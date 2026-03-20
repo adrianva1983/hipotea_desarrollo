@@ -5892,4 +5892,101 @@ class APIController extends Controller
         }
     }
 
+	/**
+	 * Recibe webhook de Kommo (vía servidor externo)
+	 * POST /API/kommo/receive
+	 * 
+	 * Flujo:
+	 * Kommo → webhook-kommo.php (servidor externo) → POST a esta acción
+	 */
+	public function recibirKommoWebhookAction(Request $request)
+	{
+		if ($request->headers->get('Content-Type') === 'application/json') {
+			$jsonRecibido = json_decode($request->getContent(), true);
+			$respuesta = array();
+			
+			if (json_last_error() === 0) {
+				$array_keys = array('leads');
+				$jsonRecibidoValido = true;
+				
+				foreach ($array_keys as $array_key) {
+					if (!array_key_exists($array_key, $jsonRecibido)) {
+						$jsonRecibidoValido = false;
+						break;
+					}
+				}
+				
+				if ($jsonRecibidoValido && !empty($jsonRecibido['leads'])) {
+					$doctrine = $this->getDoctrine();
+					$managerEntidad = $doctrine->getManager();
+					$repositorios = array(
+						'KommoMensaje' => $doctrine->getRepository('AppBundle:KommoMensaje')
+					);
+					
+					$lead = $jsonRecibido['leads'][0]; // Primera instancia
+					$kommoLeadId = $lead['id'] ?? null;
+					
+					if (!$kommoLeadId) {
+						$respuesta['errorlevel'] = 4;
+						$respuesta['mensaje'] = 'Lead ID no encontrado';
+						return new JsonResponse($respuesta, JSON_UNESCAPED_UNICODE);
+					}
+					
+					try {
+						// Buscar o crear registro
+						$kommoMensaje = $repositorios['KommoMensaje']->findOneBy(array(
+							'kommoLeadId' => $kommoLeadId
+						));
+						
+						if (!$kommoMensaje) {
+							$kommoMensaje = new \AppBundle\Entity\KommoMensaje();
+						}
+						
+						$kommoMensaje->setKommoLeadId($kommoLeadId);
+						
+						// Extrae mensaje de campos personalizados si existe
+						if (isset($lead['custom_fields_values']) && is_array($lead['custom_fields_values'])) {
+							foreach ($lead['custom_fields_values'] as $field) {
+								if (isset($field['field_code']) && $field['field_code'] === 'MESSAGE') {
+									$kommoMensaje->setMessageText($field['values'][0]['value'] ?? '');
+									break;
+								}
+							}
+						}
+						
+						// Tipo de evento
+						if (isset($jsonRecibido['event']['type'])) {
+							$kommoMensaje->setMessageType($jsonRecibido['event']['type']);
+						}
+						
+						$kommoMensaje->setStatus('received');
+						$kommoMensaje->setUpdatedAt(new DateTime());
+						$kommoMensaje->setRawPayload($jsonRecibido);
+						
+						$managerEntidad->persist($kommoMensaje);
+						$managerEntidad->flush();
+						
+						error_log("✅ Kommo mensaje guardado - Lead ID: {$kommoLeadId}");
+						
+						$respuesta['errorlevel'] = 0;
+						$respuesta['mensaje'] = 'Mensaje de Kommo procesado correctamente';
+						$respuesta['kommo_lead_id'] = $kommoLeadId;
+						$respuesta['db_id'] = $kommoMensaje->getId();
+						
+					} catch (Exception $e) {
+						error_log("❌ Error Kommo: " . $e->getMessage());
+						$respuesta['errorlevel'] = 2;
+						$respuesta['mensaje'] = 'Error guardando mensaje Kommo: ' . $e->getMessage();
+					}
+				} else {
+					$respuesta['errorlevel'] = 3;
+					$respuesta['mensaje'] = 'Faltan campos requeridos (leads)';
+				}
+				
+				return new JsonResponse($respuesta, JSON_UNESCAPED_UNICODE);
+			}
+			throw new HttpException(400);
+		}
+	}
+
 }

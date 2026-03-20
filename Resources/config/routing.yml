@@ -839,6 +839,11 @@ calculadora_avanzada_test_ajax:
   controller: AppBundle:SimuladorViabilidad:calculadoraAvanzadaTestAjax
   methods: [POST]
 
+kommo_webhook:
+  path: /webhook/kommo
+  controller: AppBundle:API:recibirKommoWebhook
+  methods: [POST]
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }
