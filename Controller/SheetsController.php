@@ -34,9 +34,12 @@ use DateTimeImmutable;
 
 class SheetsController extends Controller
 {
-    public function leerHojasAction(GoogleSheetsService $sheetsService)
+    public function leerHojasAction()
     {
-
+        // GoogleSheetsService inyección desactivada por incompatibilidad
+        
+        /*
+        $sheetsService = $this->get(GoogleSheetsService::class);
         $hojas = $sheetsService->getSheetNames();
         $datos = [];
 
@@ -51,12 +54,18 @@ class SheetsController extends Controller
         }
 
         return new Response('<pre>' . print_r($datos, true) . '</pre>');
+        */
+        
+        return new Response('Google Sheets está desactivado temporalmente.', 503);
     }
 
-    public function sincronizarVariasHojasAction(GoogleSheetsService $sheetsService)
+    public function sincronizarVariasHojasAction()
     {
+        // GoogleSheetsService inyección desactivada por incompatibilidad
+        
+        /*
         $em = $this->getDoctrine()->getManager();
-
+        $sheetsService = $this->get(GoogleSheetsService::class);
         $hojas = $sheetsService->getSheetNames();
 
         $rango = 'A:O';
@@ -73,6 +82,9 @@ class SheetsController extends Controller
         }
 
         return new Response('<pre>OK</pre>');
+        */
+        
+        return new Response('Google Sheets está desactivado temporalmente.', 503);
     }
 
     public function simulacionExpedienteAction($registro = [], $clavePrimerNivel = "")
