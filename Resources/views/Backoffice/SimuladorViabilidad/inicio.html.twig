@@ -1,0 +1,130 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+
+{% block customscripts %}
+	{{ parent() }}
+	<style>
+		.simulador-card {
+			box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+			border: none;
+			margin-bottom: 30px;
+		}
+		.simulador-card-header {
+			border-bottom: 3px solid #0056b3;
+		}
+		.step-number {
+			font-weight: bold;
+			font-size: 1.2rem;
+		}
+		.simulador-container {
+			max-width: 700px;
+			margin: 30px auto;
+		}
+		.aviso-legal {
+			background-color: #f8f9fa;
+			border-left: 4px solid #0056b3;
+			padding: 20px;
+			border-radius: 5px;
+		}
+	</style>
+{% endblock %}
+
+{% block body %}
+	<div class="simulador-container">
+		<div class="card simulador-card">
+			<div class="card-header bg-primary text-white simulador-card-header">
+				<h3 class="mb-0">Estudio previo de viabilidad hipotecaria</h3>
+			</div>
+			<div class="card-body">
+				<!-- Aviso Legal -->
+				<div class="alert alert-info aviso-legal" role="alert">
+					<h5 class="alert-heading">Aviso Legal Orientativo</h5>
+					<p>
+						Este simulador le proporciona una estimación preliminar de la viabilidad de su solicitud de hipoteca basada en los datos que proporcione. 
+						Los resultados obtenidos son <strong>orientativos y no vinculantes</strong>.
+					</p>
+					<hr>
+					<ul class="mb-0">
+						<li>Los cálculos realizados se basan en criterios generales de sostenibilidad financiera.</li>
+						<li>El análisis definitivo será realizado por un asesor especializado.</li>
+						<li>La información proporcionada será tratada conforme a nuestra política de privacidad.</li>
+						<li>Puede cambiar de operación o cancelar el simulador en cualquier momento.</li>
+					</ul>
+				</div>
+
+				<!-- Formulario -->
+				<form method="post" class="mt-4">
+					{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+					<div class="form-group">
+						{{ form_label(form.tipoOperacion, 'Tipo de operación:') }}
+						{{ form_widget(form.tipoOperacion, {'attr': {'class': 'form-control'}}) }}
+						{% if form.tipoOperacion.vars.errors|length > 0 %}
+							<div class="invalid-feedback d-block">
+								{{ form_errors(form.tipoOperacion) }}
+							</div>
+						{% endif %}
+					</div>
+
+					<div class="form-group mt-3">
+						<div class="form-check">
+							{{ form_widget(form.aceptaAvisoLegal, {'attr': {'class': 'form-check-input'}}) }}
+							{{ form_label(form.aceptaAvisoLegal, 'Acepto el aviso legal', {'label_attr': {'class': 'form-check-label'}}) }}
+						</div>
+						{% if form.aceptaAvisoLegal.vars.errors|length > 0 %}
+							<div class="invalid-feedback d-block">
+								{{ form_errors(form.aceptaAvisoLegal) }}
+							</div>
+						{% endif %}
+					</div>
+
+					<div class="form-group mt-4">
+						<button type="submit" class="btn btn-primary btn-lg w-100">
+							Continuar
+						</button>
+					</div>
+
+					{{ form_end(form) }}
+				</form>
+
+				<!-- Información Adicional -->
+				<div class="alert alert-light mt-4" role="alert">
+					<small class="text-muted">
+						<i class="fa fa-info-circle"></i>
+						Este proceso le llevará aproximadamente 5 minutos. Tenga a mano información sobre su situación financiera y laboral.
+					</small>
+				</div>
+			</div>
+		</div>
+
+		<!-- Pasos del Simulador -->
+		<div class="mt-5 text-center">
+			<h5 class="mb-3">Pasos del simulador</h5>
+			<div class="row text-center">
+				<div class="col-md-3">
+					<div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+						1
+					</div>
+					<p class="mt-2"><small>Aviso Legal</small></p>
+				</div>
+				<div class="col-md-3">
+					<div class="step-number bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+						2
+					</div>
+					<p class="mt-2"><small>Datos Personales</small></p>
+				</div>
+				<div class="col-md-3">
+					<div class="step-number bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+						3
+					</div>
+					<p class="mt-2"><small>Información Vivienda</small></p>
+				</div>
+				<div class="col-md-3">
+					<div class="step-number bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+						4
+					</div>
+					<p class="mt-2"><small>Análisis de Riesgo</small></p>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+<div class="dd-handle d-flex align-items-center">
+	<span class="mr-auto text-truncate">{{ nombre }}</span>
+	<div class="dd-nodrag">
+		{% if tabla.idCampoHito is defined and tabla.tipo is defined %}
+			{% if (tabla.tipo is same as(2)and opciones_campo[id]|length < 2) or tabla.tipo is same as(3) %}
+				<a class="btn btn-secondary btn-sm mr-2 waves-effect" href="{{ rutaAgregarHijo }}" title="{{ tituloAgregar }} “{{ nombre }}”">
+					<i class="fas fa-plus"></i>
+				</a>
+			{% endif %}
+		{% elseif ultimo is not defined or not ultimo %}
+			<a class="btn btn-secondary btn-sm mr-2 waves-effect" href="{{ rutaAgregarHijo }}" title="{{ tituloAgregar }} “{{ nombre }}”">
+				<i class="fas fa-plus"></i>
+			</a>
+		{% endif %}
+		<a class="btn btn-secondary btn-sm mr-2 waves-effect" href="{{ rutaModificarElemento }}/{{ id }}" title="{{ tituloEditar }}">
+			<i class="fas fa-edit"></i>
+		</a>
+		<div class="btn-group btn-group-toggle" data-toggle="buttons" title="Borrar {{ tituloBorrar }}">
+			<label class="btn btn-secondary btn-sm waves-effect"> <input name="{{ inputBorrarNombre }}" type="checkbox" value="{{ id }}">
+				<i class="fas fa-trash"></i>
+			</label>
+		</div>
+	</div>
+</div>

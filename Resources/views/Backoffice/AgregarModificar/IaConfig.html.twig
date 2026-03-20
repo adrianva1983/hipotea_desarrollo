@@ -1,0 +1,87 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregarModificarIaConfig '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block body %}
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">Editar proveedor IA</h4>
+            {{ form_start(agregarModificarIaConfig) }}
+            <div class="form-row">
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.provider) }}
+                    {{ form_widget(agregarModificarIaConfig.provider) }}
+                    {{ form_errors(agregarModificarIaConfig.provider) }}
+                </div>
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.model) }}
+                    {{ form_widget(agregarModificarIaConfig.model) }}
+                    {{ form_errors(agregarModificarIaConfig.model) }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.apiKey) }}
+                    {{ form_widget(agregarModificarIaConfig.apiKey) }}
+                    {{ form_errors(agregarModificarIaConfig.apiKey) }}
+                </div>
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.apiUrl) }}
+                    {{ form_widget(agregarModificarIaConfig.apiUrl) }}
+                    {{ form_errors(agregarModificarIaConfig.apiUrl) }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.systemPrompt) }}
+                    {{ form_widget(agregarModificarIaConfig.systemPrompt) }}
+                    {{ form_errors(agregarModificarIaConfig.systemPrompt) }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.temperatura) }}
+                    {{ form_widget(agregarModificarIaConfig.temperatura) }}
+                    {{ form_errors(agregarModificarIaConfig.temperatura) }}
+                </div>
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.maxTokens) }}
+                    {{ form_widget(agregarModificarIaConfig.maxTokens) }}
+                    {{ form_errors(agregarModificarIaConfig.maxTokens) }}
+                </div>
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.topP) }}
+                    {{ form_widget(agregarModificarIaConfig.topP) }}
+                    {{ form_errors(agregarModificarIaConfig.topP) }}
+                </div>
+                <div class="form-group col-sm">
+                    {{ form_label(agregarModificarIaConfig.topK) }}
+                    {{ form_widget(agregarModificarIaConfig.topK) }}
+                    {{ form_errors(agregarModificarIaConfig.topK) }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-sm">
+                    {{ form_widget(agregarModificarIaConfig.activo) }}
+                    {{ form_label(agregarModificarIaConfig.activo) }}
+                    {{ form_errors(agregarModificarIaConfig.activo) }}
+                </div>
+                <div class="form-group col-sm">
+                    {{ form_widget(agregarModificarIaConfig.esProveedorPorDefecto) }}
+                    {{ form_label(agregarModificarIaConfig.esProveedorPorDefecto) }}
+                    {{ form_errors(agregarModificarIaConfig.esProveedorPorDefecto) }}
+                </div>
+            </div>
+
+            <div class="d-flex">
+                <a class="btn btn-secondary mr-auto" href="{{ path('ia_config_index') }}">Volver</a>
+                {{ form_widget(agregarModificarIaConfig.reset) }}
+                {{ form_widget(agregarModificarIaConfig.submit, {attr: {class: 'btn-success ml-3'}}) }}
+            </div>
+
+            {{ form_end(agregarModificarIaConfig) }}
+        </div>
+    </div>
+{% endblock %}

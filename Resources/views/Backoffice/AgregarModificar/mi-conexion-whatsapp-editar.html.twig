@@ -1,0 +1,265 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+
+{% block customstyles %}
+	{{ parent() }}
+	<style>
+		.config-card {
+			background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+			border-radius: 15px;
+			padding: 20px;
+			margin-bottom: 20px;
+			color: white;
+		}
+
+		.config-section {
+			background: white;
+			border-radius: 10px;
+			padding: 25px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+		}
+
+		.config-item {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 15px;
+			border-bottom: 1px solid #f0f0f0;
+		}
+
+		.config-item:last-child {
+			border-bottom: none;
+		}
+
+		.config-item-label {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+		}
+
+		.config-item-label .title {
+			font-weight: 600;
+			color: #333;
+			font-size: 14px;
+		}
+
+		.config-item-label .description {
+			font-size: 12px;
+			color: #999;
+			margin-top: 3px;
+		}
+
+		.checkbox-container {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+		}
+
+		.switch {
+			position: relative;
+			display: inline-block;
+			width: 60px;
+			height: 34px;
+		}
+
+		.switch input {
+			opacity: 0;
+			width: 0;
+			height: 0;
+		}
+
+		.slider {
+			position: absolute;
+			cursor: pointer;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: #ccc;
+			-webkit-transition: .4s;
+			transition: .4s;
+			border-radius: 34px;
+		}
+
+		.slider:before {
+			position: absolute;
+			content: "";
+			height: 26px;
+			width: 26px;
+			left: 3px;
+			bottom: 3px;
+			background-color: white;
+			transition: .4s;
+			border-radius: 50%;
+		}
+
+		input:checked + .slider {
+			background-color: #25D366;
+		}
+
+		input:checked + .slider:before {
+			transform: translateX(26px);
+		}
+
+		.header-info {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding: 15px;
+			background: #f8f9fa;
+			border-radius: 10px;
+		}
+
+		.header-info-item {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.header-info-label {
+			font-size: 12px;
+			color: #999;
+			margin-bottom: 3px;
+		}
+
+		.header-info-value {
+			font-weight: bold;
+			color: #333;
+		}
+
+		.btn-group-custom {
+			display: flex;
+			gap: 10px;
+			margin-top: 30px;
+		}
+
+		.prompt-textarea {
+			width: 100%;
+			min-height: 100px;
+			padding: 10px;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			font-family: monospace;
+			font-size: 12px;
+		}
+
+		.prompt-section {
+			margin-top: 20px;
+			padding: 15px;
+			background: #f8f9fa;
+			border-radius: 10px;
+			border-left: 4px solid #25D366;
+		}
+
+		.btn-lg {
+			min-width: 150px;
+		}
+	</style>
+{% endblock %}
+
+{% block content %}
+	<div class="page-wrapper">
+		<div class="container-fluid">
+			<!-- breadcrumb -->
+			<div class="row page-titles">
+				<div class="col-md-5 align-self-center">
+					<h4 class="text-themecolor">{{ titulo }}</h4>
+				</div>
+				<div class="col-md-7 align-self-center text-right">
+					<div class="d-flex justify-content-end align-items-center">
+						<ol class="breadcrumb">
+							<li class="breadcrumb-item">
+								<a href="{{ path('lista_expedientes') }}">Home</a>
+							</li>
+							<li class="breadcrumb-item">
+								<a href="{{ path('mi_conexion_whatsapp') }}">Mi Conexión WhatsApp</a>
+							</li>
+							<li class="breadcrumb-item active">{{ titulo }}</li>
+						</ol>
+					</div>
+				</div>
+			</div>
+			<!-- End breadcrumb -->
+
+			<div class="row">
+				<div class="col-lg-8 offset-lg-2">
+					<div class="card">
+						<div class="card-header bg-info">
+							<h5 class="text-white m-0">
+								<i class="fas fa-cog"></i>
+								Configuración de Piloto Automático
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="header-info">
+								<div class="header-info-item">
+									<span class="header-info-label">ID de Conexión</span>
+									<span class="header-info-value">{{ sender.id }}</span>
+								</div>
+								<div class="header-info-item">
+									<span class="header-info-label">Teléfono</span>
+									<span class="header-info-value">{{ sender.telefono }}</span>
+								</div>
+								<div class="header-info-item">
+									<span class="header-info-label">Servidor Asignado</span>
+									<span class="header-info-value">{% if sender.servidor %}{{ sender.servidor.ip }}{% else %}<span class="badge badge-warning">Sin asignar</span>{% endif %}</span>
+								</div>
+								<div class="header-info-item">
+									<span class="header-info-label">Última Conexión</span>
+									<span class="header-info-value">{% if sender.fechaUltimaInteraccion %}{{ sender.fechaUltimaInteraccion|date('d/m/Y H:i') }}{% else %}<span class="text-muted">-</span>{% endif %}</span>
+								</div>
+							</div>
+
+							<form method="POST" action="{{ path('mi_conexion_whatsapp_editar', {'id': sender.id}) }}">
+								<div class="config-section">
+									<div class="config-item">
+										<div class="config-item-label">
+											<span class="title">
+												<i class="fas fa-robot"></i>
+												Piloto Automático
+											</span>
+											<span class="description">Activa o desactiva el piloto automático para esta conexión</span>
+										</div>
+										<div class="checkbox-container">
+											<label class="switch">
+												<input type="checkbox" name="pilotoAutomatico" value="1" {% if sender.pilotoAutomatico %}checked{% endif %}>
+												<span class="slider"></span>
+											</label>
+										</div>
+									</div>
+								</div>
+
+								<div class="prompt-section">
+									<label for="pilotoAutomaticoSystemPrompt" class="form-label">
+										<strong>
+											<i class="fas fa-file-alt"></i>
+											Instrucciones del Sistema
+										</strong>
+									</label>
+									<p class="text-muted small mt-2">Define cómo debe comportarse el piloto automático. Puedes especificar reglas, tonalidad, restricciones y acciones a realizar.</p>
+									<textarea 
+										id="pilotoAutomaticoSystemPrompt"
+										name="pilotoAutomaticoSystemPrompt" 
+										class="prompt-textarea mt-2"
+										placeholder="Ej: Responde siempre con cortesía. No ofreces productos adicionales. Solo información sobre hipotecas..."
+									>{{ sender.pilotoAutomaticoSystemPrompt }}</textarea>
+								</div>
+
+								<div class="btn-group-custom">
+									<button type="submit" class="btn btn-success btn-lg">
+										<i class="fas fa-save"></i>
+										Guardar Cambios
+									</button>
+									<a href="{{ path('mi_conexion_whatsapp') }}" class="btn btn-secondary btn-lg">
+										<i class="fas fa-times"></i>
+										Cancelar
+									</a>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

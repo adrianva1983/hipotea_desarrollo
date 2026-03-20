@@ -1,0 +1,32 @@
+{% if completar %}
+    <br>
+    Hola,
+    <br>
+    <br>
+    Presentamos nueva operación:
+    <br>
+    <br>
+    <h4>DATOS OPERACIÓN:</h4>
+    <br>
+    <br>
+    - Importe compraventa: {{ compraventa }}<br>
+    - Importe solicitado: {{ solicitado }}<br>
+    - Importe tasación: {{ tasacion }}<br>
+    <br>
+    <br>
+    Ver informe adjunto para resto de datos.
+    <br>
+    <br>
+    Saludos.
+    <br>
+{% else %}
+    <br>
+    Hola,
+    <br>
+    <br>
+    Adjunto documentación del cliente de referencia.
+    <br>
+    <br>
+    Saludos.
+    <br>
+{% endif %}

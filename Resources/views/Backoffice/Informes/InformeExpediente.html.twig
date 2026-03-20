@@ -1,0 +1,178 @@
+{# {% use '@App/Backoffice/Partes/Head/Styles.html.twig' %} #}
+{# {% use '@App/Backoffice/Partes/Head/Scripts.html.twig' %} #}
+
+	<!DOCTYPE html>
+	<html lang="es">
+	<head>
+        <base href="{{ pathToWeb }}">
+        {# <base href="/"> #}
+		{% include '@App/Backoffice/Partes/Head/Metas.html' %}
+        {# {% include '@App/Backoffice/bootstrap_4_layout.html.twig' %}} #}
+        <link href="assets/css/style.min.css" rel="stylesheet">
+        <link href="assets/css/custom/informe-expediente.min.css" rel="stylesheet">
+		{# <link href="{{ asset('assets/images/custom/fav.png') }}" rel="icon" sizes="16x16" type="image/png"> #}
+		<title>Grupo Negociador{% if titulo is defined %} - {{ titulo }}{% endif %}</title>
+		{# <link href="http://localhost:8000/assets/css/pages/login-register-lock.css" rel="stylesheet"> #}
+		{# {{ block('styles') }} #}
+		{# {% block customstyles %} #}
+			{# {{ parent() }} #}
+			<style>
+				/* .login-register {
+					background-image: '/assets/images/background/login-register.jpg';
+				} */
+			</style>
+		{# {% endblock %} #}
+		{# {% if app.environment is same as('dev') %} #}
+			{# {{ block('devscripts') }} #}
+			{# {% block customscripts %} #}
+				{# {{ parent() }} #}
+				{#<script src="{{ asset('assets/js/custom/recuperar-usuario.min.js') }}"></script>#}
+			{# {% endblock %} #}
+		{# {% endif %} #}
+	</head>
+	<body class="page">
+	{# {% include '@App/Backoffice/Partes/Body/Preloader.html' %} #}
+    {# <div class="row">
+        <div class="col-12">
+            <img src="assets/images/custom/logo_grupo_negociador.png">
+        </div>
+    </div>  #}
+    <div class="row cabecera">
+        <div class="col-6">
+            {# <img src="assets/images/custom/factura_cabecera.png" width="200px"> #}
+            <img src="assets/images/custom/hipotea.png" class="imagen-cabecera">
+        </div>
+        <div class="col-6">
+        <h3>Informe del Expediente Nº{{ num_expediente }}</h3>
+        </div>
+    </div>
+	<section id="wrapper">
+        <table align="center" cellspacing="0" cellpadding="2" border="1" class="datos-operacion">
+            <tr style="background-color:#ef6c00;color:#ffffff">
+                <th>Vivienda</th>
+                <th>Colaborador</th>
+                <th>Cliente</th>
+                <th>Comercial</th>
+                <th>Técnico</th>
+            </tr>
+            <tr>
+                <td>{{ vivienda }}</td>
+                <td>{{ colaborador }}</td>
+                <td>{{ cliente }}</td>
+                <td>{{ comercial }}</td>
+                <td>{{ tecnico }}</td>
+            </tr>
+        </table>
+		{# <div class="login-register"> #}
+        {% for fase in salida %}
+            <h3 class="text-center mb-3 banda-gris-fase">{{ fase['nombre'] }}</h3>
+            {% set hitoAnterior = "" %}
+            {% for hito in fase['hitos'] %}
+                {% if loop.index > 1 %}
+                    <br><br>
+                {% endif %}
+                {% if hitoAnterior == hito['nombre'] %}
+                    {% set hitoNumero = hitoNumero + 1 %}
+                {% else %}
+                    {% set hitoNumero = 1 %}
+                {% endif %}
+                {% set hitoAnterior = hito['nombre'] %}
+                <h3 class="text-center mb-3 banda-verde-hito">{{ hito['nombre'] }} {% if hitoNumero != 1 %}{{ hitoNumero }}{% endif %}</h3>
+                <div class="">
+                    <div class="campos">
+                    {% set numeroCampo = 0 %}
+                    {% set grupoAnterior = "" %}
+                    {% for campoHito in hito['camposHito'] %}
+                        {% if campoHito['grupo']!="" and grupoAnterior != campoHito['grupo'] %}
+                            <div class="row row2 {% if grupoAnterior == "" %}primera-fila-hito{% endif %}">
+                                <h4 class="text-center mb-3 banda-verde-grupo">{{ campoHito['grupo'] }}</h4>
+                            </div>
+                        {% endif %}
+                        {% if campoHito is iterable and ((campoHito['tipo'] is not same as(4) and campoHito['tipo'] is not same as(10)) or (campoHito['tipo'] is same as(4) and campoHito['subido'])) %}
+                            {% if numeroCampo == 0 %}
+                                <div class="row">
+                            {% endif %}
+                                <div class="col-3">
+                                    <strong>{{ campoHito['nombre'] }} {% if campoHito['tipo'] is not same as(4) and campoHito['tipo'] is not same as(10) %}:{% endif %}</strong>
+                                </div>
+                                <div class="col-3">
+                                    {% if campoHito['tipo'] is not same as(4) and campoHito['tipo'] is not same as(10) and campoHito['valor'] is defined %}
+                                        {{ campoHito['valor'] }}
+                                    {% elseif campoHito['valor'] is defined %}
+                                        {# {% if not is defined campoHito['nombreFichero'] %} #}
+                                            {# Sin nombre #}
+                                        {# {% else %} #}
+                                            {# {{ campoHito['nombreFichero'] }} #}
+                                        {# {% endif %} #}
+                                        {% if campoHito['subido'] and not campoHito['para_firmar'] %}
+                                            <br>Adjuntado
+                                        {# {% else %} #}
+                                            {# <br>Subido: No #}
+                                        {% endif %}
+                                        {# {% if campoHito['obligatorio'] %}
+                                            <br>Solicitar al cliente
+                                        {% else %}
+                                            {# <br>Solicitar al cliente: No #}
+                                        {# {% endif %} #}
+                                        {# {% if campoHito['solicitar_al_colaborador'] %}
+                                            <br>Solicitar al colaborador
+                                        {% else %} #}
+                                            {# <br>Solicitar al colaborador: No #}
+                                        {# {% endif %}
+                                        {% if campoHito['avisar_colaborador'] %}
+                                            <br>Avisar al colaborador
+                                        {% else %} #}
+                                            {# <br>Avisar al colaborador: No #}
+                                        {# {% endif %}
+                                        {% if campoHito['para_firmar'] %}
+                                            <br>Para firmar
+                                        {% else %} #}
+                                            {# <br>Para firmar: No #}
+                                        {# {% endif %} #}
+                                        {% if campoHito['para_firmar'] and campoHito['firmado'] %}
+                                            <br>Firmado
+                                        {# {% else %} #}
+                                            {# <br>Firmado: No #}
+                                        {% endif %}
+
+                                        {% if campoHito['entidadesColaboradoras'] is defined and campoHito['entidadesColaboradoras']|length > 0 %}
+                                            <div>Agentes Colaboradores:</div>
+                                            <ul>
+                                                {% for entidadColaboradora in campoHito['entidadesColaboradoras'] %}
+                                                    <li> {{ entidadColaboradora['nombre'] }}
+                                                        <ul>
+                                                        {% for agenteColaborador in entidadColaboradora['agentesColaboradores'] %}
+                                                            <li> {{ agenteColaborador['nombre'] }}</li>
+                                                        {% endfor %}
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            {% if numeroCampo == 1%}
+                                </div>
+                            {% endif %}
+                            
+                        {% endif %}
+                        {% if numeroCampo == 0 %}
+                            {% set numeroCampo = 1 %}
+                        {% else %}
+                            {% set numeroCampo = 0 %}
+                        {% endif %}
+                        {% set grupoAnterior = campoHito['grupo'] %}
+                    {% endfor %}
+                    {% if numeroCampo == 1 %}
+                        </div>
+                    {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+		{# </div> #}
+	</section>
+	{# {% if app.environment is not same as('dev') %} #}
+		{# {{ block('cloudscripts') }} #}
+		{# {{ block('customscripts') }} #}
+	{# {% endif %} #}
+	</body>
+	</html>

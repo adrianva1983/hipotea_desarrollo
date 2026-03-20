@@ -1,0 +1,30 @@
+AppBundle\Entity\VistaRotacionComerciales:
+    type: entity
+    table: vista_rotacion_comerciales
+    read_only: true
+    id:
+        idUsuario:
+            type: integer
+            column: id_usuario
+    fields:
+        role:
+            type: string
+            length: 45
+            column: role
+        nombre:
+            type: string
+            length: 100
+            column: nombre
+        apellidos:
+            type: string
+            length: 150
+            column: apellidos
+        maxOperacionesVivas:
+            type: integer
+            column: max_operaciones_vivas
+        ultimaAsignacion:
+            type: datetime
+            column: ultima_asignacion
+        operacionesDisponibles:
+            type: integer
+            column: operaciones_disponibles

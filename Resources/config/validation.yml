@@ -1,0 +1,493 @@
+AppBundle\Entity\AgenteColaborador:
+  properties:
+    nombre:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 45
+    apellidos:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 45
+    email:
+      - Email: ~
+      - Length:
+          max: 255
+    telefono:
+      - Type: string
+      - Length:
+          max: 45
+    direccion:
+      - Type: string
+      - Length:
+          max: 45
+
+AppBundle\Entity\EntidadColaboradora:
+  properties:
+    nombre:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 255
+    tipoEntidad:
+      - NotBlank: ~
+      - Type: integer
+      - GreaterThan: 0
+    estado:
+      - NotBlank: ~
+      - Type: integer
+      - GreaterThan: 0
+
+AppBundle\Entity\Usuario:
+  constraints:
+    - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: nif
+    - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: email
+  properties:
+    nif:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 10
+      - AppBundle\Validator\Constraints\DNI: ~
+    email:
+      - NotBlank: { groups: [usuarios] }
+      - Email: ~
+      - Length:
+          max: 45
+    plainPassword:
+      - NotBlank: { groups: [registration] }
+      - Type: string
+      - Length: { max: 72, groups: [registration] }
+    role:
+      - Choice: [ROLE_CLIENTE, ROLE_COLABORADOR, ROLE_COMERCIAL, ROLE_TECNICO, ROLE_ADMIN, ROLE_JEFE_INMOBILIARIA, ROLE_JEFE_OFICINA, ROLE_RESPONSABLE_ZONA]
+      - Length:
+          max: 45
+    nombre:
+      - Type: string
+      - Length:
+          max: 45
+    apellidos:
+      - Type: string
+      - Length:
+          max: 45
+    empresa:
+      - Type: string
+      - Length:
+          max: 45
+    telefonoMovil:
+      - NotBlank: { groups: [usuarios] }
+      - Type: string
+      - Length:
+          max: 15
+    telefonoFijo:
+      - Type: string
+      - Length:
+          max: 15
+    direccion:
+      - Type: string
+      - Length:
+          max: 85
+    cp:
+      - Type: string
+      - Length:
+          max: 10
+    provincia:
+      - Type: string
+      - Length:
+          max: 45
+    municipio:
+      - Type: string
+      - Length:
+          max: 45
+    pais:
+      - Type: string
+      - Length:
+          max: 45
+    fechaRegistro:
+      - DateTime: ~
+    fechaCaducidad:
+      - DateTime: ~
+    politicaPrivacidad:
+      - Type: bool
+    contratoFipre:
+      - Type: bool
+    estado:
+      - Type: bool
+    tokenActivacion:
+      - Type: string
+      - Length:
+          max: 120
+    tokenFecha:
+      - DateTime: ~
+    tag:
+      - Type: string
+      - Length:
+          max: 45
+    zona:
+      - Type: integer
+      - GreaterThanOrEqual: 0
+
+AppBundle\Entity\Fase:
+  constraints:
+    - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: tipo
+  properties:
+    nombre:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 100
+    tipo:
+      - Type: integer
+      - GreaterThanOrEqual: 0
+    color:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 7
+          min: 7
+      - Regex:
+          pattern: '/^#[[:xdigit:]]{6}$/'
+    orden:
+      - NotBlank: ~
+      - Type: integer
+      - GreaterThan: 0
+    final:
+      - Type: bool
+
+AppBundle\Entity\Hito:
+  properties:
+    nombre:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 255
+    orden:
+      - NotBlank: ~
+      - Type: integer
+      - GreaterThan: 0
+    repetible:
+      - Type: bool
+    hitoCondicional:
+      - Type: bool
+
+AppBundle\Entity\GrupoCamposHito:
+  properties:
+    nombre:
+      - Type: string
+    orden:
+      - NotBlank: ~
+      - Type: integer
+      - GreaterThan: 0
+
+AppBundle\Entity\CampoHito:
+  properties:
+    tipo:
+      - NotBlank: ~
+      - Type: integer
+      - Range:
+          min: 1
+          max: 10
+    nombre:
+      - Type: string
+      - Length:
+          max: 255
+    orden:
+      - NotBlank: ~
+      - Type: integer
+      - GreaterThan: 0
+    campoCondicional:
+      - Type: bool
+
+AppBundle\Entity\OpcionesCampo:
+  properties:
+    orden:
+      - NotBlank: ~
+      - Type: integer
+      - GreaterThan: 0
+    valor:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 90
+    idHitoCondicional:
+      - Type: string
+      - Length:
+          max: 255
+    idCampoCondicional:
+      - Type: string
+      - Length:
+          max: 255
+
+AppBundle\Entity\Inmobiliaria:
+  properties:
+    nombre:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 100
+    idComercial:
+      - NotBlank: ~
+
+AppBundle\Entity\Expediente:
+  properties:
+    idFaseActual:
+      - NotBlank: ~
+    vivienda:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 100
+    estado:
+      - Type: integer
+      - Range:
+          min: 0
+          max: 2
+    fechaCreacion:
+      - NotBlank: ~
+      - DateTime: ~
+
+AppBundle\Entity\HitoExpediente:
+  properties:
+    estado:
+      - Type: bool
+
+AppBundle\Entity\CampoHitoExpediente:
+  properties:
+    valor:
+      - Type: string
+      - Length:
+          max: 999999
+    fechaModificacion:
+      - NotBlank: ~
+      - DateTime: ~
+    obligatorio:
+      - Type: bool
+    solicitarAlColaborador:
+      - Type: bool
+    avisarColaborador:
+      - Type: bool
+    paraFirmar:
+      - Type: bool
+    firmado:
+      - Type: bool
+
+AppBundle\Entity\FicheroCampo:
+  properties:
+    nombreFichero:
+      - Type: string
+      - Length:
+          max: 90
+    # fichero:
+    #   - Collection:
+    #     - File:
+    #         mimeTypes: [application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf, image/jpeg, image/png, image/webp]
+
+AppBundle\Entity\Documento:
+  properties:
+    nombre:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 255
+    descripcion:
+      - Type: string
+      - Length:
+          max: 255
+    fechaSubida:
+      - NotBlank: ~
+      - DateTime: ~
+    estado:
+      - Type: bool
+    visiblePara:
+      - Type: integer
+      - Range:
+          min: 0
+          max: 3
+    fichero:
+      - File:
+          mimeTypes: [application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf]
+
+AppBundle\Entity\SeguimientoHorario:
+  properties:
+    datosCliente:
+      - Type: string
+      - Length:
+          max: 255
+    fechaInicio:
+      - NotBlank: ~
+      - DateTime: ~
+    fechaFin:
+      - NotBlank: ~
+      - DateTime: ~
+    tipo:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 45
+    observaciones:
+      - Type: string
+      - Length:
+          max: 255
+    estado:
+      - NotBlank: ~
+      - Type: integer
+      - Range:
+          min: 0
+          max: 2
+
+AppBundle\Entity\Notificacion:
+  properties:
+    titulo:
+      - Type: string
+      - Length:
+          max: 50
+    texto:
+      - Type: string
+      - Length:
+          max: 255
+    fecha:
+      - DateTime: ~
+    estado:
+      - Type: integer
+      - Range:
+          min: 0
+          max: 2
+
+AppBundle\Entity\Noticia:
+  properties:
+    titulo:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 80
+    imagen:
+      - Type: string
+      - Length:
+          max: 90
+    descripcion:
+      - NotBlank: ~
+      - Type: string
+      - Length:
+          max: 65535
+    fecha:
+      - DateTime: ~
+    estado:
+      - Type: bool
+    url:
+      - Type: string
+      - Length:
+          max: 255
+
+AppBundle\Entity\ClienteFactura:
+  constraints:
+    - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: cif
+  properties:
+    razonSocial:
+      - Type: string
+      - Length:
+          max: 255
+    cif:
+      - Type: string
+      - Length:
+          max: 9
+      - AppBundle\Validator\Constraints\CIF: ~
+    direccion:
+      - Type: string
+      - Length:
+          max: 255
+    provincia:
+      - Type: string
+      - Length:
+          max: 45
+    municipio:
+      - Type: string
+      - Length:
+          max: 45
+    cp:
+      - Type: string
+      - Length:
+          max: 5
+    telefono:
+      - Type: string
+      - Length:
+          max: 10
+
+AppBundle\Entity\EmisorFactura:
+  constraints:
+    - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: cif
+  properties:
+    razonSocial:
+      - Type: string
+      - Length:
+          max: 255
+    cif:
+      - Type: string
+      - Length:
+          max: 9
+      - AppBundle\Validator\Constraints\CIF: ~
+    direccion:
+      - Type: string
+      - Length:
+          max: 255
+    provincia:
+      - Type: string
+      - Length:
+          max: 45
+    municipio:
+      - Type: string
+      - Length:
+          max: 45
+    cp:
+      - Type: string
+      - Length:
+          max: 5
+    telefono:
+      - Type: string
+      - Length:
+          max: 10
+
+AppBundle\Entity\Factura:
+  properties:
+    serie:
+      - Type: string
+      - Length:
+          max: 45
+    descripcion:
+      - Type: string
+      - Length:
+          max: 255
+
+AppBundle\Entity\CalculadoraSencilla:
+  properties:
+    precioTotal:
+      - NotBlank: ~
+      - Type: double
+      - GreaterThan: 0
+    aportacionInicial:
+      - NotBlank: ~
+      - Type: double
+      - GreaterThan: 0
+    tasaInteres:
+      - NotBlank: ~
+      - Type: double
+      - Range:
+          min: 0
+          max: 100
+    plazoAmortizacion:
+      - NotBlank: ~
+      - Type: integer
+      - GreaterThan: 0
+
+AppBundle\Entity\ExpedienteEmail:
+  properties:
+    idEntidadColaboradora:
+      - NotBlank: ~
+    idAgenteColaborador:
+      - NotBlank: ~
+    asunto:
+      - NotBlank: ~
+      - Type: string
+    mensaje:
+      - NotBlank: ~
+      - Type: string

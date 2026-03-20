@@ -1,0 +1,968 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme calculadora_comparativa '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/countDecimalPlaces.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/round.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/calculadora-comparativa.js') }}"></script>
+{% endblock %}
+{% block customstyles %}
+	<link href="{{ asset('assets/css/custom/custom.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/calculadora-comparativa.css') }}" rel="stylesheet">
+{% endblock %}
+{% block body %}
+	<div class="row">
+		<div class="col-lg mb-4 mb-lg-0">
+			<div class="card h-100 mb-0 caja-externa">
+				<div class="card-body p-40 caja-calculadora">
+					<h4 class="card-title mb-1" id="titulo-principal">
+						Calcula y compara tu oferta actual con nuestras ofertas
+					</h4>
+					<div class="text-muted mb-4">Rellena la siguiente información</div>
+					{{ form_start(calculadora_comparativa) }}
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.destino) }}
+							{{ form_widget(calculadora_comparativa.destino) }}
+							{{ form_errors(calculadora_comparativa.destino) }}
+						</div>
+					</div>
+					<h6>¿Cuéntanos qué condiciones tienes?</h6>
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.tipoHipoteca) }}
+							{{ form_widget(calculadora_comparativa.tipoHipoteca) }}
+							{{ form_errors(calculadora_comparativa.tipoHipoteca) }}
+						</div>
+					</div>
+					{# <h6 class="plazo-amortizacion">Plazo de amortización:</h6> #}
+					<div class="form-row mejorar">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.aniosPendientesHipoteca) }}
+							{{ form_widget(calculadora_comparativa.aniosPendientesHipoteca) }}
+							{{ form_errors(calculadora_comparativa.aniosPendientesHipoteca) }}
+						</div>
+					</div>
+					<div class="form-row comprar-fijo-variable">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.plazoAmortizacion) }}
+							{{ form_widget(calculadora_comparativa.plazoAmortizacion) }}
+							{{ form_errors(calculadora_comparativa.plazoAmortizacion) }}
+						</div>
+					</div>
+					<div class="form-row comprar-mixto">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.aniosPlazoFijo) }}
+							{{ form_widget(calculadora_comparativa.aniosPlazoFijo) }}
+							{{ form_errors(calculadora_comparativa.aniosPlazoFijo) }}
+						</div>
+					</div>
+
+
+
+					<div class="form-row comprar-mixto">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.plazoTotal) }}
+							{{ form_widget(calculadora_comparativa.plazoTotal) }}
+							{{ form_errors(calculadora_comparativa.plazoTotal) }}
+						</div>
+					</div>
+					<div class="form-row importe-hipoteca">
+						<div class="form-groupcol-3 col">
+							{{ form_label(calculadora_comparativa.importeHipoteca) }}
+							{{ form_widget(calculadora_comparativa.importeHipoteca) }}
+							{{ form_errors(calculadora_comparativa.importeHipoteca) }}
+						</div>
+					</div>
+					<div class="form-row mejorar">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.tipo) }}
+							{{ form_widget(calculadora_comparativa.tipo) }}
+							{{ form_errors(calculadora_comparativa.tipo) }}
+						</div>
+					</div>
+					<div class="form-row mejorar-mixta-variable">
+						<div class="form-groupcol-4">
+							{{ form_label(calculadora_comparativa.revision) }}
+							{{ form_widget(calculadora_comparativa.revision) }}
+							{{ form_errors(calculadora_comparativa.revision) }}
+						</div>
+					</div>
+					<div class="form-row comprar-fijo">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.tipoFijo) }}
+							{{ form_widget(calculadora_comparativa.tipoFijo) }}
+							{{ form_errors(calculadora_comparativa.tipoFijo) }}
+						</div>
+					</div>
+					<div class="form-row comprar-variable">
+						<div class="form-groupcol-4 col-sm-12">
+							{{ form_label(calculadora_comparativa.tipoVariable) }}
+							{{ form_widget(calculadora_comparativa.tipoVariable) }}
+							{{ form_errors(calculadora_comparativa.tipoVariable) }}
+						</div>
+					</div>
+					<div class="form-row comprar-variable">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.revisionVariable) }}
+							{{ form_widget(calculadora_comparativa.revisionVariable) }}
+							{{ form_errors(calculadora_comparativa.revisionVariable) }}
+						</div>
+					</div>
+					<div class="form-row comprar-mixto">
+						<div class="form-groupcol-4 col-sm-12">
+							{{ form_label(calculadora_comparativa.tipoMixta) }}
+							{{ form_widget(calculadora_comparativa.tipoMixta) }}
+							{{ form_errors(calculadora_comparativa.tipoMixta) }}
+						</div>
+					</div>
+					<div class="form-row comprar-mixto">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.revisionMixta) }}
+							{{ form_widget(calculadora_comparativa.revisionMixta) }}
+							{{ form_errors(calculadora_comparativa.revisionMixta) }}
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_comparativa.oferta) }}
+							{{ form_widget(calculadora_comparativa.oferta) }}
+							{{ form_errors(calculadora_comparativa.oferta) }}
+						</div>
+					</div>
+					<div class="d-flex" style="margin-top:40px;">
+						<a class="btn btn-success mr-auto waves-effect btn-volver" href="{{ path('inicio') }}">Volver</a>
+						<button class="btn btn-success waves-effect" id="{{ calculadora_comparativa.calcular.vars.id }}" name="{{ calculadora_comparativa.calcular.vars.full_name }}">
+							<i class="fas fa-calculator"></i>
+							<span>
+								Calcular</span>
+						</button>
+						{% do calculadora_comparativa.calcular.setRendered %}
+						{{ form_end(calculadora_comparativa) }}
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg mb-4 mb-lg-0">
+			<div class="card h-100">
+				<h4 class="card-header bg-success text-light mb-0">
+					{% if destino is defined and destino =='1' %}
+						TABLA COMPARATIVA COMPRA DE VIVIENDA
+					{% elseif destino is defined and destino =='2'%}
+						TABLA COMPARATIVA CAMBIO DE HIPOTECA
+					{% endif %}
+				</h4>
+				<div class="card-body d-flex flex-column justify-content-center m-auto" style="width:100%;">
+					{# {% if tipo_calculo is defined and tipo_calculo =='cuota' %} #}
+						<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado>
+							{% if resultado is defined %}
+								<style>
+
+									.tabla-resultado {
+										width: 100%;
+										margin: 50px 0;
+										color: black;
+    									font-weight: 500;
+									}
+									.tabla-resultado th {
+										border-bottom: 1px dotted;
+										font-weight: 500;
+									}
+									.tabla-resultado th, .tabla-resultado td{
+										padding: 10px 4px;
+									}
+
+									.tabla-resultado td span{
+										color: grey;
+    									font-weight: 400;
+									}
+
+
+
+									.btn-right {
+										float: right;
+										margin-top: -40px;
+									}
+									.result {
+										margin-top: 20px;
+									}
+									.result h2 {
+										font-size: 1.1em;
+										margin-bottom: 40px;
+									}
+									.result table {
+										width: 100%;
+										border-collapse: inherit;
+										border: 3px dotted red;
+										border-radius: 10px;
+										padding: 2px;
+									}
+									.result th,
+									.result td {
+										border: 0 solid #ccc;
+										padding: 10px;
+										text-align: center;
+									}
+									.result td {
+										font-weight: 500;
+										font-size: 22px;
+									}
+									.result th {
+										/* background-color: #f4f4f4; */
+										font-size: 1.3em;
+										color: #e53935;
+									}
+
+									.costs {
+										margin-top: 40px;
+									}
+									.costs h2 {
+										font-size: 1.3em;
+										color: #e53935;
+									}
+									.costs .row {
+										display: flex;
+										justify-content: flex-start;
+										margin: 10px 0;
+										border-bottom: 1px dashed #ccc;
+										padding-bottom: 10px;
+									}
+									.costs .column {
+										display: flex;
+										align-items: center;
+										width: 50%;
+									}
+									.costs .icon {
+										margin-right: 10px;
+									}
+									.costs .label {
+										font-weight: bold;
+										font-size: 14px;
+									}
+									.costs .value {
+										margin-left: 5px;
+									}
+									span.label {
+										color: #888;
+									}
+
+									img.icono-imagen {
+										height: 40px;
+										width: 40px;
+										object-fit: cover;
+									}
+
+									.costs .column70 {
+										display: flex;
+										align-items: center;
+										text-align: right;
+										width: 50%;
+										flex-direction: row-reverse;
+									}
+
+									.costs .column30 {
+										display: flex;
+										align-items: center;
+										width: 50%;
+										flex-direction: row-reverse;
+									}
+									.costs .row2 {
+										display: flex;
+										justify-content: flex-start;
+										margin: 10px 0;
+										padding-bottom: 10px;
+									}
+
+									.total {
+										color: black;
+										font-weight: 600;
+									}
+
+									.costs2 {
+										padding: 50px;
+										margin-top: 0;
+									}
+									@media(max-width: 576px) {
+										.result h2,
+										.result th,
+										.result td {
+											font-size: 1em;
+										}
+
+										.costs .column {
+											width: 100%;
+										}
+
+										.costs2 {
+											padding: 3px;
+										}
+
+										.costs .column70,
+										.costs .column30 {
+											width: 50%;
+										}
+
+										.costs .label {
+											font-size: 14px;
+										}
+										.card .card-title {
+											font-size: 20px;
+										}
+										.tabla-resultado {
+											font-size: 14px;
+										}
+									}
+									@media print {
+										.topbar, .left-sidebar, footer, .caja-externa, .row.page-titles, #imprimir {
+											display: none;
+										}
+
+										.page-wrapper {
+											margin-left: 0px !important;
+											padding-top: 0px !important;
+										}
+									}
+								</style>
+									{# Caja tipos #}
+									<div class="result">
+										<button class="btn btn-success waves-effect btn-right" id="imprimir" name="imprimir">
+											<i class="fas fa-print"></i>
+										</button>
+										<h2>
+											Nuestra oferta se ha calculado teniendo en cuenta una hipoteca
+											{% if resultado is defined %}
+												{{ nombreOferta }}
+											{% endif %}
+											{% if resultado is defined and tipoOferta == 'Mixto' %}
+												y el resto de años euribor + 0.3%
+											{% endif %}
+										</h2>
+									</div>
+
+									{# Caja gastos #}
+									{% if destino == 1 %} {# Quiere comprar #}
+										{% if tipoOferta == 'Fijo' %} {# Quiere una oferta de Fija #}
+											{% if tipo == 1 %} {# Tiene una oferta de Fija #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>Tu Hipoteca</th>
+														<th>Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% elseif tipo == 2 %} {# Tiene una oferta de Mixta #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>* Tu Hipoteca</th>
+														<th>Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% elseif tipo == 3 %} {# Tiene una oferta de Variable #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>* Tu Hipoteca</th>
+														<th>Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primer año)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% endif %}
+										{% else %} {# Quiere una oferta de mixta #}
+											{% if tipo == 1 %} {# Tiene una oferta de Fija #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>Tu Hipoteca</th>
+														<th>* Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% elseif tipo == 2 %} {# Tiene una oferta de Mixta #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>* Tu Hipoteca</th>
+														<th>* Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primeros años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% elseif tipo == 3 %} {# Tiene una oferta de Variable #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>* Tu Hipoteca</th>
+														<th>* Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primer año)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% endif %}
+										{% endif %}
+									{% else %} {# Quiere cambiar la hipoteca que tiene #}
+										{% if tipoOferta == 'Fijo' %} {# Quiere una oferta de Fija #}
+											{% if tipo == 1 %} {# Tiene una oferta de Fija #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>Tu Hipoteca</th>
+														<th>Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% elseif tipo == 2 %} {# Tiene una oferta de Mixta #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>* Tu Hipoteca</th>
+														<th>Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% elseif tipo == 3 %} {# Tiene una oferta de Variable #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>* Tu Hipoteca</th>
+														<th>Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primer año)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% endif %}
+										{% else %} {# Quiere una oferta de mixta #}
+											{% if tipo == 1 %} {# Tiene una oferta de Fija #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>Tu Hipoteca</th>
+														<th>* Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% elseif tipo == 2 %} {# Tiene una oferta de Mixta #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>* Tu Hipoteca</th>
+														<th>* Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primeros años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% elseif tipo == 3 %} {# Tiene una oferta de Variable #}
+												<table class="tabla-resultado">
+													<tr>
+														<th></th>
+														<th>* Tu Hipoteca</th>
+														<th>* Nuestra Oferta</th>
+														<th>Diferencia</th>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Primer año)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+													<tr>
+														<td>Intereses totales</td>
+														<td>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+														</td>
+														<td>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+														</td>
+													</tr>
+												</table>
+											{% endif %}
+										{% endif %}
+									{% endif %}
+									{# <div class="costs">
+										<div class="row">
+											<div class="column"></div>
+											<div class="column">Tu Hipoteca</div>
+											<div class="column">Nuestra Oferta</div>
+											<div class="column">Ahorro</div>
+										</div>
+										<div class="row">
+											<div class="column">
+												Cuota Mensual
+											</div>
+											<div class="column">
+												<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}
+													€</span>
+											</div>
+											<div class="column">
+												<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}
+													€</span>
+											</div>
+											<div class="column">
+												<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}
+												€</span>
+											</div>
+										</div>
+									</div> #}
+
+							{% endif %}
+							{% if mensaje is defined %}
+								<div>
+									<center>
+										<br>
+										{{ mensaje }}
+									</center>
+								</div>
+							{% endif %}
+							<br>
+							{% if resultado is defined and vinculaciones %}
+								<h5 style="text-align:left;color: black;">
+									Opción con vinculaciones: personalizada para ti
+								</h5>
+								<p style="color:grey;font-size:12px;text-align:justify;">
+									En Hipotea, entendemos que cada cliente es único. Por eso, las condiciones de vinculación se negocian de forma individualizada, adaptándose a tus necesidades y preferencias. Las vinculaciones más comunes incluyen la domiciliación de nómina y la contratación de seguros de hogar y vida, pero estudiaremos juntos las opciones que más te beneficien.
+								</p>
+							{% else %}
+								<h5 style="text-align:left;color: black;">
+									Opción sin vinculaciones: la hipoteca que no te ata
+								</h5>
+								<p style="color:grey;font-size:12px;text-align:justify;">
+									Al optar por esta opción, no solo disfrutarás de ahorros en la cuota e intereses, sino también de la ventaja de no tener que contratar productos adicionales que otras ofertas podrían requerir. Por ejemplo, si otras ofertas te solicitan 2.000 € anuales en seguros innecesarios o más costosos de lo que encontrarías en el mercado externo, es importante que sumes este ahorro al total que hemos calculado para ti cada año.
+								</p>
+							{% endif %}
+							{% if resultado is defined and (tipoOferta == 'Mixto' or tipo == 2 or tipo == 3) %}
+								<p style="color:grey;font-size:12px;text-align:justify;">
+									<strong>*</strong> En la parte variable, hemos utilizado un Euríbor medio del 2% al que hemos sumado, por un lado, el margen de tu hipoteca actual y, por otro, el margen de nuestra oferta para compararlos. Es importante destacar que, aunque hemos hecho estos cálculos, no podemos cuantificar la tranquilidad que aporta una hipoteca a tipo fijo frente a una variable. Si el Euríbor sube más allá de las medias estimadas, las diferencias en el ahorro podrían ser significativas a favor del tipo fijo.
+								</p>
+							{% endif %}
+							{% if resultado is defined and (tipoOferta == 'Fijo' or tipo == 1) %}
+								<p style="color:grey;font-size:12px;text-align:justify;">
+									Generalmente, recomendamos no contratar hipotecas a tipo fijo si la tasa supera el 2,5%. En esos casos, aconsejamos optar por una hipoteca mixta.
+								</p>
+							{% endif %}
+							{% if resultado is defined and plazoAmortizacion %}
+								<p style="color:grey;font-size:12px;text-align:justify;">
+									Tu oferta tiene un plazo superior a 30 años, lo que puede reducir la cuota al extender el pago en más años, pero también supone pagar más intereses en total. Nuestras ofertas están limitadas a un máximo de 30 años, por lo que en esta comparativa estás comparando períodos diferentes, algo que debes tener en cuenta tanto en la comparativa de la cuota como el total de intereses.
+								</p>
+							{% endif %}
+
+							<p style="color:grey;font-size:12px;text-align:justify;">
+								<strong>IMPORTANTE:</strong> Recuerda que siempre tienes la opción de cambiar tu hipoteca para ajustarla a las mejores ofertas disponibles. Si ya has firmado tu hipoteca con nosotros, no te cobramos nada por estudiar y tramitar mejoras posteriores. Asegúrate de contar con la hipoteca más conveniente hoy y adapta tu elección a futuro según tus necesidades, como pasar de una hipoteca mixta a una fija o al revés, sin costes adicionales.
+							</p>
+						</div>
+						<div class="text-muted{% if resultado is defined %} d-none{% endif %} centrado-caja texto-resultado-vacio" data-contenedor-resultado-vacio>
+							{# Por favor, completa la información para ver el resultado. #}
+							<p>
+								En Hipotea sabemos que encontrar la hipoteca adecuada puede marcar una gran diferencia en tu economía. Por eso, hemos diseñado esta calculadora para ayudarte a visualizar claramente los beneficios que podrías obtener al elegir una de nuestras opciones.
+							</p>
+							<p>
+								<strong>¿Cómo funciona?</strong>
+							</p>
+							<ol>
+								<li>Introduce los detalles de tu oferta actual: Solo necesitas especificar el importe del préstamo, el tipo de interés y el plazo.</li>
+								<li>Selecciona la oferta de Hipotea que deseas comparar: Puedes elegir entre nuestras hipotecas mixtas de 3, 5 y 10 años, o nuestra atractiva oferta a tipo fijo. Además, te ofrecemos la opción de comparar las condiciones con o sin vinculación.</li>
+								<li>Analiza los resultados: Te mostraremos cuánto podrías ahorrar en la cuota mensual y en el total de intereses a lo largo del plazo de la hipoteca.</li>
+							</ol>
+							<p>
+								Con esta herramienta, queremos que tengas toda la información para que tomes la mejor decisión y descubras cómo mejorar tu oferta. ¡Comienza ahora y descubre el ahorro que podrías conseguir con Hipotea!
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endblock %}
+	{% block modals %}
+		{{ parent() }}
+		{% include '@App/Backoffice/Modal/ErrorCalculadora.html' %}
+	{% endblock %}

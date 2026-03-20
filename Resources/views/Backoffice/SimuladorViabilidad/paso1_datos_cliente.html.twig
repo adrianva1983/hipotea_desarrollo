@@ -1,0 +1,183 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+
+{% block customscripts %}
+	{{ parent() }}
+	<style>
+		.simulador-container {
+			max-width: 600px;
+			margin: 30px auto;
+		}
+		.simulador-card {
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			border: none;
+		}
+		.simulador-header {
+			background-color: #0056b3;
+			color: white;
+			border-bottom: 3px solid #003d82;
+		}
+		.paso-progreso {
+			font-size: 14px;
+			color: #666;
+			margin-bottom: 8px;
+		}
+		.form-group label {
+			font-weight: 500;
+			margin-top: 12px;
+			margin-bottom: 6px;
+			color: #333;
+		}
+		.form-group:first-child label {
+			margin-top: 0;
+		}
+		.form-control {
+			border: 1px solid #ddd;
+			padding: 10px 12px;
+		}
+		.form-control:focus {
+			border-color: #0056b3;
+			box-shadow: 0 0 0 0.2rem rgba(0, 86, 179, 0.25);
+		}
+		.form-control.is-invalid {
+			border-color: #dc3545;
+		}
+		.invalid-feedback {
+			display: block;
+			color: #dc3545;
+			font-size: 13px;
+			margin-top: 4px;
+		}
+		.botones-grupo {
+			display: flex;
+			gap: 10px;
+			margin-top: 30px;
+		}
+		.btn-atras, .btn-continuar {
+			flex: 1;
+			padding: 10px;
+		}
+		.btn-atras {
+			background-color: #e9ecef;
+			color: #333;
+			border: 1px solid #dee2e6;
+		}
+		.btn-atras:hover {
+			background-color: #dee2e6;
+			color: #333;
+		}
+		.btn-continuar {
+			background-color: #0056b3;
+			color: white;
+			border: 1px solid #0056b3;
+		}
+		.btn-continuar:hover {
+			background-color: #003d82;
+			border-color: #003d82;
+		}
+	</style>
+{% endblock %}
+
+{% block body %}
+	<div class="simulador-container">
+		<div class="card simulador-card">
+			<div class="card-header simulador-header">
+				<h4 class="mb-0">{{ titulo }}</h4>
+			</div>
+			<div class="card-body">
+				<!-- Progreso Simple -->
+				<div class="paso-progreso">
+					Paso {{ paso_numero }} de {{ pasos_totales }}
+				</div>
+
+				<!-- Formulario -->
+				<form method="post" novalidate>
+					{{ form_start(form, {'attr': {'class': '', 'novalidate': 'novalidate'}}) }}
+
+						<!-- Nombre -->
+						<div class="form-group">
+							{{ form_label(form.nombre) }}
+							{{ form_widget(form.nombre, {
+								'attr': {
+									'class': 'form-control' ~ (form.nombre.vars.errors|length ? ' is-invalid' : ''),
+									'placeholder': 'Ej: Juan García López'
+								}
+							}) }}
+							{% if form.nombre.vars.errors|length %}
+								<div class="invalid-feedback">
+									{% for error in form.nombre.vars.errors %}
+										{{ error.message }}<br>
+									{% endfor %}
+								</div>
+							{% endif %}
+						</div>
+
+						<!-- DNI -->
+						<div class="form-group">
+							{{ form_label(form.dni) }}
+							{{ form_widget(form.dni, {
+								'attr': {
+									'class': 'form-control' ~ (form.dni.vars.errors|length ? ' is-invalid' : ''),
+									'placeholder': 'Ej: 12345678A'
+								}
+							}) }}
+							{% if form.dni.vars.errors|length %}
+								<div class="invalid-feedback">
+									{% for error in form.dni.vars.errors %}
+										{{ error.message }}<br>
+									{% endfor %}
+								</div>
+							{% endif %}
+						</div>
+
+						<!-- Teléfono -->
+						<div class="form-group">
+							{{ form_label(form.telefono) }}
+							{{ form_widget(form.telefono, {
+								'attr': {
+									'class': 'form-control' ~ (form.telefono.vars.errors|length ? ' is-invalid' : ''),
+									'placeholder': 'Ej: 600123456'
+								}
+							}) }}
+							{% if form.telefono.vars.errors|length %}
+								<div class="invalid-feedback">
+									{% for error in form.telefono.vars.errors %}
+										{{ error.message }}<br>
+									{% endfor %}
+								</div>
+							{% endif %}
+						</div>
+
+						<!-- Email -->
+						<div class="form-group">
+							{{ form_label(form.email) }}
+							{{ form_widget(form.email, {
+								'attr': {
+									'class': 'form-control' ~ (form.email.vars.errors|length ? ' is-invalid' : ''),
+									'placeholder': 'Ej: usuario@example.com'
+								}
+							}) }}
+							{% if form.email.vars.errors|length %}
+								<div class="invalid-feedback">
+									{% for error in form.email.vars.errors %}
+										{{ error.message }}<br>
+									{% endfor %}
+								</div>
+							{% endif %}
+						</div>
+
+						<!-- Botones -->
+						<div class="botones-grupo">
+							<a href="{{ path('simulador_inicio') }}" class="btn btn-atras">
+								← Atrás
+							</a>
+							<button type="submit" class="btn btn-continuar">
+								Continuar →
+							</button>
+						</div>
+
+					{{ form_end(form) }}
+				</form>
+			</div>
+		</div>
+	</div>
+{% endblock %}

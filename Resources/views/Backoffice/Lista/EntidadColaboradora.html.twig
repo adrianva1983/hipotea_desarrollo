@@ -1,0 +1,102 @@
+{% set crearnuevo = path('agregar_modificar_entidad_colaboradora') %}
+{% set crearnuevo_texto = 'Crear nueva' %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/borrar-entidades.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/tabla-boton-borrar.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{% if entidades_colaboradoras is defined %}
+				{% if entidades_colaboradoras is empty %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay entidades colaboradoras.</span>
+					</div>
+				{% else %}
+					<form class="text-truncate mb-3" id="formulario-borrar-entidades" method="post">
+						<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+							<thead>
+							<tr>
+								<th scope="col">
+									<div class="custom-control custom-checkbox">
+										<input class="custom-control-input" id="seleccionar-todas-entidades" type="checkbox">
+										<label class="custom-control-label" for="seleccionar-todas-entidades"></label>
+									</div>
+								</th>
+								<th scope="col">Nombre</th>
+								<th scope="col">Tipo</th>
+								<th scope="col">Estado</th>
+								<th scope="col">Acciones</th>
+							</tr>
+							</thead>
+							<tbody>
+							{% for entidad_colaboradora in entidades_colaboradoras %}
+								<tr>
+									<td>
+										<div class="custom-control custom-checkbox">
+											<input class="custom-control-input" id="entidad[{{ entidad_colaboradora.idEntidadColaboradora }}]" name="entidad-colaboradora[]" type="checkbox" value="{{ entidad_colaboradora.idEntidadColaboradora }}">
+											<label class="custom-control-label" for="entidad[{{ entidad_colaboradora.idEntidadColaboradora }}]"></label>
+										</div>
+									</td>
+									<td>{{ entidad_colaboradora.nombre }}</td>
+									{% if entidad_colaboradora.tipoEntidad is same as(1) %}
+										<td>Banco</td>
+									{% elseif entidad_colaboradora.tipoEntidad is same as(2) %}
+										<td>Tasadora</td>
+									{% elseif entidad_colaboradora.tipoEntidad is same as(3) %}
+										<td>Notaría</td>
+									{% else %}
+										<td></td>
+									{% endif %}
+									{% if entidad_colaboradora.estado is same as(1) %}
+										<td>Activo</td>
+									{% elseif entidad_colaboradora.estado is same as(2) %}
+										<td>Inactivo</td>
+									{% else %}
+										<td></td>
+									{% endif %}
+									<td>
+										<a href="{{ path('agregar_modificar_entidad_colaboradora',{'id':entidad_colaboradora.idEntidadColaboradora}) }}">
+											<i class="far fa-edit"></i>
+											<span> Editar</span>
+										</a>
+									</td>
+								</tr>
+							{% endfor %}
+							</tbody>
+						</table>
+						<div>
+							<button class="btn btn-success waves-effect" id="boton-borrar-entidades">Borrar marcados</button>
+						</div>
+					</form>
+				{% endif %}
+			{% endif %}
+			<a class="btn btn-success waves-effect" href="{{ path('inicio') }}">Volver</a>
+		</div>
+	</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+{% endblock %}

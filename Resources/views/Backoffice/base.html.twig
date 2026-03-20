@@ -1,0 +1,76 @@
+{% use '@App/Backoffice/Partes/Head/Styles.html.twig' %}
+{% use '@App/Backoffice/Partes/Head/Scripts-base.html.twig' %}
+{% use '@App/Backoffice/Partes/Body/Main-Wrapper.html.twig' %}
+{% spaceless %}
+	<!DOCTYPE html>
+	<html lang="es">
+	<head>
+		{% include '@App/Backoffice/Partes/Head/Metas.html' %}
+		<link href="{{ asset('assets/images/custom/cropped-Group-270x270.png') }}" rel="icon" sizes="24x24" type="image/png">
+		<title>Hipotea: {% if titulo is defined %} - {{ titulo }}{% endif %}</title>
+		{% if app.environment is same as('dev') %}
+			{% block devstyles %}{% endblock %}
+		{% else %}
+			{% block cloudstyles %}{% endblock %}
+		{% endif %}
+		{{ block('styles') }}
+		{{ block('customstyles') }}
+		{% if app.environment is same as('dev') %}
+			{{ block('devscripts') }}
+			{% block customscripts %}
+				{{ parent() }}
+				<script>
+					function rutaNotificacionConfigurarEstadoLeidaAJAX() {
+						return '{{ path('notificacion_confirguar_estado_leida_ajax') }}';
+					}
+
+					function rutaAbrirExpedienteNotificacion() {
+						return '{{ path('agregar_modificar_expediente') }}';
+					}
+				</script>
+				<script src="{{ asset('assets/js/custom/custom.min.js') }}"></script>
+			{% endblock %}
+		{% endif %}
+	</head>
+	<body class="skin-default fixed-layout">
+	{% include '@App/Backoffice/Partes/Body/Preloader.html' %}
+	{{ block('main_wrapper') }}
+	{% block modals %}
+		{% if notificaciones is defined and notificaciones.notificaciones is defined and notificaciones.notificaciones is iterable and notificaciones.notificaciones|length>0 %}
+			{% include '@App/Backoffice/Modal/Notificacion.html' %}
+		{% endif %}
+	{% endblock %}
+	<script>
+		// Cargar foto de perfil en base64 cuando el DOM esté listo
+		document.addEventListener('DOMContentLoaded', function() {
+			var usuarioFoto = '{{ app.user.fotoPerfil }}';
+			if (usuarioFoto && usuarioFoto.trim() !== '') {
+				cargarFotoPerfilBase64(usuarioFoto);
+			}
+		});
+
+		function cargarFotoPerfilBase64(nombreFoto) {
+			var ruta = '{{ path('obtener_foto_perfil_base64') }}?archivo=' + encodeURIComponent(nombreFoto);
+			fetch(ruta)
+				.then(response => response.json())
+				.then(data => {
+					if (data.dataUri) {
+						// Buscar todas las imágenes de foto de perfil y actualizar
+						var imgElements = document.querySelectorAll('img[alt="user-img"]');
+						imgElements.forEach(function(img) {
+							if (img.classList.contains('img-circle')) {
+								img.src = data.dataUri;
+							}
+						});
+					}
+				})
+				.catch(error => console.error('Error cargando foto:', error));
+		}
+	</script>
+	{% if app.environment is not same as('dev') %}
+		{{ block('cloudscripts') }}
+		{{ block('customscripts') }}
+	{% endif %}
+	</body>
+	</html>
+{% endspaceless %}

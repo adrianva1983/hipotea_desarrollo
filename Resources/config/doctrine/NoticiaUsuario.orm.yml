@@ -1,0 +1,42 @@
+AppBundle\Entity\NoticiaUsuario:
+  type: entity
+  table: noticia_usuario
+  indexes:
+    fk_noticia_usuario_noticia1_idx:
+      columns:
+        - id_noticia
+    fk_noticia_usuario_usuario1_idx:
+      columns:
+        - id_usuario
+  id:
+    idNoticiaUsuario:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_noticia_usuario
+      generator:
+        strategy: IDENTITY
+  manyToOne:
+    idNoticia:
+      targetEntity: Noticia
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_noticia:
+          referencedColumnName: id_noticia
+      orphanRemoval: false
+    idUsuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_usuario:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

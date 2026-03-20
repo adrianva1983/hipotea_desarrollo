@@ -1,0 +1,270 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme calculadora_avanzada '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/countDecimalPlaces.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/round.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/calculadora-avanzada.js') }}"></script>
+{% endblock %}
+{% block customstyles %}
+	<link href="{{ asset('assets/css/custom/custom.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/calculadora-avanzada.css') }}" rel="stylesheet">
+{% endblock %}
+{% block body %}
+<div class="row">
+	<div class="col-lg mb-4 mb-lg-0">
+		<div class="card h-100 mb-0 caja-externa">
+			<div class="card-body p-40 caja-calculadora">
+				<h4 class="card-title mb-1">Calcula la cuota de tu hipoteca</h4>
+				<div class="text-muted mb-4">Rellena la siguiente información</div>
+				{{ form_start(calculadora_avanzada) }}
+				<div class="form-row">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.edad) }}
+						{{ form_widget(calculadora_avanzada.edad) }}
+						{{ form_errors(calculadora_avanzada.edad) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.tipo) }}
+						{{ form_widget(calculadora_avanzada.tipo) }}
+						{{ form_errors(calculadora_avanzada.tipo) }}
+					</div>
+				</div>
+				<div class="form-row cuota1">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.valorInmueble) }}
+						{{ form_widget(calculadora_avanzada.valorInmueble) }}
+						{{ form_errors(calculadora_avanzada.valorInmueble) }}
+					</div>
+				</div>
+				<div class="form-row cuota2">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.aportacionInicial) }}
+						{{ form_widget(calculadora_avanzada.aportacionInicial) }}
+						{{ form_errors(calculadora_avanzada.aportacionInicial) }}
+					</div>
+				</div>
+				<div class="form-row cuota">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.producto) }}
+						{{ form_widget(calculadora_avanzada.producto) }}
+						{{ form_errors(calculadora_avanzada.producto) }}
+					</div>
+				</div>
+				<div class="form-row cambio-casa">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.valorViviendaActual) }}
+						{{ form_widget(calculadora_avanzada.valorViviendaActual) }}
+						{{ form_errors(calculadora_avanzada.valorViviendaActual) }}
+					</div>
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.hipotecaActual) }}
+						{{ form_widget(calculadora_avanzada.hipotecaActual) }}
+						{{ form_errors(calculadora_avanzada.hipotecaActual) }}
+					</div>
+					{#<div class="form-group col">
+						{{ form_label(calculadora_avanzada.ventaCasaActual) }}
+						{{ form_widget(calculadora_avanzada.ventaCasaActual) }}
+						{{ form_errors(calculadora_avanzada.ventaCasaActual) }}
+					</div>#}
+				</div>
+				<div class="form-row cambio-casa">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.aportacionTrasVenta) }}
+						{{ form_widget(calculadora_avanzada.aportacionTrasVenta) }}
+						{{ form_errors(calculadora_avanzada.aportacionTrasVenta) }}
+					</div>
+				</div>
+				<div class="form-row importe-maximo">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.ingresosMensuales) }}
+						{{ form_widget(calculadora_avanzada.ingresosMensuales) }}
+						{{ form_errors(calculadora_avanzada.ingresosMensuales) }}
+					</div>
+					<div class="form-group col">
+					</div>
+				</div>
+				<div class="form-row importe-maximo">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.numPagasExtra) }}
+						{{ form_widget(calculadora_avanzada.numPagasExtra) }}
+						{{ form_errors(calculadora_avanzada.numPagasExtra) }}
+					</div>
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.importePagaExtra) }}
+						{{ form_widget(calculadora_avanzada.importePagaExtra) }}
+						{{ form_errors(calculadora_avanzada.importePagaExtra) }}
+					</div>
+				</div>
+				<div class="form-row importe-maximo">
+					<div class="form-group col">
+						{{ form_label(calculadora_avanzada.prestamosMensuales) }}
+						{{ form_widget(calculadora_avanzada.prestamosMensuales) }}
+						{{ form_errors(calculadora_avanzada.prestamosMensuales) }}
+					</div>
+					<div class="form-group col">
+					</div>
+				</div>
+				<div class="d-flex">
+					<a class="btn btn-success mr-auto waves-effect btn-volver" href="{{ path('inicio') }}">Volver</a>
+					<button class="btn btn-success waves-effect" id="{{ calculadora_avanzada.calcular.vars.id }}" name="{{ calculadora_avanzada.calcular.vars.full_name }}">
+						<i class="fas fa-calculator"></i>
+						<span> Calcular</span>
+					</button>
+					{% do calculadora_avanzada.calcular.setRendered %}
+					{{ form_end(calculadora_avanzada) }}
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-lg mb-4 mb-lg-0">
+		<div class="card h-100">
+			<h4 class="card-header bg-success text-light mb-0">{% if tipo_calculo is defined and tipo_calculo =='cuota' %}Tu hipoteca {% elseif tipo_calculo is defined and tipo_calculo =='importe_maximo'%}El precio máximo{% endif %}</h4>
+			<div class="card-body d-flex flex-column justify-content-center m-auto" style="width:100%;">
+				{% if tipo_calculo is defined and tipo_calculo =='cuota' %}
+				<div{% if resultado is not defined %} class="d-none"{% else %} class="texto-resultado"{% endif %} data-contenedor-resultado>
+					{% if resultado is defined and importe_fijo > 0 %}
+						{% if cuota_fija_final and cuota_fija_final > 0 %}
+							{# <div class="text-center mb-4">
+								<span>La cuota mensual hasta la venta con interés variable sería de <h1>{{ cuota_variable |number_format(2,',','.') }}€</h1> y de <h1>{{ cuota_fija |number_format(2,',','.') }}€</h1> para interés fijo.</span>
+							</div>
+
+							<div class="text-center mb-4">
+								<span>La cuota mensual después de la venta con interés variable sería de <h1>{{ cuota_variable_final |number_format(2,',','.') }}€</h1> y de <h1>{{ cuota_fija_final |number_format(2,',','.') }}€</h1> para interés fijo.</span>
+							</div> #}
+							<div class="mb-4">
+								<span>Para una hipoteca de  </span>
+								<span data-resultado-hipoteca>{% if resultado is defined %}{{ valor_inmueble|number_format(2,',','.') }}{% endif %}</span>
+								<span>€ más gastos, con una aportación de {{ entrada }}€</span>
+								<span> en un plazo de </span>
+								<span data-plazo-amortizacion>{% if resultado is defined %}{{ amortizacion }}{% endif %}</span>
+								<span> años, actualmente en venta una propiedad por importe de {% if resultado is defined %}{{ valor_vivienda_actual }}€{% endif %} con hipoteca de {% if resultado is defined %}{{ hipoteca_actual }}€{% endif %} y cuando venda reembolsará {% if resultado is defined %}{{ aportacion_tras_venta }}€{% endif %} las cuotas serán de:</span>
+							</div>
+							<div class="row">
+								<div class="col-4 mi-padding">
+								</div>
+								<div class="col-4 mi-padding negrita">
+									<strong>Tipo Fijo</strong>
+								</div>
+								<div class="col-4 mi-padding negrita">
+									<strong>Tipo Variable</strong>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-4 mi-padding negrita">
+									<strong>Mientras Vende</strong>
+								</div>
+								<div class="col-4 mi-padding">
+									{% if resultado is defined %}{{ cuota_fija |number_format(2,',','.') }}€{% endif %}
+								</div>
+								<div class="col-4 mi-padding">
+									{% if resultado is defined %}{{ cuota_variable|number_format(2,',','.') }}€{% endif %}
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-4 mi-padding negrita">
+									<strong>Cuando Venda</strong>
+								</div>
+								<div class="col-4 mi-padding">
+									{% if resultado is defined %}{{ cuota_fija_final |number_format(2,',','.') }}€{% endif %}
+								</div>
+								<div class="col-4 mi-padding">
+									{% if resultado is defined %}{{ cuota_variable_final|number_format(2,',','.') }}€{% endif %}
+								</div>
+							</div>
+							{# <h1 class="text-center mb-4">
+								<span class="titulo-importe-cuota" data-pago-mensual>Tipo Fijo: <span class="importe-cuota">{% if resultado is defined %}{{ cuota_fija |number_format(2,',','.') }}€{% endif %}</span></span>
+							</h1>
+							{# <div class="text-center mb-4">para interés fijo y de</div>
+							<h1 class="text-center mb-4">
+								<span class="titulo-importe-cuota" data-pago-mensual>Tipo Variable: <span class="importe-cuota">{% if resultado is defined %}{{ cuota_variable|number_format(2,',','.') }}{% endif %} €</span></span>
+							</h1> #}
+						{% else %}
+							<div class="mb-4">
+								<span>Para un inmueble de  </span>
+								<span data-resultado-hipoteca>{% if resultado is defined %}{{ valor_inmueble|number_format(2,',','.') }}{% endif %}</span>
+								<span>€ más gastos, con una aportación de {{ entrada }}€</span>
+								<span> en un plazo de </span>
+								<span data-plazo-amortizacion>{% if resultado is defined %}{{ amortizacion }}{% endif %}</span>
+								<span> años, tu pago mensual será de:</span>
+							</div>
+							<h1 class="text-center mb-4">
+								<span class="titulo-importe-cuota" data-pago-mensual>Tipo Fijo: <span class="importe-cuota">{% if resultado is defined %}{{ importe_fijo|number_format(2,',','.') }}{% endif %} €</span></span>
+							</h1>
+							{# <div class="text-center mb-4">para interés fijo y de</div> #}
+							<h1 class="text-center mb-4">
+								<span class="titulo-importe-cuota" data-pago-mensual>Tipo Variable: <span class="importe-cuota">{% if resultado is defined %}{{ importe_variable|number_format(2,',','.') }}{% endif %} €</span></span>
+							</h1>
+							{# <div class="text-center mb-4"> para interés variable.</div> #}
+							{#<div class="mb-4">
+								<span>Hipoteca total con interés: </span>
+								<span data-hipoteca-total-con-interes> {% if resultado is defined %}{{ interes_fijo|number_format(2,',','.') }}{% endif %}</span>
+								<span> € para interés fijo y de </span>
+								<span data-hipoteca-total-con-interes> {% if resultado is defined %}{{ interes_variable|number_format(2,',','.') }}{% endif %}</span>
+								<span> € para interés variable.</span>
+							</div>
+							<div>
+								<span>Total con anticipo: </span>
+								<span data-total-con-anticipo>{% if resultado is defined %}{{ con_entrada_fijo|number_format(2,',','.') }}{% endif %}</span>
+								<span> € para interés fijo y de </span>
+								<span data-total-con-anticipo> {% if resultado is defined %}{{ con_entrada_variable|number_format(2,',','.') }}{% endif %}</span>
+								<span> € para interés variable.</span>
+							</div>#}
+						{% endif %}
+					{% endif %}
+					{% if mensaje is defined %}
+						<div>
+							<center>
+								<br>
+								{{ mensaje }}
+							</center>
+						</div>
+					{% endif %}
+					{% else %}
+					<div{% if resultado is not defined %} class="d-none"{% else %} class="texto-resultado"{% endif %} data-contenedor-resultado>
+						{% if resultado is defined and importe_fijo > 0 %}
+							<div class="mb-4">
+								<span>En función de los datos facilitados, el valor máximo de la vivienda sería:</span>
+							</div>
+							<h1 class="text-center mb-4 fondo-casa">
+								<span data-pago-mensual>{% if resultado is defined %}{{ importe_fijo|number_format(2,',','.') }}{% endif %} €</span>
+							</h1>
+							<br>
+							{#<div class="mb-4">
+								<span>Hipoteca total con interés: </span>
+								<span data-hipoteca-total-con-interes> {% if resultado is defined %}{{ interes_fijo|number_format(2,',','.') }}{% endif %}</span>
+								<span> € para interés fijo y de </span>
+								<span data-hipoteca-total-con-interes> {% if resultado is defined %}{{ interes_variable|number_format(2,',','.') }}{% endif %}</span>
+								<span> € para interés variable.</span>
+							</div>
+							<div>
+								<span>Total con anticipo: </span>
+								<span data-total-con-anticipo>{% if resultado is defined %}{{ con_entrada_fijo|number_format(2,',','.') }}{% endif %}</span>
+								<span> € para interés fijo y de </span>
+								<span data-total-con-anticipo> {% if resultado is defined %}{{ con_entrada_variable|number_format(2,',','.') }}{% endif %}</span>
+								<span> € para interés variable.</span>
+							</div>#}
+						{% endif %}
+						{% if mensaje is defined %}
+							<div>
+								<center>
+									<br>
+									{{ mensaje }}
+								</center>
+							</div>
+						{% endif %}
+						{% endif %}
+						<p style="color:grey;">Esta calculadora sólo esta destinada para vivienda habitual (descartando locales, naves, segunda residencia, etc.), y no contempla algunas excepciones (minusvalía, etc.)</p>
+					</div>
+					<div class="text-muted{% if resultado is defined %} d-none{% endif %} centrado-caja texto-resultado" data-contenedor-resultado-vacio>Completa la información para ver el resultado.</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{% endblock %}
+	{% block modals %}
+	{{ parent() }}
+	{% include '@App/Backoffice/Modal/ErrorCalculadora.html' %}
+{% endblock %}

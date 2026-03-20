@@ -1,0 +1,400 @@
+{% extends "@App/Backoffice/base.html.twig" %}
+
+{% block customscripts %}
+    <style>
+        .semaforo-resultado {
+            padding: 40px 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .semaforo-resultado.rojo {
+            background-color: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        .semaforo-resultado.amarillo {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+        .semaforo-resultado.verde {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        .semaforo-icono {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        .semaforo-titulo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .semaforo-mensaje {
+            font-size: 1rem;
+            margin: 10px 0;
+        }
+        .seccion-datos {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 4px solid #007bff;
+        }
+        .seccion-titulo {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+        .seccion-titulo i {
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+        .dato-fila {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .dato-item {
+            padding: 10px 0;
+        }
+        .dato-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .dato-valor {
+            font-size: 1rem;
+            color: #2c3e50;
+            word-break: break-word;
+        }
+        .lista-motivos,
+        .lista-sugerencias {
+            list-style: none;
+            padding: 0;
+        }
+        .lista-motivos li,
+        .lista-sugerencias li {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 4px solid;
+            display: flex;
+            align-items: flex-start;
+        }
+        .motivo-critico {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .motivo-advertencia {
+            background-color: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .motivo-positivo {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .sugerencia-alta {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .sugerencia-media {
+            background-color: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .sugerencia-baja {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .icono-item {
+            margin-right: 10px;
+            font-size: 1.1rem;
+            min-width: 20px;
+            text-align: center;
+        }
+        .aviso-legal {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #004085;
+            line-height: 1.6;
+        }
+        .aviso-legal-titulo {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-enviar {
+            margin-top: 30px;
+            padding: 12px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .valor-financiero {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        @media (max-width: 768px) {
+            .dato-fila {
+                grid-template-columns: 1fr;
+            }
+            .semaforo-icono {
+                font-size: 2rem;
+            }
+            .semaforo-titulo {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container-fluid mt-4 mb-5">
+        <div class="row">
+            <div class="col-md-12">
+
+                <!-- SEMÁFORO RESULTADO -->
+                {% set semaforo = simulador.resultado.semaforo %}
+                {% set mensaje = simulador.resultado.mensaje %}
+                
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="semaforo-resultado {{ semaforo }}">
+                            {% if semaforo == 'rojo' %}
+                                <div class="semaforo-icono">🔴</div>
+                                <div class="semaforo-titulo">Solicitud No Viable</div>
+                            {% elseif semaforo == 'amarillo' %}
+                                <div class="semaforo-icono">🟡</div>
+                                <div class="semaforo-titulo">Solicitud Sujeta a Valoración</div>
+                            {% else %}
+                                <div class="semaforo-icono">🟢</div>
+                                <div class="semaforo-titulo">Solicitud Viable</div>
+                            {% endif %}
+                            
+                            <div class="semaforo-mensaje">
+                                {{ mensaje }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RESUMEN DE DATOS DEL CLIENTE -->
+                {% if simulador.cliente is defined %}
+                <div class="seccion-datos">
+                    <div class="seccion-titulo">
+                        <i class="fas fa-user-circle"></i>
+                        Datos Personales
+                    </div>
+                    <div class="dato-fila">
+                        <div class="dato-item">
+                            <div class="dato-label">Nombre Completo</div>
+                            <div class="dato-valor">{{ simulador.cliente.nombre ?? 'N/A' }}</div>
+                        </div>
+                        <div class="dato-item">
+                            <div class="dato-label">DNI / NIE</div>
+                            <div class="dato-valor">{{ simulador.cliente.dni ?? 'N/A' }}</div>
+                        </div>
+                    </div>
+                    <div class="dato-fila">
+                        <div class="dato-item">
+                            <div class="dato-label">Teléfono</div>
+                            <div class="dato-valor">{{ simulador.cliente.telefono ?? 'N/A' }}</div>
+                        </div>
+                        <div class="dato-item">
+                            <div class="dato-label">Email</div>
+                            <div class="dato-valor">{{ simulador.cliente.email ?? 'N/A' }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- DATOS FINANCIEROS -->
+                {% if simulador.precio is defined or simulador.cuota is defined %}
+                <div class="seccion-datos">
+                    <div class="seccion-titulo">
+                        <i class="fas fa-chart-bar"></i>
+                        Análisis Financiero
+                    </div>
+                    
+                    <div class="dato-fila">
+                        {% if simulador.precio.precioMaximoRecomendado is defined %}
+                        <div class="dato-item">
+                            <div class="dato-label">Precio Máximo Recomendado</div>
+                            <div class="dato-valor valor-financiero">
+                                {{ simulador.precio.precioMaximoRecomendado|number_format(2, ',', '.') }} €
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if simulador.cuota.gastosTotalesAproximados is defined %}
+                        <div class="dato-item">
+                            <div class="dato-label">Gastos Totales Aproximados</div>
+                            <div class="dato-valor valor-financiero">
+                                {{ simulador.cuota.gastosTotalesAproximados|number_format(2, ',', '.') }} €
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="dato-fila">
+                        {% if simulador.cuota.aportacionNecesaria is defined %}
+                        <div class="dato-item">
+                            <div class="dato-label">Aportación Necesaria (Mínima 20%)</div>
+                            <div class="dato-valor valor-financiero">
+                                {{ simulador.cuota.aportacionNecesaria|number_format(2, ',', '.') }} €
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if simulador.cuota.importePrestamo is defined %}
+                        <div class="dato-item">
+                            <div class="dato-label">Importe del Préstamo</div>
+                            <div class="dato-valor valor-financiero">
+                                {{ simulador.cuota.importePrestamo|number_format(2, ',', '.') }} €
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="dato-fila">
+                        {% if simulador.cuota.cuotaHipotecariaEstimada is defined %}
+                        <div class="dato-item">
+                            <div class="dato-label">Cuota Hipotecaria Estimada (Mensual)</div>
+                            <div class="dato-valor valor-financiero">
+                                {{ simulador.cuota.cuotaHipotecariaEstimada|number_format(2, ',', '.') }} €
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if simulador.cuota.porcentajeFinanciacion is defined %}
+                        <div class="dato-item">
+                            <div class="dato-label">Porcentaje de Financiación</div>
+                            <div class="dato-valor valor-financiero">
+                                {{ simulador.cuota.porcentajeFinanciacion|number_format(2, ',', '.') }} %
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- MOTIVOS DEL RESULTADO -->
+                {% if simulador.resultado.motivos is defined and simulador.resultado.motivos|length > 0 %}
+                <div class="seccion-datos">
+                    <div class="seccion-titulo">
+                        <i class="fas fa-list-check"></i>
+                        Motivos de la Valoración
+                    </div>
+                    <ul class="lista-motivos">
+                        {% for motivo in simulador.resultado.motivos %}
+                        <li class="motivo-{{ motivo.tipo }}">
+                            <span class="icono-item">
+                                {% if motivo.tipo == 'critico' %}
+                                    ⚠️
+                                {% elseif motivo.tipo == 'advertencia' %}
+                                    ⚡
+                                {% else %}
+                                    ✓
+                                {% endif %}
+                            </span>
+                            <span>{{ motivo.mensaje }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- SUGERENCIAS -->
+                {% if simulador.resultado.sugerencias is defined and simulador.resultado.sugerencias|length > 0 %}
+                <div class="seccion-datos">
+                    <div class="seccion-titulo">
+                        <i class="fas fa-lightbulb"></i>
+                        Sugerencias para Mejorar su Solicitud
+                    </div>
+                    <ul class="lista-sugerencias">
+                        {% for sugerencia in simulador.resultado.sugerencias %}
+                        <li class="sugerencia-{{ sugerencia.prioridad }}">
+                            <span class="icono-item">
+                                {% if sugerencia.prioridad == 'alta' %}
+                                    🔴
+                                {% elseif sugerencia.prioridad == 'media' %}
+                                    🟡
+                                {% else %}
+                                    💡
+                                {% endif %}
+                            </span>
+                            <span>{{ sugerencia.mensaje }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- BOTONES DE ACCIÓN: ENVIAR A HIPOTEA Y DESCARGAR PDF -->
+                <div class="text-center btn-enviar">
+                    <!-- Botón Principal: Enviar a Hipotea -->
+                    <form method="POST" action="{{ path('simulador_enviar_hipotea') }}" style="display: inline;">
+                        {% if semaforo == 'rojo' %}
+                        <button type="submit" class="btn btn-outline-secondary btn-lg" style="margin-right: 10px;" title="Enviar solicitud para revisión completa">
+                            <i class="fas fa-paper-plane"></i> Enviar a Hipotea para Estudio Completo
+                        </button>
+                        {% else %}
+                        <button type="submit" class="btn btn-success btn-lg" style="margin-right: 10px;">
+                            <i class="fas fa-paper-plane"></i> Enviar a Hipotea para Estudio Completo
+                        </button>
+                        {% endif %}
+                    </form>
+                    
+                    <!-- Botón Secundario: Descargar PDF -->
+                    <a href="{{ path('simulador_descargar_resultado') }}" class="btn btn-info btn-lg">
+                        <i class="fas fa-download"></i> Descargar PDF
+                    </a>
+                </div>
+
+                <!-- AVISO LEGAL -->
+                <div class="aviso-legal">
+                    <div class="aviso-legal-titulo">
+                        <i class="fas fa-info-circle"></i> Aviso Legal
+                    </div>
+                    <p>
+                        Este simulador ofrece una valoración orientativa basada en los datos proporcionados. 
+                        El resultado no constituye una oferta vinculante ni una aprobación definitiva de crédito. 
+                        La viabilidad final de la solicitud dependerá de una valoración completa por parte de nuestro equipo de expertos, 
+                        incluyendo análisis de documentación adicional, verificación de solvencia y evaluación de riesgos.
+                    </p>
+                    <p>
+                        Los cálculos efectuados son aproximados y pueden variar según las condiciones finales de mercado. 
+                        Consulte con nuestros asesores financieros para obtener información personalizada sobre su caso específico.
+                    </p>
+                    <p class="mb-0">
+                        Última evaluación: {{ simulador.resultado.fecha_evaluacion|date('d/m/Y H:i') ?? 'N/A' }}
+                    </p>
+                </div>
+
+                <!-- BOTONES DE NAVEGACIÓN -->
+                <div class="text-center" style="margin-top: 30px; margin-bottom: 30px;">
+                    <a href="{{ path('simulador_inicio') }}" class="btn btn-outline-primary btn-md">
+                        <i class="fas fa-redo"></i> Hacer Otra Consulta
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

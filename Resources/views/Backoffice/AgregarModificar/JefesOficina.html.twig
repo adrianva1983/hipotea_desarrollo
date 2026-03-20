@@ -1,0 +1,79 @@
+{% extends "@App/Backoffice/base.html.twig" %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="bg-light rounded h-100 p-4">
+                <h6 class="mb-4">{{ titulo }}</h6>
+                
+                <a href="{{ path('agregar_modificar_jefe_oficina', {id: 0}) }}" class="btn btn-primary mb-3">
+                    <i class="fa fa-plus"></i> Agregar Jefe de Oficina
+                </a>
+
+                {% if usuarios|length > 0 %}
+                <form action="" method="post">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><input type="checkbox" id="selectAll"></th>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Apellidos</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr>
+                                <td><input type="checkbox" name="cliente[]" value="{{ usuario.idUsuario }}" class="selectItem"></td>
+                                <td>{{ usuario.idUsuario }}</td>
+                                <td>{{ usuario.nombre }}</td>
+                                <td>{{ usuario.apellidos }}</td>
+                                <td>{{ usuario.email }}</td>
+                                <td>{{ usuario.telefonoMovil }}</td>
+                                <td>
+                                    {% if usuario.estado %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ path('agregar_modificar_jefe_oficina', {id: usuario.idUsuario}) }}" class="btn btn-sm btn-warning">
+                                        <i class="fa fa-edit"></i> Editar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <div class="mt-3">
+                        <button type="submit" name="borrar-entidades" class="btn btn-danger">
+                            <i class="fa fa-trash"></i> Borrar Seleccionados
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info">
+                    No hay jefes de oficina registrados. 
+                    <a href="{{ path('agregar_modificar_jefe_oficina', {id: 0}) }}">Crear uno</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('selectAll').addEventListener('change', function() {
+    document.querySelectorAll('.selectItem').forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+</script>
+{% endblock %}

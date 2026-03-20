@@ -1,0 +1,67 @@
+AppBundle\Entity\CampoHito:
+  type: entity
+  table: campo_hito
+  indexes:
+    fk_campo_hito_grupo_campos_hito1_idx:
+      columns:
+        - id_grupo_campos_hito
+  id:
+    idCampoHito:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_campo_hito
+      generator:
+        strategy: IDENTITY
+  fields:
+    tipo:
+      type: smallint
+      nullable: false
+      options:
+        unsigned: false
+        comment: "1: Texto\n2: Booleano\n3: Desplegable\n4: Fichero\n5: Email\n6: Fecha\n7: Banco\n8: Tasadora\n9: Notaria\n10: Espacio blanco"
+        default: '1'
+    nombre:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+    orden:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+        comment: 'Orden para dibujar el campo'
+    campoCondicional:
+      type: boolean
+      nullable: false
+      options:
+        default: '0'
+      column: campo_condicional
+    mostrarCliente:
+      type: boolean
+      nullable: false
+      options:
+        default: '1'
+      column: mostrar_cliente
+    mostrarColaborador:
+      type: boolean
+      nullable: false
+      options:
+        default: '1'
+      column: mostrar_colaborador
+  manyToOne:
+    idGrupoCamposHito:
+      targetEntity: GrupoCamposHito
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_grupo_campos_hito:
+          referencedColumnName: id_grupo_campos_hito
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

@@ -1,0 +1,9 @@
+{% use '@App/Frontoffice/Partes/Body/Page-Wrapper.html.twig' %}
+{% block main_wrapper %}
+<div id="main-wrapper">
+	{# {% include '@App/Frontoffice/Partes/Body/Topbar-Header.html.twig' %} #}
+	{# {% include '@App/Frontoffice/Partes/Body/Left-Sidebar.html.twig' %} #}
+	{{ block('page_wrapper') }}
+	{# {% include '@App/Frontoffice/Partes/Body/Footer.html.twig' %} #}
+</div>
+{% endblock %}

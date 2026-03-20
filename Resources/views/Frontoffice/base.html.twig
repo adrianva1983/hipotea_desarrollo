@@ -1,0 +1,40 @@
+{% use '@App/Frontoffice/Partes/Head/Styles.html.twig' %}
+{% use '@App/Frontoffice/Partes/Head/Scripts-base.html.twig' %}
+{% use '@App/Frontoffice/Partes/Body/Main-Wrapper.html.twig' %}
+{% spaceless %}
+	<!DOCTYPE html>
+	<html lang="es">
+	<head>
+		{% include '@App/Frontoffice/Partes/Head/Metas.html' %}
+		<link href="{{ asset('assets/images/custom/cropped-Group-270x270.png') }}" rel="icon" sizes="24x24" type="image/png">
+		<title>Hipotea: {% if titulo is defined %} - {{ titulo }}{% endif %}</title>
+		{% if app.environment is same as('dev') %}
+			{% block devstyles %}{% endblock %}
+		{% else %}
+			{% block cloudstyles %}{% endblock %}
+		{% endif %}
+		{{ block('styles') }}
+		{{ block('customstyles') }}
+		{% if app.environment is same as('dev') %}
+			{{ block('devscripts') }}
+			{% block customscripts %}
+				{{ parent() }}
+				<script src="{{ asset('assets/js/custom/custom.min.js') }}"></script>
+			{% endblock %}
+		{% endif %}
+	</head>
+	<body class="skin-default">
+	{# {% include '@App/Frontoffice/Partes/Body/Preloader.html' %} #}
+	{{ block('main_wrapper') }}
+	{% block modals %}
+		{% if notificaciones is defined and notificaciones.notificaciones is defined and notificaciones.notificaciones is iterable and notificaciones.notificaciones|length>0 %}
+			{# {% include '@App/Backoffice/Modal/Notificacion.html' %} #}
+		{% endif %}
+	{% endblock %}
+	{% if app.environment is not same as('dev') %}
+		{{ block('cloudscripts') }}
+		{{ block('customscripts') }}
+	{% endif %}
+	</body>
+	</html>
+{% endspaceless %}

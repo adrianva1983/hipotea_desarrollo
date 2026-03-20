@@ -1,0 +1,139 @@
+AppBundle\Entity\WhatsappSender:
+  type: entity
+  table: WhatsappSenders
+  repositoryClass: AppBundle\Repository\WhatsappSenderRepository
+  id:
+    id:
+      column: Id
+      type: integer
+      generator:
+        strategy: IDENTITY
+  fields:
+    idAgencia:
+      column: IdAgencia
+      type: integer
+      nullable: true
+    idUsuario:
+      column: IdUsuario
+      type: integer
+      nullable: true
+    telefono:
+      column: Telefono
+      type: string
+      length: 20
+      nullable: false
+    fechaUltimaInteraccion:
+      column: FechaUltimaInteraccion
+      type: datetime
+      nullable: true
+    version:
+      column: Version
+      type: integer
+      nullable: false
+    imagenQR:
+      column: ImagenQR
+      type: text
+      nullable: true
+    pathEjecutable:
+      column: PathEjecutable
+      type: string
+      length: 255
+      nullable: true
+    crucesAutomaticos:
+      column: CrucesAutomaticos
+      type: boolean
+      nullable: false
+      options:
+        default: true
+    crucesAutomaticosRGPDExterna:
+      column: CrucesAutomaticosRGPDExterna
+      type: boolean
+      nullable: false
+      options:
+        default: false
+    automatizacionesWhatsapp:
+      column: AutomatizacionesWhatsapp
+      type: boolean
+      nullable: false
+      options:
+        default: false
+    syncConversaciones:
+      column: SyncConversaciones
+      type: boolean
+      nullable: false
+      options:
+        default: true
+    recordatoriosVisitas:
+      column: RecordatoriosVisitas
+      type: boolean
+      nullable: false
+      options:
+        default: true
+    pilotoAutomatico:
+      column: PilotoAutomatico
+      type: boolean
+      nullable: false
+      options:
+        default: false
+    pilotoAutomaticoSystemPrompt:
+      column: PilotoAutomaticoSystemPrompt
+      type: text
+      nullable: true
+    mensajeTrasLead:
+      column: MensajeTrasLead
+      type: boolean
+      nullable: true
+      options:
+        default: false
+    mensajeTrasLeadUsuarioUnico:
+      column: MensajeTrasLeadUsuarioUnico
+      type: boolean
+      nullable: false
+      options:
+        default: false
+      comment: 'Si está a True este usuario es el que centraliza el envío de estos whatsapp'
+    fechaUltimoMensajeTrasLead:
+      column: FechaUltimoMensajeTrasLead
+      type: datetime
+      nullable: true
+    agendaVisitaTrasLead:
+      column: AgendaVisitaTrasLead
+      type: boolean
+      nullable: false
+      options:
+        default: false
+    leadsAComercial:
+      column: LeadsAComercial
+      type: boolean
+      nullable: false
+      options:
+        default: false
+    fechaUltimoMensajeLeadComercial:
+      column: FechaUltimoMensajeLeadComercial
+      type: datetime
+      nullable: true
+    observacionesError:
+      column: ObservacionesError
+      type: text
+      nullable: true
+    servidor:
+      column: Servidor
+      type: string
+      length: 255
+      nullable: true
+    sessionId:
+      column: SessionId
+      type: string
+      length: 255
+      nullable: true
+    configuracion:
+      column: Configuracion
+      type: text
+      nullable: true
+  indexes:
+    IDX_IdAgencia:
+      columns:
+        - IdAgencia
+    IDX_IdUsuario:
+      columns:
+        - IdUsuario

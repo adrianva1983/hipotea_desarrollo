@@ -1,0 +1,46 @@
+AppBundle\Entity\Inmobiliaria:
+  type: entity
+  table: inmobiliaria
+  indexes:
+    fk_inmobiliaria_usuario1_idx:
+      columns:
+        - id_comercial
+  id:
+    idInmobiliaria:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_inmobiliaria
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombre:
+      type: string
+      nullable: false
+      length: 100
+      options:
+        fixed: false
+  manyToOne:
+    idComercial:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_comercial:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idResponsableZona:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_responsable_zona:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

@@ -1,0 +1,70 @@
+AppBundle\Entity\Notificacion:
+  type: entity
+  table: notificacion
+  indexes:
+    fk_notificacion_usuario1_idx:
+      columns:
+        - id_usuario
+    fk_notificacion_expediente1_idx:
+      columns:
+        - id_expediente
+  id:
+    idNotificacion:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_notificacion
+      generator:
+        strategy: IDENTITY
+  fields:
+    titulo:
+      type: string
+      nullable: false
+      length: 50
+      options:
+        fixed: false
+        default: Información
+    texto:
+      type: string
+      nullable: false
+      length: 255
+      options:
+        fixed: false
+    fecha:
+      type: datetime
+      nullable: true
+    fechaLeida:
+      type: datetime
+      nullable: true
+      column: fecha_leida
+    estado:
+      type: smallint
+      nullable: false
+      options:
+        unsigned: false
+        comment: '0:leida1:nueva2:oculta'
+        default: '1'
+  manyToOne:
+    idExpediente:
+      targetEntity: Expediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_expediente:
+          referencedColumnName: id_expediente
+      orphanRemoval: false
+    idUsuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_usuario:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

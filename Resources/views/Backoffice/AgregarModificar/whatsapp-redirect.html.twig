@@ -1,0 +1,27 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+
+{% block customscripts %}
+<script>
+    console.log('Abriendo conexión de WhatsApp en una nueva ventana...');
+	// Abrir URL en nueva ventana
+	window.open('{{ externalUrl|raw }}', '_blank');
+	
+	// Redirigir a la página anterior o a Auto WhatsApp después de 1 segundo
+	setTimeout(function() {
+
+		{% if app.request.headers.get('referer') %}
+			window.location.href = document.referrer;
+		{% else %}
+			window.location.href = '{{ path('auto_whatsapp') }}';
+		{% endif %}
+	}, 1000);
+</script>
+{% endblock %}
+{% block body %}
+<div class="container">
+	<div class="alert alert-info" role="alert">
+		<i class="fas fa-spinner fa-spin"></i> Abriendo conexión de WhatsApp en una nueva ventana...
+	</div>
+</div>
+{% endblock %}
+

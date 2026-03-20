@@ -1,0 +1,255 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/dropify/dist/css/dropify.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/css/dropify.min.css" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+	{#<style type="text/css">
+		.custom-file-input:lang(es) ~ .custom-file-label:after {
+			content: 'Elegir'
+		}
+	</style>#}
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/dropify/dist/js/dropify.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/js/dropify.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script>
+		{% if nombres_fichero is defined %}
+		function nombresFicheroFuncion() {
+			return JSON.parse({{ nombres_fichero|json_encode|raw }});
+		}
+
+		function rutaBorrarFicheroExpedienteAJAX() {
+			return '{{ path('borrar_fichero_expediente_ajax') }}';
+		}
+		{% endif %}
+		function rutaObtenerAgentesColaboradoresAJAX() {
+			return '{{ path('obtener_agentes_colaboradores_ajax') }}';
+		}
+	</script>
+	{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}
+		<script src="{{ asset('assets/js/custom/documentos-expediente-datatable-cl-col.min.js') }}"></script>
+	{% else %}
+		<script src="{{ asset('assets/js/custom/documentos-expediente-datatable.min.js') }}"></script>
+	{% endif %}
+	<script src="{{ asset('assets/js/custom/documentos-expediente.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			{% if documentos is defined and documentos is iterable and documentos|length>0 %}
+				<form enctype="multipart/form-data" method="post">
+					<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+						<thead>
+						<tr>
+							{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+								<th class="align-top" scope="col">Fase</th>
+							{% endif %}
+							<th class="align-top" scope="col">Hito</th>
+							<th class="align-top" scope="col">Nombre</th>
+							<th class="align-top" scope="col">Fichero para subir</th>
+							<th class="align-top" scope="col">Ver</th>
+							{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}
+								<th class="d-none"></th>
+							{% else %}
+								<th class="align-top" scope="col">Solicitar al cliente</th>
+								<th class="align-top" scope="col">Solicitar al colaborador</th>
+								<th class="align-top" scope="col">Envío automático</th>
+								<th class="align-top" scope="col">Para firmar</th>
+								<th class="align-top" scope="col">Enviar al cliente</th>
+								<th class="align-top" scope="col">Enviar al colaborador</th>
+							{% endif %}
+						</tr>
+						</thead>
+						<tbody>
+						{% for documentosArray in documentos %}
+							{% for documento in documentosArray %}
+								{% form_theme agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+								{% form_theme agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+								<tr data-fichero-campo="{{ agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1].vars.value.idFicheroCampo }}">
+									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+										<td class="align-middle">{{ documento.idCampoHito.idGrupoCamposHito.idHito.idFase }}</td>
+									{% endif %}
+									<td class="align-middle">{{ documento.idCampoHito.idGrupoCamposHito.idHito }}</td>
+									<td class="align-middle">
+										{{ documento.idCampoHito.nombre }}
+										{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].valor,{attr:{class:'form-control-sm d-none',readonly:'',value:documento.idCampoHito.nombre}}) }}
+									</td>
+									<td class="align-middle" id="td_drop_{{documento.idCampoHitoExpediente}}">
+										{#<div class="custom-file">
+											{{ form_widget(agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1].fichero,{attr:{class:'custom-file-input','lang':'es'}}) }}
+											{{ form_label(agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1].fichero,null,{'label':'Escoja un fichero…',label_attr:{class:'custom-file-label'}}) }}
+										</div>#}
+										{% if fichero_subido[documento.idCampoHito.idCampoHito][loop.index-1] is defined %}
+											{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}
+												{{ form_widget(agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas_col_cl[loop.index-1],'data-default-file':fichero_subido[documento.idCampoHito.idCampoHito][loop.index-1],'data-height':100,'data-max-file-size':max_file_size}}) }}
+											{% else %}
+												{{ form_widget(agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[documento.idCampoHito.idCampoHito][loop.index-1],'data-height':100,'data-max-file-size':max_file_size}}) }}
+											{% endif %}
+										{% else %}
+											{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}
+												{{ form_widget(agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas_col_cl[loop.index-1],'data-height':100,'data-max-file-size':max_file_size}}) }}
+											{% else %}
+												{{ form_widget(agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-height':100,'data-max-file-size':max_file_size}}) }}
+											{% endif %}
+										{% endif %}
+										{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1]._token) }}
+										{{ form_widget(agregar_modificar_fichero_campo[documento.idCampoHito.idCampoHito][loop.index-1]._token) }}
+									</td>
+									<td class="align-middle">
+										{% if fichero_subido_ruta[documento.idCampoHito.idCampoHito][loop.index-1] is defined %}
+											<a class="btn btn-secondary waves-effect" data-boton-descargar href="{{ fichero_subido_ruta[documento.idCampoHito.idCampoHito][loop.index-1] }}" target="_blank">
+												<i class="fas fa-download"></i>
+											</a>
+										{% else %}
+											<button class="btn btn-secondary waves-effect disabled" disabled>
+												<i class="fas fa-download"></i>
+											</button>
+										{% endif %}
+									</td>
+									{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}
+										<td class="d-none">
+											{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].obligatorio,{attr:{hidden:''}}) }}
+											{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].solicitarAlColaborador,{attr:{hidden:''}}) }}
+											{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].avisarColaborador,{attr:{hidden:''}}) }}
+											{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].paraFirmar,{attr:{hidden:''}}) }}
+											{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].enviarAlCliente,{attr:{hidden:''}}) }}
+											{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].enviarAlColaborador,{attr:{hidden:''}}) }}
+										</td>
+									{% else %}
+										<td class="align-middle">
+											<div class="custom-control custom-checkbox pl-1">
+												{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].obligatorio,{attr:{class:'custom-control-input'},label:false,label_attr:{class:'custom-control-label'}}) }}
+											</div>
+										</td>
+										<td class="align-middle">
+											<div class="custom-control custom-checkbox pl-1">
+												{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].solicitarAlColaborador,{attr:{class:'custom-control-input'},label:false,label_attr:{class:'custom-control-label'}}) }}
+											</div>
+										</td>
+										<td class="align-middle">
+											<div class="custom-control custom-checkbox pl-1">
+												{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].avisarColaborador,{attr:{class:'custom-control-input','data-idCampoHitoExpediente':documento.idCampoHito.idCampoHito,'data-idHitoExpediente':loop.index-1},label:false,label_attr:{class:'custom-control-label'}}) }}
+											</div>
+										</td>
+										<td class="align-middle">
+											<div class="custom-control custom-checkbox pl-1">
+												{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].paraFirmar,{attr:{class:'custom-control-input'},label:false,label_attr:{class:'custom-control-label'}}) }}
+											</div>
+										</td>
+										<td class="align-middle">
+											<div class="custom-control custom-checkbox pl-1">
+												{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].enviarAlCliente,{attr:{class:'custom-control-input'},label:false,label_attr:{class:'custom-control-label'}}) }}
+											</div>
+										</td>
+										<td class="align-middle">
+											<div class="custom-control custom-checkbox pl-1">
+												{{ form_widget(agregar_modificar_campo_hito_expediente[documento.idCampoHito.idCampoHito][loop.index-1].enviarAlColaborador,{attr:{class:'custom-control-input'},label:false,label_attr:{class:'custom-control-label'}}) }}
+											</div>
+										</td>
+									{% endif %}
+								</tr>
+							{% endfor %}
+						{% endfor %}
+						</tbody>
+					</table>
+					<div class="d-flex mt-3">
+						<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_expedientes') }}">Volver</a>
+						<button class="btn btn-secondary waves-effect" type="reset">Reiniciar</button>
+						<button class="btn btn-success waves-effect ml-3">Aceptar</button>
+					</div>
+					{% for documentosArray in documentos %}
+						{% for documento in documentosArray %}
+							{% form_theme agregar_modificar_campo_hito_expediente_colaboradores[documento.idCampoHito.idCampoHito][loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+							<div class="modal fade show" id="modal-seleccionar-{{ documento.idCampoHito.idCampoHito }}-{{ loop.index-1 }}">
+								<div class="modal-dialog modal-dialog-centered">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h4 class="modal-title" id="modal-seleccionar-agente-titulo-{{ documento.idCampoHito.idCampoHito }}">Seleccione un agente colaborador para el Hito {{ documento.idCampoHito.idGrupoCamposHito.idHito.nombre }}</h4>
+											<button class="close" data-dismiss="modal" type="button">×</button>
+										</div>
+										<div class="modal-body" id="modal-seleccionar-agente-cuerpo-{{ documento.idCampoHito.idCampoHito }}">
+											<div class="form-row">
+												<div class="form-group col-md">
+													{{ form_label(agregar_modificar_campo_hito_expediente_colaboradores[documento.idCampoHito.idCampoHito][loop.index-1].idEntidadColaboradora) }}
+													{{ form_widget(agregar_modificar_campo_hito_expediente_colaboradores[documento.idCampoHito.idCampoHito][loop.index-1].idEntidadColaboradora,{attr:{class:'select2'}}) }}
+													{{ form_errors(agregar_modificar_campo_hito_expediente_colaboradores[documento.idCampoHito.idCampoHito][loop.index-1].idEntidadColaboradora) }}
+												</div>
+												<div class="form-group col-md">
+													{{ form_label(agregar_modificar_campo_hito_expediente_colaboradores[documento.idCampoHito.idCampoHito][loop.index-1].idAgenteColaborador) }}
+													{{ form_widget(agregar_modificar_campo_hito_expediente_colaboradores[documento.idCampoHito.idCampoHito][loop.index-1].idAgenteColaborador,{attr:{class:'select2'}}) }}
+													{{ form_errors(agregar_modificar_campo_hito_expediente_colaboradores[documento.idCampoHito.idCampoHito][loop.index-1].idAgenteColaborador) }}
+												</div>
+											</div>
+										</div>
+										<div class="modal-footer">
+											<button class="btn btn-success waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+										</div>
+									</div>
+								</div>
+							</div>
+							{{ form_widget(agregar_modificar_campo_hito_expediente_colaboradores[documento.idCampoHito.idCampoHito][loop.index-1]._token) }}
+						{% endfor %}
+					{% endfor %}
+				</form>
+			{% else %}
+				<div class="alert alert-info" role="alert">
+					{% if 'ParaFirmar' in app.request.attributes.get('_route_params')['paraFirmar'] %}
+						<span>Este expediente no tiene documentos para firmar.</span>
+					{% else %}
+						<span>Este expediente no tiene documentos.</span>
+					{% endif %}
+				</div>
+				<div>
+					<a class="btn btn-success waves-effect" href="{{ path('lista_expedientes') }}">Volver</a>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% if nombres_fichero is defined %}
+		<div class="modal fade" id="mensaje-ajax">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">
+							<strong>Error</strong>
+						</h4>
+						<button class="close" data-dismiss="modal" type="button">×</button>
+					</div>
+					<div class="modal-body" id="mensaje-ajax-body">Error al borrar el archivo</div>
+					<div class="modal-footer">
+						<button class="btn btn-secondary waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}

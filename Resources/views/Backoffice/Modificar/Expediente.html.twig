@@ -1,0 +1,351 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<link href="{{ asset('assets/node_modules/dropify/dist/css/dropify.min.css') }}" rel="stylesheet">
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<link href="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.css') }}" rel="stylesheet">
+	{% endif %}
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/css/dropify.min.css" rel="stylesheet">
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+	{% endif %}
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/expediente.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<script src="{{ asset('assets/node_modules/dropify/dist/js/dropify.min.js') }}"></script>
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<script src="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.js') }}"></script>
+		<script src="{{ asset('assets/node_modules/bootstrap-datepicker/locales/bootstrap-datepicker.es.min.js') }}"></script>
+	{% endif %}
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/js/dropify.min.js"></script>
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+	{% endif %}
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	{% if nombres_fichero is defined %}
+		<script>
+			function nombresFicheroFuncion() {
+				return JSON.parse({{ nombres_fichero|json_encode|raw }});
+			}
+
+			function rutaBorrarFicheroExpedienteAJAX() {
+				return '{{ path('borrar_fichero_expediente_ajax') }}';
+			}
+		</script>
+	{% endif %}
+	<script src="{{ asset('assets/js/custom/Element.hasAttribute.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/expediente.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<form enctype="multipart/form-data" method="post">
+		<div class="card">
+			<div class="card-body">
+				{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+				<h4 class="card-title">{{ fase.nombre }}</h4>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				{% if hitos is iterable and hitos|length>0 %}
+					{% for hito in hitos %}
+						{% if hitos_expediente[hito.idHito] is iterable and hitos_expediente[hito.idHito]|length>0 %}
+							{% for hito_expediente in hitos_expediente[hito.idHito] %}
+								<div{% if not loop.parent.loop.last or hito.repetible %} class="mb-3"{% endif %} data-hito-condicional="{{ hito.hitoCondicional }}" data-hito-expediente="{{ hito.idHito }}"{% if loop.index is same as(1) %} data-repetible="{{ hito.repetible?1:0 }}"{% endif %}>
+									<h4 class="card-title bg-success text-light mb-0 p-3" data-hito-titulo>{{ hito.nombre }}{% if loop.index>1 %} ({{ loop.index }}){% endif %}</h4>
+									<div class="border p-3">
+										{% if grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+											{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+												<div{% if grupo_campos_hito.nombre is not empty %} class="border{% if loop.length>1 %} mb-3{% endif %} p-3"{% endif %}>
+													{% if grupo_campos_hito.nombre is not empty %}
+														<h5 class="card-title">{{ grupo_campos_hito.nombre }}</h5>
+														<hr>
+													{% endif %}
+													{% if campos_hito[grupo_campos_hito.idGrupoCamposHito] is iterable and campos_hito[grupo_campos_hito.idGrupoCamposHito]|length>0 %}
+														<div class="row">
+															{% for campo_hito in campos_hito[grupo_campos_hito.idGrupoCamposHito] %}
+																{% if ((is_granted('ROLE_CLIENTE') and campo_hito.mostrarCliente) or (is_granted('ROLE_COLABORADOR') and campo_hito.mostrarColaborador)) %}
+																	{% if modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] is defined %}
+																		{% form_theme modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																	{% endif %}
+																	<div class="col-lg {% if loop.length>1 and not loop.last and loop.index is odd %} border-lg-right{% endif %}{% if campo_hito.tipo is same as(10) %} d-none d-lg-block{% endif %}">
+																		{% if campo_hito.tipo is not same as(10) %}
+																			<h6 class="card-title">{{ campo_hito.nombre }}</h6>
+																		{% endif %}
+																		{% if campo_hito.tipo is same as(4) %}
+																			<div data-contenedor-campo-hito-expediente-colaboradores>
+																				<div class="row">
+																					<div class="col-md d-none">
+																						<div class="form-row">
+																							<div class="form-group col">
+																								{{ form_label(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }}
+																								{{ form_widget(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor,{attr:{readonly:'',value:campo_hito.nombre}}) }}
+																								{{ form_errors(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }}
+																							</div>
+																						</div>
+																					</div>
+																					<div class="col-md" data-fichero-campo="{{ modificarFicheroCampo[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].vars.value.idFicheroCampo }}">
+																						{% form_theme modificarFicheroCampo[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																						<div class="form-row">
+																							<div class="form-group col">
+																								{{ form_label(modificarFicheroCampo[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].fichero) }}
+																								{% if fichero_subido[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] is defined %}
+																									{{ form_widget(modificarFicheroCampo[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas[loop.parent.loop.parent.loop.index-1],'data-default-file':fichero_subido[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1],'data-max-file-size':maxFileSize}}) }}
+																								{% else %}
+																									{{ form_widget(modificarFicheroCampo[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas[loop.parent.loop.parent.loop.index-1],'data-max-file-size':maxFileSize}}) }}
+																								{% endif %}
+																								{{ form_errors(modificarFicheroCampo[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].fichero) }}
+																							</div>
+																						</div>
+																						{% if fichero_subido_ruta[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] is defined %}
+																							<a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] }}" target="_blank">Descargar</a>
+																						{% endif %}
+																					</div>
+																				</div>
+																			</div>
+																		{% else %}
+																			<div class="form-row">
+																				<div class="form-group col">
+																					{% if campo_hito.tipo is same as(2) or campo_hito.tipo is same as(3) %}
+																						{{ form_label(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idOpcionesCampo) }}
+																						{{ form_widget(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idOpcionesCampo) }}
+																						{{ form_errors(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idOpcionesCampo) }}
+																					{% elseif campo_hito.tipo is same as(6) %}
+																						{{ form_label(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }}
+																						{{ form_widget(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor,{attr:{class:'js-datepicker'}}) }}
+																						{{ form_errors(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }}
+																					{% elseif campo_hito.tipo is same as(7) or campo_hito.tipo is same as(8) or campo_hito.tipo is same as(9) %}
+																						{{ form_label(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idAgenteColaborador) }}
+																						{{ form_widget(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																						{{ form_errors(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idAgenteColaborador) }}
+																					{% elseif campo_hito.tipo is same as(10) %}
+																					{% else %}
+																						{{ form_label(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }}
+																						{{ form_widget(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }}
+																						{{ form_errors(modificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }}
+																					{% endif %}
+																				</div>
+																			</div>
+																		{% endif %}
+																	</div>
+																	{% if loop.index is even and not loop.last %}
+																		<div class="col-12 d-none d-lg-block">
+																			<hr>
+																		</div>
+																	{% endif %}
+																{% endif %}
+															{% endfor %}
+														</div>
+													{% else %}
+														<div class="alert alert-info" role="alert">
+															<span>No hay campos hito.</span>
+														</div>
+													{% endif %}
+												</div>
+											{% endfor %}
+										{% else %}
+											<div class="alert alert-info" role="alert">
+												<span>No hay grupos de campos hito.</span>
+											</div>
+										{% endif %}
+										{% if hito.repetible and hitos_expediente[hito.idHito]|length>1 %}
+											<div class="d-flex justify-content-end border-top pt-3">
+												<button class="btn btn-danger waves-effect" data-borrar-hito-expediente type="button">
+													<i class="far fa-trash-alt"></i>
+												</button>
+											</div>
+										{% endif %}
+									</div>
+								</div>
+								{% if hito.repetible and loop.last %}
+									<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-hito-expediente-contenedor>
+										<button class="btn btn-success waves-effect" data-agregar-hito-expediente type="button">
+											<i class="fas fa-plus"></i>
+										</button>
+									</div>
+								{% endif %}
+							{% endfor %}
+						{% endif %}
+					{% endfor %}
+				{% else %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay hitos.</span>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<div class="d-flex">
+					<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_expedientes') }}">Volver</a>
+					<button class="btn btn-secondary waves-effect" type="reset">Reiniciar</button>
+					<button class="btn btn-success waves-effect ml-3" data-boton-enviar>Aceptar</button>
+				</div>
+			</div>
+		</div>
+		<button class="btn btn-warning waves-effect shadow-sm position-fixed d-none boton-flotante" data-boton-flotante>
+			<i class="fas fa-save"></i>
+			<span> Guardar</span>
+		</button>
+		{% if numero_hitos_expediente_duplicados is defined %}
+			{% if hitos is iterable and hitos|length>0 %}
+				{% for hito in hitos %}
+					{% if hito.repetible and numero_hitos_expediente_duplicados[hito.idHito] is defined and numero_hitos_expediente_duplicados[hito.idHito] > 0 %}
+						<input name="numero-hitos-expediente-duplicados[{{ hito.idHito }}]" type="hidden" value="{{ numero_hitos_expediente_duplicados[hito.idHito] }}">
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		{% endif %}
+	</form>
+	{% if hitos is iterable and hitos|length>0 %}
+		{% for hito in hitos %}
+			{% if hito.repetible %}
+				<div class="d-none">
+					<div{% if not loop.last or hito.repetible %} class="mb-3"{% endif %} data-modelo-hito-condicional="{{ hito.hitoCondicional }}" data-modelo-hito-expediente="{{ hito.idHito }}">
+						<h4 class="card-title bg-success text-light mb-0 p-3" data-hito-titulo>{{ hito.nombre }}{% if loop.index>1 %} ({{ loop.index }}){% endif %}</h4>
+						<div class="border p-3">
+							{% if grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+								{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+									<div{% if grupo_campos_hito.nombre is not empty %} class="border{% if loop.length>1 %} mb-3{% endif %} p-3"{% endif %}>
+										{% if grupo_campos_hito.nombre is not empty %}
+											<h5 class="card-title">{{ grupo_campos_hito.nombre }}</h5>
+											<hr>
+										{% endif %}
+										{% if campos_hito[grupo_campos_hito.idGrupoCamposHito] is iterable and campos_hito[grupo_campos_hito.idGrupoCamposHito]|length>0 %}
+											<div class="row">
+												{% for campo_hito in campos_hito[grupo_campos_hito.idGrupoCamposHito] %}
+													{% if modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito] is defined %}
+														{% form_theme modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+													{% endif %}
+													<div class="col-lg {% if loop.length>1 and not loop.last and loop.index is odd %} border-lg-right{% endif %}{% if campo_hito.tipo is same as(10) %} d-none d-lg-block{% endif %}">
+														{% if campo_hito.tipo is not same as(10) %}
+															<h6 class="card-title">{{ campo_hito.nombre }}</h6>
+														{% endif %}
+														{% if campo_hito.tipo is same as(4) %}
+															<div data-contenedor-campo-hito-expediente-colaboradores>
+																<div class="row">
+																	<div class="col-md d-none">
+																		<div class="form-row">
+																			<div class="form-group col">
+																				{{ form_label(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																				{{ form_widget(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor,{attr:{readonly:'',value:campo_hito.nombre}}) }}
+																				{{ form_errors(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-md">
+																		{% form_theme modificarFicheroCampoModelo[campo_hito.idCampoHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																		<div class="form-row">
+																			<div class="form-group col">
+																				{{ form_label(modificarFicheroCampoModelo[campo_hito.idCampoHito].fichero) }}
+																				{% if fichero_subido[campo_hito.idCampoHito] is defined %}
+																					{{ form_widget(modificarFicheroCampoModelo[campo_hito.idCampoHito].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas_modelo,'data-default-file':fichero_subido[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1],'data-max-file-size':maxFileSize}}) }}
+																				{% else %}
+																					{{ form_widget(modificarFicheroCampoModelo[campo_hito.idCampoHito].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas_modelo,'data-max-file-size':maxFileSize}}) }}
+																				{% endif %}
+																				{{ form_errors(modificarFicheroCampoModelo[campo_hito.idCampoHito].fichero) }}
+																			</div>
+																		</div>
+																		{% if fichero_subido_ruta[campo_hito.idCampoHito] is defined %}
+																			<a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] }}" target="_blank">Descargar</a>
+																		{% endif %}
+																	</div>
+																</div>
+															</div>
+														{% else %}
+															<div class="form-row">
+																<div class="form-group col">
+																	{% if campo_hito.tipo is same as(2) or campo_hito.tipo is same as(3) %}
+																		{{ form_label(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }}
+																		{{ form_widget(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }}
+																		{{ form_errors(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }}
+																	{% elseif campo_hito.tipo is same as(6) %}
+																		{{ form_label(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																		{{ form_widget(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor,{attr:{class:'js-datepicker'}}) }}
+																		{{ form_errors(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																	{% elseif campo_hito.tipo is same as(7) or campo_hito.tipo is same as(8) or campo_hito.tipo is same as(9) %}
+																		{{ form_label(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador) }}
+																		{{ form_widget(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																		{{ form_errors(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador) }}
+																	{% elseif campo_hito.tipo is same as(10) %}
+																	{% else %}
+																		{{ form_label(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																		{{ form_widget(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																		{{ form_errors(modificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																	{% endif %}
+																</div>
+															</div>
+														{% endif %}
+													</div>
+													{% if loop.index is even and not loop.last %}
+														<div class="col-12 d-none d-lg-block">
+															<hr>
+														</div>
+													{% endif %}
+												{% endfor %}
+											</div>
+										{% else %}
+											<div class="alert alert-info" role="alert">
+												<span>No hay campos hito.</span>
+											</div>
+										{% endif %}
+									</div>
+								{% endfor %}
+							{% else %}
+								<div class="alert alert-info" role="alert">
+									<span>No hay grupos de campos hito.</span>
+								</div>
+							{% endif %}
+							<div class="d-flex justify-content-end border-top pt-3">
+								<button class="btn btn-danger waves-effect" data-borrar-hito-expediente type="button">
+									<i class="far fa-trash-alt"></i>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			{% endif %}
+		{% endfor %}
+	{% endif %}
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% if nombres_fichero is defined %}
+		<div class="modal fade" id="mensaje-ajax">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">
+							<strong>Error</strong>
+						</h4>
+						<button class="close" data-dismiss="modal" type="button">×</button>
+					</div>
+					<div class="modal-body" id="mensaje-ajax-body">Error al borrar el archivo</div>
+					<div class="modal-footer">
+						<button class="btn btn-secondary waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}

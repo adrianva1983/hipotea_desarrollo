@@ -1,0 +1,172 @@
+<aside class="left-sidebar">
+	<div class="scroll-sidebar">
+		{% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
+			<div class="user-profile">
+				<div class="user-pro-body">
+					<div>
+						{% if is_granted('ROLE_ADMIN') %}
+							<img alt="user-img" class="img-circle" src="{{ asset('assets/images/users/Admin.jpg') }}">
+						{% else %}
+							<img alt="user-img" class="img-circle p-1 bg-light" src="{{ asset('assets/images/users/user-solid.svg') }}">
+						{% endif %}
+					</div>
+					<div class="dropdown">
+						<a aria-expanded="false" aria-haspopup="true" class="dropdown-toggle u-dropdown link hide-menu" data-toggle="dropdown" href="javascript:void(0)" role="button">
+							<span>{{ app.user.username }} </span>
+							<span class="caret"></span>
+						</a>
+						<div class="dropdown-menu animated flipInY">
+							<a class="dropdown-item" href="{{ path('mi_perfil') }}">
+								<i class="ti-user"></i>
+								<span> Mi Perfil</span>
+							</a>
+							<div class="dropdown-divider"></div>
+							<a class="dropdown-item" href="{{ path('cerrar_sesion') }}">
+								<i class="fa fa-power-off"></i>
+								<span> Cerrar sesión</span>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		{% endif %}
+		<nav class="sidebar-nav">
+			<ul id="sidebarnav">
+				{% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+						<li>
+							<a class="waves-effect waves-dark" href="{{ path('lista_clientes') }}">
+								<i class="far fa-user fa-fw"></i>
+								<span class="hide-menu">Clientes</span>
+							</a>
+						</li>
+					{% endif %}
+					<li>
+						<a class="waves-effect waves-dark" href="{{ path('lista_expedientes') }}">
+							<i class="far fa-file-alt fa-fw"></i>
+							<span class="hide-menu">Expedientes</span>
+						</a>
+					</li>
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+					<li>
+						<a class="waves-effect waves-dark" href="{{ path('lista_expedientes_sin_asignar') }}">
+							<i class="fa fa-exclamation-triangle"></i>
+							<span class="hide-menu">Exp. Sin Asignar</span>
+						</a>
+					</li>
+					{% endif %}
+					{#{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}#}
+					<li>
+						<a class="waves-effect waves-dark" href="{{ path('lista_documentos') }}">
+							<i class="far fa-file fa-fw"></i>
+							<span class="hide-menu">Documentos</span>
+						</a>
+					</li>
+					{#{% endif %}#}
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+						{% if not is_granted('ROLE_COLABORADOR') %}
+							<li>
+								<a class="waves-effect waves-dark" href="{{ path('calendario') }}">
+									<i class="far fa-calendar-alt fa-fw"></i>
+									<span class="hide-menu">Calendario</span>
+								</a>
+							</li>
+							{% if is_granted('ROLE_ADMIN') %}
+								<li>
+									<a class="waves-effect waves-dark" href="{{ path('estadisticas') }}">
+										<i class="far fa-file-alt fa-fw"></i>
+										<span class="hide-menu">Estadísticas</span>
+									</a>
+								</li>
+							{% endif %}
+						{% endif %}
+					{% endif %}
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+						<li>
+							<a class="waves-effect waves-dark" href="{{ path('lista_noticias') }}">
+								<i class="far fa-newspaper fa-fw"></i>
+								<span class="hide-menu">Noticias</span>
+							</a>
+						</li>
+						<li>
+							<a class="waves-effect waves-dark" href="{{ path('crear_notificaciones') }}">
+								<i class="far fa-comment fa-fw"></i>
+								<span class="hide-menu">Notificaciones</span>
+							</a>
+						</li>
+					{% endif %}
+					{% if is_granted('ROLE_ADMIN') %}
+						<li>
+							<a class="has-arrow waves-effect waves-dark" href="javascript:void(0)">
+								<i class="far fa-money-bill-alt fa-fw"></i>
+								<span class="hide-menu">Facturación</span>
+							</a>
+							<ul class="collapse">
+								<li>
+									<a href="{{ path('lista_clientes_facturas') }}">Clientes de facturas</a>
+								</li>
+								<li>
+									<a href="{{ path('lista_emisores_facturas') }}">Emisores de facturas</a>
+								</li>
+								<li>
+									<a href="{{ path('lista_facturas') }}">Facturas</a>
+								</li>
+							</ul>
+						</li>
+					{% endif %}
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+						<li>
+							<a class="has-arrow waves-effect waves-dark" href="javascript:void(0)">
+								<i class="fas fa-cog fa-fw"></i>
+								<span class="hide-menu">Configuración</span>
+							</a>
+							<ul class="collapse">
+								<li>
+									<a href="{{ path('lista_entidades_colaboradoras') }}">Entidades</a>
+								</li>
+								<li>
+									<a href="{{ path('lista_agentes_colaboradores') }}">Personal Entidades</a>
+								</li>
+								<li>
+									<a href="{{ path('lista_inmobiliarias') }}">Colaboradores</a>
+								</li>
+								<li>
+									<a href="{{ path('lista_usuarios_inmobiliarias') }}">Usuarios Colaborador</a>
+								</li>
+								{% if is_granted('ROLE_ADMIN') %}
+									<li>
+										<a href="{{ path('lista_usuarios') }}">Usuarios GN</a>
+									</li>
+								{% endif %}
+								<li>
+									<a href="{{ path('lista_fases_hitos_campos_opciones') }}">Fases, hitos, campos y opciones</a>
+								</li>
+								{% if is_granted('ROLE_ADMIN') %}
+									<li>
+										<a href="{{ path('parametros_aplicacion',{'id':'1'}) }}">Parámetros Calculadora</a>
+									</li>
+								{% endif %}
+							</ul>
+						</li>
+					{% endif %}
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+						<li>
+							<a class="waves-effect waves-dark" href="{{ path('calculadora_sencilla') }}">
+								<i class="fas fa-calculator fa-fw"></i>
+								<span class="hide-menu">Calculadora</span>
+							</a>
+						</li>
+					{% endif %}
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+						<li>
+							<a class="waves-effect waves-dark" href="{{ path('calculadora_avanzada') }}">
+								<i class="fas fa-calculator fa-fw"></i>
+								<span class="hide-menu">Calculadora Avanzada</span>
+							</a>
+						</li>
+					{% endif %}
+				{% endif %}
+			</ul>
+		</nav>
+	</div>
+</aside>

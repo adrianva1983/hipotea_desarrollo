@@ -1,0 +1,117 @@
+{% set crearnuevo = path('agregar_modificar_usuario_inmobiliaria') %}
+
+{% set crearnuevo_texto = 'Crear nuevo' %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/borrar-entidades.min.js') }}"></script>
+	
+	<script src="{{ asset('assets/js/custom/tabla-usuarios-boton-borrar.min.js') }}"></script>
+
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{% if usuarios is defined %}
+				{% if usuarios is empty %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay usuarios.</span>
+					</div>
+				{% else %}
+					<form class="text-truncate mb-3" id="formulario-borrar-entidades" method="post">
+						<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+							<thead>
+							<tr>
+								{# {% if not is_granted('ROLE_COLABORADOR') %} #}
+									<th scope="col">
+										<div class="custom-control custom-checkbox">
+											<input class="custom-control-input" id="seleccionar-todas-entidades" type="checkbox">
+											<label class="custom-control-label" for="seleccionar-todas-entidades"></label>
+										</div>
+									</th>
+								{# {% endif %} #}
+								<th scope="col">Apellidos</th>
+								<th scope="col">Nombre</th>
+								<th scope="col">Móvil</th>
+								<th scope="col">E-Mail</th>
+								<th scope="col">Inmobiliaria</th>
+								<th scope="col">Activo</th>
+								<th scope="col">Caducidad</th>
+								{# {% if not is_granted('ROLE_COLABORADOR') %} #}
+									<th scope="col">Acciones</th>
+								{# {% endif %} #}
+							</tr>
+							</thead>
+							<tbody>
+							{% for usuario in usuarios %}
+								<tr>
+									{% if not is_granted('ROLE_COLABORADOR') %}
+										<td>
+											<div class="custom-control custom-checkbox">
+												<input class="custom-control-input" id="entidad[{{ usuario.idUsuario }}]" name="usuario[]" type="checkbox" value="{{ usuario.idUsuario }}">
+												<label class="custom-control-label" for="entidad[{{ usuario.idUsuario }}]"></label>
+											</div>
+										</td>
+									{% endif %}
+									<td>{{ usuario.apellidos }}</td>
+									<td>{{ usuario.username }}</td>
+									<td>{{ usuario.telefonoMovil }}</td>
+									<td>{{ usuario.email }}</td>
+									<td>{{ usuario.idInmobiliaria }}</td>
+									{% if usuario.estado %}
+										<td>Si</td>
+									{% else %}
+										<td>No</td>
+									{% endif %}
+									{% if usuario.fechaCaducidad is null %}
+										<td></td>
+									{% else %}
+										<td data-order="{{ usuario.fechaCaducidad|date('U') }}">{{ usuario.fechaCaducidad|date('d/m/Y') }}</td>
+									{% endif %}
+									{# {% if not is_granted('ROLE_COLABORADOR') %} #}
+										<td>
+											<a href="{{ path('agregar_modificar_usuario_inmobiliaria',{'id':usuario.idUsuario}) }}">
+												<i class="far fa-edit"></i>
+												<span> Editar</span>
+											</a>
+										</td>
+									{# {% endif %} #}
+								</tr>
+							{% endfor %}
+							</tbody>
+						</table>
+						{# {% if not is_granted('ROLE_COLABORADOR') %} #}
+							<div>
+								<button class="btn btn-success waves-effect" id="boton-borrar-entidades">Borrar marcados</button>
+							</div>
+						{# {% endif %} #}
+					</form>
+				{% endif %}
+			{% endif %}
+			<a class="btn btn-success waves-effect" href="{{ path('inicio') }}">Volver</a>
+		</div>
+	</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+{% endblock %}

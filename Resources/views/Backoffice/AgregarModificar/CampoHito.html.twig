@@ -1,0 +1,53 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregarModificarCampoHito '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(agregarModificarCampoHito) }}
+			<div class="form-row">
+				<div class="form-group col">
+					{{ form_label(agregarModificarCampoHito.nombre) }}
+					{{ form_widget(agregarModificarCampoHito.nombre) }}
+					{{ form_errors(agregarModificarCampoHito.nombre) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarCampoHito.tipo) }}
+					{{ form_widget(agregarModificarCampoHito.tipo) }}
+					{{ form_errors(agregarModificarCampoHito.tipo) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarCampoHito.orden) }}
+					{{ form_widget(agregarModificarCampoHito.orden) }}
+					{{ form_errors(agregarModificarCampoHito.orden) }}
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarCampoHito.mostrarCliente) }}
+					{{ form_widget(agregarModificarCampoHito.mostrarCliente) }}
+					{{ form_errors(agregarModificarCampoHito.mostrarCliente) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarCampoHito.mostrarColaborador) }}
+					{{ form_widget(agregarModificarCampoHito.mostrarColaborador) }}
+					{{ form_errors(agregarModificarCampoHito.mostrarColaborador) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarCampoHito.campoCondicional) }}
+					{{ form_widget(agregarModificarCampoHito.campoCondicional) }}
+					{{ form_errors(agregarModificarCampoHito.campoCondicional) }}
+				</div>
+			</div>
+			<div class="d-flex">
+				<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_fases_hitos_campos_opciones') }}">Volver</a>
+				{{ form_label(agregarModificarCampoHito.reset) }}
+				{{ form_widget(agregarModificarCampoHito.reset) }}
+				{{ form_label(agregarModificarCampoHito.submit) }}
+				{{ form_widget(agregarModificarCampoHito.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_widget(agregarModificarCampoHito.idGrupoCamposHito) }}
+			{{ form_end(agregarModificarCampoHito) }}
+		</div>
+	</div>
+{% endblock %}

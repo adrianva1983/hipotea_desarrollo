@@ -1,0 +1,81 @@
+AppBundle\Entity\CampoHitoExpedienteColaboradores:
+  type: entity
+  table: campo_hito_expediente_colaboradores
+  indexes:
+    fk_campo_hito_expediente_colaboradores_campo_hito1_idx:
+      columns:
+        - id_campo_hito
+    fk_campo_hito_expediente_colaboradores_hito_expediente1_idx:
+      columns:
+        - id_hito_expediente
+    fk_campo_hito_expediente_colaboradores_expediente1_idx:
+      columns:
+        - id_expediente
+    fk_campo_hito_expediente_colaboradores_entidad_colaboradora1_idx:
+      columns:
+        - id_entidad_colaboradora
+    fk_campo_hito_expediente_colaboradores_agente_colaborador1_idx:
+      columns:
+        - id_agente_colaborador
+  id:
+    idCampoHitoExpedienteColaboradores:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_campo_hito_expediente_colaboradores
+      generator:
+        strategy: IDENTITY
+  manyToOne:
+    idCampoHito:
+      targetEntity: CampoHito
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_campo_hito:
+          referencedColumnName: id_campo_hito
+      orphanRemoval: false
+    idHitoExpediente:
+      targetEntity: HitoExpediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_hito_expediente:
+          referencedColumnName: id_hito_expediente
+      orphanRemoval: false
+    idExpediente:
+      targetEntity: Expediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_expediente:
+          referencedColumnName: id_expediente
+      orphanRemoval: false
+    idEntidadColaboradora:
+      targetEntity: EntidadColaboradora
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_entidad_colaboradora:
+          referencedColumnName: id_entidad_colaboradora
+      orphanRemoval: false
+    idAgenteColaborador:
+      targetEntity: AgenteColaborador
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_agente_colaborador:
+          referencedColumnName: id_agente_colaborador
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

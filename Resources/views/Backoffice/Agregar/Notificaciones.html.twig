@@ -1,0 +1,89 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme crear_notificaciones '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/notificaciones.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(crear_notificaciones) }}
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(crear_notificaciones.titulo) }}
+					{{ form_widget(crear_notificaciones.titulo) }}
+					{{ form_errors(crear_notificaciones.titulo) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(crear_notificaciones.idUsuario) }}
+					{{ form_widget(crear_notificaciones.idUsuario,{attr:{class:'select2'}}) }}
+					{{ form_errors(crear_notificaciones.idUsuario) }}
+				</div>
+				{#<div class="form-group col-sm">
+					{{ form_label(crear_notificaciones.idExpediente) }}
+					{{ form_widget(crear_notificaciones.idExpediente) }}
+					{{ form_errors(crear_notificaciones.idExpediente) }}
+				</div>#}
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(crear_notificaciones.texto) }}
+					{{ form_widget(crear_notificaciones.texto) }}
+					{{ form_errors(crear_notificaciones.texto) }}
+				</div>
+			</div>
+			<div class="d-flex">
+				<a class="btn btn-success mr-auto waves-effect" href="{{ path('inicio') }}">Volver</a>
+				{{ form_label(crear_notificaciones.reset) }}
+				{{ form_widget(crear_notificaciones.reset) }}
+				{{ form_label(crear_notificaciones.submit) }}
+				{{ form_widget(crear_notificaciones.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_end(crear_notificaciones) }}
+		</div>
+	</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	<div class="modal fade" id="modal-confirmar">
+		<div class="modal-dialog modal-dialog-centered modal-sm">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">
+						<strong>Añadir notificaciones</strong>
+					</h4>
+					<button class="close" data-dismiss="modal" type="button">×</button>
+				</div>
+				<div class="modal-body">¿Está seguro?</div>
+				<div class="modal-footer">
+					<button class="btn btn-success waves-effect" id="modal-confirmar-si" type="button">Si</button>
+					<button class="btn btn-success waves-effect" data-dismiss="modal" type="button">No</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

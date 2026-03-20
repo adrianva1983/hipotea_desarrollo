@@ -1,0 +1,574 @@
+AppBundle\Entity\Parametros:
+  type: entity
+  table: parametros
+  id:
+    id:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id
+      generator:
+        strategy: IDENTITY
+  fields:
+    edadAmortizacion:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: edad_amortizacion
+    gastosInmobiliaria:
+      type: decimal
+      nullable: true
+      precision: 10
+      scale: 2
+      options:
+      column: gastos_inmobiliaria
+    porComisionApertura:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: por_comision_apertura
+    honorariosFinanciacion:
+      type: decimal
+      nullable: true
+      precision: 10
+      scale: 2
+      options:
+      column: honorarios_financiacion
+    tasacion:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: tasacion
+    vinculaciones:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: vinculaciones
+    escrituraCompraNotario:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: escritura_compra_notario
+    escrituraCompraRegistro:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: escritura_compra_registro
+    escrituraCompraGestoria:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: escritura_compra_gestoria
+    gastosImporteMaximo:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: gastos_importe_maximo
+    interesImporteMaximo:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: interes_importe_maximo
+    tipoCienVariable:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_cien_variable
+    tipoCienFijo1519:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_cien_fijo_15_19
+    tipoCienFijo2024:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_cien_fijo_20_24
+    tipoCienFijo2530:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_cien_fijo_25_30
+    tipoPremiumVariable:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_premium_variable
+    tipoPremiumFijo1519:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_premium_fijo_15_19
+    tipoPremiumFijo2024:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_premium_fijo_20_24
+    tipoPremiumFijo2530:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_premium_fijo_25_30
+    tipoSinCompromisoVariable:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_sin_compromiso_variable
+    tipoSinCompromisoFijoMenos20:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_sin_compromiso_fijo_menos_20
+    tipoSinCompromisoFijo2030:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_sin_compromiso_fijo_20_30
+    tipoCambioCasaVariable:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_cambio_casa_variable
+    tipoCambioCasaFijo:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+      column: tipo_cambio_casa_fijo
+    levantamientoRegistral:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: levantamiento_registral
+    andaluciaItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: andalucia_itp_general
+    andaluciaItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: andalucia_itp_habitual
+    andaluciaAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: andalucia_ajd_general
+    andaluciaAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: andalucia_ajd_habitual
+    aragonItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: aragon_itp_general
+    aragonItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: aragon_itp_habitual
+    aragonAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: aragon_ajd_general
+    aragonAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: aragon_ajd_habitual
+    asturiasItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: asturias_itp_general
+    asturiasItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: asturias_itp_habitual
+    asturiasAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: asturias_ajd_general
+    asturiasAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: asturias_ajd_habitual
+    balearesItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: baleares_itp_general
+    balearesItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: baleares_itp_habitual
+    balearesAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: baleares_ajd_general
+    balearesAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: baleares_ajd_habitual
+    catalunyaItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: catalunya_itp_general
+    catalunyaItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: catalunya_itp_habitual
+    catalunyaAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: catalunya_ajd_general
+    catalunyaAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: catalunya_ajd_habitual
+    madridItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: madrid_itp_general
+    madridItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: madrid_itp_habitual
+    madridAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: madrid_ajd_general
+    madridAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: madrid_ajd_habitual
+    comunidadValencianaItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: comunidad_valenciana_itp_general
+    comunidadValencianaItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: comunidad_valenciana_itp_habitual
+    comunidadValencianaAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: comunidad_valenciana_ajd_general
+    comunidadValencianaAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: comunidad_valenciana_ajd_habitual
+    extremaduraItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: extremadura_itp_general
+    extremaduraItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: extremadura_itp_habitual
+    extremaduraAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: extremadura_ajd_general
+    extremaduraAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: extremadura_ajd_habitual
+    galiciaItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: galicia_itp_general
+    galiciaItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: galicia_itp_habitual
+    galiciaAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: galicia_ajd_general
+    galiciaAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: galicia_ajd_habitual
+    canariasItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: canarias_itp_general
+    canariasItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: canarias_itp_habitual
+    canariasAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: canarias_ajd_general
+    canariasAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: canarias_ajd_habitual
+    murciaItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: murcia_itp_general
+    murciaItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: murcia_itp_habitual
+    murciaAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: murcia_ajd_general
+    murciaAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: murcia_ajd_habitual
+    navarraItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: navarra_itp_general
+    navarraItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: navarra_itp_habitual
+    navarraAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: navarra_ajd_general
+    navarraAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: navarra_ajd_habitual
+    paisVascoItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: pais_vasco_itp_general
+    paisVascoItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: pais_vasco_itp_habitual
+    paisVascoAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: pais_vasco_ajd_general
+    paisVascoAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: pais_vasco_ajd_habitual
+    riojaItpGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: rioja_itp_general
+    riojaItpHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: rioja_itp_habitual
+    riojaAjdGeneral:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: rioja_ajd_general
+    riojaAjdHabitual:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 4
+      options:
+        column: rioja_ajd_habitual
+  lifecycleCallbacks: {}

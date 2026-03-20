@@ -1,0 +1,37 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregarModificarInmobiliaria '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(agregarModificarInmobiliaria) }}
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarInmobiliaria.nombre) }}
+					{{ form_widget(agregarModificarInmobiliaria.nombre) }}
+					{{ form_errors(agregarModificarInmobiliaria.nombre) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarInmobiliaria.idComercial) }}
+					{{ form_widget(agregarModificarInmobiliaria.idComercial) }}
+					{{ form_errors(agregarModificarInmobiliaria.idComercial) }}
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarInmobiliaria.idResponsableZona) }}
+					{{ form_widget(agregarModificarInmobiliaria.idResponsableZona) }}
+					{{ form_errors(agregarModificarInmobiliaria.idResponsableZona) }}
+				</div>
+			</div>
+			<div class="d-flex">
+				<a class="btn btn-success waves-effect mr-auto" href="{{ path('lista_inmobiliarias') }}">Volver</a>
+				{{ form_label(agregarModificarInmobiliaria.reset) }}
+				{{ form_widget(agregarModificarInmobiliaria.reset) }}
+				{{ form_label(agregarModificarInmobiliaria.submit) }}
+				{{ form_widget(agregarModificarInmobiliaria.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_end(agregarModificarInmobiliaria) }}
+		</div>
+	</div>
+{% endblock %}

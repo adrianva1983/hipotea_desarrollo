@@ -1,0 +1,123 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregarModificarDocumento '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/dropify/dist/css/dropify.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/css/dropify.min.css" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/dropify/dist/js/dropify.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/js/dropify.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	{% if nombres_fichero_mostrar is defined %}
+		<script>
+			function nombreFicheroFuncion() {
+				return '{{ nombres_fichero_mostrar }}';
+			}
+
+			function rutaBorrarFicheroDocumentoAJAX() {
+				return '{{ path('borrar_fichero_documento_ajax') }}';
+			}
+		</script>
+	{% endif %}
+	<script src="{{ asset('assets/js/custom/documento.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(agregarModificarDocumento) }}
+			<div class="form-row">
+				{% if is_granted('ROLE_ADMIN') %}
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarDocumento.idUsuario) }}
+						{{ form_widget(agregarModificarDocumento.idUsuario,{attr:{class:'select2'}}) }}
+						{{ form_errors(agregarModificarDocumento.idUsuario) }}
+					</div>
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarDocumento.visiblePara) }}
+						{{ form_widget(agregarModificarDocumento.visiblePara) }}
+						{{ form_errors(agregarModificarDocumento.visiblePara) }}
+					</div>
+				{% endif %}
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarDocumento.nombre) }}
+					{{ form_widget(agregarModificarDocumento.nombre) }}
+					{{ form_errors(agregarModificarDocumento.nombre) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarDocumento.descripcion) }}
+					{{ form_widget(agregarModificarDocumento.descripcion) }}
+					{{ form_errors(agregarModificarDocumento.descripcion) }}
+				</div>
+				<div class="form-group col-md-2 col-sm-3 d-sm-flex align-items-center">
+					{{ form_label(agregarModificarDocumento.estado) }}
+					{{ form_widget(agregarModificarDocumento.estado) }}
+					{{ form_errors(agregarModificarDocumento.estado) }}
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col">
+					{{ form_label(agregarModificarDocumento.fichero) }}
+					{% if fichero_subido is defined %}
+						{{ form_widget(agregarModificarDocumento.fichero,{'attr':{'class':'dropify','data-allowed-file-extensions':extensionesPermitidas,'data-default-file':fichero_subido,'data-max-file-size':maxFileSize}}) }}
+					{% else %}
+						{{ form_widget(agregarModificarDocumento.fichero,{'attr':{'class':'dropify','data-allowed-file-extensions':extensionesPermitidas,'data-max-file-size':maxFileSize}}) }}
+					{% endif %}
+					{{ form_errors(agregarModificarDocumento.fichero) }}
+				</div>
+			</div>
+			{% if fichero_subido_ruta is defined %}
+				<a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta }}" target="_blank">Descargar</a>
+			{% endif %}
+			<div class="d-flex">
+				<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_documentos') }}">Volver</a>
+				{{ form_label(agregarModificarDocumento.reset) }}
+				{{ form_widget(agregarModificarDocumento.reset) }}
+				{{ form_label(agregarModificarDocumento.submit) }}
+				{{ form_widget(agregarModificarDocumento.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_end(agregarModificarDocumento) }}
+		</div>
+	</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	<div class="modal fade" id="mensaje-ajax">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">
+						<strong>Error</strong>
+					</h4>
+					<button class="close" data-dismiss="modal" type="button">×</button>
+				</div>
+				<div class="modal-body" id="mensaje-ajax-body">Error al borrar el archivo</div>
+				<div class="modal-footer">
+					<button class="btn btn-secondary waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

@@ -1,0 +1,533 @@
+{% extends '@App/Frontoffice/base_pdf.html.twig' %}
+{% form_theme calculadora_avanzada '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="https://areaprivada.hipotea.com/assets/js/custom/countDecimalPlaces.min.js"></script>
+	<script src="https://areaprivada.hipotea.com/assets/js/custom/round.min.js"></script>
+	<script src="https://areaprivada.hipotea.com/assets/js/custom/calculadora-cuota-v2.js"></script>
+	{# // <script>
+	// 	window.addEventListener('load', function () {
+	// 		setTimeout(function() {
+	// 			// Selecciona el elemento con el atributo data-contenedor-resultado
+	// 			const resultadoElement = document.querySelector('[data-contenedor-resultado]');
+				
+	// 			// Verifica si el elemento existe en el DOM
+	// 			if (resultadoElement) {
+	// 				// Obtiene la posición del elemento desde la parte superior de la página
+	// 				const position = resultadoElement.getBoundingClientRect().top + window.scrollY - 60;
+					
+	// 				// Desplaza la página hasta esa posición calculada y lo deja en la parte superior
+	// 				window.scrollTo({
+	// 					top: position,
+	// 					behavior: 'smooth' // Desplazamiento suave
+	// 				});
+	// 			}
+	// 		}, 100); // Retraso de 100ms
+	// 	});
+	// </script> #}
+{% endblock %}
+{% block customstyles %}
+	{# <link href="{{ asset('assets/css/custom/custom.min.css') }}" rel="stylesheet"> #}
+	{# <link href="{{ asset('assets/css/custom/calculadora-avanzada.css') }}" rel="stylesheet"> #}
+	<style>
+		* {
+			-ms-interpolation-mode: nearest-neighbor;
+			image-rendering: pixelated;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: crisp-edges
+		}
+		body {
+			background-color: #FFFFFF;
+		}
+		.bg-success {
+			background-color: #ef6c00 !important
+		}
+		.bg-warning {
+			background-color: #ffbc00 !important
+		}
+		.btn-success {
+			background-color: #ef6c00;
+			border-color: #ef6c00
+		}
+		.btn-success.disabled, .btn-success:disabled, .btn-success:not(:disabled):not(.disabled).active, .btn-success:not(:disabled):not(.disabled):active, .show > .btn-success.dropdown-toggle {
+			background-color: #f48224;
+			border-color: #f48224
+		}
+		.btn-success.focus, .btn-success:focus, .btn-success:not(:disabled):not(.disabled).active:focus, .btn-success:not(:disabled):not(.disabled):active:focus, .show > .btn-success.dropdown-toggle:focus {
+			box-shadow: 0 0 0 .2rem rgba(178, 221, 76, .5)
+		}
+		.btn-success:hover, .full-color-table.full-success-table tr:hover {
+			background-color: #f48224;
+			border-color: #f48224
+		}
+		tr:hover a {
+			color: #FFFFFF;
+		}
+
+		tr:hover a.editar {
+			color: green;
+		}
+		tr:hover a.documentos {
+			color: blue;
+		}
+		tr:hover a.notificar, tr:hover a.cancelar {
+			color: red;
+		}
+		tr:hover a.email {
+			color: gray;
+		}
+		tr:hover a.informe {
+			color: orange;
+		}
+		tr:hover a.contrato {
+			color: cornflowerblue;
+		}
+		tr:hover a.pendiente, tr:hover a.seguimiento {
+			color: darkmagenta;
+		}
+		tr:hover a.registro, tr:hover a.firmas {
+			color: tomato;
+		}
+		tr:hover a.duplicar {
+			color: teal;
+		}
+
+		.custom-checkbox .custom-control-input:active ~ .custom-control-label::before {
+			background-color: #e53317;
+			border-color: #e53317
+		}
+		.custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+			background-color: #ed7f32
+		}
+		.full-color-table.full-success-table {
+			background-color: #FFF;
+			border-color: #f48224
+		}
+		.full-color-table.full-success-table thead th {
+			background-color: #ef6c00;
+			border-color: #f48224
+		}
+		/* Select2 multiple selection white space fix */
+		.select2-selection__choice {
+			white-space: normal
+		}
+		.sidebar-nav .has-arrow::after {
+			border-color: #adacac
+		}
+		.sidebar-nav ul li a, .sidebar-nav > ul > li > a i, .skin-green-dark .left-sidebar .user-pro-body a.link, .skin-green-dark .sidebar-nav > ul > li.active > a i {
+			color: #adacac
+		}
+		.skin-green-dark .left-sidebar .user-pro-body a.link:focus, .skin-green-dark .left-sidebar .user-pro-body a.link:hover, .skin-green-dark .sidebar-nav ul li a.active, .skin-green-dark .sidebar-nav ul li a.active i, .skin-green-dark .sidebar-nav ul li a:hover, .skin-green-dark .sidebar-nav ul li a:hover i {
+			color: #fff
+		}
+		.skin-green-dark .page-titles .breadcrumb .breadcrumb-item.active {
+			color: #f48224
+		}
+		.skin-green-dark .sidebar-nav > ul > li.active > a {
+			border-left: 3px solid #f48224;
+			color: #adacac
+		}
+		.skin-green-dark .topbar {
+			background: #ef6c00
+		}
+		.skin-green-dark .left-sidebar, .skin-green-dark .topbar .top-navbar .navbar-header {
+			background: #303030
+		}
+		.table-striped tbody tr:nth-of-type(odd) {
+			background: rgba(226, 226, 226, 0.5)
+		}
+		/* Tooltip Positioning Issue */
+		/* https://github.com/FezVrasta/popper.js/issues/457 */
+		.tooltip {
+			top: 0
+		}
+		a {
+			color: #ed7f32
+		}
+		a.bg-success:focus, a.bg-success:hover, button.bg-success:focus, button.bg-success:hover {
+			background-color: #f48224 !important
+		}
+		a:hover {
+			color: #e53317
+		}
+		html {
+			min-width: 20rem
+		}
+		.horizontal .form-check {
+			margin-right: 20px;
+			float: left;
+		}
+
+		.js-datepicker {
+			width: 120px;
+		}
+
+		.caja-parametros {
+			border: #CCC 1px solid;
+			padding: 15px;
+			border-radius: 10px;
+		}
+
+		.leyenda-parametros {
+			font-size: 1.2rem;
+			width: auto;
+			padding: 10px;
+		}
+
+		@media (min-width: 576px) {
+			.border-sm-bottom {
+				border-bottom: 1px solid #e9ecef !important
+			}
+			.border-sm-bottom-0 {
+				border-bottom: 0 !important
+			}
+			.border-sm-left {
+				border-left: 1px solid #e9ecef !important
+			}
+			.border-sm-left-0 {
+				border-left: 0 !important
+			}
+			.border-sm-right {
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-sm-right-0 {
+				border-right: 0 !important
+			}
+			.border-sm-top {
+				border-top: 1px solid #e9ecef !important
+			}
+			.border-sm-top-0 {
+				border-top: 0 !important
+			}
+			.border-sm-x {
+				border-left: 1px solid #e9ecef !important;
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-sm-y {
+				border-bottom: 1px solid #e9ecef !important;
+				border-top: 1px solid #e9ecef !important
+			}
+		}
+		@media (min-width: 768px) {
+			.border-md-bottom {
+				border-bottom: 1px solid #e9ecef !important
+			}
+			.border-md-bottom-0 {
+				border-bottom: 0 !important
+			}
+			.border-md-left {
+				border-left: 1px solid #e9ecef !important
+			}
+			.border-md-left-0 {
+				border-left: 0 !important
+			}
+			.border-md-right {
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-md-right-0 {
+				border-right: 0 !important
+			}
+			.border-md-top {
+				border-top: 1px solid #e9ecef !important
+			}
+			.border-md-top-0 {
+				border-top: 0 !important
+			}
+			.border-md-x {
+				border-left: 1px solid #e9ecef !important;
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-md-y {
+				border-bottom: 1px solid #e9ecef !important;
+				border-top: 1px solid #e9ecef !important
+			}
+		}
+		@media (min-width: 992px) {
+			.border-lg-bottom {
+				border-bottom: 1px solid #e9ecef !important
+			}
+			.border-lg-bottom-0 {
+				border-bottom: 0 !important
+			}
+			.border-lg-left {
+				border-left: 1px solid #e9ecef !important
+			}
+			.border-lg-left-0 {
+				border-left: 0 !important
+			}
+			.border-lg-right {
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-lg-right-0 {
+				border-right: 0 !important
+			}
+			.border-lg-top {
+				border-top: 1px solid #e9ecef !important
+			}
+			.border-lg-top-0 {
+				border-top: 0 !important
+			}
+			.border-lg-x {
+				border-left: 1px solid #e9ecef !important;
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-lg-y {
+				border-bottom: 1px solid #e9ecef !important;
+				border-top: 1px solid #e9ecef !important
+			}
+		}
+		@media (min-width: 1200px) {
+			.border-xl-bottom {
+				border-bottom: 1px solid #e9ecef !important
+			}
+			.border-xl-bottom-0 {
+				border-bottom: 0 !important
+			}
+			.border-xl-left {
+				border-left: 1px solid #e9ecef !important
+			}
+			.border-xl-left-0 {
+				border-left: 0 !important
+			}
+			.border-xl-right {
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-xl-right-0 {
+				border-right: 0 !important
+			}
+			.border-xl-top {
+				border-top: 1px solid #e9ecef !important
+			}
+			.border-xl-top-0 {
+				border-top: 0 !important
+			}
+			.border-xl-x {
+				border-left: 1px solid #e9ecef !important;
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-xl-y {
+				border-bottom: 1px solid #e9ecef !important;
+				border-top: 1px solid #e9ecef !important
+			}
+		}
+		@media (max-width: 1023px) {
+			.d-flex {
+				display: flex !important
+			}
+		}
+
+	</style>
+	<style>
+		.cambio-casa,
+		.cuota,
+		.cuota1,
+		.cuota2,
+		.importe-maximo, .titular-dos {
+			display: none
+		}
+		.centrado-caja {
+			height: 100%;
+			line-height: 100%;
+			padding-top: 20%;
+			text-align: center
+		}
+
+		span.importe-cuota {
+			font-weight: 200;
+		}
+
+		span.titulo-importe-cuota {
+			font-weight: 600;
+		}
+
+		.texto-resultado {
+			padding: 25px;
+			font-size: 17px;
+			/* text-align: justify; */
+			border: 4px solid #ef6c00;
+			border-radius: 20px;
+			text-align: center;
+			height: 100%;
+		}
+
+		.texto-resultado-vacio {
+			padding: 50px;
+			font-size: 17px;
+			/* text-align: justify; */
+			border: 4px solid #ef6c00;
+			border-radius: 20px;
+			text-align: center;
+			height: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		div.texto-resultado h1 {
+			padding: 15px 0px 0px 0px;
+		}
+
+		div.caja-calculadora{
+			background-image: url('/assets/images/calculadora-sencilla.jpg');
+			background-repeat: no-repeat;
+			background-size: 100px;
+			background-position-x: 100%;
+			border: 4px solid #000034;
+			border-radius: 20px;
+		}
+
+		div.caja-externa {
+			border-radius: 20px;
+		}
+
+		.card .card-title {
+			font-size: 25px;
+		}
+
+		button#calculadora_avanzada_calcular, button#calculadora_sencilla_calcular, button#calculadora_avanzada_test_calcular {
+			padding: 18px;
+			font-size: 20px;
+			width: 200px;
+			border-radius: 40px;
+			box-shadow: 2px 1px 7px 2px #bcbcbc;
+		}
+
+		.btn-volver{
+			padding: 18px;
+			font-size: 20px;
+			width: 200px;
+			border-radius: 40px;
+			box-shadow: 2px 1px 7px 2px #bcbcbc;
+		}
+
+		.mi-padding {
+			padding: 10px;
+			text-align: center;
+		}
+
+		.negrita {
+			font-weight: 600;
+		}
+
+		.fondo-casa {
+			background-image: url(/assets/images/fondo-casa.png);
+			background-repeat: no-repeat;
+			background-size: 250px;
+			background-position-x: center;
+			height: 225px;
+			line-height: 250px;
+			font-size: 25px;
+			margin-bottom: 0px !important;
+		}
+
+		@media (max-width: 576px) {
+			.texto-resultado {
+				padding: 3px;
+				font-size: 17px;
+				/* text-align: justify; */
+				border: 4px solid #ef6c00;
+				border-radius: 20px;
+				text-align: center;
+				height: 100%;
+			}
+		}
+	</style>
+{% endblock %}
+{% block body %}
+	<div style="display: flex;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+		<div class="col-lg mb-4 mb-lg-0">
+			<img src="https://areaprivada.hipotea.com/uploads/logo-hipotea-email.png" style="text-align:left;width:120px;">
+			{% if email is defined %}
+				<p>Un cliente ha solicitado información desde la calculadora web, sus datos de contacto son:</p>
+				<p><strong>Nombre:</strong> {{ nombre }}</p>
+				<p><strong>Email:</strong> {{ email }}</p>
+				<p><strong>Teléfono:</strong> {{ telefono }}</p>
+				<br>
+				<p>Estos son los datos que ha introducido:</p>
+				{% if numTitulares is defined %}
+					<p><strong>Número de Titulares:</strong> {{ numTitulares }}</p>
+					<p><strong>Edad Titular Uno:</strong> {{ edadTitularUno }}</p>
+					{% if numTitulares > 1 %}
+						<p><strong>Edad Titular Dos:</strong> {{ edadTitularDos }}</p>
+					{% endif %}
+					<p><strong>Plazo Amortizacion:</strong> {{ plazoAmortizacion }}</p>
+					<p><strong>Aportacion Inicial:</strong> {{ aportacionInicial }}</p>
+					<p><strong>Destino Compra:</strong> {{ destinoCompra }}</p>
+					<p><strong>Obra Nueva:</strong> {{ obraNuevaText }}</p>
+					<p><strong>Comunidad Autonoma:</strong> {{ comunidadAutonoma }}</p>
+					<p><strong>Discapacidad:</strong> {{ discapacidad }}</p>
+					<p><strong>Familia Numerosa:</strong> {{ familiaNumerosa }}</p>
+					<p><strong>Monoparental:</strong> {{ monoparental }}</p>
+					<p><strong>VPO:</strong> {{ vpo }}</p>
+					<p><strong>Ingresos Mensuales:</strong> {{ ingresosMensuales }}</p>
+					<p><strong>Número Pagas Extra:</strong> {{ numPagasExtra }}</p>
+					<p><strong>Importe Paga Extra:</strong> {{ importePagaExtra }}</p>
+					<p><strong>Préstamos Mensuales:</strong> {{ prestamosMensuales }}</p>
+					{% if numTitulares > 1 %}
+						<p><strong>Ingresos Mensuales Dos:</strong> {{ ingresosMensualesDos }}</p>
+						<p><strong>Número Pagas Extra Dos:</strong> {{ numPagasExtraDos }}</p>
+						<p><strong>Importe Paga Extra Dos:</strong> {{ importePagaExtraDos }}</p>
+						<p><strong>Préstamos Mensuales Dos:</strong> {{ prestamosMensualesDos }}</p>
+					{% endif %}
+				{% else %}
+					<p><strong>Edad:</strong> {{ edad }}</p>
+					<p><strong>Valor Inmueble:</strong> {{ valorInmueble }}</p>
+					<p><strong>Aportacion Inicial:</strong> {{ aportacionInicial }}</p>
+					<p><strong>Destino Compra:</strong> {{ destinoCompra }}</p>
+					<p><strong>Obra Nueva:</strong> {{ obraNuevaText }}</p>
+					<p><strong>Comunidad Autonoma:</strong> {{ comunidadAutonoma }}</p>
+					<p><strong>Discapacidad:</strong> {{ discapacidad }}</p>
+					<p><strong>Familia Numerosa:</strong> {{ familiaNumerosa }}</p>
+					<p><strong>Monoparental:</strong> {{ monoparental }}</p>
+					<p><strong>VPO:</strong> {{ vpo }}</p>
+					<p><strong>Honorarios Inmobiliaria:</strong> {{ honorariosInmobiliaria }}</p>
+					<p><strong>Producto:</strong> {{ producto }}</p>
+					{% if valorViviendaActual is defined %}
+						<p><strong>Valor Vivienda Actual: </strong> {{ valorViviendaActual }}</p>
+						<p><strong>Hipoteca Actual: </strong> {{ hipotecaActual }}</p>
+						<p><strong>Aportación Tras Venta: </strong> {{ aportacionTrasVenta }}</p>
+					{% endif %}
+				{% endif %}
+				<br><br>
+				<p>
+					Estos son los datos que ha obtenido:
+				</p>
+			{% else %}
+				<p>Hola {{ nombre }},</p>
+				<p>Gracias por utilizar nuestra calculadora hipotecaria.</p>
+				<p>A continuación encontrar&aacute;s el resultado de tu consulta, que confiamos te resulte de utilidad.</p>
+				<p>&iquest;Quieres llevar tu consulta un paso m&aacute;s all&aacute;? te invitamos <strong>a elegir una de estas dos opciones:</strong></p>
+				<table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 50px auto;">
+					<tr>
+						<td style="padding: 0 25px;">
+						<a href="https://api.whatsapp.com/send?phone=+34673585968&text=Quiero%20hablar%20con%20un%20agente%20"
+							target="_blank"
+							style="display: inline-block; padding: 18px; font-size: 20px; width: 200px; border-radius: 40px; box-shadow: 2px 1px 7px 2px #bcbcbc; background-color: #ef6c00; border: 1px solid #ef6c00; color: white; text-decoration: none; text-align: center;">
+							Hablar con uno de nuestros agentes
+						</a>
+						</td>
+						<td style="padding: 0 25px;">
+						<a href="https://hipotea.com/cuestionario/"
+							target="_blank"
+							style="display: inline-block; padding: 18px; font-size: 20px; width: 200px; border-radius: 40px; box-shadow: 2px 1px 7px 2px #bcbcbc; background-color: #ef6c00; border: 1px solid #ef6c00; color: white; text-decoration: none; text-align: center;">
+							Completar nuestro cuestionario online
+						</a>
+						</td>
+					</tr>
+				</table>
+
+				<br>
+				<p><strong>Te recomendamos especialmente la opci&oacute;n del formulario</strong>. Nuestro cuestionario online es el m&aacute;s completo del mercado y nos permite proporcionarte ofertas totalmente personalizadas, ajustadas a tus circunstancias y objetivos. Es una forma r&aacute;pida y eficiente de empezar tu camino hacia la hipoteca ideal.</p>
+				<p>Estamos aqu&iacute; para apoyarte en cada paso de este proceso. No dudes en elegir la opci&oacute;n que mejor se adapte a tu comodidad y necesidades.</p>
+				<p>Un cordial saludo.</p>
+			{% endif %}
+		</div>
+	</div>
+	<div style="display: flex;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;" style="max-width:600px;text-align:center;margin: auto 0;">
+		<div>
+			<div style="width:100vw;">
+				<img src="https://areaprivada.hipotea.com/uploads/firma-hipotea-email.png" style="text-align:center;">
+				<p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
+				Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>
+			</div>
+		{% endblock %}

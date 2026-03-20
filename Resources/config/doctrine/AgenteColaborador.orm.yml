@@ -1,0 +1,60 @@
+AppBundle\Entity\AgenteColaborador:
+  type: entity
+  table: agente_colaborador
+  indexes:
+    fk_Agente_colaborador_Entidad_colaboradora_idx:
+      columns:
+        - id_entidad_colaboradora
+  id:
+    idAgenteColaborador:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_agente_colaborador
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombre:
+      type: string
+      nullable: false
+      length: 45
+      options:
+        fixed: false
+    apellidos:
+      type: string
+      nullable: false
+      length: 45
+      options:
+        fixed: false
+    email:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+    telefono:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    direccion:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+  manyToOne:
+    idEntidadColaboradora:
+      targetEntity: EntidadColaboradora
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_entidad_colaboradora:
+          referencedColumnName: id_entidad_colaboradora
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

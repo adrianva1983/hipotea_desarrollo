@@ -1,0 +1,43 @@
+AppBundle\Entity\GrupoHitoExpediente:
+  type: entity
+  table: grupo_hito_expediente
+  indexes:
+    fk_grupo_hito_expediente_hito1_idx:
+      columns:
+        - id_grupo_campos_hito
+    fk_hito_expediente1_idx:
+      columns:
+        - id_hito_expediente
+  id:
+    idGrupoHitoExpediente:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_grupo_hito_expediente
+      generator:
+        strategy: IDENTITY
+  fields:
+  manyToOne:
+    idHitoExpediente:
+      targetEntity: HitoExpediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_hito_expediente:
+          referencedColumnName: id_hito_expediente
+      orphanRemoval: false
+    idGrupoCamposHito:
+      targetEntity: GrupoCamposHito
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_grupo_campos_hito:
+          referencedColumnName: id_grupo_campos_hito
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

@@ -1,0 +1,615 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme modificarParametros '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(modificarParametros) }}
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Parámetros Generales:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.edadAmortizacion) }}
+						{{ form_widget(modificarParametros.edadAmortizacion) }}
+						{{ form_errors(modificarParametros.edadAmortizacion) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.gastosInmobiliaria) }}
+						{{ form_widget(modificarParametros.gastosInmobiliaria) }}
+						{{ form_errors(modificarParametros.gastosInmobiliaria) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.porComisionApertura) }}
+						{{ form_widget(modificarParametros.porComisionApertura) }}
+						{{ form_errors(modificarParametros.porComisionApertura) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.honorariosFinanciacion) }}
+						{{ form_widget(modificarParametros.honorariosFinanciacion) }}
+						{{ form_errors(modificarParametros.honorariosFinanciacion) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tasacion) }}
+						{{ form_widget(modificarParametros.tasacion) }}
+						{{ form_errors(modificarParametros.tasacion) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.vinculaciones) }}
+						{{ form_widget(modificarParametros.vinculaciones) }}
+						{{ form_errors(modificarParametros.vinculaciones) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.escrituraCompraNotario) }}
+						{{ form_widget(modificarParametros.escrituraCompraNotario) }}
+						{{ form_errors(modificarParametros.escrituraCompraNotario) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.escrituraCompraRegistro) }}
+						{{ form_widget(modificarParametros.escrituraCompraRegistro) }}
+						{{ form_errors(modificarParametros.escrituraCompraRegistro) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.escrituraCompraGestoria) }}
+						{{ form_widget(modificarParametros.escrituraCompraGestoria) }}
+						{{ form_errors(modificarParametros.escrituraCompraGestoria) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.gastosImporteMaximo) }}
+						{{ form_widget(modificarParametros.gastosImporteMaximo) }}
+						{{ form_errors(modificarParametros.gastosImporteMaximo) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.interesImporteMaximo) }}
+						{{ form_widget(modificarParametros.interesImporteMaximo) }}
+						{{ form_errors(modificarParametros.interesImporteMaximo) }}
+					</div>
+					<div class="form-group col-sm-4">
+					</div>
+				</div>
+				<div class="form-row">
+					{# <div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoCienFijo1519) }}
+						{{ form_widget(modificarParametros.tipoCienFijo1519) }}
+						{{ form_errors(modificarParametros.tipoCienFijo1519) }}
+					</div> #}
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoCienVariable) }}
+						{{ form_widget(modificarParametros.tipoCienVariable) }}
+						{{ form_errors(modificarParametros.tipoCienVariable) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoCienFijo2024) }}
+						{{ form_widget(modificarParametros.tipoCienFijo2024) }}
+						{{ form_errors(modificarParametros.tipoCienFijo2024) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoCienFijo2530) }}
+						{{ form_widget(modificarParametros.tipoCienFijo2530) }}
+						{{ form_errors(modificarParametros.tipoCienFijo2530) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoPremiumVariable) }}
+						{{ form_widget(modificarParametros.tipoPremiumVariable) }}
+						{{ form_errors(modificarParametros.tipoPremiumVariable) }}
+					</div>
+					{# <div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoPremiumFijo1519) }}
+						{{ form_widget(modificarParametros.tipoPremiumFijo1519) }}
+						{{ form_errors(modificarParametros.tipoPremiumFijo1519) }}
+					</div> #}
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoPremiumFijo2024) }}
+						{{ form_widget(modificarParametros.tipoPremiumFijo2024) }}
+						{{ form_errors(modificarParametros.tipoPremiumFijo2024) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoPremiumFijo2530) }}
+						{{ form_widget(modificarParametros.tipoPremiumFijo2530) }}
+						{{ form_errors(modificarParametros.tipoPremiumFijo2530) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoSinCompromisoVariable) }}
+						{{ form_widget(modificarParametros.tipoSinCompromisoVariable) }}
+						{{ form_errors(modificarParametros.tipoSinCompromisoVariable) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoSinCompromisoFijoMenos20) }}
+						{{ form_widget(modificarParametros.tipoSinCompromisoFijoMenos20) }}
+						{{ form_errors(modificarParametros.tipoSinCompromisoFijoMenos20) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoSinCompromisoFijo2030) }}
+						{{ form_widget(modificarParametros.tipoSinCompromisoFijo2030) }}
+						{{ form_errors(modificarParametros.tipoSinCompromisoFijo2030) }}
+					</div>
+				</div>
+				<div class="form-row">
+					
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoCambioCasaVariable) }}
+						{{ form_widget(modificarParametros.tipoCambioCasaVariable) }}
+						{{ form_errors(modificarParametros.tipoCambioCasaVariable) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoCienFijo1519) }}
+						{{ form_widget(modificarParametros.tipoCienFijo1519) }}
+						{{ form_errors(modificarParametros.tipoCienFijo1519) }}
+					</div>
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.tipoCambioCasaFijo) }}
+						{{ form_widget(modificarParametros.tipoCambioCasaFijo) }}
+						{{ form_errors(modificarParametros.tipoCambioCasaFijo) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col-sm-4">
+						{{ form_label(modificarParametros.levantamientoRegistral) }}
+						{{ form_widget(modificarParametros.levantamientoRegistral) }}
+						{{ form_errors(modificarParametros.levantamientoRegistral) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Andalucía:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.andaluciaItpGeneral) }}
+						{{ form_widget(modificarParametros.andaluciaItpGeneral) }}
+						{{ form_errors(modificarParametros.andaluciaItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.andaluciaItpHabitual) }}
+						{{ form_widget(modificarParametros.andaluciaItpHabitual) }}
+						{{ form_errors(modificarParametros.andaluciaItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.andaluciaAjdGeneral) }}
+						{{ form_widget(modificarParametros.andaluciaAjdGeneral) }}
+						{{ form_errors(modificarParametros.andaluciaAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.andaluciaAjdHabitual) }}
+						{{ form_widget(modificarParametros.andaluciaAjdHabitual) }}
+						{{ form_errors(modificarParametros.andaluciaAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Aragón:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.aragonItpGeneral) }}
+						{{ form_widget(modificarParametros.aragonItpGeneral) }}
+						{{ form_errors(modificarParametros.aragonItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.aragonItpHabitual) }}
+						{{ form_widget(modificarParametros.aragonItpHabitual) }}
+						{{ form_errors(modificarParametros.aragonItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.aragonAjdGeneral) }}
+						{{ form_widget(modificarParametros.aragonAjdGeneral) }}
+						{{ form_errors(modificarParametros.aragonAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.aragonAjdHabitual) }}
+						{{ form_widget(modificarParametros.aragonAjdHabitual) }}
+						{{ form_errors(modificarParametros.aragonAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Asturias:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.asturiasItpGeneral) }}
+						{{ form_widget(modificarParametros.asturiasItpGeneral) }}
+						{{ form_errors(modificarParametros.asturiasItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.asturiasItpHabitual) }}
+						{{ form_widget(modificarParametros.asturiasItpHabitual) }}
+						{{ form_errors(modificarParametros.asturiasItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.asturiasAjdGeneral) }}
+						{{ form_widget(modificarParametros.asturiasAjdGeneral) }}
+						{{ form_errors(modificarParametros.asturiasAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.asturiasAjdHabitual) }}
+						{{ form_widget(modificarParametros.asturiasAjdHabitual) }}
+						{{ form_errors(modificarParametros.asturiasAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Baleares:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.balearesItpGeneral) }}
+						{{ form_widget(modificarParametros.balearesItpGeneral) }}
+						{{ form_errors(modificarParametros.balearesItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.balearesItpHabitual) }}
+						{{ form_widget(modificarParametros.balearesItpHabitual) }}
+						{{ form_errors(modificarParametros.balearesItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.balearesAjdGeneral) }}
+						{{ form_widget(modificarParametros.balearesAjdGeneral) }}
+						{{ form_errors(modificarParametros.balearesAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.balearesAjdHabitual) }}
+						{{ form_widget(modificarParametros.balearesAjdHabitual) }}
+						{{ form_errors(modificarParametros.balearesAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Canarias:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.canariasItpGeneral) }}
+						{{ form_widget(modificarParametros.canariasItpGeneral) }}
+						{{ form_errors(modificarParametros.canariasItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.canariasItpHabitual) }}
+						{{ form_widget(modificarParametros.canariasItpHabitual) }}
+						{{ form_errors(modificarParametros.canariasItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.canariasAjdGeneral) }}
+						{{ form_widget(modificarParametros.canariasAjdGeneral) }}
+						{{ form_errors(modificarParametros.canariasAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.canariasAjdHabitual) }}
+						{{ form_widget(modificarParametros.canariasAjdHabitual) }}
+						{{ form_errors(modificarParametros.canariasAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Cantabria:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.cantabriaItpGeneral) }}
+						{{ form_widget(modificarParametros.cantabriaItpGeneral) }}
+						{{ form_errors(modificarParametros.cantabriaItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.cantabriaItpHabitual) }}
+						{{ form_widget(modificarParametros.cantabriaItpHabitual) }}
+						{{ form_errors(modificarParametros.cantabriaItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.cantabriaAjdGeneral) }}
+						{{ form_widget(modificarParametros.cantabriaAjdGeneral) }}
+						{{ form_errors(modificarParametros.cantabriaAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.cantabriaAjdHabitual) }}
+						{{ form_widget(modificarParametros.cantabriaAjdHabitual) }}
+						{{ form_errors(modificarParametros.cantabriaAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Castilla-La Mancha:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.castillaLaManchaItpGeneral) }}
+						{{ form_widget(modificarParametros.castillaLaManchaItpGeneral) }}
+						{{ form_errors(modificarParametros.castillaLaManchaItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.castillaLaManchaItpHabitual) }}
+						{{ form_widget(modificarParametros.castillaLaManchaItpHabitual) }}
+						{{ form_errors(modificarParametros.castillaLaManchaItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.castillaLaManchaAjdGeneral) }}
+						{{ form_widget(modificarParametros.castillaLaManchaAjdGeneral) }}
+						{{ form_errors(modificarParametros.castillaLaManchaAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.castillaLaManchaAjdHabitual) }}
+						{{ form_widget(modificarParametros.castillaLaManchaAjdHabitual) }}
+						{{ form_errors(modificarParametros.castillaLaManchaAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Castilla y León:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.castillaYLeonItpGeneral) }}
+						{{ form_widget(modificarParametros.castillaYLeonItpGeneral) }}
+						{{ form_errors(modificarParametros.castillaYLeonItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.castillaYLeonItpHabitual) }}
+						{{ form_widget(modificarParametros.castillaYLeonItpHabitual) }}
+						{{ form_errors(modificarParametros.castillaYLeonItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.castillaYLeonAjdGeneral) }}
+						{{ form_widget(modificarParametros.castillaYLeonAjdGeneral) }}
+						{{ form_errors(modificarParametros.castillaYLeonAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.castillaYLeonAjdHabitual) }}
+						{{ form_widget(modificarParametros.castillaYLeonAjdHabitual) }}
+						{{ form_errors(modificarParametros.castillaYLeonAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Cataluña:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.catalunyaItpGeneral) }}
+						{{ form_widget(modificarParametros.catalunyaItpGeneral) }}
+						{{ form_errors(modificarParametros.catalunyaItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.catalunyaItpHabitual) }}
+						{{ form_widget(modificarParametros.catalunyaItpHabitual) }}
+						{{ form_errors(modificarParametros.catalunyaItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.catalunyaAjdGeneral) }}
+						{{ form_widget(modificarParametros.catalunyaAjdGeneral) }}
+						{{ form_errors(modificarParametros.catalunyaAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.catalunyaAjdHabitual) }}
+						{{ form_widget(modificarParametros.catalunyaAjdHabitual) }}
+						{{ form_errors(modificarParametros.catalunyaAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Comunidad Valenciana:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.comunidadValencianaItpGeneral) }}
+						{{ form_widget(modificarParametros.comunidadValencianaItpGeneral) }}
+						{{ form_errors(modificarParametros.comunidadValencianaItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.comunidadValencianaItpHabitual) }}
+						{{ form_widget(modificarParametros.comunidadValencianaItpHabitual) }}
+						{{ form_errors(modificarParametros.comunidadValencianaItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.comunidadValencianaAjdGeneral) }}
+						{{ form_widget(modificarParametros.comunidadValencianaAjdGeneral) }}
+						{{ form_errors(modificarParametros.comunidadValencianaAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.comunidadValencianaAjdHabitual) }}
+						{{ form_widget(modificarParametros.comunidadValencianaAjdHabitual) }}
+						{{ form_errors(modificarParametros.comunidadValencianaAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Extremadura:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.extremaduraItpGeneral) }}
+						{{ form_widget(modificarParametros.extremaduraItpGeneral) }}
+						{{ form_errors(modificarParametros.extremaduraItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.extremaduraItpHabitual) }}
+						{{ form_widget(modificarParametros.extremaduraItpHabitual) }}
+						{{ form_errors(modificarParametros.extremaduraItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.extremaduraAjdGeneral) }}
+						{{ form_widget(modificarParametros.extremaduraAjdGeneral) }}
+						{{ form_errors(modificarParametros.extremaduraAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.extremaduraAjdHabitual) }}
+						{{ form_widget(modificarParametros.extremaduraAjdHabitual) }}
+						{{ form_errors(modificarParametros.extremaduraAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Galicia:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.galiciaItpGeneral) }}
+						{{ form_widget(modificarParametros.galiciaItpGeneral) }}
+						{{ form_errors(modificarParametros.galiciaItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.galiciaItpHabitual) }}
+						{{ form_widget(modificarParametros.galiciaItpHabitual) }}
+						{{ form_errors(modificarParametros.galiciaItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.galiciaAjdGeneral) }}
+						{{ form_widget(modificarParametros.galiciaAjdGeneral) }}
+						{{ form_errors(modificarParametros.galiciaAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.galiciaAjdHabitual) }}
+						{{ form_widget(modificarParametros.galiciaAjdHabitual) }}
+						{{ form_errors(modificarParametros.galiciaAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Madrid:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.madridItpGeneral) }}
+						{{ form_widget(modificarParametros.madridItpGeneral) }}
+						{{ form_errors(modificarParametros.madridItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.madridItpHabitual) }}
+						{{ form_widget(modificarParametros.madridItpHabitual) }}
+						{{ form_errors(modificarParametros.madridItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.madridAjdGeneral) }}
+						{{ form_widget(modificarParametros.madridAjdGeneral) }}
+						{{ form_errors(modificarParametros.madridAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.madridAjdHabitual) }}
+						{{ form_widget(modificarParametros.madridAjdHabitual) }}
+						{{ form_errors(modificarParametros.madridAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Murcia:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.murciaItpGeneral) }}
+						{{ form_widget(modificarParametros.murciaItpGeneral) }}
+						{{ form_errors(modificarParametros.murciaItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.murciaItpHabitual) }}
+						{{ form_widget(modificarParametros.murciaItpHabitual) }}
+						{{ form_errors(modificarParametros.murciaItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.murciaAjdGeneral) }}
+						{{ form_widget(modificarParametros.murciaAjdGeneral) }}
+						{{ form_errors(modificarParametros.murciaAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.murciaAjdHabitual) }}
+						{{ form_widget(modificarParametros.murciaAjdHabitual) }}
+						{{ form_errors(modificarParametros.murciaAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">Navarra:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.navarraItpGeneral) }}
+						{{ form_widget(modificarParametros.navarraItpGeneral) }}
+						{{ form_errors(modificarParametros.navarraItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.navarraItpHabitual) }}
+						{{ form_widget(modificarParametros.navarraItpHabitual) }}
+						{{ form_errors(modificarParametros.navarraItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.navarraAjdGeneral) }}
+						{{ form_widget(modificarParametros.navarraAjdGeneral) }}
+						{{ form_errors(modificarParametros.navarraAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.navarraAjdHabitual) }}
+						{{ form_widget(modificarParametros.navarraAjdHabitual) }}
+						{{ form_errors(modificarParametros.navarraAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">País Vasco:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.paisVascoItpGeneral) }}
+						{{ form_widget(modificarParametros.paisVascoItpGeneral) }}
+						{{ form_errors(modificarParametros.paisVascoItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.paisVascoItpHabitual) }}
+						{{ form_widget(modificarParametros.paisVascoItpHabitual) }}
+						{{ form_errors(modificarParametros.paisVascoItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.paisVascoAjdGeneral) }}
+						{{ form_widget(modificarParametros.paisVascoAjdGeneral) }}
+						{{ form_errors(modificarParametros.paisVascoAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.paisVascoAjdHabitual) }}
+						{{ form_widget(modificarParametros.paisVascoAjdHabitual) }}
+						{{ form_errors(modificarParametros.paisVascoAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-group caja-parametros">
+  				<legend class="leyenda-parametros">La Rioja:</legend>
+				<div class="form-row">
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.riojaItpGeneral) }}
+						{{ form_widget(modificarParametros.riojaItpGeneral) }}
+						{{ form_errors(modificarParametros.riojaItpGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.riojaItpHabitual) }}
+						{{ form_widget(modificarParametros.riojaItpHabitual) }}
+						{{ form_errors(modificarParametros.riojaItpHabitual) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.riojaAjdGeneral) }}
+						{{ form_widget(modificarParametros.riojaAjdGeneral) }}
+						{{ form_errors(modificarParametros.riojaAjdGeneral) }}
+					</div>
+					<div class="form-group col-sm-3">
+						{{ form_label(modificarParametros.riojaAjdHabitual) }}
+						{{ form_widget(modificarParametros.riojaAjdHabitual) }}
+						{{ form_errors(modificarParametros.riojaAjdHabitual) }}
+					</div>
+				</div>
+			</fieldset>
+
+			<div class="d-flex">
+				<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_fases_hitos_campos_opciones') }}">Volver</a>
+				{{ form_label(modificarParametros.reset) }}
+				{{ form_widget(modificarParametros.reset) }}
+				{{ form_label(modificarParametros.submit) }}
+				{{ form_widget(modificarParametros.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_end(modificarParametros) }}
+		</div>
+	</div>
+{% endblock %}

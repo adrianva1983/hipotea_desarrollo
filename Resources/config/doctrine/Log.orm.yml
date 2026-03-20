@@ -1,0 +1,47 @@
+AppBundle\Entity\Log:
+  type: entity
+  table: log
+  indexes:
+    fk_Log_Usuario1_idx:
+      columns:
+        - id_usuario
+  id:
+    idLog:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_log
+      generator:
+        strategy: IDENTITY
+  fields:
+    fecha:
+      type: datetime
+      nullable: true
+    accion:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+        comment: 'tipo de acción registrada'
+    idElemento:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+        comment: 'Elemento al que el usuario realiza la acción'
+      column: id_elemento
+  manyToOne:
+    idUsuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_usuario:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

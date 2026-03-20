@@ -1,0 +1,1578 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregarModificarExpediente '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<link href="{{ asset('assets/node_modules/dropify/dist/css/dropify.min.css') }}" rel="stylesheet">
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<link href="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.css') }}" rel="stylesheet">
+	{% endif %}
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/css/dropify.min.css" rel="stylesheet">
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+	{% endif %}
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/expediente.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<script src="{{ asset('assets/node_modules/dropify/dist/js/dropify.min.js') }}"></script>
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<script src="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.js') }}"></script>
+		<script src="{{ asset('assets/node_modules/bootstrap-datepicker/locales/bootstrap-datepicker.es.min.js') }}"></script>
+	{% endif %}
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/js/dropify.min.js"></script>
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+	{% endif %}
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script>
+		{% if nombres_fichero is defined %}
+		function nombresFicheroFuncion() {
+			return JSON.parse({{ nombres_fichero|json_encode|raw }});
+		}
+
+		function rutaBorrarFicheroExpedienteAJAX() {
+			return '{{ path('borrar_fichero_expediente_ajax') }}';
+		}
+		{% endif %}
+		function rutaObtenerAgentesColaboradoresAJAX() {
+			return '{{ path('obtener_agentes_colaboradores_ajax') }}';
+		}
+
+		function actualizarSeguimientoExpedienteAJAX() {
+			return '{{ path('actualizar_seguimiento_expediente_ajax') }}';
+		}
+
+		// Función para sincronizar con Blender (cliente)
+		function sincronizarConBlender1() 
+		{
+			// Obtener el valor del campo 707
+			var valorCampo707 = '{{ valor_campo_707 is not null ? valor_campo_707 : "" }}';
+			
+			console.log('=== DEBUG BLENDER ===');
+			console.log('Valor del campo 707 recibido:', valorCampo707);
+			console.log('Tipo:', typeof valorCampo707);
+			console.log('Longitud:', valorCampo707.length);
+			console.log('Es vacío:', valorCampo707 === '');
+			console.log('Valor raw Twig: {{ valor_campo_707 }}');
+			console.log('Debug array:', '{{ debug_campo_707|join(", ") }}');
+			
+			if (valorCampo707 && valorCampo707.length > 0) {
+				console.log('Valor del campo 707 (Activar Blender): ' + valorCampo707);
+				alert('Sincronización con Blender - Valor: ' + valorCampo707);
+				// TODO: Implementar lógica de sincronización con Blender
+			} else {
+				alert('No hay valor configurado en el campo Activar Blender');
+			}
+		}
+		function obtenerDocumentos() 
+		{
+			const dni = document.getElementById("dniClienteValue").value;
+			fetch(`{{ path('document_request') }}?dni=${dni}`)
+				.then(response => response.json())
+				.then(data => {
+					if (data.widget_url_boxed) {
+						// Cargar URL en el iframe del modal
+						document.getElementById("widgetIframe").src = data.widget_url_boxed;
+						// Abrir el modal
+						$('#modal-widget-blender').modal('show');
+						localStorage.setItem("request_id", data.request_id);
+						localStorage.setItem("dni", dni);  // Guardar el DNI en localStorage
+						verificarEstadoDocumentos();
+					} else {
+						alert("Error en la solicitud de documentos.");
+					}
+				});
+		}
+
+		function verificarEstadoDocumentos() 
+		{
+				const requestId = localStorage.getItem("request_id");
+				const dni = localStorage.getItem("dni");
+
+				if (!requestId || !dni) return;
+
+				fetch(`{{ path('document_download') }}?request_id=${requestId}&dni=${dni}`)
+					.then(response => response.json())
+					.then(data => {
+						if (data.success && data.files.length > 0) {
+							mostrarBotonDescarga(data.files);
+						} else {
+							setTimeout(verificarEstadoDocumentos, 5000);
+						}
+					});
+		}
+
+		function mostrarBotonDescarga(files) 
+		{
+			const container = document.getElementById("botonDescargaContainer");
+			const totalArchivos = files.length;
+			
+			container.innerHTML = `<br><h5>Documentos descargados: ${totalArchivos}</h5>`;
+
+			localStorage.removeItem("request_id");
+		}
+
+		// Event listener para cargar documentos cuando se abre la pestaña Belender
+		$(document).ready(function() {
+			console.log('✅ Document ready - Inicializando eventos Belender');
+			
+			// Cargar documentos automáticamente al inicializar
+			cargarDocumentosPestanaBelender();
+			
+			// Agregar event listener al elemento del acordeón
+			$('[style*="background-color: #ef6c00"]').each(function() {
+				if ($(this).find('h5:contains("Documentos Descargados")').length) {
+					console.log('✅ Acordeón Belender encontrado');
+					$(this).on('click', function() {
+						console.log('👆 Click en acordeón detectado');
+						toggleDocumentosBelender(this);
+					});
+				}
+			});
+		});
+
+		function toggleDocumentosBelender(element) {
+			const contenedor = document.getElementById('contenedor-documentos-belender-tab');
+			const mostrarIcon = element.querySelector('.mostrar');
+			const ocultarIcon = element.querySelector('.ocultar');
+			
+			console.log('🔄 Toggle - Contenedor encontrado:', !!contenedor);
+			console.log('🔄 Toggle - Display actual:', contenedor.style.display);
+			
+			// Toggle display
+			const esVisible = contenedor.style.display !== 'none' && contenedor.style.display !== '';
+			console.log('🔄 Toggle - ¿Está visible?', esVisible);
+			
+			if (esVisible) {
+				// Ocultar
+				contenedor.style.display = 'none';
+				mostrarIcon.classList.remove('d-none');
+				ocultarIcon.classList.add('d-none');
+				console.log('🔄 Toggle - Ocultando');
+			} else {
+				// Mostrar
+				contenedor.style.display = 'block';
+				mostrarIcon.classList.add('d-none');
+				ocultarIcon.classList.remove('d-none');
+				console.log('🔄 Toggle - Mostrando');
+				
+				// Cargar documentos
+				setTimeout(function() {
+					//cargarDocumentosPestanaBelender();
+				}, 50);
+			}
+		}
+
+		function cargarDocumentosPestanaBelender() 
+		{
+			console.log('🔍 Iniciando carga de documentos en pestaña Belender');
+			// Intentar obtener DNI de múltiples formas
+			let dni = null;
+			
+			const dniInput = document.getElementById("dniClienteValue");
+			if (dniInput && dniInput.value) {
+				dni = dniInput.value;
+				console.log('✅ DNI obtenido de dniClienteValue:', dni);
+			}
+			
+			// Si no funciona, buscar en localStorage
+			if (!dni) {
+				dni = localStorage.getItem("dni");
+				console.log('✅ DNI obtenido de localStorage:', dni);
+			}
+			
+			// Si aún no hay DNI, mostrar error
+			if (!dni) {
+				console.error('❌ No se pudo obtener el DNI');
+				document.getElementById('contenedor-documentos-belender-tab').innerHTML = `
+					<div class="alert alert-warning">
+						<i class="fas fa-exclamation-triangle mr-2"></i>
+						No se puede cargar los documentos: DNI no disponible
+					</div>
+				`;
+				return;
+			}
+
+			console.log('🔍 Cargando documentos para DNI:', dni);
+
+			// Mostrar estado de cargando
+			document.getElementById('contenedor-documentos-belender-tab').innerHTML = `
+				<div class="alert alert-info">
+					<div class="spinner-border spinner-border-sm mr-2" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+					Cargando documentos...
+				</div>
+			`;
+
+			fetch(`/cargar-documentos-descargados?dni=${encodeURIComponent(dni)}`)
+				.then(response => {
+					console.log('📡 Response status:', response.status);
+					if (!response.ok) {
+						throw new Error(`HTTP error! status: ${response.status}`);
+					}
+					return response.json();
+				})
+				.then(data => {
+					console.log('✅ Respuesta recibida:', data);
+					if (data.success && data.documentos && data.documentos.length > 0) {
+						console.log('📋 Mostrando documentos:', data.documentos.length);
+						mostrarDocumentosPestanaBelender(data.documentos, dni);
+					} else {
+						console.log('ℹ️ No hay documentos disponibles');
+						document.getElementById('contenedor-documentos-belender-tab').innerHTML = `
+							<div class="alert alert-info">
+								<i class="fas fa-info-circle mr-2"></i>
+								No hay documentos descargados aún. Utiliza la sección "Documentos Descargados de Belender" para descargarlos.
+							</div>
+						`;
+					}
+				})
+				.catch(error => {
+					console.error("❌ Error cargando documentos:", error);
+					document.getElementById('contenedor-documentos-belender-tab').innerHTML = `
+						<div class="alert alert-danger">
+							<i class="fas fa-times-circle mr-2"></i>
+							Error al cargar los documentos: ${error.message}
+						</div>
+					`;
+				});
+		}
+
+		function obtenerBadgeEstado(estado) {
+			const estadoMap = {
+				'disponible': '<span class="badge badge-success">Disponible</span>',
+				'procesando': '<span class="badge badge-warning">Procesando</span>',
+				'error': '<span class="badge badge-danger">Error</span>',
+				'descargado': '<span class="badge badge-info">Descargado</span>'
+			};
+			return estadoMap[estado] || `<span class="badge badge-secondary">${estado}</span>`;
+		}
+
+		function formatearBytes(bytes) {
+			if (bytes === 0) return '0 Bytes';
+			const k = 1024;
+			const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+			const i = Math.floor(Math.log(bytes) / Math.log(k));
+			return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+		}
+
+		function generarAcciones(doc, dni) {
+			let html = '<div class="btn-group" role="group">';
+			
+			if (doc.tipo === 'json') {
+				html += `<button type="button" class="btn btn-sm btn-primary" onclick="verDocumentoJSON('${dni}', '${doc.nombre}')">
+					<i class="fas fa-eye"></i> Ver
+				</button>`;
+			} else if (doc.tipo === 'pdf') {
+				const url = new URL('{{ path('obtener_documento') }}', window.location.origin);
+				url.searchParams.append('dni', dni);
+				url.searchParams.append('archivo', doc.nombre);
+				html += `<a href="${url.toString()}" class="btn btn-sm btn-success" download>
+					<i class="fas fa-download"></i> Descargar
+				</a>`;
+			}
+			
+			html += '</div>';
+			return html;
+		}
+
+		function consolidarDocumentosBelender() {
+			const dni = document.getElementById("dniClienteValue").value;
+			
+			if (!dni) {
+				alert('No se ha encontrado el DNI del cliente');
+				return;
+			}
+
+			// Mostrar loading
+			const btnConsolidar = document.getElementById('btn-consolidar-belender');
+			const textoOriginal = btnConsolidar.innerHTML;
+			btnConsolidar.disabled = true;
+			btnConsolidar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando con IA del cliente...';
+
+			console.log('📨 Iniciando fetch a procesar_documentos_belender...');
+			fetch(`{{ path('procesar_documentos_belender') }}?dni=${encodeURIComponent(dni)}`)
+				.then(response => {
+					console.log('📥 Respuesta recibida, status:', response.status);
+					return response.json();
+				})
+				.then(async data => {
+					console.log('📦 Datos JSON parseados:', data);
+					console.log('Estado:', data.estado || 'no definido');
+					console.log('¿Tiene documentos_originales?', !!data.documentos_originales);
+					
+					if (data.success || data.estado === 'consolidacion_basica') {
+						console.log('✅ Condición cumplida');
+						let datosFinales = data.datos_consolidados || data;
+						
+						// Si es consolidación básica (sin IA), intentar procesar con IA en cliente
+						if (data.estado === 'consolidacion_basica' && data.documentos_originales) {
+							console.log('🤖 *** INTENTANDO CONSOLIDAR CON IA EN EL CLIENTE ***');
+							btnConsolidar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consolidando con IA (cliente)...';
+							
+							const datosConIA = await procesarConGeminiJS(data.documentos_originales, dni);
+							console.log('Resultado de procesarConGeminiJS:', datosConIA);
+							
+							if (datosConIA) {
+								console.log('✅ IA del cliente funcionó');
+								datosFinales = datosConIA;
+								datosFinales.procesado_por = 'gemini-js-client';
+							} else {
+								console.log('⚠️ IA del cliente falló, usando datos sin procesar');
+								datosFinales.procesado_por = 'fallback-sin-ia';
+							}
+						} else {
+							console.log('❌ Condición de IA fallida. Estado:', data.estado, 'Tiene docs:', !!data.documentos_originales);
+						}
+						
+						btnConsolidar.disabled = false;
+						btnConsolidar.innerHTML = textoOriginal;
+						console.log('✅ Datos finales:', datosFinales);
+						mostrarDatosConsolidados(datosFinales);
+					} else {
+						console.log('❌ Condición inicial fallida');
+						alert('Error al consolidar documentos: ' + (data.error || 'Error desconocido'));
+						btnConsolidar.disabled = false;
+						btnConsolidar.innerHTML = textoOriginal;
+					}
+				})
+				.catch(error => {
+					console.error('❌ Error en fetch:', error);
+					btnConsolidar.disabled = false;
+					btnConsolidar.innerHTML = textoOriginal;
+					alert('Error al procesar documentos: ' + error.message);
+				});
+		}
+
+		function mostrarDatosConsolidados(datos) {
+			const modalHtml = `
+				<div class="modal fade" id="modalDatosConsolidados" tabindex="-1" role="dialog">
+					<div class="modal-dialog modal-xl" role="document">
+						<div class="modal-content">
+							<div class="modal-header bg-success text-white">
+								<h5 class="modal-title"><i class="fas fa-robot mr-2"></i>Datos Consolidados por IA</h5>
+								<button type="button" class="close text-white" data-dismiss="modal">
+									<span>&times;</span>
+								</button>
+							</div>
+							<div class="modal-body">
+								<div class="alert alert-info">
+									<i class="fas fa-info-circle mr-2"></i>
+									Estos datos han sido extraídos y consolidados automáticamente de todos los documentos de Belender usando IA.
+								</div>
+								<pre style="max-height: 600px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; font-size: 13px;">${JSON.stringify(datos, null, 2)}</pre>
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-warning" onclick="compararConExpediente()">
+									<i class="fas fa-balance-scale mr-2"></i>Comparar con Expediente
+								</button>
+								<button type="button" class="btn btn-secondary" data-dismiss="modal">
+									<i class="fas fa-times mr-2"></i>Cerrar
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			`;
+			
+			$('#modalDatosConsolidados').remove();
+			$('body').append(modalHtml);
+			$('#modalDatosConsolidados').modal('show');
+		}
+
+		function compararConExpediente() {
+			console.log('🔎 Iniciando comparación con los datos del expediente...');
+			const dni = document.getElementById("dniClienteValue").value;
+			if (!dni) {
+				alert('No se ha encontrado el DNI del cliente');
+				return;
+			}
+
+			// Recoger todos los campos del formulario en un objeto plano
+			const form = document.querySelector('form');
+			if (!form) {
+				alert('Formulario no encontrado en la página');
+				return;
+			}
+
+			const fd = new FormData(form);
+			const datosObj = {};
+			for (const [k, v] of fd.entries()) {
+				if (datosObj.hasOwnProperty(k)) {
+					if (!Array.isArray(datosObj[k])) datosObj[k] = [datosObj[k]];
+					datosObj[k].push(v);
+				} else {
+					datosObj[k] = v;
+				}
+			}
+
+			// Enviar al servidor para comparar
+			const payload = new FormData();
+			payload.append('datos_expediente', JSON.stringify(datosObj));
+
+			const compararUrl = `{{ path('comparar_datos_expediente') }}?dni=${encodeURIComponent(dni)}`;
+			console.log('📨 Enviando datos al servidor para comparar:', compararUrl);
+
+			fetch(compararUrl, {
+				method: 'POST',
+				body: payload
+			})
+			.then(resp => resp.json())
+			.then(result => {
+				console.log('📦 Resultado comparación:', result);
+				if (result.error) {
+					alert('Error al comparar: ' + result.error);
+					return;
+				}
+				// Construir modal con discrepancias y coincidencias
+				const discrepancias = result.discrepancias || result.discrepancies || [];
+				const coincidencias = result.coincidencias || result.matches || [];
+				const resumen = result.resumen || {};
+
+				let html = `
+					<div class="modal fade" id="modalComparacion" tabindex="-1" role="dialog">
+						<div class="modal-dialog modal-xl" role="document">
+							<div class="modal-content">
+								<div class="modal-header bg-info text-white">
+									<h5 class="modal-title"><i class="fas fa-balance-scale mr-2"></i>Resultado de la Comparación</h5>
+									<button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+								</div>
+								<div class="modal-body">
+									<div class="mb-3">
+										<strong>Resumen:</strong>
+										<ul>
+											<li>Total discrepancias: ${resumen.total_discrepancias || (discrepancias.length)}</li>
+											<li>Discrepancias graves: ${resumen.discrepancias_graves || 0}</li>
+											<li>Porcentaje coincidencia: ${resumen.porcentaje_coincidencia || 0}%</li>
+										</ul>
+									</div>
+									<div class="row">
+										<div class="col-md-6">
+											<h6>Discrepancias</h6>
+											<div style="max-height:400px; overflow:auto;">
+												${discrepancias.map(d => `
+													<div class="border p-2 mb-2">
+														<strong>${d.campo}</strong> — <span class="badge badge-${d.gravedad === 'alta' ? 'danger' : d.gravedad === 'media' ? 'warning' : 'secondary'}">${d.gravedad}</span>
+														<div><em>Declarado:</em> ${d.valor_declarado}</div>
+														<div><em>Oficial:</em> ${d.valor_oficial}</div>
+														<div class="text-muted small">${d.descripcion || ''}</div>
+													</div>
+												`).join('')}
+											</div>
+										</div>
+										<div class="col-md-6">
+											<h6>Coincidencias</h6>
+											<div style="max-height:400px; overflow:auto;">
+												${coincidencias.map(c => `
+													<div class="border p-2 mb-2">
+														<strong>${c.campo}</strong>
+														<div>${c.valor}</div>
+													</div>
+												`).join('')}
+											</div>
+										</div>
+									</div>
+								<div class="modal-footer">
+									<button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+								</div>
+								</div>
+							</div>
+						</div>`;
+
+				$('#modalComparacion').remove();
+				$('body').append(html);
+				$('#modalComparacion').modal('show');
+			})
+			.catch(err => {
+				console.error('❌ Error en compararConExpediente:', err);
+				alert('Error al comparar: ' + err.message);
+			});
+		}
+
+		async function procesarConGeminiJS(documentosOriginales, dni) {
+			console.log('🤖 Iniciando procesamiento con Gemini en JavaScript...');
+			
+			try {
+				const apiKey = 'AIzaSyB2QjeyKlwcZ2aYdwFJ5wvLpFqErbURkVc';
+				const modeloUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+				
+				const systemPrompt = `Eres un asistente especializado en procesar documentos oficiales españoles (IRPF, catastro, vida laboral, etc.) provenientes de la API de Belender.
+
+TAREA: Consolida múltiples documentos JSON en UN SOLO JSON estructurado con los siguientes campos:
+
+{
+    "datos_personales": {
+        "nombre_completo": "",
+        "dni": "",
+        "fecha_nacimiento": ""
+    },
+    "domicilio": {
+        "calle": "",
+        "numero": "",
+        "piso": "",
+        "codigo_postal": "",
+        "municipio": "",
+        "provincia": ""
+    },
+    "situacion_laboral": {
+        "situacion": "",
+        "empresa": "",
+        "puesto": ""
+    },
+    "ingresos": {
+        "total_bruto": 0,
+        "total_neto": 0,
+        "fuentes": []
+    },
+    "patrimonio": {
+        "inmuebles": [],
+        "vehiculos": [],
+        "cuentas_bancarias": []
+    },
+    "cargas_financieras": {
+        "hipotecas": [],
+        "prestamos": [],
+        "obligaciones": []
+    },
+    "informacion_fiscal": {
+        "base_imponible": 0,
+        "impuesto_a_pagar": 0,
+        "porcentaje_retencion": 0
+    },
+    "metadatos": {
+        "fecha_procesamiento": "",
+        "documentos_origen": []
+    }
+}
+
+IMPORTANTE: 
+- Extrae SOLO los datos que existan en los documentos
+- Si un campo no tiene información, déjalo vacío o como null
+- Deduplica información repetida
+- Detecta inconsistencias entre documentos
+- Devuelve SOLO JSON válido, sin markdown ni explicaciones`;
+				
+				const mensaje = `DOCUMENTOS A CONSOLIDAR:\n\n${JSON.stringify(documentosOriginales, null, 2)}`;
+				
+				const body = {
+					contents: [
+						{
+							parts: [
+								{
+									text: `${systemPrompt}\n\nMENSAJE:\n${mensaje}`
+								}
+							]
+						}
+					],
+					generationConfig: {
+						temperature: 0.7,
+						topK: 40,
+						topP: 0.95,
+						maxOutputTokens: 8000
+					}
+				};
+				
+				console.log('📤 Enviando petición a Gemini...');
+				const response = await fetch(modeloUrl, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify(body)
+				});
+				
+				if (!response.ok) {
+					const error = await response.text();
+					console.error('❌ Error HTTP:', response.status, error);
+					return null;
+				}
+				
+				const data = await response.json();
+				console.log('📥 Respuesta recibida de Gemini');
+				
+				if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+					let texto = data.candidates[0].content.parts[0].text;
+					
+					// Limpiar markdown si existe
+					texto = texto.replace(/^```json\n?/i, '').replace(/\n?```$/i, '').trim();
+					
+					try {
+						const jsonConsolidado = JSON.parse(texto);
+						console.log('✅ Datos consolidados exitosamente con IA');
+						return jsonConsolidado;
+					} catch (e) {
+						console.error('❌ Error al parsear JSON de Gemini:', e);
+						console.log('Texto recibido:', texto.substring(0, 200));
+						return null;
+					}
+				}
+				
+				console.error('⚠️ Respuesta inesperada de Gemini:', JSON.stringify(data).substring(0, 300));
+				return null;
+				
+			} catch (error) {
+				console.error('❌ Error en procesarConGeminiJS:', error);
+				return null;
+			}
+		}
+
+		function verDocumentoJSON(dni, nombreArchivo) 
+		{
+			console.log('🔍 Iniciando verDocumentoJSON');
+			console.log('🔍 DNI recibido:', dni);
+			console.log('🔍 Tipo DNI:', typeof dni);
+			console.log('🔍 Nombre archivo recibido:', nombreArchivo);
+			console.log('🔍 Tipo nombre:', typeof nombreArchivo);
+			
+			// Verificar que los parámetros no estén vacíos
+			if (!dni || !nombreArchivo) {
+				alert('Error: DNI o nombre de archivo no están definidos.\nDNI: ' + dni + '\nArchivo: ' + nombreArchivo);
+				return;
+			}
+			
+			// Construir URL base
+			const baseUrl = '{{ path('obtener_documento') }}';
+			console.log('🔍 URL base:', baseUrl);
+			
+			// Crear URLSearchParams para asegurar encoding correcto
+			const params = new URLSearchParams();
+			params.append('dni', dni);
+			params.append('archivo', nombreArchivo); // ⚠️ Cambio: 'nombre' → 'archivo'
+			
+			const fullUrl = baseUrl + '?' + params.toString();
+			console.log('🔍 URL completa:', fullUrl);
+			console.log('🔍 Parámetros:', params.toString());
+			
+			fetch(fullUrl, {
+				method: 'GET',
+				headers: {
+					'Accept': 'application/json',
+					'X-Requested-With': 'XMLHttpRequest'
+				}
+			})
+				.then(response => {
+					console.log('📡 Response status:', response.status);
+					console.log('📡 Response statusText:', response.statusText);
+					console.log('📡 Response headers:', [...response.headers.entries()]);
+					
+					if (!response.ok) {
+						return response.text().then(text => {
+							console.error('❌ Response body:', text);
+							let errorMsg = text;
+							try {
+								const errorJson = JSON.parse(text);
+								errorMsg = errorJson.error || text;
+							} catch (e) {
+								// Si no es JSON, usar el texto tal cual
+							}
+							throw new Error('HTTP ' + response.status + ': ' + errorMsg);
+						});
+					}
+					return response.json();
+				})
+				.then(data => {
+					console.log('✅ Contenido JSON recibido:', data);
+					
+					// Mostrar en modal
+					const contenidoFormateado = JSON.stringify(data, null, 2);
+					const modalHtml = `
+						<div class="modal fade" id="modalDocumentoJSON" tabindex="-1" role="dialog">
+							<div class="modal-dialog modal-lg" role="document">
+								<div class="modal-content">
+									<div class="modal-header bg-primary text-white">
+										<h5 class="modal-title"><i class="fas fa-file-code mr-2"></i>Documento JSON: ${nombreArchivo}</h5>
+										<button type="button" class="close text-white" data-dismiss="modal">
+											<span>&times;</span>
+										</button>
+									</div>
+									<div class="modal-body">
+										<pre style="max-height: 500px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; font-size: 13px;">${contenidoFormateado}</pre>
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times mr-2"></i>Cerrar</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					`;
+					
+					// Eliminar modal anterior si existe
+					$('#modalDocumentoJSON').remove();
+					
+					// Agregar y mostrar nuevo modal
+					$('body').append(modalHtml);
+					$('#modalDocumentoJSON').modal('show');
+				})
+				.catch(error => {
+					console.error('❌ Error completo:', error);
+					alert('Error al cargar el documento JSON:\n\n' + error.message + '\n\nDNI: ' + dni + '\nArchivo: ' + nombreArchivo + '\n\nRevisa la consola del navegador (F12) para más detalles.');
+				});
+		}
+
+		function mostrarDocumentosPestanaBelender(documentos, dni) 
+		{
+			const contenedor = document.getElementById('contenedor-documentos-belender-tab');
+			const acordeon = document.getElementById('acordeon-documentos-belender');
+			
+			// Mostrar el acordeón si hay documentos
+			if (documentos && documentos.length > 0) 
+			{
+				acordeon.style.display = 'block';
+				console.log('📂 Mostrando acordeón de documentos Belender');
+			} 
+			else 
+			{
+				console.log('ℹ️ No hay documentos para mostrar el acordeón de documentos Belender');
+				acordeon.style.display = 'none';
+				return;
+			}
+			
+			let html = `
+				<!-- Botón para consolidar documentos con IA -->
+				<div class="mb-3">
+					<button type="button" id="btn-consolidar-belender" class="btn btn-warning btn-block" onclick="consolidarDocumentosBelender()">
+						<i class="fas fa-robot mr-2"></i>Consolidar Documentos con IA
+					</button>
+					<small class="form-text text-muted">
+						La IA analizará todos los documentos JSON y extraerá la información relevante en un formato unificado.
+					</small>
+				</div>
+				<hr>
+				<div class="table-responsive">
+					<table class="table table-hover table-striped table-sm">
+						<thead style="background-color: #f5f5f5;">
+							<tr>
+								<th><i class="fas fa-file mr-2"></i>Nombre</th>
+								<th><i class="fas fa-tag mr-2"></i>Tipo</th>
+								<th><i class="fas fa-info-circle mr-2"></i>Estado</th>
+								<th><i class="fas fa-weight mr-2"></i>Tamaño</th>
+								<th><i class="fas fa-cog mr-2"></i>Acciones</th>
+							</tr>
+						</thead>
+						<tbody>
+			`;
+
+			documentos.forEach((doc) => {
+				const estadoBadge = obtenerBadgeEstado(doc.estado);
+				const tamaño = doc.tipo === 'json' ? 'N/A' : formatearBytes(doc.tamaño);
+				const acciones = generarAcciones(doc, dni);
+
+				html += `
+					<tr style="vertical-align: middle;">
+						<td><strong>${doc.nombre}</strong></td>
+						<td><span class="badge" style="background-color: #0056b3; color: white;">${doc.tipo.toUpperCase()}</span></td>
+						<td>${estadoBadge}</td>
+						<td>${tamaño}</td>
+						<td>${acciones}</td>
+					</tr>
+				`;
+			});
+
+			html += `
+				</tbody>
+					</table>
+				</div>
+			`;
+
+			contenedor.innerHTML = html;
+			// Mantener el contenedor contraído (con d-none)
+			contenedor.classList.add('d-none');
+			
+			// Consolidar automáticamente al cargar los documentos
+			console.log('🤖 Iniciando consolidación automática...');
+			setTimeout(() => {
+				consolidarDocumentosBelender();
+			}, 1000);
+		}
+	</script>
+	<script src="{{ asset('assets/js/custom/Element.hasAttribute.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/expediente.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+
+{# DEBUG: Ver todas las variables #}
+{# {{ dump(_context) }} #}
+{# Valor específico del campo 707: {{ dump(valor_campo_707) }} #}
+
+
+
+
+
+
+{# <input type="text" id="dniInput" placeholder="Introduce DNI">
+<button onclick="obtenerDocumentos()"> &nbsp;&nbsp; Obtener Documentos Cl@ve</button>
+<div id="botonDescargaContainer"></div>
+
+<script>
+	function obtenerDocumentos() {
+		const dni = document.getElementById("dniInput").value;
+		fetch(`{{ path('document_request') }}?dni=${dni}`)
+			.then(response => response.json())
+			.then(data => {
+				if (data.widget_url_boxed) {
+					window.open(data.widget_url_boxed, '_blank');
+					localStorage.setItem("request_id", data.request_id);
+					localStorage.setItem("dni", dni);  // Guardar el DNI en localStorage
+					verificarEstadoDocumentos();
+				} else {
+					alert("Error en la solicitud de documentos.");
+				}
+			});
+	}
+
+	function verificarEstadoDocumentos() {
+			const requestId = localStorage.getItem("request_id");
+			const dni = localStorage.getItem("dni");
+
+			if (!requestId || !dni) return;
+
+			fetch(`{{ path('document_download') }}?request_id=${requestId}&dni=${dni}`)
+				.then(response => response.json())
+				.then(data => {
+					if (data.success && data.files.length > 0) {
+						mostrarBotonDescarga(data.files);
+					} else {
+						setTimeout(verificarEstadoDocumentos, 5000);
+					}
+				});
+	}
+
+	function mostrarBotonDescarga(files) {
+		const container = document.getElementById("botonDescargaContainer");
+		const totalArchivos = files.length;
+		
+		container.innerHTML = `<br><h5>Documentos descargados: ${totalArchivos}</h5>`;
+
+		localStorage.removeItem("request_id");
+	}
+</script> #}
+
+
+	<form enctype="multipart/form-data" method="post">
+		<div class="card">
+			<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}
+				<h4 class="card-title">{{ fases[0].nombre }}</h4>
+					<div class="form-row">
+						<div class="form-group col-xl {% if is_granted('ROLE_CLIENTE') %}oculto{% endif %}">
+							{{ form_label(agregarModificarExpediente.idCliente) }}
+							{{ form_widget(agregarModificarExpediente.idCliente,{attr:{class:'select2'}}) }}
+							{{ form_errors(agregarModificarExpediente.idCliente) }}
+						</div>
+						<div class="form-group col-xl {% if is_granted('ROLE_CLIENTE') %}oculto{% endif %}">
+							{{ form_label(agregarModificarExpediente.vivienda) }}
+							{{ form_widget(agregarModificarExpediente.vivienda) }}
+							{{ form_errors(agregarModificarExpediente.vivienda) }}
+						</div>
+						{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined %}
+							<div class="form-group col-md oculto">
+								{{ form_label(agregarModificarExpediente.idFaseActual) }}
+								{{ form_widget(agregarModificarExpediente.idFaseActual) }}
+								{{ form_errors(agregarModificarExpediente.idFaseActual) }}
+							</div>
+							<div class="form-group col-md oculto">
+								{{ form_label(agregarModificarExpediente.estado) }}
+								{{ form_widget(agregarModificarExpediente.estado) }}
+								{{ form_errors(agregarModificarExpediente.estado) }}
+							</div>
+						{% endif %}
+					</div>
+				{% else %}
+					<h4 class="card-title">{{ titulo }}</h4>
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+						<div class="form-row">
+							<div class="form-group col-lg">
+								{{ form_label(agregarModificarExpediente.idColaborador) }}
+								{{ form_widget(agregarModificarExpediente.idColaborador,{attr:{class:'select2'}}) }}
+								{{ form_errors(agregarModificarExpediente.idColaborador) }}
+							</div>
+							<div class="form-group col-lg">
+								{{ form_label(agregarModificarExpediente.idComercial) }}
+								{{ form_widget(agregarModificarExpediente.idComercial,{attr:{class:'select2'}}) }}
+								{{ form_errors(agregarModificarExpediente.idComercial) }}
+							</div>
+							<div class="form-group col-lg">
+								{{ form_label(agregarModificarExpediente.idTecnico) }}
+								{{ form_widget(agregarModificarExpediente.idTecnico,{attr:{class:'select2'}}) }}
+								{{ form_errors(agregarModificarExpediente.idTecnico) }}
+							</div>
+						</div>
+					{% endif %}
+					<div class="form-row">
+						<div class="form-group col-xl">
+							{{ form_label(agregarModificarExpediente.idCliente) }}
+							{{ form_widget(agregarModificarExpediente.idCliente,{attr:{class:'select2'}}) }}
+							{{ form_errors(agregarModificarExpediente.idCliente) }}
+						</div>
+						<div class="form-group col-xl">
+							{{ form_label(agregarModificarExpediente.vivienda) }}
+							{{ form_widget(agregarModificarExpediente.vivienda) }}
+							{{ form_errors(agregarModificarExpediente.vivienda) }}
+						</div>
+					</div>
+					{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined %}
+						<div class="form-row">
+							<div class="form-group col-md">
+								{{ form_label(agregarModificarExpediente.idFaseActual) }}
+								{{ form_widget(agregarModificarExpediente.idFaseActual) }}
+								{{ form_errors(agregarModificarExpediente.idFaseActual) }}
+							</div>
+							<div class="form-group col-md">
+								{{ form_label(agregarModificarExpediente.estado) }}
+								{{ form_widget(agregarModificarExpediente.estado) }}
+								{{ form_errors(agregarModificarExpediente.estado) }}
+							</div>
+						</div>
+					{% endif %}
+				{% endif %}
+			</div>
+		</div>
+		{{ form_widget(agregarModificarExpediente._token) }}
+		<div class="card">
+			<div class="card-body">
+				{% if fases is defined and fases is iterable and fases|length>0 %}
+					{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+						{# LEYENDAS DE COLORES #}
+							<div class="leyenda-fases">
+								<div class="fase fase-negra">Fase 1</div>
+								<div class="fase fase-verde">Fase 2</div>
+								<div class="fase fase-amarilla">Fase 3</div>
+								<div class="fase fase-naranja">Fase 4</div>
+								<div class="fase fase-roja">Fase 5</div>
+							</div>
+
+						{# FIN LEYENDAS DE COLORES #}
+						<div role="tablist">
+							<nav class="nav nav-tabs">
+								{% for fase in fases %}
+									<a aria-controls="nav-fase-{{ fase.idFase }}" aria-selected="true" class="nav-item nav-link{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or ((not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA')) and irADocumentos and fase.tipo is same as(1)) %} active{% endif %}" data-toggle="tab" id="nav-fase-{{ fase.idFase }}-tab" href="#nav-fase-{{ fase.idFase }}" role="tab">
+										<b>{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or (not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') and fase.tipo is same as(1)) %}<u>{% endif %}{{ fase.nombre }}{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or (not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') and fase.tipo is same as(1)) %}</u>{% endif %}</b>
+									</a>
+								{% endfor %}
+								</nav>
+							</div>
+						{% endif %}
+					<div class="tab-content">
+						{% for fase in fases %}
+							{% if (not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA')) or (fase.tipo is same as(0) and not irADocumentos) or (fase.tipo is same as(1) and irADocumentos) %}
+							{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+							<div aria-labelledby="nav-fase-{{ fase.idFase }}-tab" class="tab-pane fade{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or (not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') and fase.tipo is same as(1) and irADocumentos) %} show active{% endif %} border border-top-0 p-3" id="nav-fase-{{ fase.idFase }}" role="tabpanel">
+							{% endif %}
+								{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+									{% for hito in hitos[fase.idFase] %}
+										{% if hitos_expediente[hito.idHito] is iterable and hitos_expediente[hito.idHito]|length>0 %}
+											{% set iteracion_hito_expediente = 0 %}
+											{% for hito_expediente in hitos_expediente[hito.idHito] %}
+												{% form_theme agregarModificarHitoExpediente[hito.idHito][loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+												<div{% if not loop.parent.loop.last or hito.repetible %} class="mb-3"{% endif %} data-hito-condicional="{{ hito.hitoCondicional }}" data-hito-expediente="{{ hito.idHito }}"{% if loop.index is same as(1) %} data-repetible="{{ hito.repetible?1:0 }}"{% endif %} {% if iteracion_hito_expediente > 0 %} data-agregado="{{ iteracion_hito_expediente }}"{% endif %} {% if hito_expediente.idHitoExpediente %} data-id-hito-expediente={{ hito_expediente.idHitoExpediente }}{% endif %}>
+													<h4 class="card-title bg-success text-light mb-0 p-3" data-hito-titulo>{{ hito.nombre }} {% if loop.index>1 %} ({{ loop.index }}){% endif %} <i class="fas fa-angle-down mostrar"></i><i class="fas fa-angle-up d-none ocultar"></i></h4>
+													<div class="border p-3 d-none">
+														<div class="form-row d-none">
+															<div class="form-group col-md">
+																{{ form_label(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado) }}
+																{{ form_widget(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado,{attr:{hidden:''}}) }}
+																{{ form_errors(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado) }}
+															</div>
+														</div>
+														<hr class="d-none mt-0">
+														{% if grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+															{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+																{% for grupo_hito_expediente in grupos_hito_expediente[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] %}
+																	<div{% if grupo_campos_hito.nombre is not empty %} class="border{% if loop.length>1 %} mb-3{% endif %} p-3"{% endif %} data-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" data-id-grupo-expediente="{{ grupo_hito_expediente }}" data-grupo-repetible="{{ grupo_campos_hito.repetible?1:0 }}">
+																		{% if grupo_campos_hito.nombre is not empty %}
+																			<h5 class="card-title titulo-grupo" data-grupo-titulo>{{ grupo_campos_hito.nombre }}</h5>
+																			<hr>
+																		{% endif %}
+																		{% if campos_hito[grupo_campos_hito.idGrupoCamposHito] is iterable and campos_hito[grupo_campos_hito.idGrupoCamposHito]|length>0 %}
+																			<div class="row">
+																				{% for campo_hito in campos_hito[grupo_campos_hito.idGrupoCamposHito] %}
+																				{% if agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente] is defined %}
+																					{% form_theme agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																				{% endif %}
+																				<div data-id-campo-hito="{{ campo_hito.idCampoHito }}" class="col-lg {% if loop.length>1 and not loop.last and loop.index is odd %} border-lg-right{% endif %}{% if (is_granted('ROLE_CLIENTE') and not campo_hito.mostrarCliente) or (is_granted('ROLE_COLABORADOR') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_JEFE_INMOBILIARIA') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_JEFE_OFICINA') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_RESPONSABLE_ZONA') and not campo_hito.mostrarColaborador) %} d-none{% endif %}" data-campo-condicional="{{ campo_hito.campoCondicional }}">
+																					{% if campo_hito.tipo is not same as(10) %}
+																							<h6 class="card-title">{{ campo_hito.nombre }} {% if not campo_hito.mostrarCliente and not campo_hito.mostrarColaborador  %} <span style="color:red;">* Sólo GN</span> {% endif %}</h6>
+																						{% endif %}
+																			{% if campo_hito.tipo is same as(4) %}
+																				<div data-contenedor-campo-hito-expediente-colaboradores>
+																					<div class="row">
+																						<div class="col-md {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}d-none{% endif %}">
+																							<div class="form-row d-none">
+																											<div class="form-group col">
+																												{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor,{attr:{readonly:'',value:campo_hito.nombre}}) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																											</div>
+																										</div>
+																										<div class="form-row">
+																											<div class="col">
+																												{% if fase.tipo is same as(1) %}
+																													<div class="form-group">
+																														{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																														{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																														{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																													</div>
+																													<div class="form-group">
+																														{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																														{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																														{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																													</div>
+																												{% endif %}
+																												<div class="form-group">
+																													{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																													{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																													{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																												</div>
+																												<div class="form-group">
+																													{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																													{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																													{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																												</div>
+																												<div class="form-group">
+																													{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																													{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																													{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																												</div>
+																												<div class="form-group">
+																													{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																													{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																													{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																												</div>
+																											</div>
+																										</div>
+																									</div>
+																									<div class="col-md" data-fichero-campo="{{ agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].vars.value.idFicheroCampo }}">
+																										{% form_theme agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																										<div class="form-row">
+																											<div class="form-group col">
+																												{{ form_label(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero) }}
+																												{% if fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
+																													{{ form_widget(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente],'data-max-file-size':maxFileSize}}) }}
+																												{% else %}
+																													{{ form_widget(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-max-file-size':maxFileSize}}) }}
+																												{% endif %}
+																												{{ form_errors(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero) }}
+																											</div>
+																										</div>
+																										{% if fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
+																											<a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] }}" target="_blank">Ver</a>
+																										{% endif %}
+																									</div>
+																							</div>
+																							{% form_theme agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																							<div class="form-row {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}d-none{% endif %}">
+																								<div class="form-group col-md">
+																										{{ form_label(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora) }}
+																										{{ form_widget(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora,{attr:{class:'select2'}}) }}
+																										{{ form_errors(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora) }}
+																									</div>
+																									<div class="form-group col-md">
+																										{{ form_label(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador) }}
+																										{{ form_widget(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																										{{ form_errors(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador) }}
+																									</div>
+																								</div>
+																							</div>
+																						{% else %}
+																							<div class="form-row">
+																								<div class="form-group col">
+																									{% if campo_hito.tipo is same as(2) or campo_hito.tipo is same as(3) %}
+																										{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idOpcionesCampo) }} #}
+																										{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idOpcionesCampo) }}
+																										{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idOpcionesCampo) }}
+																									{% elseif campo_hito.tipo is same as(6) %}
+																										{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }} #}
+																										{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor,{attr:{class:'js-datepicker'}}) }}
+																										{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																									{% elseif campo_hito.tipo is same as(7) or campo_hito.tipo is same as(8) or campo_hito.tipo is same as(9) %}
+																										{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idAgenteColaborador) }} #}
+																										{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																										{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idAgenteColaborador) }}
+																									{% elseif campo_hito.tipo is same as(10) %}
+																									{% else %}
+																										{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }} #}
+																										{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																										{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																									{% endif %}
+																								</div>
+																							</div>
+																						{% endif %}
+																					</div>
+																					{% if loop.index is even and not loop.last %}
+																						<div class="col-12 d-none d-lg-block">
+																							<hr>
+																						</div>
+																					{% endif %}
+																				{% endfor %}
+																			</div>
+																		{% else %}
+																			<div class="alert alert-info" role="alert">
+																				<span>No hay campos hito.</span>
+																			</div>
+																		{% endif %}
+																		{% if grupo_campos_hito.repetible and grupos_campos_hito[hito.idHito]|length>1 %}
+																			<div class="d-flex justify-content-end border-top pt-3">
+																				<button class="btn btn-danger waves-effect {% if not loop.last or loop.index <= 1 %}oculto{% endif %}" data-borrar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+																					<i class="far fa-trash-alt"></i> Eliminar {{ grupo_campos_hito.nombre }}
+																				</button>
+																			</div>
+																		{% endif %}
+																	</div>
+																	{% if grupo_campos_hito.repetible and loop.last %}
+																		<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-grupo-expediente-contenedor>
+																			<button class="btn btn-success waves-effect" data-agregar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+																				<i class="fas fa-plus"></i> Añadir {{ grupo_campos_hito.nombre }}
+																			</button>
+																		</div>
+																	{% endif %}
+																{% endfor %}
+															{% endfor %}
+														{% else %}
+															<div class="alert alert-info" role="alert">
+																<span>No hay grupos de campos hito.</span>
+															</div>
+														{% endif %}
+														{% if hito.repetible and hitos_expediente[hito.idHito]|length>1 %}
+															<div class="d-flex justify-content-end border-top pt-3">
+																<button class="btn btn-danger waves-effect btn-hito-rojo {% if not loop.last or loop.index <= 1 %}oculto{% endif %}" data-borrar-hito-expediente="{{ hito.idHito }}" type="button">
+																	<i class="far fa-trash-alt"></i> Eliminar {{ hito.nombre }}
+																</button>
+															</div>
+														{% endif %}
+													</div>
+												</div>
+												{% if hito.repetible and loop.last %}
+													<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-hito-expediente-contenedor>
+														<button class="btn btn-success waves-effect btn-hito" data-agregar-hito-expediente="{{ hito.idHito }}" type="button">
+															<i class="fas fa-plus"></i> Añadir {{ hito.nombre }}
+														</button>
+													</div>
+												{% endif %}
+												{% set iteracion_hito_expediente = iteracion_hito_expediente + 1 %}
+											{% endfor %}
+										{% endif %}
+									{% endfor %}
+								{% else %}
+									<div class="alert alert-info" role="alert">
+										<span>No hay hitos.</span>
+									</div>
+								{% endif %}
+							{% endif %}
+							{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+							</div>
+							{% endif %}
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay fases.</span>
+					</div>
+			{% endif %}
+			<!-- ACORDEÓN: Documentos Belender -->
+			<div class="mb-3" data-hito-condicional="" id="acordeon-documentos-belender" style="display: none;">					<h4 class="card-title bg-success text-light mb-0 p-3" data-hito-titulo="" onclick="toggleDocumentosBelender(this)" style="cursor: pointer;">
+						Documentos Descargados de Belender
+						<i class="fas fa-angle-down mostrar"></i>
+						<i class="fas fa-angle-up d-none ocultar"></i>
+					</h4>
+
+				<div class="border p-3 d-none" id="contenedor-documentos-belender-tab">
+					<!-- Botón para consolidar documentos con IA -->
+					<div class="mb-3">
+						<button type="button" id="btn-consolidar-belender" class="btn btn-warning btn-block" onclick="consolidarDocumentosBelender()">
+							<i class="fas fa-robot mr-2"></i>Consolidar Documentos con IA
+						</button>
+						<small class="form-text text-muted">
+							La IA analizará todos los documentos JSON y extraerá la información relevante en un formato unificado.
+						</small>
+					</div>
+					<hr>
+					<div class="alert alert-info">
+						<i class="fas fa-info-circle mr-2"></i>
+						Cargando documentos...
+					</div>
+				</div>				</div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<div class="d-flex">
+					<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_expedientes') }}">Volver</a>
+					{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined and (is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')) %}
+						<button class="btn btn-info waves-effect ml-3 btn_seguimiento btn_seguimiento-fijo" data-boton-seguimiento>Seguimiento</button>
+					{% endif %}
+					{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined and (is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')) %}
+						<button class="btn btn-warning waves-effect ml-3 btn_seguimiento-fijo" data-boton-tecnico type="button">Auto-asignar Técnico</button>
+						<button class="btn btn-warning waves-effect ml-3 btn_seguimiento-fijo fase-amarilla" data-boton-comercial type="button">Auto-asignar Comercial</button>
+					{% endif %}
+				{% if attribute(agregarModificarExpediente, 'idFaseActual') is not defined %}
+					<button class="btn btn-secondary waves-effect" type="reset">Reiniciar</button>
+				{% endif %}
+			{% if is_granted('ROLE_CLIENTE') and valor_campo_707 == 'SI' %}
+				<button type="button" class="btn btn-info waves-effect ml-3 " id="boton-sincronizar-blender" onclick="obtenerDocumentos()">
+					<i class="fas fa-sync-alt"></i> Sincronizar con Belender
+					{% if agregarModificarExpediente.vars.data.idCliente and agregarModificarExpediente.vars.data.idCliente.nif %}
+						({{ agregarModificarExpediente.vars.data.idCliente.nif }})
+					{% endif %}
+				</button>
+			{% endif %}
+				<input type="hidden" id="dniClienteValue" value="{{ agregarModificarExpediente.vars.data.idCliente.nif }}">
+				<input type="hidden" id="campo707Value" value="{{ valor_campo_707 }}">
+			
+				<button class="btn btn-success waves-effect ml-3" data-boton-enviar>Aceptar</button>
+				</div>
+			</div>
+		</div>
+		{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined and (is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')) %}
+			<button class="btn btn-info waves-effect shadow-sm position-fixed d-none boton-flotante btn_seguimiento boton-flotante-izq" data-boton-flotante data-boton-seguimiento>
+				<i class="far fa-check-square"></i>
+				<span> Seguimiento</span>
+			</button>
+			<button class="btn btn-warning waves-effect shadow-sm position-fixed d-none boton-flotante boton-flotante-centro" data-boton-flotante data-boton-tecnico type="button">
+				<i class="far fa-user"></i>
+				<span> Auto-asignar Técnico</span>
+			</button>
+			<button class="btn btn-warning waves-effect shadow-sm position-fixed d-none boton-flotante boton-flotante-dcha fase-amarilla" data-boton-flotante data-boton-comercial type="button">
+				<i class="far fa-user"></i>
+				<span> Auto-asignar Comercial</span>
+			</button>
+		{% endif %}
+		<button class="btn btn-success waves-effect shadow-sm position-fixed d-none boton-flotante" data-boton-flotante>
+			<i class="fas fa-save"></i>
+			<span> Guardar</span>
+		</button>
+		{% if numero_hitos_expediente_duplicados is defined %}
+			{% if fases is defined and fases is iterable and fases|length>0 %}
+				{% for fase in fases %}
+					{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+						{% for hito in hitos[fase.idFase] %}
+							{% if hito.repetible and numero_hitos_expediente_duplicados[hito.idHito] is defined and numero_hitos_expediente_duplicados[hito.idHito] > 0 %}
+								<input name="numero-hitos-expediente-duplicados[{{ hito.idHito }}]" type="hidden" value="{{ numero_hitos_expediente_duplicados[hito.idHito] }}">
+							{% endif %}
+						{% endfor %}
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		{% endif %}
+		{# {% if numero_grupos_hito_expediente_duplicados is defined %}
+			{% if fases is defined and fases is iterable and fases|length>0 %}
+				{% for fase in fases %}
+					{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+						{% for hito in hitos[fase.idFase] %}
+							{% for hito_expediente in hitos_expediente[hito.idHito] %}
+								{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+									{% if grupo_campos_hito.repetible and numero_grupos_hito_expediente_duplicados[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] is defined and numero_grupos_hito_expediente_duplicados[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] > 0 %}
+										{% for grupo_hito_exp in grupos_hito_expediente[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] %}
+											<input name="numero-grupos-hito-expediente-duplicados[{{ grupo_hito_exp }}]" type="hidden" value=1">
+										{% endfor %}
+									{% endif %}
+								{% endfor %}
+							{% endfor %}
+						{% endfor %}
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		{% endif %} #}
+		{% if numero_grupos_hito_expediente_duplicados is defined %}
+			{% if fases is defined and fases is iterable and fases|length>0 %}
+				{% for fase in fases %}
+					{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+						{% for hito in hitos[fase.idFase] %}
+							{% for hito_expediente in hitos_expediente[hito.idHito] %}
+								{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+									{% if grupo_campos_hito.repetible %}
+										{# KKK: {{ hito.idHito }} - {{ loop.parent.loop.index - 1 }} - {{ grupo_campos_hito.idGrupoCamposHito }} #}
+										{% set miIndex = loop.parent.loop.index -1 %}
+										{% set miClave =  hito.idHito ~ '_' ~ miIndex ~ '_' ~ grupo_campos_hito.idGrupoCamposHito %}
+										{# {% set full_name = content.field_firstname.value ~ ' ' ~ content.field_lastname.value %} #}
+										{# {% set miClave =  {hito.idHito}"_"{loop.parent.loop.index - 1}"_"{grupo_campos_hito.idGrupoCamposHito} %} #}
+										{# KKK: {{ miClave }} #}
+										{% if numero_grupos_hito_expediente_duplicados[miClave] is defined %}
+											{% if numero_grupos_hito_expediente_duplicados[miClave] > 0 %}
+											{# {% for grupo_hito_exp in grupos_hito_expediente[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] %} #}
+												<input name="numero-grupos-hito-expediente-duplicados[{{ miClave }}]" type="hidden" value="{{ numero_grupos_hito_expediente_duplicados[miClave]-1 }}">
+											{# {% endfor %} #}
+											{% endif %}
+										{% endif %}
+									{% endif %}
+								{% endfor %}
+							{% endfor %}
+						{% endfor %}
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		{% endif %}
+		<input name="ids-hitos-expedientes-borrar" type="hidden">
+		<input type="hidden" name="autoAsignarTecnico" value="0" id="auto-asignar-tecnico-hidden">
+		<input type="hidden" name="autoAsignarComercial" value="0" id="auto-asignar-comercial-hidden">
+	</form>
+	{% if fases is defined and fases is iterable and fases|length>0 %}
+		{% for fase in fases %}
+			{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+				{% set hitoActual = '' %}
+				{% set hitoAnterior = '' %}
+				{% for hito in hitos[fase.idFase] %}
+					{% set hitoActual = hito.idHito %}
+					{% if hito.repetible %}
+						{% form_theme agregarModificarHitoExpedienteModelo[hito.idHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+						<div class="d-none">
+							<div{% if not loop.parent.loop.last or hito.repetible %} class="mb-3"{% endif %} data-modelo-hito-condicional="{{ hito.hitoCondicional }}" data-modelo-hito-expediente="{{ hito.idHito }}">
+								<h4 class="card-title bg-success text-light mb-0 p-3" data-hito-titulo>{{ hito.nombre }}{% if hitoActual == hitoAnterior and loop.index>1 %} ({{ loop.index }}){% endif %}</h4>
+								<div class="border p-3">
+									<div class="form-row d-none">
+										<div class="form-group col-md">
+											{{ form_label(agregarModificarHitoExpedienteModelo[hito.idHito].estado) }}
+											{{ form_widget(agregarModificarHitoExpedienteModelo[hito.idHito].estado,{attr:{hidden:''}}) }}
+											{{ form_errors(agregarModificarHitoExpedienteModelo[hito.idHito].estado) }}
+										</div>
+									</div>
+									<hr class="d-none mt-0">
+									{% if grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+										{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+											<div{% if grupo_campos_hito.nombre is not empty %} class="border{% if loop.length>1 %} mb-3{% endif %} p-3"{% endif %} data-modelo-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" data-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" data-grupo-repetible="{{ grupo_campos_hito.repetible?1:0 }}">
+												{% if grupo_campos_hito.nombre is not empty %}
+													<h5 class="card-title titulo-grupo">{{ grupo_campos_hito.nombre }}</h5>
+													<hr>
+												{% endif %}
+												{% if campos_hito[grupo_campos_hito.idGrupoCamposHito] is iterable and campos_hito[grupo_campos_hito.idGrupoCamposHito]|length>0 %}
+													<div class="row">
+														{% for campo_hito in campos_hito[grupo_campos_hito.idGrupoCamposHito] %}
+															{% if agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito] is defined %}
+																{% form_theme agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+															{% endif %}
+															<div data-id-campo-hito="{{ campo_hito.idCampoHito }}" class="col-lg {% if loop.length>1 and not loop.last and loop.index is odd %} border-lg-right{% endif %}{% if (is_granted('ROLE_CLIENTE') and not campo_hito.mostrarCliente) or (is_granted('ROLE_COLABORADOR') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_JEFE_INMOBILIARIA') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_JEFE_OFICINA') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_RESPONSABLE_ZONA') and not campo_hito.mostrarColaborador) %} d-none{% endif %}" data-campo-condicional="{{ campo_hito.campoCondicional }}">
+																{% if campo_hito.tipo is not same as(10) %}
+																	<h6 class="card-title">{{ campo_hito.nombre }}</h6>
+																{% endif %}
+																{% if campo_hito.tipo is same as(4) %}
+																	<div data-contenedor-campo-hito-expediente-colaboradores>
+																		<div class="row">
+																			<div class="col-md {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}d-none{% endif %}">
+																				<div class="form-row d-none">
+																					<div class="form-group col">
+																						{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																						{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor,{attr:{readonly:'',value:campo_hito.nombre}}) }}
+																						{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																					</div>
+																				</div>
+																				<div class="form-row">
+																					<div class="col">
+																						{% if fase.tipo is same as(1) %}
+																							<div class="form-group">
+																								{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].obligatorio) }}
+																								{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].obligatorio,{attr:{checked:'checked'}}) }}
+																								{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].obligatorio) }}
+																							</div>
+																							<div class="form-group">
+																								{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].solicitarAlColaborador) }}
+																								{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].solicitarAlColaborador,{attr:{checked:'checked'}}) }}
+																								{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].solicitarAlColaborador) }}
+																							</div>
+																						{% endif %}
+																						<div class="form-group">
+																							{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].avisarColaborador) }}
+																							{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].avisarColaborador) }}
+																							{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].avisarColaborador) }}
+																						</div>
+																						<div class="form-group">
+																							{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].paraFirmar) }}
+																							{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].paraFirmar) }}
+																							{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].paraFirmar) }}
+																						</div>
+																						<div class="form-group">
+																							{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlCliente) }}
+																							{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlCliente) }}
+																							{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlCliente) }}
+																						</div>
+																						<div class="form-group">
+																							{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlColaborador) }}
+																							{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlColaborador) }}
+																							{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlColaborador) }}
+																						</div>
+																					</div>
+																				</div>
+																			</div>
+																			<div class="col-md">
+																				{% form_theme agregarModificarFicheroCampoModelo[campo_hito.idCampoHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																				<div class="form-row">
+																					<div class="form-group col">
+																						{{ form_label(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero) }}
+																						{% if fichero_subido[campo_hito.idCampoHito] is defined %}
+																							{# {{ form_widget(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1],'data-max-file-size':maxFileSize}}) }} #}
+																							{{ form_widget(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[campo_hito.idCampoHito]|first,'data-max-file-size':maxFileSize}}) }}
+																						{% else %}
+																							{{ form_widget(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-max-file-size':maxFileSize}}) }}
+																						{% endif %}
+																						{{ form_errors(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero) }}
+																					</div>
+																				</div>
+																				{# {% if fichero_subido_ruta[campo_hito.idCampoHito] is defined %} #}
+																					{# <a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] }}" target="_blank">Descargar</a> #}
+																					{# <a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito]|first }}" target="_blank">Ver</a>
+																				{% endif %} #}
+																			</div>
+																		</div>
+																		{% form_theme agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																		<div class="form-row {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}d-none{% endif %}"">
+																			<div class="form-group col-md">
+																				{{ form_label(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idEntidadColaboradora) }}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idEntidadColaboradora,{attr:{class:'select2'}}) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idEntidadColaboradora) }}
+																			</div>
+																			<div class="form-group col-md">
+																				{{ form_label(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idAgenteColaborador) }}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idAgenteColaborador) }}
+																			</div>
+																		</div>
+																	</div>
+																{% else %}
+																	<div class="form-row">
+																		<div class="form-group col">
+																			{% if campo_hito.tipo is same as(2) or campo_hito.tipo is same as(3) %}
+																				{# {{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }} #}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }}
+																			{% elseif campo_hito.tipo is same as(6) %}
+																				{# {{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }} #}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor,{attr:{class:'js-datepicker'}}) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																			{% elseif campo_hito.tipo is same as(7) or campo_hito.tipo is same as(8) or campo_hito.tipo is same as(9) %}
+																				{# {{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador) }} #}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador) }}
+																			{% elseif campo_hito.tipo is same as(10) %}
+																			{% else %}
+																				{# {{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }} #}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																			{% endif %}
+																		</div>
+																	</div>
+																{% endif %}
+															</div>
+															{% if loop.index is even and not loop.last %}
+																<div class="col-12 d-none d-lg-block">
+																	<hr>
+																</div>
+															{% endif %}
+														{% endfor %}
+													</div>
+												{% else %}
+													<div class="alert alert-info" role="alert">
+														<span>No hay campos hito.</span>
+													</div>
+												{% endif %}
+												{% if grupo_campos_hito.repetible and grupos_campos_hito[hito.idHito]|length>1 %}
+													<div class="d-flex justify-content-end border-top pt-3">
+														{# <button class="btn btn-danger waves-effect {%if not loop.last%}oculto{% endif %}" data-borrar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button"> #}
+														<button class="btn btn-danger waves-effect oculto" data-borrar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+															<i class="far fa-trash-alt"></i> Eliminar {{ grupo_campos_hito.nombre }}
+														</button>
+													</div>
+												{% endif %}
+											</div>
+											{% if grupo_campos_hito.repetible %}
+												<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-grupo-expediente-contenedor>
+													<button class="btn btn-success waves-effect" data-agregar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+														<i class="fas fa-plus"></i> Añadir {{ grupo_campos_hito.nombre }}
+													</button>
+												</div>
+											{% endif %}
+										{% endfor %}
+									{% else %}
+										<div class="alert alert-info" role="alert">
+											<span>No hay grupos de campos hito.</span>
+										</div>
+									{% endif %}
+									<div class="d-flex justify-content-end border-top pt-3">
+										<button class="btn btn-danger waves-effect btn-hito-rojo" data-borrar-hito-expediente type="button">
+											<i class="far fa-trash-alt"></i> Eliminar {{ hito.nombre }}
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					{% endif %}
+					{% set hitoAnterior = hito.idHito %}
+				{% endfor %}
+			{% endif %}
+		{% endfor %}
+	{% endif %}
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% if nombres_fichero is defined %}
+		<div class="modal fade" id="mensaje-ajax">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">
+							<strong>Error</strong>
+						</h4>
+						<button class="close" data-dismiss="modal" type="button">×</button>
+					</div>
+					<div class="modal-body" id="mensaje-ajax-body">Error al borrar el archivo</div>
+					<div class="modal-footer">
+						<button class="btn btn-secondary waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endif %}
+	{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined and (is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')) %}
+		{% include '@App/Backoffice/Modal/SeguimientoExpediente.html.twig' %}
+	{% endif %}
+	<!-- Modal para mostrar el widget de Blender -->
+	<div class="modal fade" id="modal-widget-blender" tabindex="-1" role="dialog" aria-labelledby="modal-widget-blender-title" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document" style="max-width: 1024px; margin: auto; top: 50px;">
+			<div class="modal-content shadow-lg" style="border: none; border-radius: 8px;">
+				<div class="modal-header text-white" style="border-bottom: 2px solid #003d99; border-radius: 8px 8px 0 0; background-color: #ef6c00;">
+					<div class="d-flex align-items-center w-100">
+						<i class="fas fa-file-invoice fa-lg mr-3"></i>
+						<h5 class="modal-title m-0" id="modal-widget-blender-title">Solicitar Documentos Cl@ve</h5>
+					</div>
+					<button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar" style="opacity: 0.8;">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body p-0" style="height: 75vh; overflow: hidden;">
+					<iframe id="widgetIframe" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+				</div>
+				<div class="modal-footer bg-light" style="border-top: 1px solid #e9ecef;">
+					<button type="button" class="btn btn-secondary waves-effect" data-dismiss="modal">
+						<i class="fas fa-times mr-2"></i>Cerrar
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

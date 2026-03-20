@@ -1,0 +1,22 @@
+AppBundle\Entity\VistaTecnicosExpedientes:
+    type: entity
+    table: vista_tecnicos_expedientes
+    read_only: true
+    id:
+        idUsuario:
+            type: integer
+            column: id_usuario
+    fields:
+        role:
+            type: string
+            length: 45
+            column: role
+        maxOperacionesVivas:
+            type: integer
+            column: max_operaciones_vivas
+        numExpedientes:
+            type: integer
+            column: num_expedientes
+        numDisponibles:
+            type: integer
+            column: num_disponibles

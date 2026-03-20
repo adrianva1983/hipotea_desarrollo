@@ -1,0 +1,2030 @@
+<?php
+
+namespace AppBundle\Entity;
+
+use Doctrine\ORM\EntityManagerInterface;
+
+/**
+ * CalculadoraComparativa
+ */
+class CalculadoraComparativa
+{
+	private $destino;
+	private $tipoHipoteca;
+	private $aniosPendientesHipoteca;
+	private $plazoAmortizacion;
+	private $aniosPlazoFijo;
+	private $plazoTotal;
+	private $edad;
+	private $importeHipoteca;
+	private $tipo;
+
+	private $revision;
+	private $tipoFijo;
+	private $tipoVariable;
+	private $revisionVariable;
+	private $tipoMixta;
+	private $revisionMixta;
+	private $aniosMixta;
+	private $oferta;
+
+	private $persoTipoHipoteca;
+	private $persoVinculacion;
+	private $persoAnios;
+	private $persoTipo;
+	private $persoRevision;
+
+	private $hipoteca;
+
+	/**
+	 * @return double
+	 */
+	public function getTipo()
+	{
+		return $this->tipo;
+	}
+
+	/**
+	 * @param double $tipo
+	 */
+	public function setTipo($tipo)
+	{
+		$this->tipo = $tipo;
+	}
+
+	/**
+	 * @return double
+	 */
+	public function getTipoHipoteca()
+	{
+		return $this->tipoHipoteca;
+	}
+
+	/**
+	 * @param double $tipoHipoteca
+	 */
+	public function setTipoHipoteca($tipoHipoteca)
+	{
+		$this->tipoHipoteca = $tipoHipoteca;
+	}
+
+	/**
+	 * @return double
+	 */
+	public function getEdad()
+	{
+		return $this->edad;
+	}
+
+	/**
+	 * @param double $edad
+	 */
+	public function setEdad($edad)
+	{
+		$this->edad = $edad;
+	}
+
+	/**
+	 * @return integer
+	 */
+	public function getImporteHipoteca()
+	{
+		return $this->importeHipoteca;
+	}
+
+	/**
+	 * @param integer $importeHipoteca
+	 */
+	public function setImporteHipoteca($importeHipoteca)
+	{
+		$this->importeHipoteca = $importeHipoteca;
+	}
+
+	/**
+	 * @return integer
+	 */
+	public function getPlazoTotal()
+	{
+		return $this->plazoTotal;
+	}
+
+	/**
+	 * @param integer $plazoTotal
+	 */
+	public function setPlazoTotal($plazoTotal)
+	{
+		$this->plazoTotal = $plazoTotal;
+	}
+
+	/**
+	 * Get the value of aniosPlazoFijo
+	 */
+	public function getAniosPlazoFijo()
+	{
+		return $this->aniosPlazoFijo;
+	}
+
+	/**
+	 * Set the value of aniosPlazoFijo
+	 *
+	 * @param $aniosPlazoFijo
+	 * @return  self
+	 */
+	public function setAniosPlazoFijo($aniosPlazoFijo)
+	{
+		$this->aniosPlazoFijo = $aniosPlazoFijo;
+		return $this;
+	}
+
+	/**
+	 * Get the value of tipoFijo
+	 */
+	public function getTipoFijo()
+	{
+		return $this->tipoFijo;
+	}
+
+	/**
+	 * Set the value of tipoFijo
+	 *
+	 * @param $tipoFijo
+	 * @return  self
+	 */
+	public function setTipoFijo($tipoFijo)
+	{
+		$this->tipoFijo = $tipoFijo;
+		return $this;
+	}
+
+	/**
+	 * Get the value of tipoVariable
+	 */
+	public function getTipoVariable()
+	{
+		return $this->tipoVariable;
+	}
+
+	/**
+	 * Set the value of tipoVariable
+	 *
+	 * @param $tipoVariable
+	 * @return  self
+	 */
+	public function setTipoVariable($tipoVariable)
+	{
+		$this->tipoVariable = $tipoVariable;
+		return $this;
+	}
+
+	/**
+	 * Get the value of revisionVariable
+	 */
+	public function getRevisionVariable()
+	{
+		return $this->revisionVariable;
+	}
+
+	/**
+	 * Set the value of revisionVariable
+	 *
+	 * @param $revisionVariable
+	 * @return  self
+	 */
+	public function setRevisionVariable($revisionVariable)
+	{
+		$this->revisionVariable = $revisionVariable;
+		return $this;
+	}
+
+	/**
+	 * Get the value of tipoMixta
+	 */
+	public function getTipoMixta()
+	{
+		return $this->tipoMixta;
+	}
+
+	/**
+	 * Set the value of tipoMixta
+	 *
+	 * @param $tipoMixta
+	 * @return  self
+	 */
+	public function setTipoMixta($tipoMixta)
+	{
+		$this->tipoMixta = $tipoMixta;
+		return $this;
+	}
+
+	/**
+	 * Get the value of aniosMixta
+	 */
+	public function getAniosMixta()
+	{
+		return $this->aniosMixta;
+	}
+
+	/**
+	 * Set the value of aniosMixta
+	 *
+	 * @param $aniosMixta
+	 * @return  self
+	 */
+	public function setAniosMixta($aniosMixta)
+	{
+		$this->aniosMixta = $aniosMixta;
+		return $this;
+	}
+
+	/**
+	 * Get the value of revisionMixta
+	 */
+	public function getRevisionMixta()
+	{
+		return $this->revisionMixta;
+	}
+
+	/**
+	 * Set the value of revisionMixta
+	 *
+	 * @param $revisionMixta
+	 * @return  self
+	 */
+	public function setRevisionMixta($revisionMixta)
+	{
+		$this->revisionMixta = $revisionMixta;
+		return $this;
+	}
+
+	/**
+	 * Get the value of oferta
+	 */
+	public function getOferta()
+	{
+		return $this->oferta;
+	}
+
+	/**
+	 * Set the value of oferta
+	 *
+	 * @param $oferta
+	 * @return  self
+	 */
+	public function setOferta($oferta)
+	{
+		$this->oferta = $oferta;
+		return $this;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getHipoteca()
+	{
+		return $this->hipoteca;
+	}
+
+	/**
+	 * Get the value of persoTipoHipoteca
+	 */
+	public function getPersoTipoHipoteca()
+	{
+		return $this->persoTipoHipoteca;
+	}
+
+	/**
+	 * Set the value of persoTipoHipoteca
+	 *
+	 * @param $persoTipoHipoteca
+	 * @return  self
+	 */
+	public function setPersoTipoHipoteca($persoTipoHipoteca)
+	{
+		$this->persoTipoHipoteca = $persoTipoHipoteca;
+		return $this;
+	}
+
+	/**
+	 * Get the value of persoVinculacion
+	 */
+	public function getPersoVinculacion()
+	{
+		return $this->persoVinculacion;
+	}
+
+	/**
+	 * Set the value of persoVinculacion
+	 *
+	 * @param $persoVinculacion
+	 * @return  self
+	 */
+	public function setPersoVinculacion($persoVinculacion)
+	{
+		$this->persoVinculacion = $persoVinculacion;
+		return $this;
+	}
+
+	/**
+	 * Get the value of persoAnios
+	 */
+	public function getPersoAnios()
+	{
+		return $this->persoAnios;
+	}
+
+	/**
+	 * Set the value of persoAnios
+	 *
+	 * @param $persoAnios
+	 * @return  self
+	 */
+	public function setPersoAnios($persoAnios)
+	{
+		$this->persoAnios = $persoAnios;
+		return $this;
+	}
+
+	/**
+	 * Get the value of persoTipo
+	 */
+	public function getPersoTipo()
+	{
+		return $this->persoTipo;
+	}
+
+	/**
+	 * Set the value of persoTipo
+	 *
+	 * @param $persoTipo
+	 * @return  self
+	 */
+	public function setPersoTipo($persoTipo)
+	{
+		$this->persoTipo = $persoTipo;
+		return $this;
+	}
+
+	/**
+	 * Get the value of persoRevision
+	 */
+	public function getPersoRevision()
+	{
+		return $this->persoRevision;
+	}
+
+	/**
+	 * Set the value of persoRevision
+	 *
+	 * @param $persoRevision
+	 * @return  self
+	 */
+	public function setPersoRevision($persoRevision)
+	{
+		$this->persoRevision = $persoRevision;
+		return $this;
+	}
+
+
+	
+	public function calcularComparativa(EntityManagerInterface $entityManager)
+	{
+		$destino = $this->getDestino();
+		$tipoHipoteca = $this->getTipoHipoteca();
+		$importeHipoteca = $this->getImporteHipoteca();
+		$oferta = $this->getOferta();
+		$tipoOferta = $this->obtenerTipoOferta($oferta);
+		$nombreOferta = $this->obtenerNombreOferta($oferta);
+		
+		// $margen = 0.3;
+		$margenOferta = $this->obtenerRevisionOferta($oferta);
+		$euribor = 2;
+		// $tipo_euribor = $euribor + $margen;
+		$tipo_euriborOferta = $euribor + $margenOferta;
+
+		$respuesta = array(
+			'cuota_mensual_original' => 0,
+			'cuota_mensual_oferta' => 0,
+			'cuota_mensual_ahorro' => 0,
+			'mensaje' => '',
+			'vinculaciones' => '',
+			'destino' => $destino,
+			'tipo' => $tipoHipoteca,
+			'tipoOferta' => $tipoOferta,
+			'nombreOferta' => $nombreOferta,
+			'plazoAmortizacion' => false,
+			'margen' => $margenOferta
+		);
+		// $datos = json_decode($request->getContent())->datos;
+
+
+		// Recogemos las varables en función del cálculo
+		if($destino == 1){ // Comprar
+			if($tipoOferta == 'Fijo'){ // Oferta fijo
+				if($tipoHipoteca == 1) { // Viene de Fijo
+					$plazoAmortizacion = $this->getPlazoAmortizacion();
+					$plazoOferta = $this->getPlazoAmortizacion();
+					if($plazoAmortizacion > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoFijo = $this->getTipoFijo();
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoFijo,
+						'plazo' => $plazoAmortizacion
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original = $resultado_original['interest_discharged_total'];
+
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total'];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					$intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_ahorro;
+
+					$respuesta['intereses_original'] = $intereses_original;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_ahorro;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+				}elseif($tipoHipoteca == 2) { // Viene de Mixta
+					$aniosPlazoFijo = $this->getAniosPlazoFijo();
+					$plazoTotal = $this->getPlazoTotal();
+					$plazoOferta = $this->getPlazoTotal();
+					if($plazoTotal > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoMixta = $this->getTipoMixta();
+					$revisionMixta = $this->getRevisionMixta();
+
+					// Primero calculamos los datos para los primeros años del tipo mixto que trae
+					$this->hipoteca = [];
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoMixta,
+						'plazo' => $plazoTotal
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][$aniosPlazoFijo-1];
+
+					// Segundo calculamos los datos para los restantes años del tipo mixto que trae
+					$this->hipoteca = [];
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revisionMixta,
+						'plazo' => $plazoTotal
+					);
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][$aniosPlazoFijo-1];
+
+					// Ahora obtenemos los datos para nuestra oferta fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total'];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_original_fija + $intereses_original_variable - $intereses_oferta;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $aniosPlazoFijo;
+				}elseif($tipoHipoteca == 3) { // Viene de Variable
+					$plazoAmortizacion = $this->getPlazoAmortizacion();
+					$plazoOferta = $this->getPlazoAmortizacion();
+					if($plazoAmortizacion > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoVariable = $this->getTipoVariable();
+					$revisionVariable = $this->getRevisionVariable();
+
+
+					// Primero calculamos los datos para el primero años del tipo variable que trae
+					$this->hipoteca = [];
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoVariable,
+						'plazo' => $plazoAmortizacion
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][0];
+
+					// Segundo calculamos los datos para los restantes años del tipo variable que trae
+					$this->hipoteca = [];
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revisionVariable,
+						'plazo' => $plazoAmortizacion
+					);
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][0];
+
+					// Ahora obtenemos los datos para nuestra oferta fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total'];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_original_fija + $intereses_original_variable - $intereses_oferta;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = 1;
+
+				}
+			}elseif($tipoOferta == 'Mixto'){ // Quiere una oferta mixta
+				if($tipoHipoteca == 1) { // Tiene una oferta de Fijo
+					$plazoAmortizacion = $this->getPlazoAmortizacion();
+					$plazoOferta = $this->getPlazoAmortizacion();
+					if($plazoAmortizacion > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoFijo = $this->getTipoFijo();
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					// Primero calculamos los datos para el tipo fijo que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoFijo,
+						'plazo' => $plazoAmortizacion
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original = $resultado_original['interest_discharged_total'];
+
+					// Ahora obtenemos los datos para los años de mixta como fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][$primerosAnios-1];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para cuando pasa de fija a variable la mixta
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][$primerosAnios-1];
+					$intereses_oferta += $intereses_oferta_variable;
+
+					$cuota_ahorro_variable = $cuota_original - $cuota_oferta_variable;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta - $intereses_oferta_variable;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_ahorro;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_ahorro_variable;
+
+					$respuesta['intereses_original'] = $intereses_original;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_original - $intereses_oferta;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $primerosAnios;
+				}elseif($tipoHipoteca == 2) { // Mixta
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					$aniosPlazoFijo = $this->getAniosPlazoFijo();
+					$plazoTotal = $this->getPlazoTotal();
+					$plazoOferta = $this->getPlazoTotal();
+					if($plazoTotal > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoMixta = $this->getTipoMixta();
+					$revisionMixta = $this->getRevisionMixta();
+
+					// Primero calculamos los datos para los primeros años del tipo mixto que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoMixta,
+						'plazo' => $plazoTotal
+					);
+					$this->hipoteca = [];
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][$aniosPlazoFijo-1];
+
+					// Segundo calculamos los datos para los restantes años del tipo mixto que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revisionMixta,
+						'plazo' => $plazoTotal
+					);
+					$this->hipoteca = [];
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][$aniosPlazoFijo-1];
+
+
+					
+					// Ahora obtenemos los datos para los años de mixta como fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][$primerosAnios-1];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para cuando pasa de fija a variable la mixta
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][$primerosAnios-1];
+					
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta_variable;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta + $intereses_oferta_variable;
+					$respuesta['intereses_ahorro'] = ($intereses_original_fija + $intereses_original_variable) - ($intereses_oferta + $intereses_oferta_variable);
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $primerosAnios;
+				}elseif($tipoHipoteca == 3) { // Variable
+					$plazoAmortizacion = $this->getPlazoAmortizacion();
+					$plazoOferta = $this->getPlazoAmortizacion();
+					if($plazoAmortizacion > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoVariable = $this->getTipoVariable();
+					$revisionVariable = $this->getRevisionVariable();
+
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					// Primero calculamos los datos para el primer año de variable
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoVariable,
+						'plazo' => $plazoAmortizacion
+					);
+					$this->hipoteca = [];
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][0];
+
+					// Segundo calculamos los datos para los restantes años del tipo variable que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revisionVariable,
+						'plazo' => $plazoAmortizacion
+					);
+					$this->hipoteca = [];
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][0];
+
+
+					
+					// Ahora obtenemos los datos para los años de mixta como fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][$primerosAnios-1];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para cuando pasa de fija a variable la mixta
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][$primerosAnios-1];
+					
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta_variable;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta + $intereses_oferta_variable;
+					$respuesta['intereses_ahorro'] = ($intereses_original_fija + $intereses_original_variable) - ($intereses_oferta + $intereses_oferta_variable);
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = 1;
+				}
+			}else if($tipoOferta == 'Variable'){ // Quiere una oferta variable
+				if($tipoHipoteca == 1) { // Tiene una oferta de Fijo
+					$plazoAmortizacion = $this->getPlazoAmortizacion();
+					$plazoOferta = $this->getPlazoAmortizacion();
+					if($plazoAmortizacion > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoFijo = $this->getTipoFijo();
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					// Primero calculamos los datos para el tipo fijo que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoFijo,
+						'plazo' => $plazoAmortizacion
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original = $resultado_original['interest_discharged_total'];
+
+					// Ahora obtenemos los datos para el primer año de variable
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][0];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para el resto de años variable
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][0];
+					$intereses_oferta += $intereses_oferta_variable;
+
+					$cuota_ahorro_variable = $cuota_original - $cuota_oferta_variable;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta - $intereses_oferta_variable;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_ahorro;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_ahorro_variable;
+
+					$respuesta['intereses_original'] = $intereses_original;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_original - $intereses_oferta;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $primerosAnios;
+				}elseif($tipoHipoteca == 2) { // Mixta
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					$aniosPlazoFijo = $this->getAniosPlazoFijo();
+					$plazoTotal = $this->getPlazoTotal();
+					$plazoOferta = $this->getPlazoTotal();
+					if($plazoTotal > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoMixta = $this->getTipoMixta();
+					$revisionMixta = $this->getRevisionMixta();
+
+					// Primero calculamos los datos para los primeros años del tipo mixto que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoMixta,
+						'plazo' => $plazoTotal
+					);
+					$this->hipoteca = [];
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][$aniosPlazoFijo-1];
+
+					// Segundo calculamos los datos para los restantes años del tipo mixto que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revisionMixta,
+						'plazo' => $plazoTotal
+					);
+					$this->hipoteca = [];
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][$aniosPlazoFijo-1];
+
+
+					
+					// Ahora obtenemos los datos para el primer año de variable
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][0];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para el resto de años variables
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][0];
+					
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta_variable;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta + $intereses_oferta_variable;
+					$respuesta['intereses_ahorro'] = ($intereses_original_fija + $intereses_original_variable) - ($intereses_oferta + $intereses_oferta_variable);
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $primerosAnios;
+				}elseif($tipoHipoteca == 3) { // Variable
+					$plazoAmortizacion = $this->getPlazoAmortizacion();
+					$plazoOferta = $this->getPlazoAmortizacion();
+					if($plazoAmortizacion > 30){
+						$respuesta['plazoAmortizacion'] = true;
+						$plazoOferta = 30;
+					}
+					$tipoVariable = $this->getTipoVariable();
+					$revisionVariable = $this->getRevisionVariable();
+
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					// Primero calculamos los datos para el primer año del tipo variable que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipoVariable,
+						'plazo' => $plazoAmortizacion
+					);
+					$this->hipoteca = [];
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][0];
+
+					// Segundo calculamos los datos para los restantes años del tipo variable que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revisionVariable,
+						'plazo' => $plazoAmortizacion
+					);
+					$this->hipoteca = [];
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][0];
+
+
+					
+					// Ahora obtenemos los datos para el primer año de variable
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][0];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para el resto de años variables
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][0];
+					
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta_variable;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta + $intereses_oferta_variable;
+					$respuesta['intereses_ahorro'] = ($intereses_original_fija + $intereses_original_variable) - ($intereses_oferta + $intereses_oferta_variable);
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = 1;
+
+				}
+			}
+		}else { // Mejorar
+			$aniosPendientesHipoteca = $this->getAniosPendientesHipoteca();
+			$plazoOferta = $this->getAniosPendientesHipoteca();
+			if($aniosPendientesHipoteca > 30){
+				$respuesta['plazoAmortizacion'] = true;
+				$plazoOferta = 30;
+			}
+			$tipo = $this->getTipo();
+
+			if($tipoHipoteca == 2 || $tipoHipoteca == 3) { // Variable o Mixta
+				$revision = $this->getRevision();
+			}
+			if($tipoOferta == 'Fijo'){ // Oferta fijo
+				if($tipoHipoteca == 1) { // Viene de Fijo
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original = $resultado_original['interest_discharged_total'];
+
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total'];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					$intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_ahorro;
+
+					$respuesta['intereses_original'] = $intereses_original;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_ahorro;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+				}elseif($tipoHipoteca == 2) { // Viene de Mixta
+					// Primero calculamos los datos para los primeros años del tipo mixto que trae
+					$aniosMixta = $this->getAniosMixta();
+					$this->hipoteca = [];
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][$aniosMixta - 1];
+
+					// Segundo calculamos los datos para los restantes años del tipo mixto que trae
+					$this->hipoteca = [];
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revision,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][$aniosMixta - 1];
+
+					// Ahora obtenemos los datos para nuestra oferta fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total'];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_original_fija + $intereses_original_variable - $intereses_oferta;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = 1;
+				}elseif($tipoHipoteca == 3) { // Viene de Variable
+					// Primero calculamos los datos para los primeros años del tipo mixto que trae
+					$this->hipoteca = [];
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][0];
+
+					// Segundo calculamos los datos para los restantes años del tipo mixto que trae
+					$this->hipoteca = [];
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revision,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][0];
+
+					// Ahora obtenemos los datos para nuestra oferta fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total'];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_original_fija + $intereses_original_variable - $intereses_oferta;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = 1;
+				}
+			}elseif($tipoOferta == 'Mixto'){ // Oferta Mixta
+				if($tipoHipoteca == 1) { // Tiene una oferta de Fijo
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					// Primero calculamos los datos para el tipo fijo que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original = $resultado_original['interest_discharged_total'];
+
+					// Ahora obtenemos los datos para los años de mixta como fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][$primerosAnios-1];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para cuando pasa de fija a variable la mixta
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][$primerosAnios-1];
+					$intereses_oferta += $intereses_oferta_variable;
+
+					$cuota_ahorro_variable = $cuota_original - $cuota_oferta_variable;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta - $intereses_oferta_variable;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_ahorro;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_ahorro_variable;
+
+					$respuesta['intereses_original'] = $intereses_original;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_original - $intereses_oferta;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $primerosAnios;
+				}elseif($tipoHipoteca == 2) { // Mixta
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+					$aniosMixta = $this->getAniosMixta();
+
+					// Primero calculamos los datos para los primeros años del tipo mixto que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$this->hipoteca = [];
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][$aniosMixta - 1];
+
+					// Segundo calculamos los datos para los restantes años del tipo mixto que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revision,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$this->hipoteca = [];
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][$aniosMixta - 1];
+
+
+					
+					// Ahora obtenemos los datos para los años de mixta como fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][$primerosAnios-1];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para cuando pasa de fija a variable la mixta
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][$primerosAnios-1];
+					
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta_variable;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta + $intereses_oferta_variable;
+					$respuesta['intereses_ahorro'] = ($intereses_original_fija + $intereses_original_variable) - ($intereses_oferta + $intereses_oferta_variable);
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $primerosAnios;
+				}elseif($tipoHipoteca == 3) { // Variable
+
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					// Primero calculamos los datos para el primer año del tipo variable que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$this->hipoteca = [];
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][0];
+
+					// Segundo calculamos los datos para los restantes años del tipo variable que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revision,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$this->hipoteca = [];
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][0];
+
+
+					
+					// Ahora obtenemos los datos para los años de mixta como fija
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][$primerosAnios-1];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para cuando pasa de fija a variable la mixta
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][$primerosAnios-1];
+					
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta_variable;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta + $intereses_oferta_variable;
+					$respuesta['intereses_ahorro'] = ($intereses_original_fija + $intereses_original_variable) - ($intereses_oferta + $intereses_oferta_variable);
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = 1;
+
+				}
+			}elseif($tipoOferta == 'Variable'){ // Oferta Variable
+				if($tipoHipoteca == 1) { // Tiene una oferta de Fijo
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					// Primero calculamos los datos para el tipo fijo que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original = $resultado_original['interest_discharged_total'];
+
+					// Ahora obtenemos los datos para el primer año de variable
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][0];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para el resto de años de variable
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][0];
+					$intereses_oferta += $intereses_oferta_variable;
+
+					$cuota_ahorro_variable = $cuota_original - $cuota_oferta_variable;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta - $intereses_oferta_variable;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_ahorro;
+
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_ahorro_variable;
+
+					$respuesta['intereses_original'] = $intereses_original;
+					$respuesta['intereses_oferta'] = $intereses_oferta;
+					$respuesta['intereses_ahorro'] = $intereses_original - $intereses_oferta;
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $primerosAnios;
+				}elseif($tipoHipoteca == 2) { // Mixta
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+					$aniosMixta = $this->getAniosMixta();
+
+					// Primero calculamos los datos para los primeros años del tipo mixto que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$this->hipoteca = [];
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][$aniosMixta - 1];
+
+					// Segundo calculamos los datos para los restantes años del tipo mixto que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revision,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$this->hipoteca = [];
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][$aniosMixta - 1];
+
+
+					
+					// Ahora obtenemos los datos para el primer año de variable
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][0];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para el resto de años de variable
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][0];
+					
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta_variable;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta + $intereses_oferta_variable;
+					$respuesta['intereses_ahorro'] = ($intereses_original_fija + $intereses_original_variable) - ($intereses_oferta + $intereses_oferta_variable);
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = $primerosAnios;
+				}elseif($tipoHipoteca == 3) { // Variable
+
+					$primerosAnios = $this->obtenerAniosOferta($oferta);
+
+					// Primero calculamos los datos para el primer año del tipo variable que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$this->hipoteca = [];
+					$resultado_original = $this->calculoSencillo($datos_calculo);
+					$cuota_original = $resultado_original['fee'];
+					$intereses_original_fija = $resultado_original['interest_discharged_total_deadline'][0];
+
+					// Segundo calculamos los datos para los restantes años del tipo variable que trae
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $euribor + $revision,
+						'plazo' => $aniosPendientesHipoteca
+					);
+					$this->hipoteca = [];
+					$resultado_original_variable = $this->calculoSencillo($datos_calculo);
+					$cuota_original_variable = $resultado_original_variable['fee'];
+					$intereses_original_variable = $resultado_original_variable['interest_discharged_total'] - $resultado_original_variable['interest_discharged_total_deadline'][0];
+
+
+					
+					// Ahora obtenemos los datos para el primer año de variable de la oferta
+					$tipo_oferta = $this->obtenerInteresOferta($oferta);
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_oferta,
+						'plazo' => $plazoOferta
+					);
+					$this->hipoteca = [];
+					$resultado_oferta = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta = $resultado_oferta['fee'];
+					$intereses_oferta = $resultado_oferta['interest_discharged_total_deadline'][0];
+
+					$cuota_ahorro = $cuota_original - $cuota_oferta;
+					// $intereses_ahorro = $intereses_original - $intereses_oferta;
+
+					//  Ahora obtenemos los datos para el resto de años de la variable de la oferta
+					$datos_calculo = array(
+						'precio' => $importeHipoteca,
+						'intereses' => $tipo_euriborOferta,
+						'plazo' => $plazoOferta
+					);
+
+					$this->hipoteca = [];
+					$resultado_oferta_variable = $this->calculoSencillo($datos_calculo);
+					
+					$cuota_oferta_variable = $resultado_oferta_variable['fee'];
+					$intereses_oferta_variable = $resultado_oferta_variable['interest_discharged_total'] - $resultado_oferta_variable['interest_discharged_total_deadline'][0];
+					
+					$respuesta['cuota_mensual_original'] = $cuota_original;
+					$respuesta['cuota_mensual_oferta'] = $cuota_oferta;
+					$respuesta['cuota_mensual_ahorro'] = $cuota_original - $cuota_oferta;
+
+					$respuesta['cuota_mensual_original_variable'] = $cuota_original_variable;
+					$respuesta['cuota_mensual_oferta_variable'] = $cuota_oferta_variable;
+					$respuesta['cuota_mensual_ahorro_variable'] = $cuota_original_variable - $cuota_oferta_variable;
+
+					$respuesta['intereses_original'] = $intereses_original_fija + $intereses_original_variable;
+					$respuesta['intereses_oferta'] = $intereses_oferta + $intereses_oferta_variable;
+					$respuesta['intereses_ahorro'] = ($intereses_original_fija + $intereses_original_variable) - ($intereses_oferta + $intereses_oferta_variable);
+
+					$respuesta['vinculaciones'] = $this->obtenerVinculacionesOferta($oferta);
+					$respuesta['primerosAnios'] = 1;
+
+				}
+			}
+		}
+
+		return $respuesta;
+
+	}
+
+	private function calculoSencillo($datos)
+	{
+		$precio = $datos['precio'];
+		$interes = $datos['intereses'];
+		$plazos = $datos['plazo'];
+
+		$this->hipoteca['interest'] = $interes / 100;
+		$this->hipoteca['capital_less_initial_amount'] = $precio;// - $this->getAportacionInicial();
+		$this->hipoteca['interest_payment'][] = ($this->hipoteca['capital_less_initial_amount'] * $this->hipoteca['interest']) / 12;
+		$this->hipoteca['total_timelines'] = $plazos * 12;
+		$this->hipoteca['apr'] = 1 - (1 / (pow(1 + ($this->hipoteca['interest'] / 12), $this->hipoteca['total_timelines'])));
+		$this->hipoteca['fee'] = $this->hipoteca['interest_payment'][0] / $this->hipoteca['apr'];
+		$this->hipoteca['interest_discharged'] = $this->hipoteca['interest_payment'][0];
+		$this->hipoteca['interest_discharged_total'] = $this->hipoteca['interest_payment'][0];
+		$this->hipoteca['capital_payment'][] = $this->hipoteca['fee'] - $this->hipoteca['interest_payment'][0];
+		$this->hipoteca['capital_discharged'] = $this->hipoteca['capital_payment'][0];
+		$this->hipoteca['capital_discharged_total'] = $this->hipoteca['capital_payment'][0];
+		$this->hipoteca['capital_pending'][] = $this->hipoteca['capital_less_initial_amount'] - $this->hipoteca['capital_discharged_total'];
+		for ($i = 1, $j = 2; $i < $this->hipoteca['total_timelines']; $i += 1) {
+			$this->hipoteca['interest_payment'][] = ($this->hipoteca['capital_pending'][$i - 1] * $this->hipoteca['interest']) / 12;
+			$this->hipoteca['interest_discharged'] += $this->hipoteca['interest_payment'][$i];
+			$this->hipoteca['interest_discharged_total'] += $this->hipoteca['interest_payment'][$i];
+			$this->hipoteca['capital_payment'][] = $this->hipoteca['fee'] - $this->hipoteca['interest_payment'][$i];
+			$this->hipoteca['capital_discharged'] += $this->hipoteca['capital_payment'][$i];
+			$this->hipoteca['capital_discharged_total'] += $this->hipoteca['capital_payment'][$i];
+			$this->hipoteca['capital_pending'][] = $this->hipoteca['capital_less_initial_amount'] - $this->hipoteca['capital_discharged_total'];
+			if ($j < 12) {
+				$j += 1;
+			} else {
+				$j = 1;
+				$this->hipoteca['interest_discharged_deadline'][] = $this->hipoteca['interest_discharged'];
+				$this->hipoteca['interest_discharged'] = 0;
+				$this->hipoteca['interest_discharged_total_deadline'][] = $this->hipoteca['interest_discharged_total'];
+				$this->hipoteca['capital_discharged_deadline'][] = $this->hipoteca['capital_discharged'];
+				$this->hipoteca['capital_discharged'] = 0;
+				$this->hipoteca['capital_discharged_total_deadline'][] = $this->hipoteca['capital_discharged_total'];
+			}
+		}
+		return $this->hipoteca;
+	}	
+
+	private function obtenerInteresOferta($oferta){
+		switch ($oferta) {
+			case '1':
+				return 1;
+				break;
+			case '2':
+				return 1.55;
+				break;
+			case '3':
+				return 1;
+				break;
+			case '4':
+				return 1.25;
+				break;
+			case '5':
+				return 1.3;
+				break;
+			case '6':
+				return 1.55;
+				break;
+			case '7':
+				return 2.5;
+				break;
+			case '8':
+				return $this->getPersoTipo();
+				break;
+			default:
+				return 1;
+				break;
+		}
+	}
+
+	private function obtenerVinculacionesOferta($oferta){
+		switch ($oferta) {
+			case '1':
+				return true;
+				break;
+			case '2':
+				return false;
+				break;
+			case '3':
+				return true;
+				break;
+			case '4':
+				return false;
+				break;
+			case '5':
+				return false;
+				break;
+			case '6':
+				return true;
+				break;
+			case '7':
+				return false;
+				break;
+			case '8':
+				return $this->getPersoVinculacion();
+				break;
+			default:
+				return true;
+				break;
+		}
+	}
+
+	private function obtenerAniosOferta($oferta){
+		switch ($oferta) {
+			case '1':
+				return 3;
+				break;
+			case '2':
+				return 3;
+				break;
+			case '3':
+				return 5;
+				break;
+			case '4':
+				return 5;
+				break;
+			case '5':
+				return 10;
+				break;
+			case '8':
+				return $this->getPersoAnios()?$this->getPersoAnios():1;
+				break;
+			default:
+				return '';
+				break;
+		}
+	}
+
+	private function obtenerTipoOferta($oferta){
+		switch ($oferta) {
+			case '1':
+				return 'Mixto';
+				break;
+			case '2':
+				return 'Mixto';
+				break;
+			case '3':
+				return 'Mixto';
+				break;
+			case '4':
+				return 'Mixto';
+				break;
+			case '5':
+				return 'Mixto';
+				break;
+			case '6':
+				return 'Fijo';
+				break;
+			case '7':
+				return 'Fijo';
+				break;
+			case '8':
+				if($this->getPersoTipoHipoteca() == 1){
+					return 'Fijo';
+				}elseif($this->getPersoTipoHipoteca() == 2){
+					return 'Mixto';
+				}else{
+					return 'Variable';
+				}
+				break;
+			default:
+				return 'Mixto';
+				break;
+		}
+	}
+
+	private function obtenerRevisionOferta($oferta){
+		switch ($oferta) {
+			case '1':
+				return 0.3;
+				break;
+			case '2':
+				return 0.3;
+				break;
+			case '3':
+				return 0.3;
+				break;
+			case '4':
+				return 0.3;
+				break;
+			case '5':
+				return 0.3;
+				break;
+			case '6':
+				return 0.3;
+				break;
+			case '7':
+				return 0.3;
+				break;
+			case '8':
+				return $this->getPersoRevision();
+				break;
+			default:
+				return 0.3;
+				break;
+		}
+	}
+
+	private function obtenerNombreOferta($oferta){
+		switch ($oferta) {
+			case '1':
+				return 'Tipo mixto 3 años con vinculación al 1%';
+				break;
+			case '2':
+				return 'Tipo mixto 3 años sin vinculación al 1.55%';
+				break;
+			case '3':
+				return 'Tipo mixto 5 años con vinculación al 1%';
+				break;
+			case '4':
+				return 'Tipo mixto 10 años con vinculación al 1.25%';
+				break;
+			case '5':
+				return 'Tipo mixto 10 años sin vinculación al 1.30%';
+				break;
+			case '6':
+				return 'Tipo fijo con vinculación al 1.55%';
+				break;
+			case '7':
+				return 'Tipo fijo sin vinculación al 2.50%';
+				break;
+			case '8':
+				$res = 'Tipo '.$this->obtenerTipoOferta($oferta).' ';
+				$res .= $this->getPersoVinculacion()==1?'con':'sin';
+				$res .= ' vinculación al '.$this->getPersoTipo().'%';
+				return $res;
+				break;
+			default:
+				return '';
+				break;
+		}
+	}
+
+	private function calculoSencilloOld($datos)
+	{
+		$precio = $datos['precio'];
+		$entrada = 0; //$datos['entrada'];
+		$interes = $datos['intereses'];
+		$plazos = $datos['plazo'];
+		$ta = $precio;
+		$dp = $entrada;
+		$ir = $interes;
+		$am = $plazos;
+		$pp = 12;
+		$cp = 12;
+		$loan = $ta - $dp;
+		$np = $am * $pp;
+		if (!$ir) {
+			$payment = $loan / $np;
+		} else {
+			$rNom = $ir;
+			$rPeriod = pow(1 + $rNom / $cp, $cp / $pp) - 1;
+			$rFactor = pow($rPeriod + 1, $np);
+			$payment = $loan * (($rPeriod * $rFactor) / ($rFactor - 1));
+		}
+		// echo 'loan: '.$loan;
+		// echo 'np: '.$np;
+		// echo 'rNom: '.$rNom;
+		// echo 'rPeriod: '.$rPeriod;
+		// echo 'rFactor: '.$rFactor;
+		// echo 'payment: '.$payment;
+		$result = round($payment, 2);
+		$display_total = $ta - $dp;
+		// echo 'result: '.$result;
+		$conIntereses = round($payment * $np, 2);
+		$conEntrada = $conIntereses + $entrada;
+		// $resultado = new Object('cuota', $result, 'interes', $conIntereses, 'conEntrada', $conEntrada);
+		$resultado = array(
+			'cuota' => $result,
+			'interes' => $conIntereses,
+			'conEntrada' => $conEntrada
+		);
+		return $resultado;
+	}
+
+	private function calculoImporteMaximo($datos)
+	{
+		$cuota = $datos['cuota'];
+		$entrada = $datos['entrada'];
+		$interes = $datos['intereses'];
+		$plazos = $datos['plazo'];
+		// $gastos = $datos['gastos'];
+		$edad = $datos['edad'];
+		// $ta = $precio;
+		$dp = $entrada;
+		$ir = $interes;
+		$am = $plazos;
+		$pp = 12;
+		$cp = 12;
+		// $loan = $ta - $dp;
+		$np = $am * $pp;
+		if (!$ir) {
+			$loan = $cuota * $np;
+		} else {
+			$rNom = $ir;
+			$rPeriod = pow(1 + $rNom / $cp, $cp / $pp) - 1;
+			$rFactor = pow($rPeriod + 1, $np);
+			$loan = $cuota / (($rPeriod * $rFactor) / ($rFactor - 1));
+		}
+		$resultado_sin_gastos = round($loan - $entrada, 2);
+		// if ($resultado_sin_gastos <= 150000 && $edad < 35) {
+		// 	$gastos = 15000;
+		// } elseif ($resultado_sin_gastos <= 150000 && $edad >= 35) {
+		// 	$gastos = 20000;
+		// } elseif ($resultado_sin_gastos > 150000 && $resultado_sin_gastos <= 200000) {
+		// 	$gastos = 25000;
+		// } elseif ($resultado_sin_gastos > 200000) {
+		// 	$gastos = 25000 + (5000 * (floor($resultado_sin_gastos / 50000) - 1));
+		// }
+		$gastos = $loan * 0.10;
+		$resultado = round($loan + $entrada - $gastos, 2);
+		$resultado = array(
+			'importe' => $resultado
+		);
+		return $resultado;
+	}
+
+	private function redondear500($numero) {
+		// Obtenemos el residuo del número al dividirlo por 500
+		$resto = $numero % 500;
+	
+		// Si el resto es mayor o igual a 250, redondeamos hacia arriba
+		if ($resto >= 250) {
+			$resultado = $numero + (500 - $resto);
+		} else {
+			$resultado = $numero - $resto;
+		}
+	
+		// Convertimos el resultado a entero
+		return (int) $resultado;
+	}
+	/**
+	 * Get the value of revision
+	 */
+	public function getRevision()
+	{
+		return $this->revision;
+	}
+
+	/**
+	 * Set the value of revision
+	 *
+	 * @return  self
+	 */
+	public function setRevision($revision)
+	{
+		$this->revision = $revision;
+		return $this;
+	}
+
+
+	/**
+	 * @return double
+	 */
+	public function getAniosPendientesHipoteca()
+	{
+		return $this->aniosPendientesHipoteca;
+	}
+
+	/**
+	 * @param double $aniosPendientesHipoteca
+	 */
+	public function setAniosPendientesHipoteca($aniosPendientesHipoteca)
+	{
+		$this->aniosPendientesHipoteca = $aniosPendientesHipoteca;
+	}
+
+	/**
+	 * @return double
+	 */
+	public function getPlazoAmortizacion()
+	{
+		return $this->plazoAmortizacion;
+	}
+
+	/**
+	 * @param double $plazoAmortizacion
+	 */
+	public function setPlazoAmortizacion($plazoAmortizacion)
+	{
+		$this->plazoAmortizacion = $plazoAmortizacion;
+	}
+
+	/**
+	 * Get the value of destino
+	 */ 
+	public function getDestino()
+	{
+		return $this->destino;
+	}
+
+	/**
+	 * Set the value of destino
+	 *
+	 * @return  self
+	 */ 
+	public function setDestino($destino)
+	{
+		$this->destino = $destino;
+
+		return $this;
+	}
+}
+
+
+

@@ -1,0 +1,12 @@
+<div class="navbar-header">
+	<a class="navbar-brand ml-1 mr-2" href="{% if app.request.get('_route') is same as('inicio') %}javascript:void(0){% else %}{{ path('inicio') }}{% endif %}">
+		<b>
+			<img alt="homepage" class="dark-logo mr-1" src="{{ asset('assets/images/custom/hipotea-blanco.png') }}">
+			<img alt="homepage" class="light-logo img-fluid mr-1" src="{{ asset('assets/images/custom/hipotea-blanco.png') }}">
+		</b>
+		<span>
+			<img alt="homepage" class="dark-logo mr-1" src="{{ asset('assets/images/custom/hipotea-blanco.png') }}">
+			{#<img alt="homepage" class="light-logo" src="{{ asset('assets/images/logo-light-text.png') }}">#}
+		</span>
+	</a>
+</div>

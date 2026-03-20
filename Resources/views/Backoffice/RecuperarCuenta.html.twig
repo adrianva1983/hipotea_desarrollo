@@ -1,0 +1,66 @@
+{% use '@App/Backoffice/Partes/Head/Styles.html.twig' %}
+{% use '@App/Backoffice/Partes/Head/Scripts.html.twig' %}
+{% spaceless %}
+	<!DOCTYPE html>
+	<html lang="es">
+	<head>
+		{% include '@App/Backoffice/Partes/Head/Metas.html' %}
+		<link href="{{ asset('assets/images/cropped-Group-270x270.png') }}" rel="icon" sizes="16x16" type="image/png">
+		<title>Grupo Negociador{% if titulo is defined %} - {{ titulo }}{% endif %}</title>
+		<link href="{{ asset('assets/css/pages/login-register-lock.css') }}" rel="stylesheet">
+		{{ block('styles') }}
+		{% block customstyles %}
+			{{ parent() }}
+			<style>
+				.login-register {
+					background-image: url({{ asset('assets/images/background/login-register.jpg') }});
+				}
+			</style>
+		{% endblock %}
+		{% if app.environment is same as('dev') %}
+			{{ block('devscripts') }}
+			{% block customscripts %}
+				{{ parent() }}
+				<script src="{{ asset('assets/js/custom/recuperar-usuario.min.js') }}"></script>
+			{% endblock %}
+		{% endif %}
+	</head>
+	<body class="skin-default card-no-border">
+	{% include '@App/Backoffice/Partes/Body/Preloader.html' %}
+	<section id="wrapper">
+		<div class="login-register">
+			<div class="login-box card">
+				<div class="card-body">
+					{% form_theme recuperar_usuario '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+					{{ form_start(recuperar_usuario,{attr:{class:'form-material'}}) }}
+					<h3 class="text-center mb-3">{{ titulo }}</h3>
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(recuperar_usuario.plainPassword.first) }}
+							{{ form_widget(recuperar_usuario.plainPassword.first) }}
+							{{ form_errors(recuperar_usuario.plainPassword.first) }}
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(recuperar_usuario.plainPassword.second) }}
+							{{ form_widget(recuperar_usuario.plainPassword.second) }}
+							{{ form_errors(recuperar_usuario.plainPassword.second) }}
+						</div>
+					</div>
+					<div class="d-flex justify-content-end">
+						{{ form_label(recuperar_usuario.submit) }}
+						{{ form_widget(recuperar_usuario.submit,{attr:{class:'btn-success'}}) }}
+					</div>
+					{{ form_end(recuperar_usuario) }}
+				</div>
+			</div>
+		</div>
+	</section>
+	{% if app.environment is not same as('dev') %}
+		{{ block('cloudscripts') }}
+		{{ block('customscripts') }}
+	{% endif %}
+	</body>
+	</html>
+{% endspaceless %}

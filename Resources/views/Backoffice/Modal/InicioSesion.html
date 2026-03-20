@@ -1,0 +1,44 @@
+<div aria-modal="true" class="modal fade" id="modal-inicio-sesion" role="dialog" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-body p-4">
+				<div class="alert alert-danger d-none" id="respuesta" role="alert"></div>
+				<form class="form-material" id="loginform" method="post">
+					<h3 class="text-center mb-3">Acceder</h3>
+					<div class="form-group">
+						<input autocomplete="username" class="form-control" id="username" name="_username" placeholder="E-Mail" required type="text">
+					</div>
+					<div class="form-group">
+						<input autocomplete="current-password" class="form-control" id="password" name="_password" placeholder="Contraseña" required type="password">
+					</div>
+					<div class="form-group clearfix px-sm-2">
+						<div class="custom-control custom-checkbox float-left">
+							<input class="custom-control-input" disabled id="remember_me" name="_remember_me" type="checkbox">
+							<label class="custom-control-label" for="remember_me">Recordarme</label>
+						</div>
+						<div class="float-right">
+							<a class="text-muted" href="javascript:void(0)" id="to-recover">
+								<i class="fas fa-lock m-r-5"></i>
+								<span>¿Olvidó su contraseña?</span>
+							</a>
+						</div>
+					</div>
+					<button class="btn btn-block btn-lg btn-success btn-rounded text-center waves-effect">Iniciar sesión</button>
+				</form>
+				<form action="{{ path('recuperar_cuenta') }}" id="recoverform" method="post">
+					<div class="form-group">
+						<h3>Recuperar contraseña</h3>
+						<p class="text-muted">Introduzca su correo electrónico</p>
+					</div>
+					<div class="form-group">
+						<input class="form-control" name="email" placeholder="E-Mail" required type="email">
+					</div>
+					<div class="float-right mb-4">
+						<a class="text-muted" href="javascript:void(0)" id="to-login">Volver</a>
+					</div>
+					<button class="btn btn-primary btn-lg btn-block text-uppercase waves-effect waves-light text-center">Recuperar</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

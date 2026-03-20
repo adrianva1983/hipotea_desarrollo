@@ -1,0 +1,32 @@
+AppBundle\Entity\ConceptoSeguimientoExpediente:
+  type: entity
+  table: concepto_seguimiento_expediente
+  id:
+    idConceptoSeguimientoExpediente:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_concepto_seguimiento_expediente
+      generator:
+        strategy: IDENTITY
+  fields:
+    fase:
+      type: string
+      nullable: false
+      length: 45
+      options:
+        fixed: false
+    concepto:
+      type: string
+      nullable: false
+      length: 100
+      options:
+        fixed: false
+    orden:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+  lifecycleCallbacks: {  }

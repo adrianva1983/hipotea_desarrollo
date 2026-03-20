@@ -1,0 +1,53 @@
+AppBundle\Entity\HitoExpediente:
+  type: entity
+  table: hito_expediente
+  indexes:
+    fk_hito_expediente_hito1_idx:
+      columns:
+        - id_hito
+    fk_hito_expediente_expediente1_idx:
+      columns:
+        - id_expediente
+  id:
+    idHitoExpediente:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_hito_expediente
+      generator:
+        strategy: IDENTITY
+  fields:
+    estado:
+      type: boolean
+      nullable: false
+      options:
+        comment: "0: Pendiente\n1: Completado"
+        default: '0'
+    fechaModificacion:
+      type: datetime
+      nullable: true
+      column: fecha_modificacion
+  manyToOne:
+    idExpediente:
+      targetEntity: Expediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_expediente:
+          referencedColumnName: id_expediente
+      orphanRemoval: false
+    idHito:
+      targetEntity: Hito
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_hito:
+          referencedColumnName: id_hito
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

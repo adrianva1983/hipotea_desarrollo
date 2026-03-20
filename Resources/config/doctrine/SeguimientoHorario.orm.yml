@@ -1,0 +1,94 @@
+AppBundle\Entity\SeguimientoHorario:
+  type: entity
+  table: seguimiento_horario
+  indexes:
+    fk_seguimiento_horario_usuario1_idx:
+      columns:
+        - id_usuario
+    fk_seguimiento_horario_usuario2_idx:
+      columns:
+        - id_cliente
+  id:
+    idSeguimientoHorario:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_seguimiento_horario
+      generator:
+        strategy: IDENTITY
+  fields:
+    datosCliente:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+        comment: 'Información del cliente si no está en el sistema, Nombre, tlf'
+      column: datos_cliente
+    fechaInicio:
+      type: datetime
+      nullable: false
+      options:
+        comment: 'Fecha de inicio del evento'
+      column: fecha_inicio
+    fechaFin:
+      type: datetime
+      nullable: false
+      options:
+        comment: 'Fecha de finalización del evento'
+      column: fecha_fin
+    tipo:
+      type: string
+      nullable: false
+      length: 45
+      options:
+        fixed: false
+        comment: 'Tipo de evento'
+        default: 'Reunión cliente en oficina'
+    observaciones:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+    estado:
+      type: smallint
+      nullable: true
+      options:
+        unsigned: false
+        comment: '0: Cancelado1: Planificado2: Realizado'
+        default: '1'
+  manyToOne:
+    idUsuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_usuario:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idCliente:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_cliente:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idInmobiliaria:
+      targetEntity: Inmobiliaria
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_inmobiliaria:
+          referencedColumnName: id_inmobiliaria
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

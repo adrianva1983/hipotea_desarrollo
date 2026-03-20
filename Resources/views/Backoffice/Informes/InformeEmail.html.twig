@@ -1,0 +1,118 @@
+{# {% use '@App/Backoffice/Partes/Head/Styles.html.twig' %} #}
+{# {% use '@App/Backoffice/Partes/Head/Scripts.html.twig' %} #}
+
+	<!DOCTYPE html>
+	<html lang="es">
+	<head>
+        <base href="{{ pathToWeb }}">
+        {# <base href="/"> #}
+		{% include '@App/Backoffice/Partes/Head/Metas.html' %}
+        {# {% include '@App/Backoffice/bootstrap_4_layout.html.twig' %}} #}
+        <link href="assets/css/style.min.css" rel="stylesheet">
+        <link href="assets/css/custom/informe-email.min.css" rel="stylesheet">
+		{# <link href="{{ asset('assets/images/custom/fav.png') }}" rel="icon" sizes="16x16" type="image/png"> #}
+		<title>Grupo Negociador{% if titulo is defined %} - {{ titulo }}{% endif %}</title>
+		{# <link href="http://localhost:8000/assets/css/pages/login-register-lock.css" rel="stylesheet"> #}
+		{# {{ block('styles') }} #}
+		{# {% block customstyles %} #}
+			{# {{ parent() }} #}
+			<style>
+				/* .login-register {
+					background-image: '/assets/images/background/login-register.jpg';
+				} */
+			</style>
+		{# {% endblock %} #}
+		{# {% if app.environment is same as('dev') %} #}
+			{# {{ block('devscripts') }} #}
+			{# {% block customscripts %} #}
+				{# {{ parent() }} #}
+				{#<script src="{{ asset('assets/js/custom/recuperar-usuario.min.js') }}"></script>#}
+			{# {% endblock %} #}
+		{# {% endif %} #}
+	</head>
+	<body class="page">
+	{# {% include '@App/Backoffice/Partes/Body/Preloader.html' %} #}
+    {# <div class="row">
+        <div class="col-12">
+            <img src="assets/images/custom/logo_grupo_negociador.png">
+        </div>
+    </div>  #}
+    <div class="row cabecera">
+        <div class="col-6">
+            {# <img src="assets/images/custom/factura_cabecera.png" width="200px"> #}
+            <img src="assets/images/custom/hipotea.png" class="imagen-cabecera">
+        </div>
+        <div class="col-6">
+        <h2>Informe de Expediente</h2>
+        </div>
+    </div>
+	<section id="wrapper">
+		{# <div class="login-register"> #}
+        {% set grupoAnterior = "" %}
+        {% for hito in salida %}
+            <h3 class="text-center mb-3 banda-verde-hito">{{ hito['nombre'] }}</h3>
+            {% if hito['grupo']!="" and grupoAnterior != hito['grupo'] %}
+                <h4 class="text-center mb-3 banda-verde-grupo">{{ hito['grupo'] }}</h4>
+            {% endif %}
+            <div class="">
+                <div class="campos">
+                {% set numeroCampo = 0 %}
+                {% for campoHito in hito %}
+                    {% if campoHito is iterable %}
+                        {% if numeroCampo == 0 %}
+                            <div class="row">
+                        {% endif %}
+                                <div class="col-3">
+                                    <strong>{{ campoHito['nombre'] }}:</strong>
+                                </div>
+                                <div class="col-3">
+                                    {{ campoHito['valor'] }}
+                                </div>
+                        {% if numeroCampo == 1%}
+                            </div>
+                        {% endif %}
+                        
+                    {% endif %}
+                    {% if numeroCampo == 0 %}
+                        {% set numeroCampo = 1 %}
+                    {% else %}
+                        {% set numeroCampo = 0 %}
+                    {% endif %}
+                {% endfor %}
+                {% if numeroCampo == 1 %}
+                    </div>
+                {% endif %}
+                    {# {% form_theme recuperar_usuario '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+                    {{ form_start(recuperar_usuario,{attr:{class:'form-material'}}) }}
+                    <h3 class="text-center mb-3">{{ titulo }}</h3>
+                    <div class="form-row">
+                        <div class="form-group col">
+                            {{ form_label(recuperar_usuario.plainPassword.first) }}
+                            {{ form_widget(recuperar_usuario.plainPassword.first) }}
+                            {{ form_errors(recuperar_usuario.plainPassword.first) }}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col">
+                            {{ form_label(recuperar_usuario.plainPassword.second) }}
+                            {{ form_widget(recuperar_usuario.plainPassword.second) }}
+                            {{ form_errors(recuperar_usuario.plainPassword.second) }}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        {{ form_label(recuperar_usuario.submit) }}
+                        {{ form_widget(recuperar_usuario.submit,{attr:{class:'btn-success'}}) }}
+                    </div>
+                    {{ form_end(recuperar_usuario) }} #}
+                </div>
+            </div>
+            {% set grupoAnterior = hito['grupo'] %}
+        {% endfor %}
+		{# </div> #}
+	</section>
+	{# {% if app.environment is not same as('dev') %} #}
+		{# {{ block('cloudscripts') }} #}
+		{# {{ block('customscripts') }} #}
+	{# {% endif %} #}
+	</body>
+	</html>

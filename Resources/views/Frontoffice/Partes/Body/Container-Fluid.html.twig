@@ -1,0 +1,8 @@
+{% use '@App/Frontoffice/Partes/Body/Page-Content.html.twig' %}
+{% block container_fluid %}
+<div class="container-fluid">
+	{# {% include '@App/Frontoffice/Partes/Body/Bread-Crumb-Right-Sidebar-Toggle.html.twig' %} #}
+	{{ block('page_content') }}
+	{#{% include '@App/Frontoffice/Partes/Body/Right-Sidebar.html.twig' %}#}
+</div>
+{% endblock %}

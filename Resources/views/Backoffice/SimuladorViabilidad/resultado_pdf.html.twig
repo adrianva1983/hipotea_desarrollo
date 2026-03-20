@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado Simulador Viabilidad</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #007bff;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 12px;
+        }
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 10px 15px;
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 0 15px;
+        }
+        .row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .col {
+            flex: 1;
+            padding-right: 20px;
+        }
+        .label {
+            font-weight: bold;
+            color: #333;
+            font-size: 12px;
+        }
+        .value {
+            color: #666;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+        .semafor {
+            text-align: center;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .semafor.rojo {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .semafor.amarillo {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeeba;
+        }
+        .semafor.verde {
+            background-color: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .motivos, .sugerencias {
+            margin: 15px 0;
+            font-size: 11px;
+        }
+        .motivos h3, .sugerencias h3 {
+            color: #333;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .motivo-item, .sugerencia-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            border-left: 3px solid #ccc;
+            padding-left: 10px;
+            font-size: 11px;
+        }
+        .motivo-item.critico {
+            border-left-color: #dc3545;
+            background-color: #ffebee;
+        }
+        .motivo-item.advertencia {
+            border-left-color: #ffc107;
+            background-color: #fffbea;
+        }
+        .motivo-item.positivo {
+            border-left-color: #28a745;
+            background-color: #f0f8f5;
+        }
+        .sugerencia-item.alta {
+            border-left-color: #dc3545;
+        }
+        .sugerencia-item.media {
+            border-left-color: #ffc107;
+        }
+        .sugerencia-item.baja {
+            border-left-color: #28a745;
+        }
+        table {
+            width: 100%;
+            font-size: 11px;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+        table td {
+            border-bottom: 1px solid #dee2e6;
+            padding: 8px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+        }
+        .currency {
+            font-family: monospace;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado -->
+    <div class="header">
+        <h1>SIMULADOR DE VIABILIDAD HIPOTECARIA</h1>
+        <p>Evaluación de solicitud de hipoteca</p>
+        <p>Fecha: {{ fecha_generacion|date('d/m/Y H:i') }}</p>
+    </div>
+
+    {% if simulador.cliente %}
+    <!-- Sección: Datos del Cliente -->
+    <div class="section">
+        <h2>DATOS DEL CLIENTE</h2>
+        <div class="content">
+            <div class="row">
+                <div class="col">
+                    <div class="label">Nombre Completo</div>
+                    <div class="value">{{ simulador.cliente.nombre }}</div>
+                </div>
+                <div class="col">
+                    <div class="label">DNI</div>
+                    <div class="value">{{ simulador.cliente.dni }}</div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="label">Teléfono</div>
+                    <div class="value">{{ simulador.cliente.telefono ?? 'N/A' }}</div>
+                </div>
+                <div class="col">
+                    <div class="label">Email</div>
+                    <div class="value">{{ simulador.cliente.email ?? 'N/A' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if simulador.precio %}
+    <!-- Sección: Análisis de Precio -->
+    <div class="section">
+        <h2>ANÁLISIS DE PRECIO</h2>
+        <div class="content">
+            <table>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Importe</th>
+                </tr>
+                <tr>
+                    <td>Precio Máximo Recomendado</td>
+                    <td class="currency">{{ simulador.precio.precioMaximoRecomendado|number_format(2, ',', '.') }} ?</td>
+                </tr>
+                <tr>
+                    <td>Aportación Necesaria</td>
+                    <td class="currency">{{ simulador.precio.aportacionNecesaria|number_format(2, ',', '.') }} ?</td>
+                </tr>
+                <tr>
+                    <td>Importe del Préstamo</td>
+                    <td class="currency">{{ simulador.precio.importePrestamo|number_format(2, ',', '.') }} ?</td>
+                </tr>
+                <tr>
+                    <td>Cuota Hipotecaria Estimada (mensual)</td>
+                    <td class="currency">{{ simulador.precio.cuotaHipotecariaEstimada|number_format(2, ',', '.') }} ?</td>
+                </tr>
+                <tr>
+                    <td>Gastos Totales Aproximados</td>
+                    <td class="currency">{{ simulador.precio.gastosTotalesAproximados|number_format(2, ',', '.') }} ?</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if simulador.cuota %}
+    <!-- Sección: Análisis de Cuota -->
+    <div class="section">
+        <h2>ANÁLISIS DE CUOTA</h2>
+        <div class="content">
+            <div class="row">
+                <div class="col">
+                    <div class="label">Plazo de Amortización</div>
+                    <div class="value">{{ simulador.cuota.plazoAmortizacion }} años</div>
+                </div>
+                <div class="col">
+                    <div class="label">Tipo de Interés</div>
+                    <div class="value">{{ simulador.cuota.tipoInteres|upper }}</div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="label">Porcentaje de Financiación</div>
+                    <div class="value">{{ simulador.cuota.porcentajeFinanciacion|number_format(2, ',', '.') }} %</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if simulador.riesgo %}
+    <!-- Sección: Análisis de Riesgo -->
+    <div class="section">
+        <h2>ANÁLISIS DE RIESGO</h2>
+        <div class="content">
+            <div class="row">
+                <div class="col">
+                    <div class="label">Préstamos Impagados</div>
+                    <div class="value">{% if simulador.riesgo.tienePrestamosImpagados %}SÍ (Riesgo){% else %}NO{% endif %}</div>
+                </div>
+                <div class="col">
+                    <div class="label">Situación Laboral</div>
+                    <div class="value">{{ simulador.riesgo.situacionLaboral|upper }}</div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="label">Antigüedad Laboral</div>
+                    <div class="value">{{ simulador.riesgo.antiguedadLaboral|upper }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if simulador.resultado %}
+    <!-- Sección: RESULTADO -->
+    <div class="section">
+        <h2>RESULTADO FINAL</h2>
+        <div class="content">
+            {% set colorSemaforo = simulador.resultado.semaforo == 'rojo' ? 'rojo' : (simulador.resultado.semaforo == 'verde' ? 'verde' : 'amarillo') %}
+            <div class="semafor {{ colorSemaforo }}">
+                <div style="font-size: 48px; margin-bottom: 10px;">?</div>
+                Semáforo: {{ simulador.resultado.semaforo|upper }}
+                <div style="font-size: 12px; margin-top: 10px;">{{ simulador.resultado.mensaje }}</div>
+            </div>
+
+            {% if simulador.resultado.motivos|length > 0 %}
+            <div class="motivos">
+                <h3>Motivos de la evaluación:</h3>
+                {% for motivo in simulador.resultado.motivos %}
+                <div class="motivo-item {{ motivo.tipo }}">
+                    <strong>{{ motivo.codigo }}:</strong> {{ motivo.mensaje }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if simulador.resultado.sugerencias|length > 0 %}
+            <div class="sugerencias">
+                <h3>Sugerencias:</h3>
+                {% for sugerencia in simulador.resultado.sugerencias %}
+                <div class="sugerencia-item {{ sugerencia.prioridad }}">
+                    {{ sugerencia.mensaje }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pie de página -->
+    <div class="footer">
+        <p>Este documento es un resumen generado automáticamente del Simulador de Viabilidad Hipotecaria.</p>
+        <p>Para más información, contacte con nuestro equipo de asesoramiento.</p>
+        <p>&copy; Hipotea - Todos los derechos reservados</p>
+    </div>
+</body>
+</html>

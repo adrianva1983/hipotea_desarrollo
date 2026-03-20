@@ -1,0 +1,490 @@
+{% if not is_granted('ROLE_CLIENTE') %}
+	{% set crearnuevo = path('agregar_modificar_expediente') %}
+	{% set crearnuevo_texto = 'Crear nuevo' %}
+{% endif %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/lista-expedientes.min.css') }}" rel="stylesheet">
+	<style>
+		/* Establece la anchura de la columna 6 */
+		#tabla-entidades th:nth-child(10), #tabla-entidades th:nth-child(9), #tabla-entidades th:nth-child(7), #tabla-entidades th:nth-child(6), #tabla-entidades th:nth-child(5), #tabla-entidades th:nth-child(4) {
+			width: 80px !important;
+		}
+  </style>
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/RegExp.escape.min.js') }}"></script>
+	{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}
+		<script src="{{ asset('assets/js/custom/lista-expedientes-datatable-cl-col.min.js') }}"></script>
+	{% else %}
+		<script src="{{ asset('assets/js/custom/lista-expedientes-datatable.min.js') }}"></script>
+	{% endif %}
+	<script>
+		function rutaDuplicarExpediente() {
+			return '{{ path('duplicar_expediente',{'id':' '}) }}';
+		}
+
+		function rutaNotificacionExpediente() {
+			return '{{ path('notificacion_expediente',{'id':' '}) }}';
+		}
+	</script>
+	<script src="{{ asset('assets/js/custom/lista-expedientes.min.js') }}"></script>
+	<script>
+		setTimeout(function() {
+			location.reload();
+		}, 1200000); // 60000 milisegundos = 1 minuto 20 minutos puestos
+	</script>
+	{#{% if is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}#}
+	{% if is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+		<script>
+			$(function () {
+				'use strict';
+				{% if is_granted('ROLE_COLABORADOR') %}
+				$('#colaboradores').val('{{ app.user.idUsuario }}').change();
+				{% elseif is_granted('ROLE_COMERCIAL') and not sinAsignar %}
+				$('#comerciales').val('{{ app.user.idUsuario }}').change();
+				{% elseif is_granted('ROLE_TECNICO') and not sinAsignar %}
+				$('#tecnicos').val('{{ app.user.idUsuario }}').change();
+				{% endif %}
+			});
+		</script>
+	{% endif %}
+	<script src="{{ asset('assets/js/custom/notificacion-expediente.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{% if expedientes is defined and expedientes is iterable and expedientes|length>0 %}
+				<div class="form-row" data-buscar>
+					{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+						<div class="form-group col-md">
+							<label for="clientes">Buscar cliente</label>
+							<select class="form-control select2" id="clientes" multiple>
+								{% for cliente in clientes %}
+									{% set usuario = cliente %}
+									{% if usuario.apellidos|length is same as(0) %}
+										{% if usuario.username|length is same as(0) %}
+											{% set nombreCompleto = '' %}
+										{% else %}
+											{% set nombreCompleto = usuario.username %}
+										{% endif %}
+									{% else %}
+										{% if usuario.username|length is same as(0) %}
+											{% set nombreCompleto = usuario.apellidos %}
+										{% else %}
+											{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+										{% endif %}
+									{% endif %}
+									{% if nombreCompleto|length is not same as(0) %}
+										{% set nombreCompleto = nombreCompleto ~ ' (' ~ usuario.idInmobiliaria ~ ')' %}
+									{% endif %}
+									<option value="{{ cliente.idUsuario }}">{{ nombreCompleto }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group col-md">
+							<label for="colaboradores">Buscar colaborador</label>
+							<select class="form-control select2" id="colaboradores" multiple>
+								{% for colaborador in colaboradores %}
+									{% set usuario = colaborador %}
+									{% if usuario.apellidos|length is same as(0) %}
+										{% if usuario.username|length is same as(0) %}
+											{% set nombreCompleto = '' %}
+										{% else %}
+											{% set nombreCompleto = usuario.username %}
+										{% endif %}
+									{% else %}
+										{% if usuario.username|length is same as(0) %}
+											{% set nombreCompleto = usuario.apellidos %}
+										{% else %}
+											{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+										{% endif %}
+									{% endif %}
+									<option value="{{ colaborador.idUsuario }}">{{ nombreCompleto }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					{% endif %}
+					{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+						<div class="form-group col-md">
+							<label for="comerciales">Buscar comercial</label>
+							<select class="form-control select2" id="comerciales" multiple>
+								{% for comercial in comerciales %}
+									{% set usuario = comercial %}
+									{% if usuario.apellidos|length is same as(0) %}
+										{% if usuario.username|length is same as(0) %}
+											{% set nombreCompleto = '' %}
+										{% else %}
+											{% set nombreCompleto = usuario.username %}
+										{% endif %}
+									{% else %}
+										{% if usuario.username|length is same as(0) %}
+											{% set nombreCompleto = usuario.apellidos %}
+										{% else %}
+											{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+										{% endif %}
+									{% endif %}
+									<option value="{{ comercial.idUsuario }}">{{ nombreCompleto }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group col-md">
+							<label for="tecnicos">Buscar tecnico</label>
+							<select class="form-control select2" id="tecnicos" multiple>
+								{% for tecnico in tecnicos %}
+									{% set usuario = tecnico %}
+									{% if usuario.apellidos|length is same as(0) %}
+										{% if usuario.username|length is same as(0) %}
+											{% set nombreCompleto = '' %}
+										{% else %}
+											{% set nombreCompleto = usuario.username %}
+										{% endif %}
+									{% else %}
+										{% if usuario.username|length is same as(0) %}
+											{% set nombreCompleto = usuario.apellidos %}
+										{% else %}
+											{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+										{% endif %}
+									{% endif %}
+									<option value="{{ tecnico.idUsuario }}">{{ nombreCompleto }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					{% endif %}
+					{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+						{# <div class="form-group col-md">
+							<label for="zona">Buscar zona</label>
+							<select class="form-control select2" id="zona" multiple>
+								<option value="0">Ciudad Jardín</option>
+								<option value="1">Arroyo del Moro</option>
+								<option value="2">Santa Rosa</option>
+								<option value="3">Brillante</option>
+								<option value="4">Centro</option>
+								<option value="5">Levante</option>
+								<option value="6">Sector Sur</option>
+								<option value="7">Fátima</option>
+							</select>
+						</div> #}
+						<div class="form-group col-md text-center">
+							<div class="d-none">
+								<label for="estado">Buscar estado</label>
+								<select class="form-control" id="estado" multiple>
+									<option value="0">Cancelado</option>
+									<option selected value="1">Activo</option>
+									<option value="2">Firmado</option>
+								</select>
+							</div>
+							<div class="btn-group btn-group-toggle align-items-center h-100" data-id="estado" data-toggle="buttons">
+								<label class="btn btn-success">
+									<input name="estado" type="radio" value="0">
+									<span>Cancelados</span>
+								</label>
+								<label class="btn btn-success active">
+									<input checked name="estado" type="radio" value="1">
+									<span>Activos</span>
+								</label>
+								<label class="btn btn-success">
+									<input name="estado" type="radio" value="2">
+									<span>Firmados</span>
+								</label>
+							</div>
+						</div>
+					{% endif %}
+				</div>
+				<form class="text-truncate" id="formulario-borrar-entidades" method="post">
+					<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+						<thead>
+						<tr>
+							{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+								<th scope="col">
+									<div class="custom-control custom-checkbox">
+										<input class="custom-control-input" id="seleccionar-todas-entidades" type="checkbox">
+										<label class="custom-control-label" for="seleccionar-todas-entidades"></label>
+									</div>
+								</th>
+							{% endif %}
+							<th scope="col">Fecha</th>
+							{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+								<th scope="col">Nº Exp.</th>
+							{% endif %}
+							{#<th scope="col">Nº</th>#}
+							{% if not is_granted('ROLE_CLIENTE') %}
+								<th data-nombre-columna="clientes" scope="col">Cliente</th>
+							{% endif %}
+							{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+								{# <th data-nombre-columna="colaboradores" scope="col">Colaborador</th> #}
+								<th data-nombre-columna="emails" scope="col">Email</th>
+								<th data-nombre-columna="telefonos" scope="col">Teléfono</th>
+							{% endif %}
+							{#<th scope="col">Inmobiliaria</th>#}
+							{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+								<th data-nombre-columna="comerciales" scope="col" class="d-none">Comercial</th>
+								<th data-nombre-columna="tecnicos" scope="col" class="d-none">Técnico</th>
+							{% endif %}
+							<th data-nombre-columna="vivienda" scope="col">Inmueble</th>
+							{# {% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+								<th data-nombre-columna="zona" scope="col">Zona</th>
+							{% endif %} #}
+							<th scope="col">Acciones</th>
+							<th scope="col">Fase actual</th>
+							{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+								<th data-nombre-columna="estado" scope="col">Estado</th>
+							{% endif %}
+						</tr>
+						</thead>
+						<tbody>
+						{% for expediente in expedientes %}
+							<tr>
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+									<td>
+										<div class="custom-control custom-checkbox">
+											<input class="custom-control-input" id="entidad[{{ expediente.idExpediente }}]" name="expediente[]" type="checkbox" value="{{ expediente.idExpediente }}">
+											<label class="custom-control-label" for="entidad[{{ expediente.idExpediente }}]"></label>
+										</div>
+									</td>
+								{% endif %}
+								<td data-order="{{ expediente.fechaCreacion|date('U') }}">{{ expediente.fechaCreacion|date('d/m/Y') }}</td>
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+									<td>{{ expediente.idExpediente }}</td>
+								{% endif %}
+								{#<td>{{ expediente.idExpediente }}</td>#}
+								{% if not is_granted('ROLE_CLIENTE') %}
+									{% if expediente.idCliente is null %}
+										<td></td>
+									{% else %}
+										{% set usuario = expediente.idCliente %}
+										{% if usuario.apellidos|length is same as(0) %}
+											{% if usuario.username|length is same as(0) %}
+												{% set nombreCompleto = '' %}
+											{% else %}
+												{% set nombreCompleto = usuario.username %}
+											{% endif %}
+										{% else %}
+											{% if usuario.username|length is same as(0) %}
+												{% set nombreCompleto = usuario.apellidos %}
+											{% else %}
+												{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+											{% endif %}
+										{% endif %}
+										{% if nombreCompleto|length is not same as(0) %}
+											{% set nombreCompleto = nombreCompleto ~ ' (' ~ usuario.idInmobiliaria ~ ')' %}
+										{% endif %}
+										<td>{{ nombreCompleto }}</td>
+									{% endif %}
+								{% endif %}
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+									{# {% if expediente.idColaborador is null %}
+										<td></td>
+									{% else %}
+										{% set usuario = expediente.idColaborador %}
+										{% if usuario.apellidos|length is same as(0) %}
+											{% if usuario.username|length is same as(0) %}
+												{% set nombreCompleto = '' %}
+											{% else %}
+												{% set nombreCompleto = usuario.username %}
+											{% endif %}
+										{% else %}
+											{% if usuario.username|length is same as(0) %}
+												{% set nombreCompleto = usuario.apellidos %}
+											{% else %}
+												{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+											{% endif %}
+										{% endif %}
+										<td>{{ nombreCompleto }}</td>
+									{% endif %} #}
+									<td>{{ camposPersonalizados[expediente.idExpediente]['email']}}</td>
+									<td>{{ camposPersonalizados[expediente.idExpediente]['telefono']}}</td>
+								{% endif %}
+								{#{% if expediente.idColaborador is not null %}
+									<td>{{ expediente.idColaborador.idInmobiliaria }}</td>
+								{% else %}
+									<td></td>
+								{% endif %}#}
+								{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') %}
+									{% if expediente.idComercial is null %}
+										<td class="d-none"></td>
+									{% else %}
+										{% set usuario = expediente.idComercial %}
+										{% if usuario.apellidos|length is same as(0) %}
+											{% if usuario.username|length is same as(0) %}
+												{% set nombreCompleto = '' %}
+											{% else %}
+												{% set nombreCompleto = usuario.username %}
+											{% endif %}
+										{% else %}
+											{% if usuario.username|length is same as(0) %}
+												{% set nombreCompleto = usuario.apellidos %}
+											{% else %}
+												{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+											{% endif %}
+										{% endif %}
+										<td class="d-none">{{ nombreCompleto }}</td>
+									{% endif %}
+									{% if expediente.idTecnico is null %}
+										<td class="d-none"></td>
+									{% else %}
+										{% set usuario = expediente.idTecnico %}
+										{% if usuario.apellidos|length is same as(0) %}
+											{% if usuario.username|length is same as(0) %}
+												{% set nombreCompleto = '' %}
+											{% else %}
+												{% set nombreCompleto = usuario.username %}
+											{% endif %}
+										{% else %}
+											{% if usuario.username|length is same as(0) %}
+												{% set nombreCompleto = usuario.apellidos %}
+											{% else %}
+												{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+											{% endif %}
+										{% endif %}
+										<td class="d-none">{{ nombreCompleto }}</td>
+									{% endif %}
+								{% endif %}
+								<td>{{ expediente.vivienda }}</td>
+								{# {% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+									{% if expediente.idColaborador is null %}
+										<td></td>
+									{% else %}
+										{% if expediente.idColaborador.zona is same as(0) %}
+											<td>Ciudad Jardín</td>
+										{% elseif expediente.idColaborador.zona is same as(1) %}
+											<td>Arroyo del Moro</td>
+										{% elseif expediente.idColaborador.zona is same as(2) %}
+											<td>Santa Rosa</td>
+										{% elseif expediente.idColaborador.zona is same as(3) %}
+											<td>Brillante</td>
+										{% elseif expediente.idColaborador.zona is same as(4) %}
+											<td>Centro</td>
+										{% elseif expediente.idColaborador.zona is same as(5) %}
+											<td>Levante</td>
+										{% elseif expediente.idColaborador.zona is same as(6) %}
+											<td>Sector Sur</td>
+										{% elseif expediente.idColaborador.zona is same as(7) %}
+											<td>Fátima</td>
+										{% else %}
+											<td></td>
+										{% endif %}
+									{% endif %}
+								{% endif %} #}
+								<td>
+									{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}
+										{% if expediente.estado is same as(1) %}
+											<a class="mr-2" href="{{ path('seguimiento_expediente',{'id':expediente.idExpediente}) }}">
+												<i class="fas fa-eye"></i>
+												<span> Seguimiento</span>
+											</a>
+											<a class="mr-2" href="{{ path('modificar_expediente',{'id':expediente.idExpediente}) }}">
+												<i class="far fa-edit"></i>
+												<span> Editar</span>
+											</a>
+											<a class="mr-2" href="{{ path('agregar_modificar_documentos',{'id':expediente.idExpediente}) }}">
+												<i class="far fa-file-alt"></i>
+												<span> Documentos</span>
+											</a>
+											<a class="mr-2" href="{{ path('lista_documentos_expediente',{'id':expediente.idExpediente,'paraFirmar':'ParaFirmar'}) }}">
+												<i class="fas fa-edit"></i>
+												<span> Firmas</span>
+											</a>
+										{% endif %}
+									{% else %}
+										<a class="mr-2" target ="_blank" href="{{ path('agregar_modificar_expediente',{'id':expediente.idExpediente}) }}">
+											<i class="far fa-edit"></i>
+											<span> Editar</span>
+										</a>
+										<a class="mr-2" href="{{ path('agregar_modificar_documentos',{'id':expediente.idExpediente}) }}">
+											<i class="far fa-file-alt"></i>
+											<span> Documentos</span>
+										</a>
+										<a class="mr-2" data-notificacion-expediente="{{ expediente.idExpediente }}" {% if expediente.idCliente is null %}data-sin-cliente{% endif %} href="javascript:void(0)">
+											<i class="fab fa-telegram-plane"></i>
+											<span> Notificar</span>
+										</a>
+										<a class="mr-2" href="{{ path('expediente_email',{'id':expediente.idExpediente}) }}">
+											<i class="far fa-envelope"></i>
+											<span> E-Mail</span>
+										</a>
+										<a class="mr-2" href="{{ path('informe_expediente',{'id':expediente.idExpediente}) }}" target="_blank">
+											<i class="fas fa-info"></i>
+											<span> Informe</span>
+										</a>
+										<a class="mr-2" href="{{ path('informe_pendiente_expediente',{'id':expediente.idExpediente}) }}" target="_blank">
+											<i class="fas fa-tasks"></i>
+											<span> Pendiente</span>
+										</a>
+										<a class="mr-2" href="{{ path('obtener_registro_expediente',{'id':expediente.idExpediente}) }}">
+											<i class="fas fa-book"></i>
+											<span> Registro</span>
+										</a>
+										<a data-enlace-duplicar-expediente="{{ expediente.idExpediente }}" href="{{ path('duplicar_expediente',{'id':expediente.idExpediente}) }}">
+											<i class="far fa-copy"></i>
+											<span> Duplicar</span>
+										</a>
+									{% endif %}
+								</td>
+								<td>
+									<span class="expediente-color" style="background:{{ expediente.idFaseActual.color }}"></span>
+									<span> {{ expediente.idFaseActual }}</span>
+								</td>
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+									{% if expediente.estado is same as(0) %}
+										<td>Cancelado</td>
+									{% elseif expediente.estado is same as(1) %}
+										<td>Activo</td>
+									{% elseif expediente.estado is same as(2) %}
+										<td>Firmado</td>
+									{% else %}
+										<td></td>
+									{% endif %}
+								{% endif %}
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+					{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') %}
+						<div>
+							<button class="btn btn-success waves-effect" id="boton-borrar-entidades">Borrar marcados</button>
+						</div>
+					{% endif %}
+				</form>
+			{% else %}
+				<div class="alert alert-info" role="alert">
+					<span>No hay expedientes pendientes.</span>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+	{% include '@App/Backoffice/Modal/ConfirmarDuplicar.html' %}
+	{% include '@App/Backoffice/Modal/NotificacionExpediente.html.twig' %}
+{% endblock %}

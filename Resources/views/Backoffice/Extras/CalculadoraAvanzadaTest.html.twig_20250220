@@ -1,0 +1,1148 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme calculadora_avanzada '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/countDecimalPlaces.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/round.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/calculadora-avanzada-test.js') }}"></script>
+{% endblock %}
+{% block customstyles %}
+	<link href="{{ asset('assets/css/custom/custom.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/calculadora-avanzada.css') }}" rel="stylesheet">
+{% endblock %}
+{% block body %}
+	<div class="row">
+		<div class="col-lg mb-4 mb-lg-0">
+			<div class="card h-100 mb-0 caja-externa">
+				<div class="card-body p-40 caja-calculadora">
+					<h4 class="card-title mb-1" id="titulo-principal">
+						{% if tipo_calculo is defined and tipo_calculo =='importe_maximo'%}Calcula el precio máximo de vivienda que puedes comprar
+							{% else %}Calcula la cuota de tu hipoteca
+						{% endif %}
+					</h4>
+					<div class="text-muted mb-4">Rellena la siguiente información</div>
+					{{ form_start(calculadora_avanzada) }}
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.tipologiaOperacion) }}
+							{{ form_widget(calculadora_avanzada.tipologiaOperacion) }}
+							{{ form_errors(calculadora_avanzada.tipologiaOperacion) }}
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.tipo) }}
+							{{ form_widget(calculadora_avanzada.tipo) }}
+							{{ form_errors(calculadora_avanzada.tipo) }}
+						</div>
+					</div>
+					<div class="form-row cuota2 importe-maximo">
+						<div class="form-group col-6">
+							{{ form_label(calculadora_avanzada.numTitulares) }}
+							{{ form_widget(calculadora_avanzada.numTitulares) }}
+							{{ form_errors(calculadora_avanzada.numTitulares) }}
+						</div>
+					</div>
+					<div class="form-row cuota2 importe-maximo">
+						<div class="form-group col-6">
+							{{ form_label(calculadora_avanzada.edadTitularUno) }}
+							{{ form_widget(calculadora_avanzada.edadTitularUno) }}
+							{{ form_errors(calculadora_avanzada.edadTitularUno) }}
+						</div>
+					</div>
+					<div class="form-row titular-dos">
+						<div class="form-group col-6">
+							{{ form_label(calculadora_avanzada.edadTitularDos) }}
+							{{ form_widget(calculadora_avanzada.edadTitularDos) }}
+							{{ form_errors(calculadora_avanzada.edadTitularDos) }}
+						</div>
+					</div>
+
+
+
+					<div class="form-row cuota1">
+						<div class="form-group col-6">
+							{{ form_label(calculadora_avanzada.edad) }}
+							{{ form_widget(calculadora_avanzada.edad) }}
+							{{ form_errors(calculadora_avanzada.edad) }}
+						</div>
+					</div>
+					<div class="form-row cuota1">
+						<div class="form-groupcol-3 col-sm-12">
+							{{ form_label(calculadora_avanzada.valorInmueble) }}
+							{{ form_widget(calculadora_avanzada.valorInmueble) }}
+							{{ form_errors(calculadora_avanzada.valorInmueble) }}
+						</div>
+					</div>
+					<div class="form-row cuota2">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.aportacionInicial) }}
+							{{ form_widget(calculadora_avanzada.aportacionInicial) }}
+							{{ form_errors(calculadora_avanzada.aportacionInicial) }}
+						</div>
+					</div>
+					<div class="form-row cuota1 preguntas-gastos">
+						<div class="form-groupcol-4 col-sm-12">
+							{{ form_label(calculadora_avanzada.destinoCompra) }}
+							{{ form_widget(calculadora_avanzada.destinoCompra) }}
+							{{ form_errors(calculadora_avanzada.destinoCompra) }}
+						</div>
+					</div>
+					<div class="form-row cuota1 preguntas-gastos">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.obraNueva) }}
+							{{ form_widget(calculadora_avanzada.obraNueva) }}
+							{{ form_errors(calculadora_avanzada.obraNueva) }}
+						</div>
+					</div>
+					<div class="form-row cuota1 preguntas-gastos">
+						<div class="form-groupcol-4 col-sm-12">
+							{{ form_label(calculadora_avanzada.comunidadAutonoma) }}
+							{{ form_widget(calculadora_avanzada.comunidadAutonoma) }}
+							{{ form_errors(calculadora_avanzada.comunidadAutonoma) }}
+						</div>
+					</div>
+					{# <div class="form-row cuota2">
+																										<div
+																											class="form-group col"> #}
+					{# {{ form_label(calculadora_avanzada.tieneMenosEdadMaxima|raw) }} #}
+					{# <label for="{{ calculadora_avanzada.tieneMenosEdadMaxima.vars.id }}" class="col-form-label required">¿Tienes menos de
+																												<span id="edadMaxima">35</span>
+																												años?<span class="text-warning">&nbsp;*</span>
+																											</label>
+																											{{ form_widget(calculadora_avanzada.tieneMenosEdadMaxima) }}
+																											{{ form_errors(calculadora_avanzada.tieneMenosEdadMaxima) }}
+																										</div>
+																									</div> #}
+					<div class="form-row cuota1 preguntas-gastos">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.minusvaliaFamiliaNumerosa) }}
+							{{ form_widget(calculadora_avanzada.minusvaliaFamiliaNumerosa) }}
+							{{ form_errors(calculadora_avanzada.minusvaliaFamiliaNumerosa) }}
+						</div>
+					</div>
+					<div class="form-row cuota1 preguntas-gastos">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.familiaNumerosa) }}
+							{{ form_widget(calculadora_avanzada.familiaNumerosa) }}
+							{{ form_errors(calculadora_avanzada.familiaNumerosa) }}
+						</div>
+					</div>
+					<div class="form-row cuota1 preguntas-gastos">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.monoparental) }}
+							{{ form_widget(calculadora_avanzada.monoparental) }}
+							{{ form_errors(calculadora_avanzada.monoparental) }}
+						</div>
+					</div>
+					<div class="form-row cuota1 preguntas-gastos">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.vpo) }}
+							{{ form_widget(calculadora_avanzada.vpo) }}
+							{{ form_errors(calculadora_avanzada.vpo) }}
+						</div>
+					</div>
+					<div class="form-row cuota1">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.honorariosInmobiliaria) }}
+							{{ form_widget(calculadora_avanzada.honorariosInmobiliaria) }}
+							{{ form_errors(calculadora_avanzada.honorariosInmobiliaria) }}
+						</div>
+					</div>
+					<div class="form-row cuota">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.producto) }}
+							<span tabindex="0" class="popover-icon" data-toggle="popover" data-html="true" data-trigger="hover" data-placement="right" data-content="
+																																						<ul>
+																																							<li><strong>+80%:</strong> Si necesitas financiar más del 80%</li>
+																																							<li><strong>Premium:</strong> Si buscas las mejores condiciones y no financias más del 80%</li>
+																																							<li><strong>Sin compromiso:</strong> Tu preferencia es no contratar productos asociados</li>
+																																							<li><strong>Cambio de casa:</strong> Tienes una vivienda en venta y deseas comprar otra</li>
+																																						</ul>">
+								&nbsp;<i class="fas fa-question-circle" style="color: #ff9301;font-size:20px;"></i>
+							</span>
+							{{ form_widget(calculadora_avanzada.producto) }}
+							{{ form_errors(calculadora_avanzada.producto) }}
+						</div>
+					</div>
+					<div class="form-row cambio-casa">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.valorViviendaActual) }}
+							{{ form_widget(calculadora_avanzada.valorViviendaActual) }}
+							{{ form_errors(calculadora_avanzada.valorViviendaActual) }}
+						</div>
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.hipotecaActual) }}
+							{{ form_widget(calculadora_avanzada.hipotecaActual) }}
+							{{ form_errors(calculadora_avanzada.hipotecaActual) }}
+						</div>
+						{#<div class="form-group col">
+																																																														{{ form_label(calculadora_avanzada.ventaCasaActual) }}
+																																																														{{ form_widget(calculadora_avanzada.ventaCasaActual) }}
+																																																														{{ form_errors(calculadora_avanzada.ventaCasaActual) }}
+																																																													</div>#}
+					</div>
+					<div class="form-row cambio-casa">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.aportacionTrasVenta) }}
+							{{ form_widget(calculadora_avanzada.aportacionTrasVenta) }}
+							{{ form_errors(calculadora_avanzada.aportacionTrasVenta) }}
+						</div>
+					</div>
+					<div class="form-row importe-maximo">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.ingresosMensuales) }}
+							{{ form_widget(calculadora_avanzada.ingresosMensuales) }}
+							{{ form_errors(calculadora_avanzada.ingresosMensuales) }}
+						</div>
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.prestamosMensuales) }}
+							{{ form_widget(calculadora_avanzada.prestamosMensuales) }}
+							{{ form_errors(calculadora_avanzada.prestamosMensuales) }}
+						</div>
+					</div>
+					<div class="form-row importe-maximo">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.numPagasExtra) }}
+							{{ form_widget(calculadora_avanzada.numPagasExtra) }}
+							{{ form_errors(calculadora_avanzada.numPagasExtra) }}
+						</div>
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.importePagaExtra) }}
+							{{ form_widget(calculadora_avanzada.importePagaExtra) }}
+							{{ form_errors(calculadora_avanzada.importePagaExtra) }}
+						</div>
+					</div>
+
+					<div class="form-row titular-dos">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.ingresosMensualesDos) }}
+							{{ form_widget(calculadora_avanzada.ingresosMensualesDos) }}
+							{{ form_errors(calculadora_avanzada.ingresosMensualesDos) }}
+						</div>
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.prestamosMensualesDos) }}
+							{{ form_widget(calculadora_avanzada.prestamosMensualesDos) }}
+							{{ form_errors(calculadora_avanzada.prestamosMensualesDos) }}
+						</div>
+					</div>
+					<div class="form-row titular-dos">
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.numPagasExtraDos) }}
+							{{ form_widget(calculadora_avanzada.numPagasExtraDos) }}
+							{{ form_errors(calculadora_avanzada.numPagasExtraDos) }}
+						</div>
+						<div class="form-group col">
+							{{ form_label(calculadora_avanzada.importePagaExtraDos) }}
+							{{ form_widget(calculadora_avanzada.importePagaExtraDos) }}
+							{{ form_errors(calculadora_avanzada.importePagaExtraDos) }}
+						</div>
+					</div>
+					<div class="d-flex">
+						<a class="btn btn-success mr-auto waves-effect btn-volver" href="{{ path('inicio') }}">Volver</a>
+						<button class="btn btn-success waves-effect" id="{{ calculadora_avanzada.calcular.vars.id }}" name="{{ calculadora_avanzada.calcular.vars.full_name }}">
+							<i class="fas fa-calculator"></i>
+							<span>
+								Calcular</span>
+						</button>
+						{% do calculadora_avanzada.calcular.setRendered %}
+						{{ form_end(calculadora_avanzada) }}
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg mb-4 mb-lg-0">
+			<div class="card h-100">
+				<h4 class="card-header bg-success text-light mb-0">
+					{% if tipo_calculo is defined and tipo_calculo =='cuota' %}Tu hipoteca
+						{% elseif tipo_calculo is defined and tipo_calculo =='importe_maximo'%}El precio máximo
+					{% endif %}
+				</h4>
+				<div class="card-body d-flex flex-column justify-content-center m-auto" style="width:100%;">
+					{% if tipo_calculo is defined and tipo_calculo =='cuota' %}
+						<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado>
+							{% if resultado is defined and importe_fijo > 0 %}
+								<style>
+									.btn-right {
+										float: right;
+										margin-top: -40px;
+									}
+									.result {
+										margin-top: 20px;
+									}
+									.result h2 {
+										font-size: 1.1em;
+										margin-bottom: 40px;
+									}
+									.result table {
+										width: 100%;
+										border-collapse: inherit;
+										border: 3px dotted red;
+										border-radius: 10px;
+										padding: 2px;
+									}
+									.result th,
+									.result td {
+										border: 0 solid #ccc;
+										padding: 10px;
+										text-align: center;
+									}
+									.result td {
+										font-weight: 500;
+										font-size: 22px;
+									}
+									.result th {
+										/* background-color: #f4f4f4; */
+										font-size: 1.3em;
+										color: #e53935;
+									}
+
+									.costs {
+										margin-top: 40px;
+									}
+									.costs h2 {
+										font-size: 1.3em;
+										color: #e53935;
+									}
+									.costs .row {
+										display: flex;
+										justify-content: flex-start;
+										margin: 10px 0;
+										border-bottom: 1px dashed #ccc;
+										padding-bottom: 10px;
+									}
+									.costs .column {
+										display: flex;
+										align-items: center;
+										width: 50%;
+									}
+									.costs .icon {
+										margin-right: 10px;
+									}
+									.costs .label {
+										font-weight: bold;
+										font-size: 14px;
+									}
+									.costs .value {
+										margin-left: 5px;
+									}
+									span.label {
+										color: #888;
+									}
+
+									img.icono-imagen {
+										height: 40px;
+										width: 40px;
+										object-fit: cover;
+									}
+
+									.costs .column70 {
+										display: flex;
+										align-items: center;
+										text-align: right;
+										width: 50%;
+										flex-direction: row-reverse;
+									}
+
+									.costs .column30 {
+										display: flex;
+										align-items: center;
+										width: 50%;
+										flex-direction: row-reverse;
+									}
+									.costs .row2 {
+										display: flex;
+										justify-content: flex-start;
+										margin: 10px 0;
+										padding-bottom: 10px;
+									}
+
+									.total {
+										color: black;
+										font-weight: 600;
+									}
+
+									.costs2 {
+										padding: 50px;
+										margin-top: 0;
+									}
+									@media(max-width: 576px) {
+										.result h2,
+										.result th,
+										.result td {
+											font-size: 1em;
+										}
+
+										.costs .column {
+											width: 100%;
+										}
+
+										.costs2 {
+											padding: 3px;
+										}
+
+										.costs .column70,
+										.costs .column30 {
+											width: 50%;
+										}
+
+										.costs .label {
+											font-size: 14px;
+										}
+										.card .card-title {
+											font-size: 20px;
+										}
+									}
+									@media print {
+										.topbar, .left-sidebar, footer, .caja-externa, .row.page-titles, #imprimir {
+											display: none;
+										}
+
+										.page-wrapper {
+											margin-left: 0px !important;
+											padding-top: 0px !important;
+										}
+									}
+								</style>
+								{% if cuota_fija_final and cuota_fija_final > 0 %}
+									{# Caja tipos #}
+									<div class="result">
+										<h2>Para un inmueble de
+											{% if resultado is defined %}
+												{{ valor_inmueble|number_format(2,',','.') }}
+											{% endif %}€, con una aportación de
+											{{ entrada }}€ y unos gastos totales de
+											{{ gastos|number_format(2,',','.') }}€, el importe total de hipoteca será de
+											{{ importe_total|number_format(2,',','.') }}€ en un plazo de
+											{% if resultado is defined %}
+												{{ amortizacion }}
+											{% endif %}
+											años, actualmente en venta una propiedad por importe de
+											{% if resultado is defined %}
+												{{ valor_vivienda_actual }}€
+											{% endif %}
+											con hipoteca de
+											{% if resultado is defined %}
+												{{ hipoteca_actual }}€
+											{% endif %}
+											y cuando venda reembolsará
+											{% if resultado is defined %}
+												{{ aportacion_tras_venta }}€
+											{% endif %}
+											las cuotas serán de:</h2>
+										<table>
+											<tr>
+												<th></th>
+												<th>Tipo Fijo</th>
+												<th>Tipo Variable</th>
+												<th>Tipo Mixto</th>
+											</tr>
+											<tr>
+												<td style="width:25%;font-size:18px;">
+													Mientras Vende
+												</td>
+												<td style="width:25%">
+													{% if resultado is defined %}
+														{{ cuota_fija|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
+														{{ tipo_fijo }}%) *</span>
+												</td>
+												<td style="width:25%">
+													{% if resultado is defined %}
+														{{ cuota_variable|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
+														{{ tipo_variable }}%, posteriormente Euribor + 0.5) *</span>
+												</td>
+												<td style="width:25%">
+													{% if resultado is defined %}
+														{{ cuota_mixta|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
+														{{ tipo_mixto }}%, posteriormente Euribor +
+														{{ tipo_luego_mixto }}) *</span>
+												</td>
+											</tr>
+											<tr>
+												<td style="width:25%;font-size:18px;">
+													Cuando Venda
+												</td>
+												<td style="width:25%">
+													{% if resultado is defined %}
+														{{ cuota_fija_final|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
+														{{ tipo_fijo }}%) *</span>
+												</td>
+												<td style="width:25%">
+													{% if resultado is defined %}
+														{{ cuota_variable_final|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
+														{{ tipo_variable }}%, posteriormente Euribor + 0.5) *</span>
+												</td>
+												<td style="width:25%">
+													{% if resultado is defined %}
+														{{ cuota_mixta_final|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
+														{{ tipo_mixto }}%, posteriormente Euribor +
+														{{ tipo_luego_mixto }}) *</span>
+												</td>
+											</tr>
+										</table>
+									</div>
+
+									{# Caja gastos #}
+									<div class="costs">
+										<h2>Gastos asociados a la compraventa</h2>
+										<div class="row">
+											<div
+												class="column">
+												{# <i class="fas fa-coins icon"></i> #}
+												<img src="/assets/images/coins.png" class="icono-imagen">
+												<span class="label">
+													{% if obraNueva %}AJD{% else %}ITP
+													{% endif %}*</span>
+												<span class="value">{{ escritura_compra_impuesto_transmisiones|number_format(2,',','.') }}
+													€</span>
+											</div>
+											<div
+												class="column">
+												{# <i class="fas fa-user-tie icon"></i> #}
+												<img src="/assets/images/notario.png" class="icono-imagen">
+												<span class="label">Notaría*</span>
+												<span class="value">{{ notario|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										{% if obraNueva %}
+											<div class="row">
+												<div class="column">
+													<img src="/assets/images/iva.jpg" class="icono-imagen">
+													<span class="label">IVA*</span>
+													<span class="value">{{ importe_iva|number_format(2,',','.') }}
+														€</span>
+												</div>
+												<div class="column"></div>
+											</div>
+										{% endif %}
+										<div class="row">
+											<div
+												class="column">
+												{# <i class="fas fa-landmark icon"></i> #}
+												<img src="/assets/images/landmark.png" class="icono-imagen">
+												<span class="label">Registro*</span>
+												<span class="value">{{ registro|number_format(2,',','.') }}
+													€</span>
+											</div>
+											<div
+												class="column">
+												{# <i class="fas fa-cogs icon"></i> #}
+												<img src="/assets/images/gestoria.png" class="icono-imagen">
+												<span class="label">Gestoría*</span>
+												<span class="value">{{ gestoria|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row">
+											<div
+												class="column">
+												{# <i class="fas fa-landmark icon"></i> #}
+												<img src="/assets/images/tasacion.png" class="icono-imagen">
+												<span class="label">Tasación*</span>
+												<span class="value">{{ tasacion|number_format(2,',','.') }}
+													€</span>
+											</div>
+											{% if gastos_inmobiliaria %}
+												<div
+													class="column">
+													{# <i class="fas fa-cogs icon"></i> #}
+													<img src="/assets/images/inmobiliaria.png" class="icono-imagen">
+													<span class="label">Inmobiliaria</span>
+													<span class="value">{{ gastos_inmobiliaria|number_format(2,',','.') }}
+														€</span>
+												</div>
+											{% endif %}
+										</div>
+									</div>
+
+									{# Caja Desglose #}
+									<div class="costs costs2">
+										<h2>Importe total de tu Hipoteca</h2>
+										<br>
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Precio vivienda:</span>
+											</div>
+											<div class="column30">
+												<span class="value">{{ valor_inmueble|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Gastos:</span>
+											</div>
+											<div class="column30">
+												<span class="value">+
+													{{ gastos|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										{# <div class="row2">
+																																											<div class="column70">
+																																												<span class="label">Intereses:</span>
+																																											</div>
+																																											<div class="column30">
+																																												<span class="value">{{ intereses|number_format(2,',','.') }} €</span>
+																																											</div>
+																																										</div> #}
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Aportación:</span>
+											</div>
+											<div class="column30">
+												<span class="value">-{{ entrada|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row2">
+											<div class="column70">
+												<span class="value total">IMPORTE TOTAL:</span>
+											</div>
+											<div class="column30">
+												<span class="value total">{{ importe_total|number_format(2,',','.') }}€
+												</span>
+											</div>
+										</div>
+									</div>
+								{% else %}
+									{# Caja tipos #}
+									<div class="result">
+										<button class="btn btn-success waves-effect btn-right" id="imprimir" name="imprimir">
+											<i class="fas fa-print"></i>
+										</button>
+										<h2>Para un inmueble de
+											{% if resultado is defined %}
+												{{ valor_inmueble|number_format(2,',','.') }}
+											{% endif %}€, con una aportación de
+											{{ entrada }}€ y unos gastos totales de
+											{{ gastos|number_format(2,',','.') }}€, el importe total de hipoteca será de
+											{{ importe_total|number_format(2,',','.') }}€. Tu pago mensual calculado a
+											{% if resultado is defined %}
+												{{ amortizacion }}
+											{% endif %}
+											años será de:</h2>
+										{# <h2>Para un inmueble de 300.000€, con una aportación de 20.000€ en un plazo de 30 años, tendrás unos gastos totales de 25.199€, el importe total de la hipoteca será de 364.234€ y tu pago mensual será de:</h2> #}
+										<table>
+											<tr>
+												<th>Tipo Fijo</th>
+												<th>Tipo Variable</th>
+												<th>Tipo Mixto</th>
+											</tr>
+											<tr>
+												<td style="width:33%">
+													{% if resultado is defined %}
+														{{ importe_fijo|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
+														{{ tipo_fijo }}%) *</span>
+												</td>
+												<td style="width:33%">
+													{% if resultado is defined %}
+														{{ importe_variable|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
+														{{ tipo_variable }}%, posteriormente Euribor + 0.5) *</span>
+												</td>
+												<td style="width:33%">
+													{% if resultado is defined %}
+														{{ cuota_mixta|number_format(2,',','.') }}
+													{% endif %}€
+													<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
+														{{ tipo_mixto }}%, posteriormente Euribor +
+														{{ tipo_luego_mixto }}) *</span>
+												</td>
+											</tr>
+										</table>
+									</div>
+
+									{# Caja gastos #}
+									<div class="costs">
+										<h2>Gastos asociados a la compraventa</h2>
+										<div class="row">
+											<div
+												class="column">
+												{# <i class="fas fa-coins icon"></i> #}
+												<img src="/assets/images/coins.png" class="icono-imagen">
+												<span class="label">
+													{% if obraNueva %}AJD{% else %}ITP
+													{% endif %}*</span>
+												<span class="value">{{ escritura_compra_impuesto_transmisiones|number_format(2,',','.') }}
+													€</span>
+											</div>
+											<div
+												class="column">
+												{# <i class="fas fa-user-tie icon"></i> #}
+												<img src="/assets/images/notario.png" class="icono-imagen">
+												<span class="label">Notaría*</span>
+												<span class="value">{{ notario|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										{% if obraNueva %}
+											<div class="row">
+												<div class="column">
+													<img src="/assets/images/iva.jpg" class="icono-imagen">
+													<span class="label">IVA*</span>
+													<span class="value">{{ importe_iva|number_format(2,',','.') }}
+														€</span>
+												</div>
+												<div class="column"></div>
+											</div>
+										{% endif %}
+										<div class="row">
+											<div
+												class="column">
+												{# <i class="fas fa-landmark icon"></i> #}
+												<img src="/assets/images/landmark.png" class="icono-imagen">
+												<span class="label">Registro*</span>
+												<span class="value">{{ registro|number_format(2,',','.') }}
+													€</span>
+											</div>
+											<div
+												class="column">
+												{# <i class="fas fa-cogs icon"></i> #}
+												<img src="/assets/images/gestoria.png" class="icono-imagen">
+												<span class="label">Gestoría*</span>
+												<span class="value">{{ gestoria|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row">
+											<div
+												class="column">
+												{# <i class="fas fa-landmark icon"></i> #}
+												<img src="/assets/images/tasacion.png" class="icono-imagen">
+												<span class="label">Tasación*</span>
+												<span class="value">{{ tasacion|number_format(2,',','.') }}
+													€</span>
+											</div>
+											{% if gastos_inmobiliaria %}
+												<div
+													class="column">
+													{# <i class="fas fa-cogs icon"></i> #}
+													<img src="/assets/images/inmobiliaria.png" class="icono-imagen">
+													<span class="label">Inmobiliaria</span>
+													<span class="value">{{ gastos_inmobiliaria|number_format(2,',','.') }}
+														€</span>
+												</div>
+											{% endif %}
+										</div>
+									</div>
+
+									{# Caja Desglose #}
+									<div class="costs costs2">
+										<h2>Importe total de tu Hipoteca</h2>
+										<br>
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Precio vivienda:</span>
+											</div>
+											<div class="column30">
+												<span class="value">{{ valor_inmueble|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Gastos:</span>
+											</div>
+											<div class="column30">
+												<span class="value">+
+													{{ gastos|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										{# <div class="row2">
+																																											<div class="column70">
+																																												<span class="label">Intereses:</span>
+																																											</div>
+																																											<div class="column30">
+																																												<span class="value">{{ intereses|number_format(2,',','.') }} €</span>
+																																											</div>
+																																										</div> #}
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Aportación:</span>
+											</div>
+											<div class="column30">
+												<span class="value">-{{ entrada|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row2">
+											<div class="column70">
+												<span class="value total">IMPORTE HIPOTECA A SOLICITAR:</span>
+											</div>
+											<div class="column30">
+												<span class="value total">{{ importe_total|number_format(2,',','.') }}€
+												</span>
+											</div>
+										</div>
+									</div>
+
+								{% endif %}
+							{% endif %}
+							{% if mensaje is defined %}
+								<div>
+									<center>
+										<br>
+										{{ mensaje }}
+									</center>
+								</div>
+							{% endif %}
+						{% else %}
+							<style>
+								.btn-right {
+									float: right;
+									margin-top: -40px;
+								}
+								.result {
+									margin-top: 20px;
+								}
+								.result h2 {
+									font-size: 1.1em;
+									margin-bottom: 40px;
+								}
+								.result table {
+									width: 100%;
+									border-collapse: inherit;
+									border: 3px dotted red;
+									border-radius: 10px;
+									padding: 2px;
+								}
+								.result th,
+								.result td {
+									border: 0 solid #ccc;
+									padding: 10px;
+									text-align: center;
+								}
+								.result td {
+									font-weight: 500;
+									font-size: 22px;
+								}
+								.result th {
+									/* background-color: #f4f4f4; */
+									font-size: 1.3em;
+									color: #e53935;
+								}
+
+								.costs {
+									margin-top: 40px;
+								}
+								.costs h2 {
+									font-size: 1.3em;
+									color: #e53935;
+								}
+								.costs .row {
+									display: flex;
+									justify-content: flex-start;
+									margin: 10px 0;
+									border-bottom: 1px dashed #ccc;
+									padding-bottom: 10px;
+								}
+								.costs .column {
+									display: flex;
+									align-items: center;
+									width: 50%;
+								}
+								.costs .icon {
+									margin-right: 10px;
+								}
+								.costs .label {
+									font-weight: bold;
+									font-size: 14px;
+								}
+								.costs .value {
+									margin-left: 5px;
+								}
+								span.label {
+									color: #888;
+								}
+
+								img.icono-imagen {
+									height: 40px;
+									width: 40px;
+									object-fit: cover;
+								}
+
+								.costs .column70 {
+									display: flex;
+									align-items: center;
+									text-align: right;
+									width: 50%;
+									flex-direction: row-reverse;
+								}
+
+								.costs .column30 {
+									display: flex;
+									align-items: center;
+									width: 50%;
+									flex-direction: row-reverse;
+								}
+								.costs .row2 {
+									display: flex;
+									justify-content: flex-start;
+									margin: 10px 0;
+									padding-bottom: 10px;
+								}
+
+								.total {
+									color: black;
+									font-weight: 600;
+								}
+
+								.costs2 {
+									padding: 50px;
+									margin-top: 0;
+								}
+								@media(max-width: 576px) {
+									.result h2,
+									.result th,
+									.result td {
+										font-size: 1em;
+									}
+
+									.costs .column {
+										width: 100%;
+									}
+
+									.costs2 {
+										padding: 3px;
+									}
+
+									.costs .column70,
+									.costs .column30 {
+										width: 50%;
+									}
+
+									.costs .label {
+										font-size: 14px;
+									}
+									.card .card-title {
+										font-size: 20px;
+									}
+								}
+								@media print {
+									.topbar, .left-sidebar, footer, .caja-externa, .row.page-titles, #imprimir {
+										display: none;
+									}
+
+									.page-wrapper {
+										margin-left: 0px !important;
+										padding-top: 0px !important;
+									}
+								}
+							</style>
+							<div {% if resultado is not defined %} class="d-none" {% else %} class="texto-resultado" {% endif %} data-contenedor-resultado>
+								{% if resultado is defined and importe_fijo > 0 %}
+									<div class="mb-4">
+										<span>En función de los datos facilitados, el valor máximo de la vivienda sería:</span>
+									</div>
+									<h1 class="text-center mb-4 fondo-casa">
+										<span data-pago-mensual>
+											{% if resultado is defined %}
+												{{ importe_fijo|number_format(0,',','.') }}
+											{% endif %}
+											€</span>
+									</h1>
+									<br>
+									{#<div class="mb-4">
+																																																																																											<span>Hipoteca total con interés: </span>
+																																																																																											<span data-hipoteca-total-con-interes> {% if resultado is defined %}{{ interes_fijo|number_format(2,',','.') }}{% endif %}</span>
+																																																																																											<span> € para interés fijo y de </span>
+																																																																																											<span data-hipoteca-total-con-interes> {% if resultado is defined %}{{ interes_variable|number_format(2,',','.') }}{% endif %}</span>
+																																																																																											<span> € para interés variable.</span>
+																																																																																										</div>
+																																																																																										<div>
+																																																																																											<span>Total con anticipo: </span>
+																																																																																											<span data-total-con-anticipo>{% if resultado is defined %}{{ con_entrada_fijo|number_format(2,',','.') }}{% endif %}</span>
+																																																																																											<span> € para interés fijo y de </span>
+																																																																																											<span data-total-con-anticipo> {% if resultado is defined %}{{ con_entrada_variable|number_format(2,',','.') }}{% endif %}</span>
+																																																																																											<span> € para interés variable.</span>
+																																																																																										</div>#}
+								{% endif %}
+								{# {% if mensaje is defined and tipo_calculo is defined and tipo_calculo =='cuota'%} #}
+								{% if mensaje is defined %}
+									<div>
+										<center>
+											{# <br> #}
+											{{ mensaje }}
+										</center>
+									</div>
+								{% endif %}
+							{% endif %}
+							{# <br> #}
+							{% if resultado is defined %}
+								{% if tipo_calculo is defined and tipo_calculo =='cuota' %}
+									<p style="color:grey;font-size:12px;">Esta calculadora sólo esta destinada para vivienda (descartando locales, naves, etc.), y no contempla algunas excepciones.</p>
+									<p style="color:grey;font-size:12px;">* Los tipos mostrados son una estimación de tipos medios, y no representan necesariamente las ofertas que se puedan conseguir.</p>
+									<p style="color:grey;font-size:12px;">* Los gastos de notaría, registro, gestoría y tasación son orientativos.</p>
+									<p style="color:grey;font-size:12px;">
+										Los gastos han sido estimados según ley (vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos fueran a cargo del comprador, los honorarios de la notaría serían de 950€.
+									</p>
+								{% else %}
+									<p style="color:grey;font-size:12px;">
+										El valor aproximado de la vivienda que puedes considerar se ha calculado usando un algoritmo que estima tu capacidad de pago y los gastos de compraventa, basado en tus respuestas.
+									</p>
+									<p style="color:grey;font-size:12px;">
+										Hemos utilizado valores medios de tipos de interés, plazos hipotecarios y gastos para ello. Recuerda que este cálculo es orientativo y no asegura la viabilidad económica completa.
+									</p>
+									<p style="color:grey;font-size:12px;">
+										Los gastos han sido estimados según ley (vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos fueran a cargo del comprador, los honorarios de la notaría serían de 950€.
+									</p>
+									<p style="color:grey;font-size:12px;">
+										Para una valoración más precisa y personalizada, te invitamos a completar nuestro cuestionario.
+									</p>
+									<p style="color:black;font-size:12px;margin-top:40px;">
+										Los gastos estimados para la compra de una vivienda de este importe, acorde a tus características y en la comunidad autónoma indicada serían:
+									</p>
+
+									{# Caja gastos #}
+										<div class="costs">
+											<h2>Gastos asociados a la compraventa</h2>
+											<div class="row">
+												<div
+													class="column">
+													{# <i class="fas fa-coins icon"></i> #}
+													<img src="/assets/images/coins.png" class="icono-imagen">
+													<span class="label">
+														{% if obraNueva %}AJD{% else %}ITP
+														{% endif %}*</span>
+													<span class="value">{{ escritura_compra_impuesto_transmisiones|number_format(2,',','.') }}
+														€</span>
+												</div>
+												<div
+													class="column">
+													{# <i class="fas fa-user-tie icon"></i> #}
+													<img src="/assets/images/notario.png" class="icono-imagen">
+													<span class="label">Notaría*</span>
+													<span class="value">{{ notario|number_format(2,',','.') }}
+														€</span>
+												</div>
+											</div>
+											{% if obraNueva %}
+												<div class="row">
+													<div class="column">
+														<img src="/assets/images/iva.jpg" class="icono-imagen">
+														<span class="label">IVA*</span>
+														<span class="value">{{ importe_iva|number_format(2,',','.') }}
+															€</span>
+													</div>
+													<div class="column"></div>
+												</div>
+											{% endif %}
+											<div class="row">
+												<div
+													class="column">
+													{# <i class="fas fa-landmark icon"></i> #}
+													<img src="/assets/images/landmark.png" class="icono-imagen">
+													<span class="label">Registro*</span>
+													<span class="value">{{ registro|number_format(2,',','.') }}
+														€</span>
+												</div>
+												<div
+													class="column">
+													{# <i class="fas fa-cogs icon"></i> #}
+													<img src="/assets/images/gestoria.png" class="icono-imagen">
+													<span class="label">Gestoría*</span>
+													<span class="value">{{ gestoria|number_format(2,',','.') }}
+														€</span>
+												</div>
+											</div>
+											<div class="row">
+												<div
+													class="column">
+													{# <i class="fas fa-landmark icon"></i> #}
+													<img src="/assets/images/tasacion.png" class="icono-imagen">
+													<span class="label">Tasación*</span>
+													<span class="value">{{ tasacion|number_format(2,',','.') }}
+														€</span>
+												</div>
+												{% if gastos_inmobiliaria %}
+													<div
+														class="column">
+														{# <i class="fas fa-cogs icon"></i> #}
+														<img src="/assets/images/inmobiliaria.png" class="icono-imagen">
+														<span class="label">Inmobiliaria</span>
+														<span class="value">{{ gastos_inmobiliaria|number_format(2,',','.') }}
+															€</span>
+													</div>
+												{% endif %}
+											</div>
+										</div>
+
+										{# Caja Desglose #}
+									<div class="costs costs2">
+										<h2>Importe total de tu Hipoteca</h2>
+										<br>
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Precio vivienda:</span>
+											</div>
+											<div class="column30">
+												<span class="value">{{ valor_inmueble|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Gastos:</span>
+											</div>
+											<div class="column30">
+												<span class="value">+
+													{{ gastos|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row2">
+											<div class="column70">
+												<span class="label">Aportación:</span>
+											</div>
+											<div class="column30">
+												<span class="value">-{{ entrada|number_format(2,',','.') }}
+													€</span>
+											</div>
+										</div>
+										<div class="row2">
+											<div class="column70">
+												<span class="value total">IMPORTE HIPOTECA A SOLICITAR:</span>
+											</div>
+											<div class="column30">
+												<span class="value total">{{ importe_total|number_format(2,',','.') }}€
+												</span>
+											</div>
+										</div>
+									</div>
+									
+									<p style="color:grey;font-size:12px;">
+										Aunque en Hipotea ofrecemos hipotecas con financiación al 100% (incluyendo opciones para cubrir gastos), para conseguir las mejores condiciones es recomendable aportar, de media, el 10% del precio de la vivienda más los gastos.
+									</p>
+								{% endif %}
+							{% endif %}
+						</div>
+						<div class="text-muted{% if resultado is defined %} d-none{% endif %} centrado-caja texto-resultado-vacio" data-contenedor-resultado-vacio>
+							Por favor, completa la información para ver el resultado.
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endblock %}
+	{% block modals %}
+		{{ parent() }}
+		{% include '@App/Backoffice/Modal/ErrorCalculadora.html' %}
+	{% endblock %}

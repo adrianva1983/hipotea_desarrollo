@@ -1,0 +1,56 @@
+AppBundle\Entity\OpcionesCampo:
+  type: entity
+  table: opciones_campo
+  indexes:
+    fk_opciones_campo_campo_hito1_idx:
+      columns:
+        - id_campo_hito
+  id:
+    idOpcionesCampo:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_opciones_campo
+      generator:
+        strategy: IDENTITY
+  fields:
+    orden:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+        comment: 'Orden para dibujar el campo'
+    valor:
+      type: string
+      nullable: false
+      length: 90
+      options:
+        fixed: false
+    idHitoCondicional:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: id_hito_condicional
+    idCampoCondicional:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: id_campo_condicional
+  manyToOne:
+    idCampoHito:
+      targetEntity: CampoHito
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_campo_hito:
+          referencedColumnName: id_campo_hito
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

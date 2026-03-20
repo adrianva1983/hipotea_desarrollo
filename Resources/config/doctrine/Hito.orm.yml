@@ -1,0 +1,53 @@
+AppBundle\Entity\Hito:
+  type: entity
+  table: hito
+  indexes:
+    fk_hito_fase1_idx:
+      columns:
+        - id_fase
+  id:
+    idHito:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_hito
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombre:
+      type: string
+      nullable: false
+      length: 255
+      options:
+        fixed: false
+    orden:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+        comment: 'Orden para dibujar el campo'
+    repetible:
+      type: boolean
+      nullable: false
+      options:
+        default: '0'
+    hitoCondicional:
+      type: boolean
+      nullable: false
+      options:
+        default: '0'
+      column: hito_condicional
+  manyToOne:
+    idFase:
+      targetEntity: Fase
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_fase:
+          referencedColumnName: id_fase
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

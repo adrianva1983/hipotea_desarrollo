@@ -1,0 +1,1456 @@
+{% extends '@App/Frontoffice/base_pdf.html.twig' %}
+{% form_theme calculadora_avanzada '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="https://areaprivada.hipotea.com/assets/js/custom/countDecimalPlaces.min.js"></script>
+	<script src="https://areaprivada.hipotea.com/assets/js/custom/round.min.js"></script>
+	<script src="https://areaprivada.hipotea.com/assets/js/custom/calculadora-cuota-v2.js"></script>
+	{# // <script>
+	// 	window.addEventListener('load', function () {
+	// 		setTimeout(function() {
+	// 			// Selecciona el elemento con el atributo data-contenedor-resultado
+	// 			const resultadoElement = document.querySelector('[data-contenedor-resultado]');
+				
+	// 			// Verifica si el elemento existe en el DOM
+	// 			if (resultadoElement) {
+	// 				// Obtiene la posición del elemento desde la parte superior de la página
+	// 				const position = resultadoElement.getBoundingClientRect().top + window.scrollY - 60;
+					
+	// 				// Desplaza la página hasta esa posición calculada y lo deja en la parte superior
+	// 				window.scrollTo({
+	// 					top: position,
+	// 					behavior: 'smooth' // Desplazamiento suave
+	// 				});
+	// 			}
+	// 		}, 100); // Retraso de 100ms
+	// 	});
+	// </script> #}
+{% endblock %}
+{% block customstyles %}
+	{# <link href="{{ asset('assets/css/custom/custom.min.css') }}" rel="stylesheet"> #}
+	{# <link href="{{ asset('assets/css/custom/calculadora-avanzada.css') }}" rel="stylesheet"> #}
+	<style>
+		* {
+			-ms-interpolation-mode: nearest-neighbor;
+			image-rendering: pixelated;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: crisp-edges
+		}
+
+		body {
+			background-color: #FFFFFF;
+		}
+		.bg-success {
+			background-color: #ef6c00 !important
+		}
+		.bg-warning {
+			background-color: #ffbc00 !important
+		}
+		.btn-success {
+			background-color: #ef6c00;
+			border-color: #ef6c00
+		}
+		.btn-success.disabled, .btn-success:disabled, .btn-success:not(:disabled):not(.disabled).active, .btn-success:not(:disabled):not(.disabled):active, .show > .btn-success.dropdown-toggle {
+			background-color: #f48224;
+			border-color: #f48224
+		}
+		.btn-success.focus, .btn-success:focus, .btn-success:not(:disabled):not(.disabled).active:focus, .btn-success:not(:disabled):not(.disabled):active:focus, .show > .btn-success.dropdown-toggle:focus {
+			box-shadow: 0 0 0 .2rem rgba(178, 221, 76, .5)
+		}
+		.btn-success:hover, .full-color-table.full-success-table tr:hover {
+			background-color: #f48224;
+			border-color: #f48224
+		}
+		tr:hover a {
+			color: #FFFFFF;
+		}
+
+		tr:hover a.editar {
+			color: green;
+		}
+		tr:hover a.documentos {
+			color: blue;
+		}
+		tr:hover a.notificar, tr:hover a.cancelar {
+			color: red;
+		}
+		tr:hover a.email {
+			color: gray;
+		}
+		tr:hover a.informe {
+			color: orange;
+		}
+		tr:hover a.contrato {
+			color: cornflowerblue;
+		}
+		tr:hover a.pendiente, tr:hover a.seguimiento {
+			color: darkmagenta;
+		}
+		tr:hover a.registro, tr:hover a.firmas {
+			color: tomato;
+		}
+		tr:hover a.duplicar {
+			color: teal;
+		}
+
+		.custom-checkbox .custom-control-input:active ~ .custom-control-label::before {
+			background-color: #e53317;
+			border-color: #e53317
+		}
+		.custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+			background-color: #ed7f32
+		}
+		.full-color-table.full-success-table {
+			background-color: #FFF;
+			border-color: #f48224
+		}
+		.full-color-table.full-success-table thead th {
+			background-color: #ef6c00;
+			border-color: #f48224
+		}
+		/* Select2 multiple selection white space fix */
+		.select2-selection__choice {
+			white-space: normal
+		}
+		.sidebar-nav .has-arrow::after {
+			border-color: #adacac
+		}
+		.sidebar-nav ul li a, .sidebar-nav > ul > li > a i, .skin-green-dark .left-sidebar .user-pro-body a.link, .skin-green-dark .sidebar-nav > ul > li.active > a i {
+			color: #adacac
+		}
+		.skin-green-dark .left-sidebar .user-pro-body a.link:focus, .skin-green-dark .left-sidebar .user-pro-body a.link:hover, .skin-green-dark .sidebar-nav ul li a.active, .skin-green-dark .sidebar-nav ul li a.active i, .skin-green-dark .sidebar-nav ul li a:hover, .skin-green-dark .sidebar-nav ul li a:hover i {
+			color: #fff
+		}
+		.skin-green-dark .page-titles .breadcrumb .breadcrumb-item.active {
+			color: #f48224
+		}
+		.skin-green-dark .sidebar-nav > ul > li.active > a {
+			border-left: 3px solid #f48224;
+			color: #adacac
+		}
+		.skin-green-dark .topbar {
+			background: #ef6c00
+		}
+		.skin-green-dark .left-sidebar, .skin-green-dark .topbar .top-navbar .navbar-header {
+			background: #303030
+		}
+		.table-striped tbody tr:nth-of-type(odd) {
+			background: rgba(226, 226, 226, 0.5)
+		}
+		/* Tooltip Positioning Issue */
+		/* https://github.com/FezVrasta/popper.js/issues/457 */
+		.tooltip {
+			top: 0
+		}
+		a {
+			color: #ed7f32
+		}
+		a.bg-success:focus, a.bg-success:hover, button.bg-success:focus, button.bg-success:hover {
+			background-color: #f48224 !important
+		}
+		a:hover {
+			color: #e53317
+		}
+		html {
+			min-width: 20rem
+		}
+		.horizontal .form-check {
+			margin-right: 20px;
+			float: left;
+		}
+
+		.js-datepicker {
+			width: 120px;
+		}
+
+		.caja-parametros {
+			border: #CCC 1px solid;
+			padding: 15px;
+			border-radius: 10px;
+		}
+
+		.leyenda-parametros {
+			font-size: 1.2rem;
+			width: auto;
+			padding: 10px;
+		}
+
+		@media (min-width: 576px) {
+			.border-sm-bottom {
+				border-bottom: 1px solid #e9ecef !important
+			}
+			.border-sm-bottom-0 {
+				border-bottom: 0 !important
+			}
+			.border-sm-left {
+				border-left: 1px solid #e9ecef !important
+			}
+			.border-sm-left-0 {
+				border-left: 0 !important
+			}
+			.border-sm-right {
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-sm-right-0 {
+				border-right: 0 !important
+			}
+			.border-sm-top {
+				border-top: 1px solid #e9ecef !important
+			}
+			.border-sm-top-0 {
+				border-top: 0 !important
+			}
+			.border-sm-x {
+				border-left: 1px solid #e9ecef !important;
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-sm-y {
+				border-bottom: 1px solid #e9ecef !important;
+				border-top: 1px solid #e9ecef !important
+			}
+		}
+		@media (min-width: 768px) {
+			.border-md-bottom {
+				border-bottom: 1px solid #e9ecef !important
+			}
+			.border-md-bottom-0 {
+				border-bottom: 0 !important
+			}
+			.border-md-left {
+				border-left: 1px solid #e9ecef !important
+			}
+			.border-md-left-0 {
+				border-left: 0 !important
+			}
+			.border-md-right {
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-md-right-0 {
+				border-right: 0 !important
+			}
+			.border-md-top {
+				border-top: 1px solid #e9ecef !important
+			}
+			.border-md-top-0 {
+				border-top: 0 !important
+			}
+			.border-md-x {
+				border-left: 1px solid #e9ecef !important;
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-md-y {
+				border-bottom: 1px solid #e9ecef !important;
+				border-top: 1px solid #e9ecef !important
+			}
+		}
+		@media (min-width: 992px) {
+			.border-lg-bottom {
+				border-bottom: 1px solid #e9ecef !important
+			}
+			.border-lg-bottom-0 {
+				border-bottom: 0 !important
+			}
+			.border-lg-left {
+				border-left: 1px solid #e9ecef !important
+			}
+			.border-lg-left-0 {
+				border-left: 0 !important
+			}
+			.border-lg-right {
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-lg-right-0 {
+				border-right: 0 !important
+			}
+			.border-lg-top {
+				border-top: 1px solid #e9ecef !important
+			}
+			.border-lg-top-0 {
+				border-top: 0 !important
+			}
+			.border-lg-x {
+				border-left: 1px solid #e9ecef !important;
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-lg-y {
+				border-bottom: 1px solid #e9ecef !important;
+				border-top: 1px solid #e9ecef !important
+			}
+		}
+		@media (min-width: 1200px) {
+			.border-xl-bottom {
+				border-bottom: 1px solid #e9ecef !important
+			}
+			.border-xl-bottom-0 {
+				border-bottom: 0 !important
+			}
+			.border-xl-left {
+				border-left: 1px solid #e9ecef !important
+			}
+			.border-xl-left-0 {
+				border-left: 0 !important
+			}
+			.border-xl-right {
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-xl-right-0 {
+				border-right: 0 !important
+			}
+			.border-xl-top {
+				border-top: 1px solid #e9ecef !important
+			}
+			.border-xl-top-0 {
+				border-top: 0 !important
+			}
+			.border-xl-x {
+				border-left: 1px solid #e9ecef !important;
+				border-right: 1px solid #e9ecef !important
+			}
+			.border-xl-y {
+				border-bottom: 1px solid #e9ecef !important;
+				border-top: 1px solid #e9ecef !important
+			}
+		}
+		@media (max-width: 1023px) {
+			.d-flex {
+				display: flex !important
+			}
+		}
+
+	</style>
+	<style>
+		.cambio-casa,
+		.cuota,
+		.cuota1,
+		.cuota2,
+		.importe-maximo, .titular-dos {
+			display: none
+		}
+		.centrado-caja {
+			height: 100%;
+			line-height: 100%;
+			padding-top: 20%;
+			text-align: center
+		}
+
+		span.importe-cuota {
+			font-weight: 200;
+		}
+
+		span.titulo-importe-cuota {
+			font-weight: 600;
+		}
+
+		.texto-resultado {
+			padding: 25px;
+			font-size: 17px;
+			/* text-align: justify; */
+			border: 4px solid #ef6c00;
+			border-radius: 20px;
+			text-align: center;
+			height: 100%;
+		}
+
+		.texto-resultado-vacio {
+			padding: 50px;
+			font-size: 17px;
+			/* text-align: justify; */
+			border: 4px solid #ef6c00;
+			border-radius: 20px;
+			text-align: center;
+			height: 100%;
+			display: flex; display: -webkit-box;
+			align-items: center;
+			justify-content: center;
+		}
+
+		div.texto-resultado h1 {
+			padding: 15px 0px 0px 0px;
+		}
+
+		div.caja-calculadora{
+			background-image: url('/assets/images/calculadora-sencilla.jpg');
+			background-repeat: no-repeat;
+			background-size: 100px;
+			background-position-x: 100%;
+			border: 4px solid #000034;
+			border-radius: 20px;
+		}
+
+		div.caja-externa {
+			border-radius: 20px;
+		}
+
+		.card .card-title {
+			font-size: 25px;
+		}
+
+		button#calculadora_avanzada_calcular, button#calculadora_sencilla_calcular, button#calculadora_avanzada_test_calcular {
+			padding: 18px;
+			font-size: 20px;
+			width: 200px;
+			border-radius: 40px;
+			box-shadow: 2px 1px 7px 2px #bcbcbc;
+		}
+
+		.btn-volver{
+			padding: 18px;
+			font-size: 20px;
+			width: 200px;
+			border-radius: 40px;
+			box-shadow: 2px 1px 7px 2px #bcbcbc;
+		}
+
+		.mi-padding {
+			padding: 10px;
+			text-align: center;
+		}
+
+		.negrita {
+			font-weight: 600;
+		}
+
+		.fondo-casa {
+			background-image: url(/assets/images/fondo-casa.png);
+			background-repeat: no-repeat;
+			background-size: 150px;
+			background-position-x: center;
+			height: 125px;
+			line-height: 150px;
+			font-size: 25px;
+			margin-bottom: 0px !important;
+		}
+
+		@media (max-width: 576px) {
+			.texto-resultado {
+				padding: 3px;
+				font-size: 17px;
+				/* text-align: justify; */
+				border: 4px solid #ef6c00;
+				border-radius: 20px;
+				text-align: center;
+				height: 100%;
+			}
+		}
+	</style>
+{% endblock %}
+{% block body %}
+	<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 0px 0;border-bottom: 1px dashed #ccc;padding-bottom: 0px;">
+		<div class="col-lg mb-4 mb-lg-0">
+			<img src="https://areaprivada.hipotea.com/uploads/logo-hipotea-email.png" style="text-align:left;width:80px;">
+		</div>
+	</div>
+	<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;" style="max-width:600px;text-align:center;margin: auto 0;">
+		<div class="col-lg mb-4 mb-lg-0">
+			<div class="col-lg mb-4 mb-lg-0">
+				<div class="card h-100">
+					<h4 class="card-header bg-success text-light mb-0">
+						{% if tipo_calculo is defined and tipo_calculo =='cuota' %}Tu hipoteca
+							{% elseif tipo_calculo is defined and tipo_calculo =='importe_maximo'%}El precio máximo
+						{% endif %}
+					</h4>
+					<div class="card-body d-flex flex-column justify-content-center m-auto" style="width:100%;">
+						{% if tipo_calculo is defined and tipo_calculo =='cuota' %}
+							<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado>
+								{% if resultado is defined and importe_fijo > 0 %}
+									<style>
+										#plazoAmortizacion {
+											padding-left: 0 !important;
+											padding-right: 0 !important;
+										}
+										.btn-right {
+											float: right;
+											margin-top: -40px;
+										}
+										.result {
+											margin-top: 20px;
+										}
+										.result h2 {
+											font-size: 1.1em;
+											margin-bottom: 40px;
+										}
+										.result table {
+											width: 100%;
+											border-collapse: inherit;
+											border: 3px dotted red;
+											border-radius: 10px;
+											padding: 2px;
+										}
+										.result th,
+										.result td {
+											border: 0 solid #ccc;
+											padding: 10px;
+											text-align: center;
+										}
+										.result td {
+											font-weight: 500;
+											font-size: 22px;
+										}
+										.result th {
+											/* background-color: #f4f4f4; */
+											font-size: 1.3em;
+											color: #e53935;
+										}
+
+										.costs {
+											margin-top: 10px;
+										}
+										.costs h2 {
+											font-size: 1.3em;
+											color: #e53935;
+										}
+										.costs .row {
+											display: flex; display: -webkit-box;
+											justify-content: flex-start;
+											margin: 10px 0;
+											border-bottom: 1px dashed #ccc;
+											padding-bottom: 10px;
+										}
+										.costs .column {
+											display: flex; display: -webkit-box;
+											align-items: center;
+											width: 50%;
+										}
+										.costs .icon {
+											margin-right: 10px;
+										}
+										.costs .label {
+											font-weight: bold;
+											font-size: 14px;
+										}
+										.costs .value {
+											margin-left: 5px;
+										}
+										span.label {
+											color: #888;
+										}
+
+										img.icono-imagen {
+											height: 40px;
+											width: 40px;
+											object-fit: cover;
+										}
+
+										.costs .column70 {
+											display: flex; display: -webkit-box;
+											align-items: center;
+											text-align: right;
+											width: 50%;
+											flex-direction: row-reverse;
+										}
+
+										.costs .column30 {
+											display: flex; display: -webkit-box;
+											align-items: center;
+											width: 50%;
+											flex-direction: row-reverse;
+										}
+										.costs .row2 {
+											display: flex; display: -webkit-box;
+											justify-content: flex-start;
+											margin: 10px 0;
+											padding-bottom: 10px;
+										}
+
+										.total {
+											color: black;
+											font-weight: 600;
+										}
+
+										.costs2 {
+											padding: 15px;
+											margin-top: 0;
+										}
+										@media(max-width: 576px) {
+											.result h2,
+											.result th,
+											.result td {
+												font-size: 1em;
+											}
+
+											.costs .column {
+												width: 100%;
+											}
+
+											.costs.cost3 .column {
+												width: 50%;
+											}
+
+											.costs2 {
+												padding: 3px;
+											}
+
+											.costs .column70,
+											.costs .column30 {
+												width: 50%;
+											}
+
+											.costs .label {
+												font-size: 14px;
+												text-align: left;
+											}
+											.card .card-title {
+												font-size: 1.05rem;
+											}
+										}
+										@media print {
+											.topbar,
+											.left-sidebar,
+											footer,
+											.caja-externa,
+											.row.page-titles,
+											#imprimir {
+												display: none;
+											}
+
+											.page-wrapper {
+												margin-left: 0 !important;
+												padding-top: 0 !important;
+											}
+										}
+									</style>
+									{% if cuota_fija_final and cuota_fija_final > 0 %}
+										{# Caja tipos #}
+										<div class="result">
+											<h2 style="font-size: 17px;">Para un inmueble de
+												{% if resultado is defined %}
+													{{ valor_inmueble|number_format(0,',','.') }}
+												{% endif %}€, con una aportación de
+												{{ entrada }}€ y unos gastos totales de
+												{{ gastos|number_format(0,',','.') }}€, el importe total de hipoteca será de
+												{{ importe_total|number_format(0,',','.') }}€ en un plazo de
+												{% if resultado is defined %}
+													{{ amortizacion }}
+												{% endif %}
+												años, actualmente en venta una propiedad por importe de
+												{% if resultado is defined %}
+													{{ valor_vivienda_actual }}€
+												{% endif %}
+												con hipoteca de
+												{% if resultado is defined %}
+													{{ hipoteca_actual }}€
+												{% endif %}
+												y cuando venda reembolsará
+												{% if resultado is defined %}
+													{{ aportacion_tras_venta }}€
+												{% endif %}
+												las cuotas serán de:</h2>
+											<table>
+												<tr>
+													<th></th>
+													<th>Tipo Fijo</th>
+													<th>Tipo Variable</th>
+													<th>Tipo Mixto</th>
+												</tr>
+												<tr>
+													<td style="width:25%;font-size:18px;">
+														Mientras Vende
+													</td>
+													<td style="width:25%">
+														{% if resultado is defined %}
+															{{ cuota_fija|number_format(0,',','.') }}
+														{% endif %}
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
+															{{ tipo_fijo }}%) *</span>
+													</td>
+													<td style="width:25%">
+														{% if resultado is defined %}
+															{{ cuota_variable|number_format(0,',','.') }}
+														{% endif %}
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
+															{{ tipo_variable }}%, posteriormente Euribor + 0.5) *</span>
+													</td>
+													<td style="width:25%">
+														{% if resultado is defined %}
+															{{ cuota_mixta|number_format(0,',','.') }}
+														{% endif %}
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
+															{{ tipo_mixto }}%, posteriormente Euribor +
+															{{ tipo_luego_mixto }}) *</span>
+													</td>
+												</tr>
+												<tr>
+													<td style="width:25%;font-size:18px;">
+														Cuando Venda
+													</td>
+													<td style="width:25%">
+														{% if resultado is defined %}
+															{{ cuota_fija_final|number_format(0,',','.') }}
+														{% endif %}
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
+															{{ tipo_fijo }}%) *</span>
+													</td>
+													<td style="width:25%">
+														{% if resultado is defined %}
+															{{ cuota_variable_final|number_format(0,',','.') }}
+														{% endif %}
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
+															{{ tipo_variable }}%, posteriormente Euribor + 0.5) *</span>
+													</td>
+													<td style="width:25%">
+														{% if resultado is defined %}
+															{{ cuota_mixta_final|number_format(0,',','.') }}
+														{% endif %}
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
+															{{ tipo_mixto }}%, posteriormente Euribor +
+															{{ tipo_luego_mixto }}) *</span>
+													</td>
+												</tr>
+											</table>
+										</div>
+
+										{# Caja gastos #}
+										<div style="margin-top: 10px;">
+											<h2 style="font-size: 1.3em;color: #e53935;">Gastos asociados a la compraventa</h2>
+											<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-coins icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/coins.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">
+														{% if obraNueva %}AJD{% else %}ITP
+														{% endif %}
+														{{ tipo_interes_ccaa|number_format(2,',','.') }}
+														%</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ escritura_compra_impuesto_transmisiones|number_format(0,',','.') }}</span>
+												</div>
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-user-tie icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/notario.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Notaría*</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ notario|number_format(0,',','.') }}</span>
+												</div>
+											</div>
+											{% if obraNueva %}
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<img src="https://areaprivada.hipotea.com/assets/images/email/iva.jpg" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">IVA*</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ importe_iva|number_format(0,',','.') }}</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;"></div>
+												</div>
+											{% endif %}
+											<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-landmark icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/landmark.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Registro*</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ registro|number_format(0,',','.') }}</span>
+												</div>
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-cogs icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/gestoria.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Gestoría*</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ gestoria|number_format(0,',','.') }}</span>
+												</div>
+											</div>
+											<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-landmark icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/tasacion.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label">Tasación*</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ tasacion|number_format(0,',','.') }}</span>
+												</div>
+												{% if gastos_inmobiliaria %}
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-cogs icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/inmobiliaria.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Inmobiliaria</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ gastos_inmobiliaria|number_format(0,',','.') }}</span>
+													</div>
+												{% endif %}
+											</div>
+										</div>
+									</div>
+									<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado style="page-break-before: always;">
+										{# Caja Desglose #}
+										<div class="costs costs2" style="padding: 15px;margin-top: 0;">
+											<h2 style="font-size: 1.3em;color: #e53935;">Importe total de tu Hipoteca</h2>
+											<br>
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Precio vivienda:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ valor_inmueble|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Gastos:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value" style="margin-left: 5px;font-size:14px;">+
+														{{ gastos|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Pendiente hipoteca:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value" style="margin-left: 5px;font-size:14px;">+
+														{{ hipoteca_actual|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											{# <div class="row2">
+																																																																<div class="column70">
+																																																																	<span class="label">Intereses:</span>
+																																																																</div>
+																																																																<div class="column30">
+																																																																	<span class="value">{{ intereses|number_format(2,',','.') }} €</span>
+																																																																</div>
+																																																															</div> #}
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Aportación:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value" style="margin-left: 5px;font-size:14px;">-{{ entrada|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="value total" style="margin-left: 5px;color: black;font-weight: 600;">IMPORTE TOTAL:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value total" style="margin-left: 5px;color: black;font-weight: 600;">{{ importe_total|number_format(0,',','.') }}€
+													</span>
+												</div>
+											</div>
+										</div>
+									{% else %}
+										{# Caja tipos #}
+										<div class="result">
+											<h2 style="font-size: 17px;">Para un inmueble de
+												{% if resultado is defined %}
+													{{ valor_inmueble|number_format(0,',','.') }}
+												{% endif %}€, con una aportación de
+												{{ entrada }}€ y unos gastos totales de
+												{{ gastos|number_format(0,',','.') }}€, el importe total de hipoteca será de
+												{{ importe_total|number_format(0,',','.') }}€. Tu pago mensual calculado a
+												{% if resultado is defined %}
+													{{ amortizacion }}
+												{% endif %}
+												años será de:</h2>
+											{# <h2>Para un inmueble de 300.000€, con una aportación de 20.000€ en un plazo de 30 años, tendrás unos gastos totales de 25.199€, el importe total de la hipoteca será de 364.234€ y tu pago mensual será de:</h2> #}
+											<table>
+												<tr>
+													<th>Tipo Fijo</th>
+													<th>Tipo Variable</th>
+													<th>Tipo Mixto</th>
+												</tr>
+												<tr>
+													<td style="width:33%">
+														{% if resultado is defined %}
+															{{ importe_fijo|number_format(0,',','.') }}
+														{% endif %}€
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
+															{{ tipo_fijo }}%) *</span>
+													</td>
+													<td style="width:33%">
+														{% if resultado is defined %}
+															{{ importe_variable|number_format(0,',','.') }}
+														{% endif %}€
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
+															{{ tipo_variable }}%, posteriormente Euribor + 0.5) *</span>
+													</td>
+													<td style="width:33%">
+														{% if resultado is defined %}
+															{{ cuota_mixta|number_format(0,',','.') }}
+														{% endif %}€
+														<br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
+															{{ tipo_mixto }}%, posteriormente Euribor +
+															{{ tipo_luego_mixto }}) *</span>
+													</td>
+												</tr>
+											</table>
+										</div>
+
+										{# Caja gastos #}
+										<div style="margin-top: 10px;">
+											<h2 style="font-size: 1.3em;color: #e53935;">Gastos asociados a la compraventa</h2>
+											<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-coins icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/coins.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">
+														{% if obraNueva %}AJD{% else %}ITP
+														{% endif %}
+														{{ tipo_interes_ccaa|number_format(2,',','.') }}
+														%</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ escritura_compra_impuesto_transmisiones|number_format(0,',','.') }}
+														€</span>
+												</div>
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-user-tie icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/notario.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Notaría*</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ notario|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											{% if obraNueva %}
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<img src="https://areaprivada.hipotea.com/assets/images/email/iva.jpg" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">IVA*</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ importe_iva|number_format(0,',','.') }}</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;"></div>
+												</div>
+											{% endif %}
+											<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-landmark icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/landmark.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Registro*</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ registro|number_format(0,',','.') }}
+														€</span>
+												</div>
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-cogs icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/gestoria.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Gestoría*</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ gestoria|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+												<div
+													style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+													{# <i class="fas fa-landmark icon"></i> #}
+													<img src="https://areaprivada.hipotea.com/assets/images/email/tasacion.png" style="height: 40px;width: 40px;object-fit: cover;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Tasación*</span>
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ tasacion|number_format(0,',','.') }}
+														€</span>
+												</div>
+												{% if gastos_inmobiliaria %}
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-cogs icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/inmobiliaria.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Inmobiliaria</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ gastos_inmobiliaria|number_format(0,',','.') }}</span>
+													</div>
+												{% endif %}
+											</div>
+										</div>
+									</div>
+									<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado style="page-break-before: always;">
+										{# Caja Desglose #}
+										<div class="costs costs2" style="padding: 15px;margin-top: 0;">
+											<h2 style="font-size: 1.3em;color: #e53935;">Importe total de tu Hipoteca</h2>
+											<br>
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Precio vivienda:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value" style="margin-left: 5px;font-size:14px;">{{ valor_inmueble|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Gastos:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value" style="margin-left: 5px;font-size:14px;">+
+														{{ gastos|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											{# <div class="row2">
+																																																																<div class="column70">
+																																																																	<span class="label">Intereses:</span>
+																																																																</div>
+																																																																<div class="column30">
+																																																																	<span class="value">{{ intereses|number_format(2,',','.') }} €</span>
+																																																																</div>
+																																																															</div> #}
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Aportación:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value" style="margin-left: 5px;font-size:14px;">-{{ entrada|number_format(0,',','.') }}
+														€</span>
+												</div>
+											</div>
+											<div class="row2" style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;padding-bottom: 10px;">
+												<div class="column70" style="display: flex; display: -webkit-box;align-items: center;text-align: right;width: 50%;flex-direction: row-reverse;">
+													<span class="value total" style="margin-left: 5px;color: black;font-weight: 600;">IMPORTE HIPOTECA A SOLICITAR:</span>
+												</div>
+												<div class="column30" style="display: flex; display: -webkit-box;align-items: center;width: 50%;flex-direction: row-reverse;">
+													<span class="value total" style="margin-left: 5px;color: black;font-weight: 600;">{{ importe_total|number_format(0,',','.') }}€
+													</span>
+												</div>
+											</div>
+										</div>
+
+									{% endif %}
+								{% endif %}
+								{% if mensaje is defined %}
+									<div>
+										<center>
+											<br>
+											{{ mensaje }}
+										</center>
+									</div>
+								{% endif %}
+							{% else %}
+								<style>
+									#plazoAmortizacion {
+										padding-left: 0 !important;
+										padding-right: 0 !important;
+									}
+									.btn-right {
+										float: right;
+										margin-top: -40px;
+									}
+									.result {
+										margin-top: 20px;
+									}
+									.result h2 {
+										font-size: 1.1em;
+										margin-bottom: 40px;
+									}
+									.result table {
+										width: 100%;
+										border-collapse: inherit;
+										border: 3px dotted red;
+										border-radius: 10px;
+										padding: 2px;
+									}
+									.result th,
+									.result td {
+										border: 0 solid #ccc;
+										padding: 10px;
+										text-align: center;
+									}
+									.result td {
+										font-weight: 500;
+										font-size: 22px;
+									}
+									.result th {
+										/* background-color: #f4f4f4; */
+										font-size: 1.3em;
+										color: #e53935;
+									}
+
+									.costs {
+										margin-top: 40px;
+									}
+									.costs h2 {
+										font-size: 1.3em;
+										color: #e53935;
+									}
+									.costs .row {
+										display: flex; display: -webkit-box;
+										justify-content: flex-start;
+										margin: 10px 0;
+										border-bottom: 1px dashed #ccc;
+										padding-bottom: 10px;
+									}
+									.costs .column {
+										display: flex; display: -webkit-box;
+										align-items: center;
+										width: 50%;
+									}
+									.costs .icon {
+										margin-right: 10px;
+									}
+									.costs .label {
+										font-weight: bold;
+										font-size: 14px;
+									}
+									.costs .value {
+										margin-left: 5px;
+									}
+									span.label {
+										color: #888;
+									}
+
+									img.icono-imagen {
+										height: 40px;
+										width: 40px;
+										object-fit: cover;
+									}
+
+									.costs .column70 {
+										display: flex; display: -webkit-box;
+										align-items: center;
+										text-align: right;
+										width: 50%;
+										flex-direction: row-reverse;
+									}
+
+									.costs .column30 {
+										display: flex; display: -webkit-box;
+										align-items: center;
+										width: 50%;
+										flex-direction: row-reverse;
+									}
+									.costs .row2 {
+										display: flex; display: -webkit-box;
+										justify-content: flex-start;
+										margin: 10px 0;
+										padding-bottom: 10px;
+									}
+
+									.total {
+										color: black;
+										font-weight: 600;
+									}
+
+									.costs2 {
+										padding: 15px;
+										margin-top: 0;
+									}
+									@media(max-width: 576px) {
+										.result h2,
+										.result th,
+										.result td {
+											font-size: 1em;
+										}
+
+										.costs .column {
+											width: 100%;
+										}
+
+										.costs.cost3 .column {
+											width: 50%;
+										}
+
+										.costs2 {
+											padding: 3px;
+										}
+
+										.costs .column70,
+										.costs .column30 {
+											width: 50%;
+										}
+
+										.costs .label {
+											font-size: 14px;
+											text-align: left;
+										}
+										.card .card-title {
+											font-size: 1.05rem;
+										}
+										#titulo-principal {
+											width: 70vw;
+										}
+									}
+									@media print {
+										.topbar,
+										.left-sidebar,
+										footer,
+										.caja-externa,
+										.row.page-titles,
+										#imprimir {
+											display: none;
+										}
+
+										.page-wrapper {
+											margin-left: 0 !important;
+											padding-top: 0 !important;
+										}
+									}
+								</style>
+								<div {% if resultado is not defined %} class="d-none" {% else %} class="texto-resultado1" {% endif %} data-contenedor-resultado>
+									<div class="result texto-resultado">
+										{% if resultado is defined and importe_fijo > 0 %}
+											<div class="mb-4">
+												<span style="color:grey;font-size:14px;">Con la información que nos has proporcionado, hemos aplicado un algoritmo que estima tu capacidad de pago, considerando los gastos y tu aportación inicial. El precio máximo de vivienda que te recomendamos buscar sería aproximadamente:</span>
+											</div>
+											<h1 class="text-center mb-4 fondo-casa" style="background-image: url(https://areaprivada.hipotea.com/assets/images/fondo-casa.png);background-repeat: no-repeat;background-size: 220px;background-position: center;height: 200px;line-height: 200px;font-size: 25px;margin-bottom: 0px !important;">
+												<span data-pago-mensual>
+													{% if resultado is defined %}
+														{{ importe_fijo|number_format(0,',','.') }}
+													{% endif %}
+													€</span>
+											</h1>
+											<br>
+										{% endif %}
+										{# {% if mensaje is defined and tipo_calculo is defined and tipo_calculo =='cuota'%} #}
+										{% if mensaje is defined %}
+											<div>
+												<center>
+													{# <br> #}
+													{{ mensaje }}
+												</center>
+											</div>
+										{% endif %}
+									{% endif %}
+									{# <br> #}
+									{% if resultado is defined %}
+										{% if tipo_calculo is defined and tipo_calculo =='cuota' %}
+											<p style="color:grey;font-size:14px;">Esta calculadora sólo esta destinada para vivienda (descartando locales, naves, etc.), y no contempla algunas excepciones.</p>
+											<p style="color:grey;font-size:14px;">* Los tipos mostrados son una estimación de tipos medios, y no representan necesariamente las ofertas que se puedan conseguir.</p>
+											<p style="color:grey;font-size:14px;">* Los gastos de notaría, registro, gestoría y tasación son orientativos.</p>
+											<p style="color:grey;font-size:14px;">
+												Los gastos han sido estimados según ley (vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos fueran a cargo del comprador, los honorarios de la notaría serían de 950€.
+											</p>
+										{% else %}
+											{# Caja gastos #}
+											<div style="margin-top: 10px;">
+												<h2 style="font-size: 1.3em;color: #e53935;">Gastos asociados a la compraventa</h2>
+												<p style="color:grey;font-size:14px;">Los datos estimados que hemos considerado para la financiación que necesitarías para comprar una vivienda con el valor que te hemos indicado son los siguientes:</p>
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-coins icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/coins.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">
+															{% if obraNueva %}AJD{% else %}ITP
+															{% endif %}
+															{{ tipo_interes_ccaa|number_format(2,',','.') }}
+															%</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ escritura_compra_impuesto_transmisiones|number_format(0,',','.') }}</span>
+													</div>
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-user-tie icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/notario.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Notaría</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ notario|number_format(0,',','.') }}</span>
+													</div>
+												</div>
+												{% if obraNueva %}
+													<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+														<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+															<img src="https://areaprivada.hipotea.com/assets/images/email/iva.jpg" style="height: 40px;width: 40px;object-fit: cover;">
+															<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">IVA</span>
+															<span class="value" style="margin-left: 5px;font-size:14px;">{{ importe_iva|number_format(0,',','.') }}
+																€</span>
+														</div>
+														<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;"></div>
+													</div>
+												{% endif %}
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-landmark icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/landmark.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Registro</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ registro|number_format(0,',','.') }}</span>
+													</div>
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-cogs icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/gestoria.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Gestoría</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ gestoria|number_format(0,',','.') }}</span>
+													</div>
+												</div>
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-landmark icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/tasacion.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Tasación</span>
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ tasacion|number_format(0,',','.') }}</span>
+													</div>
+													{% if gastos_inmobiliaria %}
+														<div
+															style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+															{# <i class="fas fa-cogs icon"></i> #}
+															<img src="https://areaprivada.hipotea.com/assets/images/email/inmobiliaria.png" style="height: 40px;width: 40px;object-fit: cover;">
+															<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Inmobiliaria</span>
+															<span class="value" style="margin-left: 5px;font-size:14px;">{{ gastos_inmobiliaria|number_format(0,',','.') }}
+																€</span>
+														</div>
+													{% endif %}
+												</div>
+											</div>
+
+											<p style="color:grey;font-size:14px;">Hemos calculado los gastos de forma personalizada, considerando tu edad, comunidad autónoma y los impuestos vigentes, según lo establecido por la ley (donde el vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos los gastos fueran a carga del comprador, los honorarios de la notaría serían aproximadamente de 950€.</p>
+										</div>
+										<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado style="page-break-before: always;">
+											{# Caja Desglose #}
+											<div class="costs costs2" style="padding: 15px;margin-top: 0;">
+												<h2 style="font-size: 1.3em;color: #e53935;">Importe total de tu Hipoteca</h2>
+												{# <br>
+																																	<div class="row2">
+																																		<div class="column70">
+																																			<span class="label">Precio vivienda:</span>
+																																		</div>
+																																		<div class="column30">
+																																			<span class="value">{{ valor_inmueble|number_format(2,',','.') }}
+																																				€</span>
+																																		</div>
+																																	</div>
+																																	<div class="row2">
+																																		<div class="column70">
+																																			<span class="label">Gastos:</span>
+																																		</div>
+																																		<div class="column30">
+																																			<span class="value">+
+																																				{{ gastos|number_format(2,',','.') }}
+																																				€</span>
+																																		</div>
+																																	</div>
+																																	<div class="row2">
+																																		<div class="column70">
+																																			<span class="label">Aportación:</span>
+																																		</div>
+																																		<div class="column30">
+																																			<span class="value">-{{ entrada|number_format(2,',','.') }}
+																																				€</span>
+																																		</div>
+																																	</div>
+																																	<div class="row2">
+																																		<div class="column70">
+																																			<span class="value total">IMPORTE HIPOTECA A SOLICITAR:</span>
+																																		</div>
+																																		<div class="column30">
+																																			<span class="value total">{{ importe_total|number_format(2,',','.') }}€
+																																			</span>
+																																		</div>
+																																	</div> #}
+											</div>
+
+											{# CAJA NUEVA DATOS HIPOTECA #}
+											<div class="costs cost3">
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-coins icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/importe_vivienda.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">
+															Precio vivienda:</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<span class="value" style="margin-left: 5px;font-size:14px;">+
+															{{ valor_inmueble|number_format(0,',','.') }}
+															€</span>
+													</div>
+												</div>
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-coins icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/gastos.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">
+															Gastos:</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<span class="value" style="margin-left: 5px;font-size:14px;">+
+															{{ gastos|number_format(0,',','.') }}
+															€</span>
+													</div>
+												</div>
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-coins icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/aportacion.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">
+															Aportación:</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<span class="value" style="margin-left: 5px;font-size:14px;">-
+															{{ entrada|number_format(0,',','.') }}
+															€</span>
+													</div>
+												</div>
+
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-coins icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/hipoteca_precio.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">
+															Importe hipoteca:</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<span class="value" style="margin-left: 5px;font-weight:800;">{{ importe_total|number_format(0,',','.') }}
+															€</span>
+													</div>
+												</div>
+												<br>
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-landmark icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/plazo.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Plazo:</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ amortizacion|number_format(0,',','.') }}
+															años</span>
+													</div>
+												</div>
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-landmark icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/tipo_interes.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Tipo de interés:</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ tipo_importe_maximo|number_format(2,',','.') }}
+															%</span>
+													</div>
+												</div>
+												<div style="display: flex; display: -webkit-box;justify-content: flex-start;margin: 10px 0;border-bottom: 1px dashed #ccc;padding-bottom: 10px;">
+													<div
+														style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														{# <i class="fas fa-landmark icon"></i> #}
+														<img src="https://areaprivada.hipotea.com/assets/images/email/cuota.png" style="height: 40px;width: 40px;object-fit: cover;">
+														<span class="label" style="font-weight: bold;font-size: 14px;color: #888;">Cuota:</span>
+													</div>
+													<div style="display: flex; display: -webkit-box;align-items: center;width: 50%;">
+														<span class="value" style="margin-left: 5px;font-size:14px;">{{ cuota|number_format(0,',','.') }}
+															€</span>
+													</div>
+												</div>
+											</div>
+											<p style="color:grey;font-size:14px;">Recuerda que este cálculo es orientativo y se basa en valores estandarizados; no garantiza la viabilidad económica del préstamo ni las condiciones definitivas. Para obtener una valoración más precisa y personalizada, te invitamos a completar nuestro cuestionario o solicitar una cita con nuestros asesores.</p>
+
+											{# <p style="color:grey;font-size:14px;">
+																															El valor aproximado de la vivienda que puedes considerar se ha calculado usando un algoritmo que estima tu capacidad de pago y los gastos de compraventa, basado en tus respuestas.
+																														</p>
+																														<p style="color:grey;font-size:14px;">
+																															Hemos utilizado valores medios de tipos de interés, plazos hipotecarios y gastos para ello. Recuerda que este cálculo es orientativo y no asegura la viabilidad económica completa.
+																														</p>
+																														<p style="color:grey;font-size:14px;">
+																															Los gastos han sido estimados según ley (vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos fueran a cargo del comprador, los honorarios de la notaría serían de 950€.
+																														</p>
+																														<p style="color:grey;font-size:14px;">
+																															Para una valoración más precisa y personalizada, te invitamos a completar nuestro cuestionario.
+																														</p>
+																														<p style="color:grey;font-size:14px;margin-top:40px;">
+																															Los gastos estimados para la compra de una vivienda de este importe, acorde a tus características y en la comunidad autónoma indicada serían:
+																														</p> #}
+
+											<p style="color:grey;font-size:14px;">
+												AVISO IMPORTANTE: Aunque en Hipotea ofrecemos hipotecas con financiación al 100% (incluyendo opciones para cubrir gastos), para conseguir las mejores condiciones es recomendable aportar, de media, el 10% del precio de la vivienda más los gastos.
+											</p>
+										{% endif %}
+									{% endif %}
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div>
+		{% endblock %}

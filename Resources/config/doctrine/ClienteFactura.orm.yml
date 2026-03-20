@@ -1,0 +1,58 @@
+AppBundle\Entity\ClienteFactura:
+  type: entity
+  table: cliente_factura
+  id:
+    idClienteFactura:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_cliente_factura
+      generator:
+        strategy: IDENTITY
+  fields:
+    razonSocial:
+      type: string
+      nullable: false
+      length: 255
+      options:
+        fixed: false
+      column: razon_social
+    cif:
+      type: string
+      nullable: false
+      length: 9
+      options:
+        fixed: false
+    direccion:
+      type: string
+      nullable: false
+      length: 255
+      options:
+        fixed: false
+    provincia:
+      type: string
+      nullable: false
+      length: 45
+      options:
+        fixed: false
+    municipio:
+      type: string
+      nullable: false
+      length: 45
+      options:
+        fixed: false
+    cp:
+      type: string
+      nullable: false
+      length: 5
+      options:
+        fixed: false
+    telefono:
+      type: string
+      nullable: false
+      length: 10
+      options:
+        fixed: false
+  lifecycleCallbacks: {  }

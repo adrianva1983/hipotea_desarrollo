@@ -1,0 +1,48 @@
+AppBundle\Entity\Fase:
+  type: entity
+  table: fase
+  uniqueConstraints:
+    tipo_UNIQUE:
+      columns:
+        - tipo
+  id:
+    idFase:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_fase
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombre:
+      type: string
+      nullable: false
+      length: 100
+      options:
+        fixed: false
+    tipo:
+      type: smallint
+      nullable: true
+      options:
+        unsigned: false
+    color:
+      type: string
+      nullable: false
+      length: 7
+      options:
+        fixed: false
+    orden:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+        comment: 'Orden para dibujar el campo'
+    final:
+      type: boolean
+      nullable: false
+      options:
+        comment: "0: No\n1: Si (Solo puede haber una final)\n"
+        default: '0'
+  lifecycleCallbacks: {  }

@@ -1,0 +1,94 @@
+AppBundle\Entity\Factura:
+  type: entity
+  table: factura
+  indexes:
+    fk_cabecera_factura_emisor_factura1_idx:
+      columns:
+        - id_emisor_factura
+    fk_cabecera_factura_cliente_factura1_idx:
+      columns:
+        - id_cliente_factura
+  id:
+    idFactura:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_factura
+      generator:
+        strategy: IDENTITY
+  fields:
+    fecha:
+      type: datetime
+      nullable: true
+    serie:
+      type: string
+      nullable: false
+      length: 45
+      options:
+        fixed: false
+        comment: 'Por defecto los dos últimos dígitos del año actual'
+    numero:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+        comment: 'Cada serie podrá tener facturas con distinto número, pero no podrá haber una factura con mismo número en la misma serie. Todas deben ser consecutivas según la fecha de generación.'
+    baseImponible:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+      column: base_imponible
+    impuestos:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+    retenciones:
+      type: decimal
+      nullable: true
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+    total:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+    descripcion:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+  manyToOne:
+    idClienteFactura:
+      targetEntity: ClienteFactura
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_cliente_factura:
+          referencedColumnName: id_cliente_factura
+      orphanRemoval: false
+    idEmisorFactura:
+      targetEntity: EmisorFactura
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_emisor_factura:
+          referencedColumnName: id_emisor_factura
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

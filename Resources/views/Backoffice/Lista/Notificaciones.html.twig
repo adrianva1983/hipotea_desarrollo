@@ -1,0 +1,60 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/pages/timeline-vertical-horizontal.css') }}" rel="stylesheet">
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/lista-notificaciones.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% if lista_notificaciones is defined and lista_notificaciones is iterable and lista_notificaciones|length>0 %}
+				<ul class="timeline">
+					{% for notificacion in lista_notificaciones %}
+						<li{% if loop.index is even %} class="timeline-inverted"{% endif %}>
+							{% if notificacion.estado is same as(1) %}
+								<div class="timeline-badge danger">
+									<i class="fas fa-envelope"></i>
+								</div>
+							{% elseif notificacion.estado is same as(0) %}
+								<div class="timeline-badge success">
+									<i class="fas fa-file-alt"></i>
+								</div>
+							{% endif %}
+							<div class="timeline-panel">
+								<div class="timeline-heading">
+									<h4 class="timeline-title">{{ notificacion.titulo }}</h4>
+									<p>
+										<small class="text-muted">
+											<i class="fa fa-clock-o"></i>
+											<span>{{ notificacion.fecha|date('d/m/Y H:i:s') }}</span>
+										</small>
+									</p>
+								</div>
+								<div class="timeline-body">
+									<p>{{ notificacion.texto }}</p>
+									<hr>
+									<button class="btn btn-warning waves-effect mr-3" data-cambiar-estado-notificacion="2" data-id-notificacion="{{ notificacion.idNotificacion }}" type="button">Ocultar</button>
+									{% if notificacion.estado is same as(1) %}
+										<button class="btn btn-success waves-effect" data-cambiar-estado-notificacion="0" data-id-notificacion="{{ notificacion.idNotificacion }}" type="button">Marcar como leida</button>
+									{% elseif notificacion.estado is same as(0) %}
+										<button class="btn btn-danger waves-effect" data-cambiar-estado-notificacion="1" data-id-notificacion="{{ notificacion.idNotificacion }}" type="button">Marcar como no leida</button>
+									{% endif %}
+									{% if notificacion.idExpediente %}
+										<a class="btn btn-info waves-effect" style="margin-left:10px;" href="{{ path('agregar_modificar_expediente',{'id':notificacion.idExpediente.idExpediente}) }}">Ir a expediente</a>
+									{% endif %}
+								</div>
+							</div>
+						</li>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<div class="alert alert-info" role="alert">
+					<span>No hay notifcaciones.</span>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}

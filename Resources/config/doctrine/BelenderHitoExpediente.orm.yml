@@ -1,0 +1,72 @@
+AppBundle\Entity\BelenderHitoExpediente:
+  type: entity
+  table: belender_hito_expediente
+  repositoryClass: AppBundle\Repository\BelenderHitoExpedienteRepository
+  
+  id:
+    id:
+      type: integer
+      generator:
+        strategy: AUTO
+
+  fields:
+    idHitoExpediente:
+      type: integer
+      column: id_hito_expediente
+
+    dniBelender:
+      type: string
+      length: 255
+      column: dni_belender
+
+    requestIdBelender:
+      type: string
+      length: 255
+      column: requestid_belender
+
+    fecha:
+      type: datetime
+      nullable: true
+
+    fechaNotificacion:
+      type: datetime
+      column: fecha_notificacion
+      nullable: true
+
+    fechaDescarga:
+      type: datetime
+      column: fecha_descarga
+      nullable: true
+
+    tipoPeticion:
+      type: string
+      length: 50
+      column: tipo_peticion
+      options:
+        default: 'BELENDER'
+
+    statusCode:
+      type: string
+      length: 100
+      column: status_code
+      nullable: true
+
+    fechaStatus:
+      type: datetime
+      column: fecha_status
+      nullable: true
+
+  indexes:
+    idx_hito_expediente_tipo:
+      columns:
+        - id_hito_expediente
+        - tipo_peticion
+    idx_dni_belender:
+      columns:
+        - dni_belender
+    idx_requestid_belender:
+      columns:
+        - requestid_belender
+    idx_fecha:
+      columns:
+        - fecha

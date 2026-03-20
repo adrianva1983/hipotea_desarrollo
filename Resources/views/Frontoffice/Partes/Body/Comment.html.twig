@@ -1,0 +1,54 @@
+<li class="nav-item dropdown">
+	<a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle waves-effect waves-dark" data-toggle="dropdown" href="javascript:void(0)">
+		<i class="ti-email" style="font-size: 30px;"></i>
+		{% if notificaciones is defined and notificaciones.notificaciones is defined and notificaciones.notificaciones is iterable and notificaciones.notificaciones|length>0 %}
+			<div class="notify">
+				<span class="heartbit"></span>
+				<span class="point"></span>
+			</div>
+		{% endif %}
+	</a>
+	<div class="dropdown-menu dropdown-menu-right mailbox animated bounceInDown">
+		<ul>
+			<li>
+				<div class="drop-title">Notificaciones</div>
+			</li>
+			<li>
+				<div class="message-center">
+					{% if notificaciones is defined and notificaciones.notificaciones is defined and notificaciones.notificaciones is iterable and notificaciones.notificaciones|length>0 %}
+						{% for notificacion in notificaciones.notificaciones %}
+							<a data-notificacion="{{ notificacion.idNotificacion }}" href="javascript:void(0)">
+								<div class="d-inline bg-danger rounded-circle p-2" data-contenedor-icono>
+									<i class="fas fa-envelope fa-fw text-white my-2"></i>
+								</div>
+								<div class="mail-contnet">
+									<h5 data-notificacion-titulo>{{ notificacion.titulo }}</h5>
+									<span class="mail-desc" data-notificacion-texto>{{ notificacion.texto }}</span>
+									{% if notificacion.idExpediente %}
+										<input type="hidden" name="idExpediente" data-notificacion-expediente value="{{notificacion.idExpediente.idExpediente}}">
+									{% endif %}
+									<span class="time">{{ notificacion.fecha|date('d/m/Y H:i:s') }}</span>
+								</div>
+							</a>
+						{% endfor %}
+					{% else %}
+						<a href="javascript:void(0)">
+							<div class="d-inline bg-warning rounded-circle p-2">
+								<i class="fas fa-envelope-open fa-fw text-white my-2"></i>
+							</div>
+							<div class="mail-contnet">
+								<h5>No hay notificaciones</h5>
+							</div>
+						</a>
+					{% endif %}
+				</div>
+			</li>
+			<li>
+				<a class="nav-link text-center link" href="{{ path('lista_notificaciones') }}">
+					<strong>Revisar todas las notificaciones </strong>
+					<i class="fa fa-angle-right"></i>
+				</a>
+			</li>
+		</ul>
+	</div>
+</li>

@@ -1,0 +1,107 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme calculadora_sencilla '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/countDecimalPlaces.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/round.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/calculadora-sencilla.min.js') }}"></script>
+{% endblock %}
+{% block customstyles %}
+	<link href="{{ asset('assets/css/custom/custom.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/calculadora-avanzada.css') }}" rel="stylesheet">
+{% endblock %}
+{% block body %}
+	<div class="row">
+		<div class="col-lg mb-4 mb-lg-0">
+			<div class="card h-100 mb-0  caja-externa">
+				<div class="card-body p-40 caja-calculadora">
+					<h4 class="card-title mb-1">Calcula la cuota de tu hipoteca</h4>
+					<div class="text-muted mb-4">Rellena la siguiente información</div>
+					{{ form_start(calculadora_sencilla) }}
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_sencilla.precioTotal) }}
+							{{ form_widget(calculadora_sencilla.precioTotal) }}
+							{{ form_errors(calculadora_sencilla.precioTotal) }}
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_sencilla.aportacionInicial) }}
+							{{ form_widget(calculadora_sencilla.aportacionInicial) }}
+							{{ form_errors(calculadora_sencilla.aportacionInicial) }}
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_sencilla.tasaInteres) }}
+							<div class="input-group">
+								{{ form_widget(calculadora_sencilla.tasaInteres) }}
+								<div class="input-group-append">
+									<span class="input-group-text">
+										<i class="fas fa-chart-line"></i>
+									</span>
+								</div>
+							</div>
+							{{ form_errors(calculadora_sencilla.tasaInteres) }}
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group col">
+							{{ form_label(calculadora_sencilla.plazoAmortizacion) }}
+							<div class="input-group">
+								{{ form_widget(calculadora_sencilla.plazoAmortizacion) }}
+								<div class="input-group-append">
+									<span class="input-group-text">
+										<i class="far fa-calendar-alt"></i>
+									</span>
+								</div>
+							</div>
+							{{ form_errors(calculadora_sencilla.plazoAmortizacion) }}
+						</div>
+					</div>
+					<div class="d-flex">
+						<a class="btn btn-success mr-auto waves-effect btn-volver" href="{{ path('inicio') }}">Volver</a>
+						<button class="btn btn-success waves-effect" id="{{ calculadora_sencilla.calcular.vars.id }}" name="{{ calculadora_sencilla.calcular.vars.full_name }}">
+							<i class="fas fa-calculator"></i>
+							<span> Calcular</span>
+						</button>
+						{% do calculadora_sencilla.calcular.setRendered %}
+						{{ form_end(calculadora_sencilla) }}
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg mb-4 mb-lg-0">
+			<div class="card h-100">
+				<h4 class="card-header bg-success text-light mb-0">Tu hipoteca</h4>
+				<div class="card-body d-flex flex-column justify-content-center m-auto" style="width:100%;">
+					<div class="{% if resultado is not defined %}d-none{% endif %} texto-resultado" data-contenedor-resultado>
+						<div class="mb-4">
+							<span>Para una hipoteca de </span>
+							<span data-resultado-hipoteca>{% if resultado is defined %}{{ hipoteca|number_format(2,',','.') }}{% endif %}</span>
+							<span> € amortizada en </span>
+							<span data-plazo-amortizacion>{% if resultado is defined %}{{ calculadora_sencilla.plazoAmortizacion.vars.value }}{% endif %}</span>
+							<span> año(s), tu pago mensual es de:</span>
+						</div>
+						<h1 class="mb-4">
+							<span data-pago-mensual>{% if resultado is defined %}{{ pago_mensual|number_format(2,',','.') }}{% endif %}</span>
+							<span> €</span>
+						</h1>
+						{# <div class="mb-4">
+							<span>Hipoteca total con interés: </span>
+							<span data-hipoteca-total-con-interes> {% if resultado is defined %}{{ hipoteca_total_con_interes|number_format(2,',','.') }}{% endif %}</span>
+							<span> €</span>
+						</div>
+						<div>
+							<span>Total con anticipo: </span>
+							<span data-total-con-anticipo>{% if resultado is defined %}{{ total_con_anticipo|number_format(2,',','.') }}{% endif %}</span>
+							<span> €</span>
+						</div> #}
+					</div>
+					<div class="text-muted{% if resultado is defined %} d-none{% endif %} texto-resultado" data-contenedor-resultado-vacio>Rellena el formulario para ver tu resultado.</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

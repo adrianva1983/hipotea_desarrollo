@@ -1,0 +1,1838 @@
+{% if not is_granted('ROLE_CLIENTE') %}
+	{% set crearnuevo = path('agregar_modificar_expediente') %}
+	{% set crearnuevo_texto = 'Crear nuevo' %}
+{% endif %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/lista-expedientes.min.css') }}" rel="stylesheet">
+	<style>
+		#tabla-entidades {
+			max-width: 100% !important;
+		}
+
+		#tabla-entidades thead th:nth-child(1),
+		#tabla-entidades thead th:nth-child(2),
+		#tabla-entidades thead th:nth-child(3),
+		#tabla-entidades thead th:nth-child(4),
+		#tabla-entidades thead th:nth-child(5),
+		#tabla-entidades thead th:nth-child(6),
+		#tabla-entidades thead th:nth-child(7),
+		#tabla-entidades thead th:nth-child(8),
+		#tabla-entidades thead th:nth-child(9),
+		#tabla-entidades thead th:nth-child(10),
+		#tabla-entidades thead th:nth-child(11),
+		#tabla-entidades thead th:nth-child(12),
+		#tabla-entidades thead th:nth-child(13),
+		#tabla-entidades thead th:nth-child(14),
+		#tabla-entidades thead th:nth-child(15),
+		#tabla-entidades tbody tr td:nth-child(1),
+		#tabla-entidades tbody tr td:nth-child(2),
+		#tabla-entidades tbody tr td:nth-child(3),
+		#tabla-entidades tbody tr td:nth-child(4),
+		#tabla-entidades tbody tr td:nth-child(5),
+		#tabla-entidades tbody tr td:nth-child(6),
+		#tabla-entidades tbody tr td:nth-child(7),
+		#tabla-entidades tbody tr td:nth-child(8),
+		#tabla-entidades tbody tr td:nth-child(9),
+		#tabla-entidades tbody tr td:nth-child(10),
+		#tabla-entidades tbody tr td:nth-child(11),
+		#tabla-entidades tbody tr td:nth-child(12),
+		#tabla-entidades tbody tr td:nth-child(13),
+		#tabla-entidades tbody tr td:nth-child(14),
+		#tabla-entidades tbody tr td:nth-child(15) {
+			max-width: max-content !important;
+			width: max-content !important;
+		}
+
+		a.editar {
+			border: 2px solid green;
+			padding: 2px;
+			border-radius: 5px;
+			color: green;
+			background: white;
+			font-size: 18px;
+		}
+		a.documentos {
+			border: 2px solid blue;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: blue;
+			background: white;
+			font-size: 18px;
+		}
+
+		a.notificar,
+		a.cancelar {
+			border: 2px solid red;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: red;
+			background: white;
+			font-size: 18px;
+		}
+
+		a.email {
+			border: 2px solid gray;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: gray;
+			background: white;
+			font-size: 18px;
+		}
+		a.informe {
+			border: 2px solid orange;
+			padding: 2px 10px;
+			border-radius: 5px;
+			color: orange;
+			background: white;
+			font-size: 18px;
+		}
+		a.whatsapp-chat {
+			border: 2px solid #25D366;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: #25D366;
+			background: white;
+			font-size: 18px;
+			cursor: pointer;
+		}
+		a.whatsapp-chat:hover:not(.disabled) {
+			background-color: #25D366;
+			color: white;
+		}
+
+		a.whatsapp-chat.disabled {
+			border-color: #ccc;
+			color: #ccc;
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
+		a.whatsapp-chat.disabled:hover {
+			background-color: white !important;
+			color: #ccc !important;
+		}
+
+		tr:hover a.whatsapp-chat:not(.disabled) {
+			color: #25D366;
+			background-color: white;
+		}
+
+		/* Estilos para el modal de WhatsApp */
+		.whatsapp-messages-container {
+			max-height: 500px;
+			overflow-y: auto;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 10px;
+			background-color: #ece5dd;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.whatsapp-message {
+			margin-bottom: 10px;
+			padding: 10px;
+			border-radius: 5px;
+			word-wrap: break-word;
+			display: inline-block;
+			max-width: 70%;
+		}
+
+		.whatsapp-message.user {
+			background-color: #ffffff;
+			text-align: left;
+			margin-right: auto;
+			border: 1px solid #ddd;
+			align-self: flex-start;
+		}
+		.whatsapp-message.assistant {
+			background-color: #83eeab;
+			text-align: left;
+			margin-left: auto;
+			border: 1px solid #ddd;
+			align-self: flex-start;
+		}
+
+		.whatsapp-message.bot,
+		.whatsapp-message.whatsapp_bot {
+			background-color: #dcf8c6;
+			text-align: left;
+			align-self: flex-end;
+		}
+
+		.whatsapp-message-time {
+			font-size: 0.75rem;
+			color: #666;
+			margin-top: 5px;
+		}
+
+		.whatsapp-message-role {
+			font-weight: bold;
+			font-size: 0.85rem;
+			color: #333;
+			margin-bottom: 5px;
+		}
+
+		/* Estilos para el input de envío de mensajes */
+		#whatsappInputArea {
+			background-color: #f0f0f0;
+		}
+
+		#whatsappMessageInput {
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 10px;
+			resize: vertical;
+			font-size: 14px;
+		}
+
+		#whatsappMessageInput:focus {
+			border-color: #25D366;
+			box-shadow: 0 0 5px rgba(37, 211, 102, 0.3);
+			outline: none;
+		}
+
+		#enviarMensajeWhatsapp {
+			background-color: #25D366;
+			border-color: #25D366;
+		}
+
+		#enviarMensajeWhatsapp:hover:not(:disabled) {
+			background-color: #1eac4f;
+			border-color: #1eac4f;
+		}
+
+		#enviarMensajeWhatsapp:disabled {
+			background-color: #a8d5ba;
+			border-color: #a8d5ba;
+			cursor: not-allowed;
+		}
+
+		a.contrato {
+			border: 2px solid cornflowerblue;
+			padding: 2px 10px;
+			border-radius: 5px;
+			color: cornflowerblue;
+			background: white;
+			font-size: 18px;
+		}
+
+		a.pendiente,
+		a.seguimiento {
+			border: 2px solid darkmagenta;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: darkmagenta;
+			background: white;
+			font-size: 18px;
+		}
+
+		a.registro,
+		a.firmas {
+			border: 2px solid tomato;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: tomato;
+			background: white;
+			font-size: 18px;
+		}
+
+		a.duplicar {
+			border: 2px solid teal;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: teal;
+			background: white;
+			font-size: 18px;
+		}
+
+		a.editar span,
+		a.documentos span,
+		a.notificar span,
+		a.email span,
+		a.informe span,
+		a.pendiente span,
+		a.registro span,
+		a.duplicar span,
+		a.firmas span,
+		a.seguimiento span,
+		a.cancelar span {
+			display: none;
+		}
+
+		@media(max-width: 576px) {
+			#tabla-entidades thead th,
+			#tabla-entidades tbody tr td {
+				max-width: max-content !important;
+				width: max-content !important;
+			}
+
+			#tabla-entidades td:nth-child(1) {
+				padding-right: 20px !important;
+			}
+		}
+		
+		.pagination-info {
+			text-align: center;
+			margin-top: 10px;
+			color: #666;
+		}
+		
+		.estado-btn {
+			min-height: 32px !important;
+		}
+	</style>
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script>
+		$(function () {
+			'use strict';
+			
+			// DEBUG: Contar opciones antes de inicializar Select2
+			var countClientes = $('#clientes option').length;
+			//console.log('Opciones de clientes en HTML:', countClientes);
+			$('#count-clientes').text(countClientes);
+			
+			// DEBUG: Director de Expansión - Mostrar responsables y inmobiliarias filtradas
+			//console.log('=== DIRECTOR DE EXPANSIÓN ===');
+			//console.log('ID Usuario Mod:', {{ app.user.idUsuario }});
+			
+			// Responsables asignados
+			const responsables = {{ responsablesDelDirector|json_encode|raw }};
+			const responsables1 = {{ responsablesDelDirector1|json_encode|raw }};
+			//console.log('Responsables asignados:', responsables);
+			//console.log('Responsables asignados1:', responsables1);
+			
+			
+			// Inmobiliarias filtradas
+			const inmobiliariaIds = [{% for id in inmobiliariasFiltradas %}'{{ id }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+			//console.log('Inmobiliarias filtradas:', inmobiliariaIds);
+			
+			// IMPORTANTE: Destruir TODAS las instancias de Select2 antes de inicializar
+			$('select').each(function() {
+				if ($(this).data('select2')) {
+					$(this).select2('destroy');
+				}
+			});
+			
+			// Esperar un momento antes de reinicializar
+			setTimeout(function() {
+				// Inicializar todos los select2
+				$('.select2').each(function() {
+					var placeholderText = $(this).data('placeholder') || '';
+					var isMultiple = $(this).attr('multiple') !== undefined;
+					
+					//console.log('Inicializando select:', $(this).attr('id'), 'con', $(this).find('option').length, 'opciones, multiple:', isMultiple);
+					
+					$(this).select2({
+						language: 'es',
+						placeholder: placeholderText,
+						allowClear: true,
+						width: '100%',
+						closeOnSelect: !isMultiple
+					});
+				});
+				
+				//console.log('Select2 inicializado correctamente');
+				
+				// Aplicar filtro de inmobiliarias si es Director de Expansión
+				if ({{ app.user.idUsuario }} === 1656 && inmobiliariaIds.length > 0) {
+					//console.log('Aplicando filtro de inmobiliarias para Director de Expansión');
+					$('#inmobiliarias').val(inmobiliariaIds).change();
+					//console.log('Filtro de inmobiliarias aplicado');
+				}
+			}, 100);
+			
+			$('[data-toggle="popover"]').popover();
+			
+			// Manejar selección de todos los checkboxes
+			$('#seleccionar-todas-entidades').on('change', function() {
+				$('input[name="expediente[]"]').prop('checked', $(this).prop('checked'));
+			});
+			
+			// Si se desmarca alguno individualmente, desmarcar el "seleccionar todos"
+			$(document).on('change', 'input[name="expediente[]"]', function() {
+				if (!$(this).prop('checked')) {
+					$('#seleccionar-todas-entidades').prop('checked', false);
+				} else {
+					// Si todos están marcados, marcar el "seleccionar todos"
+					if ($('input[name="expediente[]"]:checked').length === $('input[name="expediente[]"]').length) {
+						$('#seleccionar-todas-entidades').prop('checked', true);
+					}
+				}
+			});
+			
+			// Funcionalidad de búsqueda global con debounce
+			var searchTimeout;
+			$('#buscar-tabla').on('keyup', function() {
+				clearTimeout(searchTimeout);
+				var valor = $(this).val();
+				
+				// Si el campo está vacío, no hacer búsqueda
+				if (valor.length === 0) {
+					return;
+				}
+				
+				// Esperar 500ms después de que el usuario deje de escribir
+				searchTimeout = setTimeout(function() {
+					// Obtener la URL actual y agregar el parámetro de búsqueda
+					var url = new URL(window.location.href);
+					url.searchParams.set('buscar', valor);
+					url.searchParams.set('page', '1'); // Resetear a la página 1
+					
+					// Redirigir a la URL con el parámetro de búsqueda
+					window.location.href = url.toString();
+				}, 500);
+			});
+			
+			// Limpiar búsqueda si se borra el campo
+			$('#buscar-tabla').on('search', function() {
+				if ($(this).val() === '') {
+					var url = new URL(window.location.href);
+					url.searchParams.delete('buscar');
+					window.location.href = url.toString();
+				}
+			});
+		});
+
+		function rutaDuplicarExpediente() {
+			return '{{ path('duplicar_expediente',{'id':' '}) }}';
+		}
+
+		function rutaNotificacionExpediente() {
+			return '{{ path('notificacion_expediente',{'id':' '}) }}';
+		}
+
+		function rutaCancelarExpediente() {
+			return '{{ path('cancelar_expediente',{'id':' '}) }}';
+		}
+		
+		function cambiarLimit(nuevoLimit) {
+			// Obtener la URL actual con todos sus parámetros
+			var url = new URL(window.location.href);
+			
+			// Actualizar el parámetro limit
+			url.searchParams.set('limit', nuevoLimit);
+			
+			// Resetear a la página 1 al cambiar el límite
+			url.searchParams.set('page', '1');
+			
+			// Redirigir a la nueva URL
+			window.location.href = url.toString();
+		}
+		
+		// Manejo de botones de estado (Cancelados, Activos, Firmados)
+		$(function() {
+			// Función para aplicar estilos al botón según el estado
+			function aplicarEstiloBotón(estado) {
+				//console.log('Aplicando estilo al estado:', estado);
+				// Remover estilos de todos los botones
+				$('.estado-btn').removeAttr('style').removeClass('active');
+				
+				// Buscar el botón con el estado y aplicar estilo
+				var botón = $('.estado-btn[data-estado="' + estado + '"]');
+				if (botón.length) {
+					//console.log('Botón encontrado para estado:', estado);
+					if (estado == '0') {
+						botón.css({'background-color': '#dc3545', 'color': 'white'});
+					} else if (estado == '1') {
+						botón.css({'background-color': '#28a745', 'color': 'white'});
+					} else if (estado == '2') {
+						botón.css({'background-color': '#007bff', 'color': 'white'});
+					} 
+				}
+			}
+			
+			// Al cargar la página, activar el botón correspondiente al valor del input oculto
+			var estadoActual = $('#estado-filtro').val();
+			//console.log('Estado actual del input oculto:', estadoActual);
+			
+			// Si no hay estado o está vacío, usar '1' (Activos) por defecto
+			if (!estadoActual || estadoActual === '') {
+				estadoActual = '1';
+				$('#estado-filtro').val('1');
+			}
+			
+			aplicarEstiloBotón(estadoActual);
+			
+			// Evento click en los botones
+			$('.estado-btn').on('click', function() {
+				var estado = $(this).data('estado');
+				//console.log('Click en botón con estado:', estado);
+				
+				// Aplicar estilos al botón clickeado
+				aplicarEstiloBotón(estado);
+				
+				// Actualizar el valor del input oculto
+				$('#estado-filtro').val(estado);
+			});
+		});
+	</script>
+	<script src="{{ asset('assets/js/custom/lista-expedientes.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/notificacion-expediente.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/cancelar-expediente.js') }}"></script>
+	<script>
+		// Variable global para almacenar expedientes con mensajes
+		var expedientesConMensajes = [];
+		
+		// Datos del usuario logueado
+		var usuarioLogueado = {
+			id: {{ usuarioLogueado.idUsuario }},
+			role: '{{ rolUsuario }}',
+			phone: '{{ telefonoUsuario }}'
+		};
+		
+		// Variable para guardar el ID del expediente actual
+		var expedienteActual = null;
+		
+		// Variable para rastrear el número de mensajes y controlar el botón
+		var numeroMensajesActual = 0;
+		var mensajeEnviadoAstPendiente = false;
+		// Variable para polling automático de mensajes
+		var pollingIntervalId = null;
+		
+		console.log('Usuario logueado:', usuarioLogueado);
+
+		// Cargar expedientes con mensajes al cargar la página
+		$(document).ready(function() {
+			cargarExpedientesConMensajes();
+			
+			// Eventos del formulario de WhatsApp
+			$('#enviarMensajeWhatsapp').on('click', function() {
+				enviarMensajeWhatsApp();
+			});
+			
+			$('#limpiarMensajeWhatsapp').on('click', function() {
+				$('#whatsappMessageInput').val('');
+			});
+			
+			// Enviar con Enter (Shift+Enter para nueva línea)
+			$('#whatsappMessageInput').on('keypress', function(e) {
+				if (e.which === 13 && !e.shiftKey) {
+					e.preventDefault();
+					enviarMensajeWhatsApp();
+				}
+			});
+			// Detector de cierre del modal para detener polling
+			$('#whatsappChatModal').on('hidden.bs.modal', function() {
+				console.log('Modal cerrado, deteniendo polling...');
+				if (pollingIntervalId) {
+					clearInterval(pollingIntervalId);
+					pollingIntervalId = null;
+				}
+			});
+		});
+
+		function cargarExpedientesConMensajes() {
+			$.ajax({
+				url: '{{ path('api_get_expedientes_con_mensajes') }}?api_key=123456',
+				method: 'GET',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) {
+					console.log('Expedientes con mensajes:', response.expedientes_con_mensajes);
+					expedientesConMensajes = response.expedientes_con_mensajes;
+					
+					// Habilitar/deshabilitar botones de WhatsApp según acceso
+					actualizarBotonesWhatsApp();
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al cargar expedientes con mensajes:', error);
+				}
+			});
+		}
+
+		function actualizarBotonesWhatsApp() {
+			// Recorrer todos los botones de WhatsApp
+			$('a.whatsapp-chat').each(function() {
+				var expedienteId = String($(this).data('expediente-id'));
+				
+				// Si es ADMIN, habilitar solo si hay mensajes
+				if (usuarioLogueado.role === 'ROLE_ADMIN') {
+					var idsConMensajesString = expedientesConMensajes.map(String);
+					if (idsConMensajesString.includes(expedienteId)) {
+						console.log('✓ Habilitando botón para ADMIN en expediente:', expedienteId, '(Tiene mensajes)');
+						$(this).removeClass('disabled');
+					} else {
+						console.log('Deshabilitando botón para ADMIN en expediente:', expedienteId, '(Sin mensajes)');
+						$(this).addClass('disabled');
+					}
+					return;
+				}
+				
+				// Para TECNICO/COMERCIAL, SIEMPRE verificar si es asignado (con o sin mensajes previos)
+				verificarAccesoWhatsApp(expedienteId, $(this));
+			});
+		}
+		
+		function verificarAccesoWhatsApp(expedienteId, boton) {
+			// Si es ADMIN, habilitar siempre
+			if (usuarioLogueado.role === 'ROLE_ADMIN') {
+				console.log('Habilitando botón para ADMIN en expediente:', expedienteId);
+				boton.removeClass('disabled');
+				return;
+			}
+			console.log('Verificando acceso WhatsApp para expediente:', expedienteId);
+			// Verificar si es TÉCNICO o COMERCIAL del expediente
+			$.ajax({
+				url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteId,
+				method: 'GET',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(expedienteData) {
+					var idUsuario = parseInt(usuarioLogueado.id);
+					var idTecnico = expedienteData.id_tecnico ? parseInt(expedienteData.id_tecnico) : null;
+					var idComercial = expedienteData.id_comercial ? parseInt(expedienteData.id_comercial) : null;
+					
+					// Si es técnico o comercial del expediente, habilitar
+					if (idTecnico === idUsuario || idComercial === idUsuario) {
+						console.log('✓ Habilitando botón para expediente:', expedienteId, '(Eres Técnico/Comercial)');
+						boton.removeClass('disabled');
+						return;
+					}
+					
+					// Si no es técnico/comercial, continuar con la verificación normal
+					verificarAccesoWhatsAppPorMensajes(expedienteId, boton);
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al verificar técnico/comercial:', error);
+					verificarAccesoWhatsAppPorMensajes(expedienteId, boton);
+				}
+			});
+		}
+		
+		function verificarAccesoWhatsAppPorMensajes(expedienteId, boton) {
+			// Verificar si tiene mensajes de su teléfono
+			$.ajax({
+				url: '{{ path('api_get_whatsapp_messages', {'id': 'EXPEDIENTE_ID'}) }}'.replace('EXPEDIENTE_ID', expedienteId),
+				method: 'GET',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) {
+					var tieneAcceso = false;
+					
+					if (response && response.length > 0) {
+						for (var i = 0; i < response.length; i++) {
+							if (response[i].phone_number === usuarioLogueado.phone) {
+								tieneAcceso = true;
+								break;
+							}
+						}
+					}
+					
+					if (tieneAcceso) {
+						console.log('Habilitando botón para expediente:', expedienteId, '(Tiene mensajes)');
+						boton.removeClass('disabled');
+					} else {
+						console.log('Deshabilitando botón para expediente:', expedienteId, '(Sin acceso)');
+						boton.addClass('disabled');
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al verificar acceso:', error);
+					boton.addClass('disabled');
+				}
+			});
+		}
+		
+		// Manejar click en botón de WhatsApp para ver conversaciones
+		$(document).on('click', 'a.whatsapp-chat', function(e) {
+			e.preventDefault();
+			
+			// Si el botón está deshabilitado, no hacer nada
+			if ($(this).hasClass('disabled')) {
+				return;
+			}
+			
+			var expedienteId = $(this).data('expediente-id');
+			expedienteActual = expedienteId;
+			
+			
+			
+			// Obtener datos del expediente para mostrar teléfono del cliente
+			$.ajax({
+				url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteId,
+				method: 'GET',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) {
+					// Mostrar el modal
+					$('#whatsappChatModal').modal('show');
+					var telefonoCliente = response.telefono_cliente || 'N/A';
+					
+					// Actualizar título del modal con la información completa
+					$('#whatsappChatModalLabel').html(
+						'<i class="fab fa-whatsapp" style="color: #25D366;"></i> ' +
+						'Expediente #' + expedienteId + 
+						' | Mi teléfono: ' + usuarioLogueado.phone +
+						' | Cliente: ' + telefonoCliente
+					);
+				},
+				error: function() {
+					// Si falla, mostrar solo la información que tenemos
+					$('#whatsappChatModalLabel').html(
+						'<i class="fab fa-whatsapp" style="color: #25D366;"></i> ' +
+						'Expediente #' + expedienteId + 
+						' | Mi teléfono: ' + usuarioLogueado.phone +
+						' | Cliente: N/A'
+					);
+				}
+			});
+			
+			// Limpiar input
+			$('#whatsappMessageInput').val('');
+			$('#whatsappInputArea').hide();
+			
+			// Cargar los mensajes del expediente
+			console.log('Cargando mensajes de WhatsApp para expediente ID:', expedienteId);
+			cargarMensajesWhatsApp(expedienteId);
+			// Iniciar polling automático de mensajes cada 3 segundos
+			if (pollingIntervalId) {
+				clearInterval(pollingIntervalId);
+			}
+			pollingIntervalId = setInterval(function() {
+				cargarMensajesWhatsApp(expedienteId);
+			}, 10000);
+			console.log('✓ Polling iniciado para expediente:', expedienteId);
+		});
+		
+		function cargarMensajesWhatsApp(expedienteId) {
+			var url = '{{ path('api_get_whatsapp_messages', {'id': 'EXPEDIENTE_ID'}) }}'.replace('EXPEDIENTE_ID', expedienteId);
+			
+			$.ajax({
+				url: url,
+				method: 'GET',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) 
+				{
+					console.log('cargarMensajesWhatsApp', response);
+					renderizarMensajes(response);
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al cargar mensajes:', error);
+					$('#whatsappMessagesContent').html(
+						'<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+						'<strong>No hay mensajes</strong> o ocurrió un error al cargar la conversación.' +
+						'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+						'<span aria-hidden="true">&times;</span></button></div>'
+					);
+					$('#whatsappInputArea').hide();
+				}
+			});
+		}
+		
+		function renderizarMensajes(messages) {
+			if (!messages || messages.length === 0) {
+				$('#whatsappMessagesContent').html(
+					'<div class="alert alert-info alert-dismissible fade show" role="alert">' +
+					'<strong>Sin mensajes</strong> - No hay conversaciones de WhatsApp para este expediente.' +
+					'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+					'<span aria-hidden="true">&times;</span></button></div>'
+				);
+				numeroMensajesActual = 0;
+				
+				// Verificar si es técnico/comercial asignado para permitir iniciar conversación
+				if (usuarioLogueado.role === 'ROLE_TECNICO' || usuarioLogueado.role === 'ROLE_COMERCIAL') {
+					$.ajax({
+						url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteActual,
+						method: 'GET',
+						async: false,
+						headers: {
+							'X-Requested-With': 'XMLHttpRequest'
+						},
+						success: function(expedienteData) {
+							var idUsuario = parseInt(usuarioLogueado.id);
+							var idTecnico = expedienteData.id_tecnico ? parseInt(expedienteData.id_tecnico) : null;
+							var idComercial = expedienteData.id_comercial ? parseInt(expedienteData.id_comercial) : null;
+							
+							if (idTecnico === idUsuario || idComercial === idUsuario) {
+								console.log('✓ Técnico/Comercial asignado - Mostrando área de envío para iniciar conversación');
+								$('#whatsappInputArea').show();
+								return;
+							}
+							$('#whatsappInputArea').hide();
+						},
+						error: function(xhr, status, error) {
+							console.error('Error al verificar técnico/comercial:', error);
+							$('#whatsappInputArea').hide();
+						}
+					});
+				} else {
+					$('#whatsappInputArea').hide();
+				}
+				return;
+			}
+			
+			var html = '<div class="whatsapp-messages-container">';
+			
+			// Filtrar mensajes según el rol del usuario
+			var mensajesFiltrados = messages;
+			if (usuarioLogueado.role !== 'ROLE_ADMIN' && usuarioLogueado.phone) {
+				mensajesFiltrados = messages.filter(function(msg) {
+					return msg.phone_number === usuarioLogueado.phone;
+				});
+			}
+			
+			if (mensajesFiltrados.length === 0) {
+				$('#whatsappMessagesContent').html(
+					'<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+					'<strong>Sin acceso</strong> - No tienes mensajes en esta conversación.' +
+					'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+					'<span aria-hidden="true">&times;</span></button></div>'
+				);
+				$('#whatsappInputArea').hide();
+				numeroMensajesActual = 0;
+				return;
+			}
+			
+			// Guardar el número de mensajes anterior
+			var numeroMensajesAnterior = numeroMensajesActual;
+			numeroMensajesActual = mensajesFiltrados.length;
+			
+			// Si hay un mensaje pendiente y el número de mensajes aumentó, habilitar el botón
+			if (mensajeEnviadoAstPendiente && numeroMensajesActual > numeroMensajesAnterior) {
+				console.log('✓ Mensaje encontrado en la base de datos. Botón habilitado.');
+				console.log('Mensajes anteriores:', numeroMensajesAnterior, 'Mensajes actuales:', numeroMensajesActual);
+				mensajeEnviadoAstPendiente = false;
+				
+				// Eliminar la alerta de mensaje enviado
+				$('.alert-success').fadeOut(400, function() {
+					$(this).remove();
+				});
+				
+				$('#enviarMensajeWhatsapp').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Enviar');
+			}
+			
+			$.each(mensajesFiltrados, function(index, msg) {
+				var roleClass = msg.role || 'user';
+				var roleLabel = msg.role_label || msg.role || 'Usuario';
+				var timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
+				
+				html += '<div class="whatsapp-message ' + roleClass + '">';
+				html += '<div class="whatsapp-message-role">' + roleLabel + '</div>';
+				
+				// Procesar el mensaje JSON (puede ser texto o imagen)
+				var mensajeProcesado = procesarMensajeJSON(msg.text);
+				
+				html += '<div>' + mensajeProcesado + '</div>';
+				
+				if (timestamp) {
+					html += '<div class="whatsapp-message-time">' + timestamp + '</div>';
+				}
+				html += '</div>';
+			});
+			
+			html += '</div>';
+			$('#whatsappMessagesContent').html(html);
+			
+			// Verificar si el usuario tiene permiso para enviar mensajes
+			// Solo TECNICO/COMERCIAL del expediente puede enviar
+			// ADMIN NUNCA puede enviar, solo ver
+			var puedeEnviar = false;
+			console.log('=== VERIFICANDO PERMISOS DE ENVÍO ===');
+			console.log('Role del usuario:', usuarioLogueado.role);
+			console.log('Teléfono del usuario:', usuarioLogueado.phone);
+			console.log('Expediente actual:', expedienteActual);
+			
+			if (usuarioLogueado.role === 'ROLE_ADMIN') {
+				console.log('El usuario es ADMIN, NO puede enviar (solo ver)');
+				puedeEnviar = false;
+			} else if (usuarioLogueado.role === 'ROLE_TECNICO' || usuarioLogueado.role === 'ROLE_COMERCIAL') {
+				// Verificar si es el técnico o comercial asignado al expediente
+				$.ajax({
+					url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteActual,
+					method: 'GET',
+					async: false,
+					headers: {
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+					success: function(expedienteData) {
+						var idUsuario = parseInt(usuarioLogueado.id);
+						var idTecnico = expedienteData.id_tecnico ? parseInt(expedienteData.id_tecnico) : null;
+						var idComercial = expedienteData.id_comercial ? parseInt(expedienteData.id_comercial) : null;
+						
+						console.log('ID Usuario:', idUsuario, 'Técnico:', idTecnico, 'Comercial:', idComercial);
+						
+						// Verificar si es técnico o comercial del expediente
+						if (idTecnico === idUsuario || idComercial === idUsuario) {
+							console.log('✓ El usuario es Técnico/Comercial asignado, puede enviar');
+							puedeEnviar = true;
+						} else {
+							console.log('✗ El usuario NO es Técnico/Comercial asignado, NO puede enviar');
+							puedeEnviar = false;
+						}
+					},
+					error: function(xhr, status, error) {
+						console.error('Error al verificar técnico/comercial asignado:', error);
+						puedeEnviar = false;
+					}
+				});
+			} else {
+				console.log('El usuario no tiene rol suficiente');
+				puedeEnviar = false;
+			}
+			
+			// Mostrar input de envío solo si puede enviar
+			console.log('¿Puede enviar?', puedeEnviar);
+			if (puedeEnviar) {
+				console.log('Mostrando área de envío');
+				$('#whatsappInputArea').show();
+			} else {
+				console.log('Ocultando área de envío');
+				$('#whatsappInputArea').hide();
+			}
+			
+			// Scroll al final (últimos mensajes)
+			var container = $('#whatsappMessagesContent').find('.whatsapp-messages-container');
+			if (container.length) {
+				container.scrollTop(container[0].scrollHeight);
+			}
+		}
+		
+		// Función para verificar si el usuario logueado es técnico o comercial del expediente
+		function verificarSiEsTecnicoOComercialDelExpediente(expedienteId) {
+			// Hacer una consulta AJAX para obtener los datos del expediente
+			var esValido = false;
+			$.ajax({
+				url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteId,
+				method: 'GET',
+				async: false, // Sincrónico para que retorne el valor correctamente
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) {
+					console.log('Datos del expediente:', response);
+					console.log('Usuario logueado ID:', usuarioLogueado.id, 'Técnico:', response.id_tecnico, 'Comercial:', response.id_comercial);
+					
+					// Convertir a números para comparación segura
+					var idUsuario = parseInt(usuarioLogueado.id);
+					var idTecnico = response.id_tecnico ? parseInt(response.id_tecnico) : null;
+					var idComercial = response.id_comercial ? parseInt(response.id_comercial) : null;
+					
+					// Verificar si el usuario logueado es técnico o comercial
+					if (idTecnico === idUsuario || idComercial === idUsuario) {
+						console.log('Usuario SÍ es técnico o comercial del expediente');
+						esValido = true;
+					} else {
+						console.log('Usuario NO es técnico o comercial del expediente');
+						esValido = false;
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al verificar técnico/comercial:', error);
+					esValido = false;
+				}
+			});
+			console.log('Resultado final de verificación:', esValido);
+			return esValido;
+		}
+		
+		function enviarMensajeWhatsApp() {
+			var mensaje = $('#whatsappMessageInput').val().trim();
+			
+			if (!mensaje) {
+				alert('Por favor escribe un mensaje');
+				return;
+			}
+			
+			if (!expedienteActual) {
+				alert('Error: No hay expediente seleccionado');
+				return;
+			}
+			
+			// SIEMPRE validar que el cliente tiene teléfono antes de enviar
+			var validacionPasada = false;
+			
+			$.ajax({
+				url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteActual,
+				method: 'GET',
+				async: false,
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(expedienteData) {
+					var telefonoCliente = expedienteData.telefono_cliente;
+					console.log('Validando cliente - Teléfono cliente:', telefonoCliente);
+					
+					if (!telefonoCliente || telefonoCliente === 'N/A' || telefonoCliente === '') {
+						alert('❌ Error: El cliente no tiene teléfono registrado. No se puede enviar mensajes a este expediente.');
+						validacionPasada = false;
+					} else {
+						validacionPasada = true;
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al validar cliente:', error);
+					alert('❌ Error: No se pudo validar los datos del cliente');
+					validacionPasada = false;
+				}
+			});
+			
+			// Si la validación no pasó, detener el envío
+			if (!validacionPasada) {
+				console.log('Envío cancelado: Cliente sin teléfono');
+				return;
+			}
+			
+			// Preparar datos para enviar
+			var datos = {
+				id_expediente: expedienteActual,
+				phone_number: usuarioLogueado.phone,
+				text: mensaje
+			};
+			
+			console.log('Enviando mensaje:', datos);
+			
+			// Mostrar estado de carga
+			$('#enviarMensajeWhatsapp').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
+			
+			$.ajax({
+				url: '{{ path('api_send_whatsapp_message') }}?api_key=123456',
+				method: 'POST',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest',
+					'Content-Type': 'application/json',
+					'X-API-KEY': '123456'
+				},
+				data: JSON.stringify(datos),
+				success: function(response) {
+					console.log('Mensaje enviado exitosamente:', response);
+					
+					// Marcar que hay un mensaje pendiente de confirmación
+					mensajeEnviadoAstPendiente = true;
+					
+					// Limpiar input
+					$('#whatsappMessageInput').val('');
+					
+					// Mostrar notificación de éxito
+					var alertHtml = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+						'<strong>¡Mensaje enviado!</strong> Guardando en base de datos...' +
+						'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+						'<span aria-hidden="true">&times;</span></button></div>';
+					
+					// Inserta la alerta al inicio del modal body
+					$('#whatsappMessagesContent').before(alertHtml);
+					
+					// Recargar los mensajes con reintentos automáticos
+					// Primer intento: 2.5 segundos
+					setTimeout(function() {
+						console.log('Intento 1: Cargando mensajes después de 2.5 segundos');
+						cargarMensajesWhatsApp(expedienteActual);
+					}, 2500);
+					
+					// Segundo intento: 10 segundos
+					setTimeout(function() {
+						console.log('Intento 2: Recargando mensajes después de 10 segundos');
+						cargarMensajesWhatsApp(expedienteActual);
+					}, 10000);
+					
+					// Tercer intento: 20 segundos
+					setTimeout(function() {
+						console.log('Intento 3: Recargando mensajes después de 20 segundos');
+						cargarMensajesWhatsApp(expedienteActual);
+					}, 20000);
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al enviar mensaje1:', {
+						status: xhr.status,
+						statusText: xhr.statusText,
+						error: error,
+						response: xhr.responseJSON
+					});
+					
+					var mensajeError = 'Error al enviar el mensaje2';
+					if (xhr.responseJSON && xhr.responseJSON.error) {
+						mensajeError = xhr.responseJSON.error;
+					}
+					
+					// Mostrar notificación de error detallada
+					var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+						'<strong>Error:</strong> ' + mensajeError +
+						'<br><small>Revisa la consola para más detalles</small>' +
+						'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+						'<span aria-hidden="true">&times;</span></button></div>';
+					
+					$('#whatsappMessagesContent').before(alertHtml);
+					
+					// Habilitar botón en caso de error
+					mensajeEnviadoAstPendiente = false;
+					$('#enviarMensajeWhatsapp').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Enviar');
+				},
+				complete: function() {
+					// Solo restaurar botón si no está pendiente
+					if (!mensajeEnviadoAstPendiente) {
+						$('#enviarMensajeWhatsapp').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Enviar');
+					}
+				}
+			});
+		}
+		
+		// Función para procesar mensaje JSON (texto o imagen)
+		function procesarMensajeJSON(jsonText) {
+			if (!jsonText) return '';
+			
+			try {
+				// Decodificar Unicode escapados primero
+				var textoDecodificado = decodeUnicodeEscapes(jsonText);
+				
+				// Intentar parsear como JSON
+				var mensajeObj = JSON.parse(textoDecodificado);
+				
+				// Si es un objeto con estructura de mensaje
+				if (typeof mensajeObj === 'object' && mensajeObj.type) {
+					if (mensajeObj.type === 'image') {
+						// Procesar imagen
+						return procesarImagenJSON(mensajeObj);
+					} else if (mensajeObj.type === 'text') {
+						// Procesar texto
+						return escapeHtml(mensajeObj.content || '');
+					}
+				}
+				
+				// Si no tiene estructura reconocida, devolver como texto plano
+				return escapeHtml(textoDecodificado);
+				
+			} catch (e) {
+				// Si no es JSON válido, asumir que es texto plano
+				console.warn('Error parseando JSON:', e);
+				var textoDecodificado = decodeUnicodeEscapes(jsonText);
+				return escapeHtml(textoDecodificado);
+			}
+		}
+		
+		// Función para procesar imagen desde JSON
+		function procesarImagenJSON(mensajeObj) {
+			var html = '';
+			var mimeType = mensajeObj.mime_type || 'image/jpeg';
+			var imageContent = mensajeObj.content || '';
+			
+			// Mostrar imagen si hay contenido base64
+			if (imageContent) {
+				var dataUri = 'data:' + mimeType + ';base64,' + imageContent;
+				html += '<img src="' + dataUri + '" style="max-width: 100%; max-height: 300px; border-radius: 5px;" alt="Imagen compartida">';
+			}
+			
+			// Mostrar texto descriptivo si existe
+			if (mensajeObj.text) {
+				html += '<p style="margin-top: 10px;">' + escapeHtml(mensajeObj.text) + '</p>';
+			}
+			
+			// Si no hay contenido, mostrar placeholder
+			if (!imageContent && !mensajeObj.text) {
+				html += '<p style="color: #999;"><i>Imagen no disponible</i></p>';
+			}
+			
+			return html;
+		}
+		
+		// Función para decodificar caracteres Unicode escapados
+		function decodeUnicodeEscapes(str) {
+			if (!str) return str;
+			try {
+				return str.replace(/\\u([0-9a-fA-F]{4})/g, function(match, grp) {
+					return String.fromCharCode(parseInt(grp, 16));
+				});
+			} catch(e) {
+				console.error('Error decodificando Unicode:', e);
+				return str;
+			}
+		}
+		
+		// Función auxiliar para escapar HTML
+		function escapeHtml(text) {
+			if (!text) return text;
+			var map = {
+				'&': '&amp;',
+				'<': '&lt;',
+				'>': '&gt;',
+				'"': '&quot;',
+				"'": '&#039;'
+			};
+			return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+		}
+	</script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			
+			<!-- Filtros -->
+			<div class="card mb-3">
+				<!--<div class="card-header">
+					<h5 class="mb-0">Filtros de búsqueda</h5>
+				</div>-->
+                <div class="card-body">					
+                    <form method="get" action="{{ path('lista_expedientes_paginacion') }}" id="formFiltros">
+                        {# Campo oculto para preservar el límite de registros al filtrar #}
+                        <input type="hidden" name="limit" value="{{ limit }}">
+                        
+                        <div class="row">
+                            {# Filtro por número de expediente 
+                            {% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') %}
+                                <div class="col-md-2 mb-3">
+                                    <label for="expediente">Nº Expediente</label>
+                                    <input type="text" 
+                                            class="form-control" 
+                                            id="expediente" 
+                                            name="expediente" 
+                                            value="{{ app.request.get('expediente') }}"
+                                            placeholder="Nº expediente">
+                                </div>
+                            {% endif %}#}
+
+                            {# Filtro por clientes - Solo si no es ROLE_CLIENTE ni ROLE_COLABORADOR #}
+                            {% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') %}
+                                <div class="col-md-2 mb-3">
+                                    <label for="clientes">Buscar cliente </label>
+                                    <select class="form-control select2" 
+                                            id="clientes" 
+                                            name="clientes[]" 
+                                            multiple="multiple">
+                                        {% for cliente in clientes %}
+                                            {% set usuario = cliente %}
+                                            {% if usuario.apellidos|length is same as(0) %}
+                                                {% if usuario.username|length is same as(0) %}
+                                                    {% set nombreCompleto = '' %}
+                                                {% else %}
+                                                    {% set nombreCompleto = usuario.username %}
+                                                {% endif %}
+                                            {% else %}
+                                                {% if usuario.username|length is same as(0) %}
+                                                    {% set nombreCompleto = usuario.apellidos %}
+                                                {% else %}
+                                                    {% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if nombreCompleto|length is not same as(0) %}
+                                                {% set nombreCompleto = nombreCompleto  %}
+                                            {% endif %}
+                                            <option value="{{ cliente.idUsuario }}" 
+                                                    {% if app.request.get('clientes') and cliente.idUsuario in app.request.get('clientes') %}selected{% endif %}>
+                                                {{ nombreCompleto }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    
+                                </div>
+                            {% endif %}
+
+                            {# Filtro por colaboradores #}
+                            {% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') %}
+                                <div class="col-md-2 mb-3">
+                                    <label for="colaboradores">Buscar usuario colaborador</label>
+                                    <select class="form-control select2" 
+                                            id="colaboradores" 
+                                            name="colaboradores[]" 
+                                            multiple="multiple"
+                                            data-placeholder="">
+                                        {% for colaborador in colaboradores %}
+                                            {% set usuario = colaborador %}
+                                            {% if usuario.apellidos|length is same as(0) %}
+                                                {% if usuario.username|length is same as(0) %}
+                                                    {% set nombreCompleto = '' %}
+                                                {% else %}
+                                                    {% set nombreCompleto = usuario.username %}
+                                                {% endif %}
+                                            {% else %}
+                                                {% if usuario.username|length is same as(0) %}
+                                                    {% set nombreCompleto = usuario.apellidos %}
+                                                {% else %}
+                                                    {% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+                                                {% endif %}
+                                            {% endif %}
+                                            <option value="{{ colaborador.idUsuario }}"
+                                                    {% if app.request.get('colaboradores') and colaborador.idUsuario in app.request.get('colaboradores') %}selected{% endif %}>
+                                                {{ nombreCompleto }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% endif %}
+
+                            {# Filtro por comerciales - Solo para ADMIN y COMERCIAL y TECNICO #}
+                            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+                                <div class="col-md-2 mb-3">
+                                    <label for="comerciales">Buscar comercial</label>
+                                    <select class="form-control select2" 
+                                            id="comerciales" 
+                                            name="comerciales[]" 
+                                            multiple="multiple"
+                                            data-placeholder="">
+                                        {% for comercial in comerciales %}
+                                            <option value="{{ comercial.idUsuario }}"
+                                                    {% if app.request.get('comerciales') and comercial.idUsuario in app.request.get('comerciales') %}selected{% endif %}>
+                                                {{ comercial.apellidos }}, {{ comercial.nombre }}{% if comercial.username %} ({{ comercial.username }}){% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                {# Filtro por técnicos #}
+                                <div class="col-md-2 mb-3">
+                                    <label for="tecnicos">Buscar técnico</label>
+                                    <select class="form-control select2" 
+                                            id="tecnicos" 
+                                            name="tecnicos[]" 
+                                            multiple="multiple"
+                                            data-placeholder="">
+                                        {% for tecnico in tecnicos %}
+                                            <option value="{{ tecnico.idUsuario }}"
+                                                    {% if app.request.get('tecnicos') and tecnico.idUsuario in app.request.get('tecnicos') %}selected{% endif %}>
+                                                {{ tecnico.apellidos }}, {{ tecnico.nombre }}{% if tecnico.username %} ({{ tecnico.username }}){% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% endif %}
+
+                            {# Filtro por inmobiliarias #}
+                            {% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') %}
+                                <div class="col-md-2 mb-3">
+                                    <label for="inmobiliarias">Buscar colaborador</label>
+                                    <select class="form-control select2" 
+                                            id="inmobiliarias" 
+                                            name="inmobiliarias[]" 
+                                            multiple="multiple"
+                                            data-placeholder="">
+                                        {% for inmobiliaria in inmobiliarias %}
+                                            <option value="{{ inmobiliaria.idInmobiliaria }}"
+                                                    {% if app.request.get('inmobiliarias') and inmobiliaria.idInmobiliaria in app.request.get('inmobiliarias') %}selected{% endif %}>
+                                                {{ inmobiliaria.nombre }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% endif %}
+
+                            {# Filtro por oficinas - Visible para ROLE_JEFE_OFICINA también #}
+                            {% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_OFICINA') %}
+                                <div class="col-md-2 mb-3">
+                                    <label for="oficinas">Buscar oficina</label>
+                                    <select class="form-control select2" 
+                                            id="oficinas" 
+                                            name="oficinas[]" 
+                                            multiple="multiple"
+                                            data-placeholder="">
+                                        {% for oficina in oficinas %}
+                                            <option value="{{ oficina.idOficina }}"
+                                                    {% if (app.request.get('oficinas') and oficina.idOficina in app.request.get('oficinas')) or (not app.request.get('oficinas') and oficinaPreseleccionada is defined and oficinaPreseleccionada == oficina.idOficina) %}selected{% endif %}>
+                                                {{ oficina.nombre }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% endif %}
+							{# Filtro de estado con botones toggle #}
+							{% if not is_granted('ROLE_CLIENTE') %}
+                                <div class="col-md-4 mb-3">
+									<label for="estado">Estado</label>
+									<div style="width: 100% !important;">
+										<input type="hidden" id="estado-filtro" name="estado" value="{{ app.request.get('estado') }}">
+										<button type="button" class="btn btn-sm btn-outline-danger estado-btn" data-estado="0">
+											Cancelados
+										</button>
+										<button type="button" class="btn btn-sm btn-outline-success estado-btn" data-estado="1">
+											Activos
+										</button>
+										<button type="button" class="btn btn-sm btn-outline-primary estado-btn" data-estado="2">
+											Firmados
+										</button>
+									</div>
+                                </div>
+                            {% endif %}
+                        </div>
+						
+						{% if not is_granted('ROLE_CLIENTE') %}
+							{# Botones de acción #}
+							<div class="row mt-3">
+								<div class="col-12" style="text-align: center;">
+									<button type="submit" class="btn btn-primary">
+										<i class="fas fa-filter"></i> Filtrar
+									</button>
+									<a href="{{ path('lista_expedientes_paginacion') }}" class="btn btn-secondary">
+										<i class="fas fa-eraser"></i> Limpiar filtros
+									</a>
+								</div>
+							</div>
+						{% endif %}
+                    </form>
+                </div>
+			</div>
+			
+			{% if expedientes is defined and expedientes is iterable and expedientes|length>0 %}
+				<!-- Selector de cantidad de registros y búsqueda -->
+				<div class="row mb-3 align-items-center">
+					<div class="col-auto">
+						<label for="limitSelect" class="col-form-label">Mostrar:</label>
+					</div>
+					<div class="col-auto">
+						<select class="form-control" id="limitSelect" onchange="cambiarLimit(this.value)">
+							<option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
+							<option value="20" {% if limit == 20 %}selected{% endif %}>20</option>
+							<option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+							<option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+							<option value="200" {% if limit == 200 %}selected{% endif %}>200</option>
+						</select>
+					</div>
+					<div class="col-auto">
+						<span class="col-form-label">registros</span>
+					</div>
+					
+					<div class="col text-right">
+						<label for="buscar-tabla" class="col-form-label mr-2">Buscar:</label>
+						<input type="search" class="form-control d-inline-block" id="buscar-tabla" placeholder="" style="width: 200px;" value="{{ app.request.get('buscar') }}">
+					</div>
+					<div class="col-auto">
+						<form method="get" id="formOrden" action="{{ path('lista_expedientes_paginacion') }}">
+							{# Preservar parámetros GET actuales excepto 'orden' y 'page' #}
+							{% for key, val in app.request.query.all %}
+								{% if key != 'orden' and key != 'page' %}
+									{% if val is iterable %}
+										{% for v in val %}
+											<input type="hidden" name="{{ key }}[]" value="{{ v }}">
+										{% endfor %}
+									{% else %}
+										<input type="hidden" name="{{ key }}" value="{{ val }}">
+									{% endif %}
+								{% endif %}
+							{% endfor %}
+							<label for="ordenSelect" class="sr-only">Ordenar</label>
+							<select id="ordenSelect" name="orden" class="form-control" onchange="document.getElementById('formOrden').submit()">
+								<option value="fecha_modificacion" {% if app.request.get('orden') == 'fecha_modificacion' or app.request.get('orden') is null %}selected{% endif %}>Fecha modificación (por defecto)</option>
+								<option value="fecha_creacion" {% if app.request.get('orden') == 'fecha_creacion' %}selected{% endif %}>Fecha creación</option>
+							</select>
+						</form>
+					</div>
+				</div>
+				
+				<form class="text-truncate" id="formulario-borrar-entidades" method="post">
+					<div style="overflow-x: auto;">
+						<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+						<thead>
+							<tr>
+								{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR')  %}
+									<th scope="col">
+										{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+										<div class="custom-control custom-checkbox">
+											<input class="custom-control-input" id="seleccionar-todas-entidades" type="checkbox">
+											<label class="custom-control-label" for="seleccionar-todas-entidades"></label>
+										</div>
+										{% endif %}
+									</th>
+								{% endif %}
+								<th scope="col">Fecha</th>
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+									<th scope="col">Nº Exp.</th>
+								{% endif %}
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+									<th scope="col">Origen</th>
+								{% endif %}
+								{% if not is_granted('ROLE_CLIENTE') %}
+									<th scope="col">Cliente</th>
+								{% endif %}
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+									<th scope="col">Email</th>
+									<th scope="col">Teléfono</th>
+								{% endif %}
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR')  %}
+									<th scope="col">Inmobiliaria</th>
+									<th scope="col">Oficina</th>
+								{% endif %}
+								<th scope="col">Acciones</th>
+								<th scope="col">Inmueble</th>
+								<th scope="col">Fase actual</th>
+								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR')  %}
+									<th scope="col">Estado</th>
+								{% endif %}
+							</tr>
+						</thead>
+						<tbody>
+							{% for expediente in expedientes %}
+								<tr>
+									{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR')  %}
+										<td>
+											{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+											<div class="custom-control custom-checkbox">
+												<input class="custom-control-input" id="entidad[{{ expediente.idExpediente }}]" name="expediente[]" type="checkbox" value="{{ expediente.idExpediente }}">
+												<label class="custom-control-label" for="entidad[{{ expediente.idExpediente }}]"></label>
+											</div>
+											{% endif %}
+										</td>
+									{% endif %}
+									<td data-order="{{ expediente.fechaCreacion|date('U') }}">{{ expediente.fechaCreacion|date('d/m/Y') }}</td>
+									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+										<td>
+											{{ expediente.idExpediente }}
+											{% if expedientesRelacionados[expediente.idExpediente] is defined %}
+												{% set idsRelacionados = expedientesRelacionados[expediente.idExpediente] | split(',') %}
+												<span style="color:red;font-weight:bold;">[
+													{% for idRelacionado in idsRelacionados %}
+														<a target="_blank" href="{{ path('modificar_expediente', {'id': idRelacionado|trim}) }}">{{ idRelacionado|trim }}</a>
+														{% if not loop.last %},
+														{% endif %}
+													{% endfor %}
+													]</span>
+											{% endif %}
+
+										</td>
+									{% endif %}
+									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+										<td>{{ camposPersonalizados[expediente.idExpediente]['origen'] is defined ? camposPersonalizados[expediente.idExpediente]['origen'] : '' }}</td>
+									{% endif %}
+									{% if not is_granted('ROLE_CLIENTE') %}
+										{% if expediente.idCliente is null %}
+											<td></td>
+										{% else %}
+											{% set usuario = expediente.idCliente %}
+											{% if usuario.apellidos|length is same as(0) %}
+												{% if usuario.username|length is same as(0) %}
+													{% set nombreCompleto = '' %}
+												{% else %}
+													{% set nombreCompleto = usuario.username %}
+												{% endif %}
+											{% else %}
+												{% if usuario.username|length is same as(0) %}
+													{% set nombreCompleto = usuario.apellidos %}
+												{% else %}
+													{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+												{% endif %}
+											{% endif %}
+											{% if nombreCompleto|length is not same as(0) %}
+												{% set nombreCompleto = nombreCompleto  %}
+											{% endif %}
+											<td>{{ nombreCompleto }}</td>
+										{% endif %}
+									{% endif %}
+									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+										<td>{{ camposPersonalizados[expediente.idExpediente]['email'] is defined ? camposPersonalizados[expediente.idExpediente]['email'] : '' }}</td>
+										<td>{{ camposPersonalizados[expediente.idExpediente]['telefono'] is defined ? camposPersonalizados[expediente.idExpediente]['telefono'] : '' }}</td>
+									{% endif %}
+									{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR')  %}
+										<td>
+											{% set inmuebles_nombres = [] %}
+											{% if expediente.idCliente is not null and expediente.idCliente.idInmobiliaria is not null %}
+												{% set inmuebles_nombres = inmuebles_nombres|merge([expediente.idCliente.idInmobiliaria.nombre]) %}
+											{% endif %}
+											{% if expediente.idComercial is not null and expediente.idComercial.idInmobiliaria is not null %}
+												{% set inmuebles_nombres = inmuebles_nombres|merge([expediente.idComercial.idInmobiliaria.nombre]) %}
+											{% endif %}
+											{% if expediente.idTecnico is not null and expediente.idTecnico.idInmobiliaria is not null %}
+												{% set inmuebles_nombres = inmuebles_nombres|merge([expediente.idTecnico.idInmobiliaria.nombre]) %}
+											{% endif %}
+											{% if expediente.idColaborador is not null and expediente.idColaborador.idInmobiliaria is not null %}
+												{% set inmuebles_nombres = inmuebles_nombres|merge([expediente.idColaborador.idInmobiliaria.nombre]) %}
+											{% endif %}
+											{% set inmobiliarias_unicas = [] %}
+											{% for nombre in inmuebles_nombres %}
+												{% if nombre not in inmobiliarias_unicas %}
+													{% set inmobiliarias_unicas = inmobiliarias_unicas|merge([nombre]) %}
+												{% endif %}
+											{% endfor %}
+											{% if inmobiliarias_unicas|length > 0 %}
+												{{ inmobiliarias_unicas|join(', ') }}
+											{% endif %}
+										</td>
+										<td>
+											{% set oficinas_nombres = [] %}
+											{% if expediente.idCliente is not null and expediente.idCliente.idOficina is not null %}
+												{% set oficinas_nombres = oficinas_nombres|merge([expediente.idCliente.idOficina.nombre]) %}
+											{% endif %}
+											{% if expediente.idComercial is not null and expediente.idComercial.idOficina is not null %}
+												{% set oficinas_nombres = oficinas_nombres|merge([expediente.idComercial.idOficina.nombre]) %}
+											{% endif %}
+											{% if expediente.idTecnico is not null and expediente.idTecnico.idOficina is not null %}
+												{% set oficinas_nombres = oficinas_nombres|merge([expediente.idTecnico.idOficina.nombre]) %}
+											{% endif %}
+											{% if expediente.idColaborador is not null and expediente.idColaborador.idOficina is not null %}
+												{% set oficinas_nombres = oficinas_nombres|merge([expediente.idColaborador.idOficina.nombre]) %}
+											{% endif %}
+											{% set oficinas_unicas = [] %}
+											{% for nombre in oficinas_nombres %}
+												{% if nombre not in oficinas_unicas %}
+													{% set oficinas_unicas = oficinas_unicas|merge([nombre]) %}
+												{% endif %}
+											{% endfor %}
+											{% if oficinas_unicas|length > 0 %}
+												{{ oficinas_unicas|join(', ') }}
+											{% endif %}
+										</td>
+									{% endif %}
+									<td>
+										{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}
+											{% if expediente.estado is same as(1) %}
+												<a class="mr-2 seguimiento" href="{{ path('seguimiento_expediente',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Seguimiento" data-trigger="hover">
+													<i class="fas fa-eye"></i>
+													<span>Seguimiento</span>
+												</a>
+												<a class="mr-2 editar" href="{{ path('modificar_expediente',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Editar" data-trigger="hover">
+													<i class="far fa-edit"></i>
+													<span>Editar</span>
+												</a>
+												<a class="mr-2 documentos" href="{{ path('agregar_modificar_documentos',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Documentos" data-trigger="hover">
+													<i class="far fa-file-alt"></i>
+													<span>Documentos</span>
+												</a>
+												<a class="mr-2 firmas" href="{{ path('lista_documentos_expediente',{'id':expediente.idExpediente,'paraFirmar':'ParaFirmar'}) }}" data-toggle="popover" data-content="Firmas" data-trigger="hover">
+													<i class="fas fa-edit"></i>
+													<span>Firmas</span>
+												</a>
+											{% endif %}
+										{% else %}
+											<a class="mr-2 editar" target="_blank" href="{{ path('agregar_modificar_expediente',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Editar" data-trigger="hover">
+												<i class="far fa-edit"></i>
+												<span>Editar</span>
+											</a>
+											<a class="mr-2 documentos" href="{{ path('agregar_modificar_documentos',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Documentos" data-trigger="hover">
+												<i class="far fa-file-alt"></i>
+												<span>Documentos</span>
+											</a>
+											<a class="mr-2 notificar" data-notificacion-expediente="{{ expediente.idExpediente }}" {% if expediente.idCliente is null %} data-sin-cliente {% endif %} href="javascript:void(0)" data-toggle="popover" data-content="Notificar" data-trigger="hover">
+												<i class="fab fa-telegram-plane"></i>
+												<span>Notificar</span>
+											</a>
+											<a class="mr-2 email" href="{{ path('expediente_email',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Enviar Email" data-trigger="hover">
+												<i class="far fa-envelope"></i>
+												<span>E-Mail</span>
+											</a>
+											<a class="mr-2 informe" href="{{ path('informe_expediente',{'id':expediente.idExpediente}) }}" target="_blank" data-toggle="popover" data-content="Informe" data-trigger="hover">
+												<i class="fas fa-info"></i>
+												<span>Informe</span>
+											</a>
+											<a class="mr-2 pendiente" href="{{ path('informe_pendiente_expediente',{'id':expediente.idExpediente}) }}" target="_blank" data-toggle="popover" data-content="Pendiente" data-trigger="hover">
+												<i class="fas fa-tasks"></i>
+												<span>Pendiente</span>
+											</a>
+											<a class="mr-2 registro" href="{{ path('obtener_registro_expediente',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Registro" data-trigger="hover">
+												<i class="fas fa-book"></i>
+												<span>Registro</span>
+											</a>
+											<a class="mr-2 duplicar" data-enlace-duplicar-expediente="{{ expediente.idExpediente }}" href="{{ path('duplicar_expediente',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Duplicar" data-trigger="hover">
+												<i class="far fa-copy"></i>
+												<span>Duplicar</span>
+											</a>
+											<a class="mr-2 whatsapp-chat disabled" data-expediente-id="{{ expediente.idExpediente }}" href="javascript:void(0)" data-toggle="popover" data-content="Ver WhatsApp" data-trigger="hover">
+												<i class="fab fa-whatsapp"></i>
+											</a>
+											<a class="mr-2 cancelar" data-cancelar-expediente="{{ expediente.idExpediente }}" {% if expediente.idCliente is null %} data-sin-cliente {% endif %} href="javascript:void(0)" data-toggle="popover" data-content="Cancelar" data-trigger="hover">
+												<i class="far fa-trash-alt"></i>
+												<span>Cancelar</span>
+											</a>
+										{% endif %}
+									</td>
+									<td>{{ expediente.vivienda }}</td>
+									<td>
+										{% set id = expediente.idFaseActual.idFase %}
+										{% set numeroFase =
+											id in [1,3] ? 1 :
+											(id in [2,4,8] ? 2 :
+												(id == 5 ? 3 :
+												(id in [6,9] ? 4 :
+													(id in [7,10] ? 5 : 'N/A')
+												)
+												)
+											)
+										%}
+										<div class="fase-popover" data-toggle="popover" data-trigger="hover" data-content="Fase {{ numeroFase }}: {{ expediente.idFaseActual.nombre }}">
+											<span class="expediente-color" style="background:{{ expediente.idFaseActual.color }}"></span>
+											<span>Fase {{ numeroFase }}</span>
+										</div>
+									</td>
+									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR')  %}
+										{% if expediente.estado is same as(0) %}
+											<td>
+												Cancelado
+												{% if expediente.motivoCancelacion is same as(1) %}
+													por: Honorarios
+												{% elseif expediente.motivoCancelacion is same as(2) %}
+													por: No le mejoramos la oferta
+												{% elseif expediente.motivoCancelacion is same as(3) %}
+													por: Operación no viable por perfil del cliente
+												{% elseif expediente.motivoCancelacion is same as(4) %}
+													por: Operación no viable por tasación
+												{% elseif expediente.motivoCancelacion is same as(5) %}
+													por: No tienen vivienda
+												{% elseif expediente.motivoCancelacion is same as(6) %}
+													por: Compran después de 3 meses
+												{% elseif expediente.motivoCancelacion is same as(7) %}
+													por: Importe hipoteca inferior a 100.000 €
+												{% elseif expediente.motivoCancelacion is same as(8) %}
+													por: Lo hacen con su banco
+												{% elseif expediente.motivoCancelacion is same as(9) %}
+													por: Lo hacen con otra empresa intermediaria
+												{% elseif expediente.motivoCancelacion is same as(10) %}
+													por: Duplicado
+												{% elseif expediente.motivoCancelacion is same as(11) %}
+													por:
+												{% endif %}
+												{{ expediente.texto }}
+											</td>
+										{% elseif expediente.estado is same as(1) %}
+											<td>Activo</td>
+										{% elseif expediente.estado is same as(2) %}
+											<td>Firmado</td>
+										{% else %}
+											<td></td>
+										{% endif %}
+									{% endif %}
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+					</div>
+					
+					<!-- Mensaje y botón en la misma línea -->
+					<div class="row align-items-center mt-3 mb-3">
+						<div class="col-md-6">
+							<p class="text-muted mb-0">
+								Mostrando registros del {{ ((currentPage - 1) * limit) + 1 }} al {{ min(currentPage * limit, totalExpedientes) }} de un total de {{ totalExpedientes }} registros (filtrado de un total de {{ totalExpedientes }} registros)
+							</p>
+						</div>
+						<div class="col-md-6 text-right">
+                            <!-- Paginación -->
+                            {% if totalPages > 1 %}
+                            <nav aria-label="Paginación de expedientes" class="mt-3">
+                                <ul class="pagination justify-content-end">
+                                    <li class="page-item {% if currentPage == 1 %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ path('lista_expedientes_paginacion', app.request.query.all|merge({'page': 1})) }}">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item {% if currentPage == 1 %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ path('lista_expedientes_paginacion', app.request.query.all|merge({'page': currentPage - 1})) }}">
+                                            Anterior
+                                        </a>
+                                    </li>
+                                    
+                                    {% set startPage = max(1, currentPage - 2) %}
+                                    {% set endPage = min(totalPages, currentPage + 2) %}
+                                    
+                                    {% if startPage > 1 %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for page in startPage..endPage %}
+                                        <li class="page-item {% if page == currentPage %}active{% endif %}">
+                                            <a class="page-link" href="{{ path('lista_expedientes_paginacion', app.request.query.all|merge({'page': page})) }}">
+                                                {{ page }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                    
+                                    {% if endPage < totalPages %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item {% if currentPage == totalPages %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ path('lista_expedientes_paginacion', app.request.query.all|merge({'page': currentPage + 1})) }}">
+                                            Siguiente
+                                        </a>
+                                    </li>
+                                    <li class="page-item {% if currentPage == totalPages %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ path('lista_expedientes_paginacion', app.request.query.all|merge({'page': totalPages})) }}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                            {% endif %}
+							
+						</div>
+                        <div class="col-md-22">
+                            {% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+								<button class="btn btn-success waves-effect" id="boton-borrar-entidades">Borrar marcados</button>
+							{% endif %}
+                        </div>
+					</div>
+				</form>
+				
+				
+				
+			{% else %}
+				<div class="alert alert-info" role="alert">
+					<span>No hay expedientes pendientes.</span>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+	{% include '@App/Backoffice/Modal/ConfirmarDuplicar.html' %}
+	{% include '@App/Backoffice/Modal/NotificacionExpediente.html.twig' %}
+	{% include '@App/Backoffice/Modal/CancelarExpediente.html.twig' %}
+
+	<!-- Modal para ver conversaciones de WhatsApp -->
+	<div class="modal fade" id="whatsappChatModal" tabindex="-1" role="dialog" aria-labelledby="whatsappChatModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="whatsappChatModalLabel">
+						<i class="fab fa-whatsapp" style="color: #25D366;"></i>
+						Conversaciones de WhatsApp
+					</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div id="whatsappMessagesContent">
+						<div class="text-center">
+							<div class="spinner-border" role="status">
+								<span class="sr-only">Cargando...</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-body border-top" id="whatsappInputArea" style="display:none; padding-top: 15px;">
+					<div class="form-group">
+						<textarea id="whatsappMessageInput" class="form-control" placeholder="Escribe tu mensaje..." rows="3"></textarea>
+					</div>
+					<button type="button" class="btn btn-success btn-sm" id="enviarMensajeWhatsapp">
+						<i class="fas fa-paper-plane"></i> Enviar
+					</button>
+					<button type="button" class="btn btn-secondary btn-sm" id="limpiarMensajeWhatsapp">
+						Limpiar
+					</button>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

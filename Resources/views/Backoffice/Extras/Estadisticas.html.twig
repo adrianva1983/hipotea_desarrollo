@@ -1,0 +1,377 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme formulario '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/c3-master/c3.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/bootstrap-daterangepicker/daterangepicker.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.18/c3.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.0.3/daterangepicker.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+	<style>
+		.select2-search__field, .select2-search.select2-search--inline {
+			width: 100% !important;
+		}
+	</style>
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/moment/moment.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/moment/locale/es.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/bootstrap-daterangepicker/daterangepicker.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/bootstrap-daterangepicker/locales/bootstrap-daterangepicker.es.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/d3/d3.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/c3-master/c3.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.3.0/chart.min.js" integrity="sha512-yadYcDSJyQExcKhjKSQOkBKy2BLDoW6WnnGXCAkCoRlpHGpYuVuBqGObf3g/TdB86sSbss1AOP4YlGSb6EKQPg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/locale/es.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.0.3/daterangepicker.min.js"></script>
+	<script src="{{ asset('assets/js/custom/bootstrap-daterangepicker/locales/bootstrap-daterangepicker.es.min.js') }}"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.18/c3.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.3.0/chart.min.js" integrity="sha512-yadYcDSJyQExcKhjKSQOkBKy2BLDoW6WnnGXCAkCoRlpHGpYuVuBqGObf3g/TdB86sSbss1AOP4YlGSb6EKQPg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	{% if fases is defined and fases|length>0 and expedientes is defined and expedientes|length>0 %}
+		<script src="{{ asset('assets/js/custom/Array.isArray.min.js') }}"></script>
+		<script src="{{ asset('assets/js/custom/Array.prototype.filter.min.js') }}"></script>
+		<script src="{{ asset('assets/js/custom/isEmpty.min.js') }}"></script>
+		<script src="{{ asset('assets/js/custom/getLocaleDateString.min.js') }}"></script>
+		<script>
+			function obtenerParametros() {
+				return {
+					usuarios:{{ usuarios|raw }},
+					fases:{{ fases|raw }},
+					expedientes:{{ expedientes|raw }}
+				};
+			}
+
+			function obtenerAgentes(){
+				let agentes_colaboradores = {{agentes|raw}};
+				return agentes_colaboradores;
+			}
+
+			function rutaObtenerInformeEstadisticasAJAX(){
+				return '{{ path('obtener_informe_estadisticas') }}';
+			}
+			
+		</script>
+		<script src="{{ asset('assets/js/custom/estadisticas.min.js') }}"></script>
+	{% endif %}
+	<script src="{{ asset('assets/js/custom/tabla.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="row">
+		<div class="col-md">
+			<div class="card">
+				<div class="card-body">
+					<h4 class="card-title">Estadísticas Personalizadas</h4>
+					<div class="form-row">
+						<div class="form-group col-sm-4">
+							<label for="informe">Informe</label>
+							<select id="informe" name="informe" class="select-informe">
+								<option></option>
+								<option value="1">Operaciones firmadas</option>
+								<option value="2">Importe Hipoteca</option>
+								<option value="3">Importe Medio Hipoteca</option>
+								<option value="4">Operaciones Activas</option>
+								<option value="5">Porcentaje de Transformación</option>
+								<option value="6">Calendario</option>
+							</select>
+						</div>
+						<div class="form-group col-sm-4 operaciones-firmadas" style="display:none;">
+							<label for="agrupar">Agrupar por</label>
+							<select id="agrupar" name="agrupar" class="select-agrupar">
+								<option></option>
+								<option value="tecnicos">Técnico</option>
+								<option value="comerciales">Comercial</option>
+								<option value="bancos">Bancos</option>
+								<option value="tasadoras">Tasadoras</option>
+								<option value="notarias">Notarías</option>
+								<option value="inmobiliarias">Inmobiliaria</option>
+							</select>
+						</div>
+						<div class="form-group col-sm-4 hipotecas" style="display:none;">
+							<label for="agrupa2r">Agrupar por</label>
+							<select id="agrupar2" name="agrupar2" class="select-agrupar">
+								<option></option>
+								<option value="total">Total</option>
+								<option value="tecnicos">Técnico</option>
+								<option value="comerciales">Comercial</option>
+								<option value="bancos">Bancos</option>
+								<option value="tasadoras">Tasadoras</option>
+								<option value="notarias">Notarías</option>
+								<option value="inmobiliarias">Inmobiliaria</option>
+							</select>
+						</div>
+						<div class="form-group col-sm-4 operaciones-activas" style="display:none;">
+							<label for="agrupar4">Agrupar por</label>
+							<select id="agrupar4" name="agrupar4" class="select-agrupar">
+								<option></option>
+								<option value="total">Total</option>
+								<option value="fases">Fase</option>
+								<option value="tecnicos">Técnico</option>
+								<option value="comerciales">Comercial</option>
+								<option value="colaboradores">Colaborador</option>
+								<option value="bancos">Bancos</option>
+								<option value="tasadoras">Tasadoras</option>
+								<option value="notarias">Notarías</option>
+								<option value="inmobiliarias">Inmobiliaria</option>
+							</select>
+						</div>
+						<div class="form-group col-sm-4 porcentaje-transformacion" style="display:none;">
+							<label for="agrupar5">Agrupar por</label>
+							<select id="agrupar5" name="agrupar5" class="select-agrupar">
+								<option></option>
+								<option value="total">Total</option>
+								<option value="porcentaje">Porcentaje</option>
+							</select>
+						</div>
+						<div class="form-group col-sm-4 informe-calendario" style="display:none;">
+							<label for="agrupar6">Agrupar por</label>
+							<select id="agrupar6" name="agrupar6" class="select-agrupar">
+								<option></option>
+								<option value="inmobiliarias">Inmobiliarias</option>
+								<option value="tecnicos-comerciales">Técnicos y/o Comerciales</option>
+							</select>
+						</div>
+						<div class="form-group col-sm-4">
+							<label for="tipoGrafico">Tipo de Gráfico</label>
+							<select id="tipoGrafico" name="tipoGrafico" class="select-tipo-grafico">
+								<option></option>
+								<option value="bar">Barras</option>
+								<option value="doughnut">Donuts</option>
+								<option value="pie">Sectores</option>
+								<option value="line">Líneas</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="form-row">
+						<div class="form-group col-sm-6">
+							<label for="rango_fechas2">Desde / Hasta</label>
+							<input class="form-control js-daterangepicker" id="rango_fechas2" data-filtro="fecha">
+						</div>
+					</div>
+					
+					<div class="form-row operaciones-firmadas operaciones-activas porcentaje-transformacion hipotecas" style="display:none;">
+						<div class="form-group col-sm-6">
+							<label for="tecnicos">Técnicos</label>
+							<select name="tecnicos" id="tecnicos" class="select2-tecnicos" multiple="multiple">
+								<option></option>
+								{% for tecnico in tecnicos %}
+									<option value="{{tecnico.idUsuario}}">{{tecnico.username}} {{tecnico.apellidos}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group col-sm-6">
+							<label for="comerciales">Comerciales</label>
+							<select name="comerciales" id="comerciales" class="select2-comerciales" multiple="multiple">
+								<option></option>
+								{% for comercial in comerciales %}
+									<option value="{{comercial.idUsuario}}">{{comercial.username}} {{comercial.apellidos}}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+
+					<div class="form-row operaciones-firmadas operaciones-activas porcentaje-transformacion hipotecas" style="display:none;">
+						<div class="form-group col-sm-6">
+							<label for="entidad-colaboradora">Entidad Colaboradora</label>
+							<select name="entidad-colaboradora" id="entidad-colaboradora" class="select2-entidad-colaboradora" multiple="multiple">
+								<option></option>
+								{% for entidad_colaboradora in entidades_colaboradoras %}
+									<option value="{{entidad_colaboradora.idEntidadColaboradora}}">{{entidad_colaboradora.nombre}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group col-sm-6">
+							<label for="inmobiliaria">Inmobiliaria</label>
+							<select name="inmobiliaria" id="inmobiliaria" class="select2-inmobiliaria" multiple="multiple">
+								<option></option>
+								{% for inmobiliaria in inmobiliarias %}
+									<option value="{{inmobiliaria.idInmobiliaria}}">{{inmobiliaria.nombre}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						{# <div class="form-group col-sm-6">
+							<label for="agente-colaborador">Agente Colaborador</label>
+							<select name="agente-colaborador" id="agente-colaborador" class="select2-agente-colaborador" multiple="multiple" disabled>
+								<option></option>
+								{% for agente_colaborador in agentes_colaboradores %}
+									<option value="{{agente_colaborador.idAgenteColaborador}}">{{agente_colaborador.nombre}} {{agente_colaborador.apellidos}}</option>
+								{% endfor %}
+							</select> 
+						</div> #}
+					</div>
+
+					<div class="form-row informe-calendario" style="display:none;">
+						<div class="form-group col-sm-6">
+							<label for="tecnicos-comerciales">Técnicos y Comerciales</label>
+							<select name="tecnicos-comerciales" id="tecnicos-comerciales" class="select2-tecnicos-comerciales" multiple="multiple">
+								<option></option>
+								{% for usuario in tecnicos_comerciales %}
+									<option value="{{usuario.idUsuario}}">{{usuario.username}} {{usuario.apellidos}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group col-sm-6">
+							<label for="inmobiliaria6">Inmobiliaria</label>
+							<select name="inmobiliaria6" id="inmobiliaria6" class="select2-inmobiliaria" multiple="multiple">
+								<option></option>
+								{% for inmobiliaria in inmobiliarias %}
+									<option value="{{inmobiliaria.idInmobiliaria}}">{{inmobiliaria.nombre}}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group col-sm-12">
+							<button style="margin-top: 30px;float: right;" class="btn btn-success" id="generar-informe"><i class="fa fa-search" aria-hidden="true"></i> &nbsp; Generar Informe</button>
+						</div>
+					</div>
+
+					{# <div class="w-100" id="grafico2"></div> #}
+					<canvas id="grafico2" width="400" height="100"></canvas>
+					<div id="listado-visitas" style="display:none;">
+						<table id="tabla-visitas" class="table table-striped table-sm full-color-table full-success-table hover-table"></table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		{# <div class="col-md">
+			<div class="card">
+				<div class="card-body">
+					<h4 class="card-title">Estadísticas de uso</h4>
+					<div>
+						<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+							<thead>
+							<tr>
+								<th scope="col">Fecha</th>
+								<th scope="col">Usuario</th>
+								<th scope="col">Sección</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td data-order="">01/01/2019 12:30:00</td>
+								<td>Antonio</td>
+								<td>Expedientes</td>
+							</tr>
+							<tr>
+								<td data-order="">01/01/2019 12:35:00</td>
+								<td>Antonio</td>
+								<td>Calculadora</td>
+							</tr>
+							<tr>
+								<td data-order="">01/01/2019 12:40:00</td>
+								<td>Antonio</td>
+								<td>Noticias</td>
+							</tr>
+							<tr>
+								<td data-order="">01/01/2019 12:45:00</td>
+								<td>Fernando</td>
+								<td>Calendario</td>
+							</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div> #}
+	</div>
+
+	{# ANTIGUAS #}
+	{# <div class="row">
+		<div class="col-md">
+			<div class="card">
+				<div class="card-body">
+					<h4 class="card-title">Expedientes</h4>
+					{% if expedientes|raw is same as('[]') %}
+						<div class="alert alert-info" role="alert">
+							<span>No hay ningún expediente.</span>
+						</div>
+					{% else %}
+						{{ form_start(formulario) }}
+						<div class="form-row">
+							<div class="form-group col">
+								{{ form_label(formulario.x) }}
+								{{ form_widget(formulario.x) }}
+							</div>
+						</div>
+						<div class="accordion" id="arcordeon">
+							<div class="card">
+								<div class="card-header" id="headingOne">
+									<h2 class="mb-0">
+										<button class="btn btn-link" data-target="#colapsableUno" data-toggle="collapse" type="button">Mostrar/ocultar filtros</button>
+									</h2>
+								</div>
+								<div class="collapse" id="colapsableUno" data-parent="#arcordeon">
+									<div class="card-body">
+										<div class="form-row">
+											<div class="form-group col-sm-6">
+												{{ form_label(formulario.idFase) }}
+												{{ form_widget(formulario.idFase,{attr:{class:'select2','data-filtro':'campo','data-campo':'idFaseActual','data-campo2':'idFase'}}) }}
+											</div>
+											<div class="form-group col-sm-6">
+												{{ form_label(formulario.estado) }}
+												{{ form_widget(formulario.estado,{attr:{class:'select2','data-filtro':'campo','data-campo':'estado'}}) }}
+											</div>
+											<div class="form-group col-sm-6">
+												{{ form_label(formulario.idCliente) }}
+												{{ form_widget(formulario.idCliente,{attr:{class:'select2','data-filtro':'campo','data-campo':'idCliente','data-campo2':'idUsuario'}}) }}
+											</div>
+											<div class="form-group col-sm-6">
+												{{ form_label(formulario.idColaborador) }}
+												{{ form_widget(formulario.idColaborador,{attr:{class:'select2','data-filtro':'campo','data-campo':'idColaborador','data-campo2':'idUsuario'}}) }}
+											</div>
+											<div class="form-group col-sm-6">
+												{{ form_label(formulario.idComercial) }}
+												{{ form_widget(formulario.idComercial,{attr:{class:'select2','data-filtro':'campo','data-campo':'idComercial','data-campo2':'idUsuario'}}) }}
+											</div>
+											<div class="form-group col-sm-6">
+												{{ form_label(formulario.idTecnico) }}
+												{{ form_widget(formulario.idTecnico,{attr:{class:'select2','data-filtro':'campo','data-campo':'idTecnico','data-campo2':'idUsuario'}}) }}
+											</div>
+										</div>
+										<div class="form-row">
+											<div class="form-group col">
+												<label for="rango_fechas">Rango de fechas</label>
+												<input class="form-control js-daterangepicker" id="rango_fechas" data-filtro="fecha">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						{{ form_end(formulario) }}
+						<div class="w-100" id="grafico"></div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div> #}
+{% endblock %}

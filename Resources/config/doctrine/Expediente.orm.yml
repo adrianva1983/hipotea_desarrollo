@@ -1,0 +1,147 @@
+AppBundle\Entity\Expediente:
+  type: entity
+  table: expediente
+  indexes:
+    fk_expediente_fase1_idx:
+      columns:
+        - id_fase_actual
+    fk_expediente_usuario1_idx:
+      columns:
+        - id_cliente
+    fk_expediente_usuario2_idx:
+      columns:
+        - id_comercial
+    fk_expediente_usuario3_idx:
+      columns:
+        - id_tecnico
+    fk_expediente_usuario4_idx:
+      columns:
+        - id_colaborador
+    fk_expediente_responsable_zona_idx:
+      columns:
+        - id_responsable_zona
+  id:
+    idExpediente:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_expediente
+      generator:
+        strategy: IDENTITY
+  fields:
+    vivienda:
+      type: string
+      nullable: false
+      length: 100
+      options:
+        fixed: false
+        comment: 'Descripción breve de la vivienda'
+    estado:
+      type: smallint
+      nullable: true
+      options:
+        unsigned: false
+        comment: '0: Cancelado1: Activo2: Finalizado'
+        default: '1'
+    fechaCreacion:
+      type: datetime
+      nullable: false
+      column: fecha_creacion
+    fechaModificacion:
+      type: datetime
+      nullable: false
+      column: fecha_modificacion
+      columnDefinition: "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+    motivoCancelacion:
+      type: smallint
+      nullable: true
+      column: motivoCancelacion
+      options:
+        unsigned: false
+    texto:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+        comment: 'Explicacion del motivo de cancelacion'
+    whatsappAutomatico:
+      type: boolean
+      nullable: false
+      column: whatsapp_automatico
+      options:
+        default: false
+        comment: 'Indica si el proceso automático de WhatsApp está activado'
+    whatsappAutomaticoEnviado:
+      type: boolean
+      nullable: false
+      column: whatsapp_automatico_enviado
+      options:
+        default: false
+        comment: 'Indica si ya se ha enviado el WhatsApp automático (para evitar duplicados)'
+  manyToOne:
+    idFaseActual:
+      targetEntity: Fase
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_fase_actual:
+          referencedColumnName: id_fase
+      orphanRemoval: false
+    idCliente:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_cliente:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idComercial:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_comercial:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idTecnico:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_tecnico:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idColaborador:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_colaborador:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idResponsableZona:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_responsable_zona:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks:
+    preUpdate:
+      - updateFechaModificacion

@@ -1,0 +1,190 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme expediente_email '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/html5-editor/bootstrap-wysihtml5.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/html5-editor/bootstrap-wysihtml5.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/html5-editor/wysihtml5-0.3.0.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/html5-editor/bootstrap-wysihtml5.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/wysihtml5/0.3.0/wysihtml5.min.js"></script>
+	<script src="{{ asset('assets/node_modules/html5-editor/bootstrap-wysihtml5.min.js') }}"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script>
+		function rutaObtenerAgentesColaboradoresAJAX() {
+			return '{{ path('obtener_agentes_colaboradores_ajax') }}';
+		}
+
+		function actualizarDocumentos(tipo){
+			$('[name="expediente_email[documentos][]"]').prop('checked', false);
+			var arrayDocTasadoras = [
+				{% for documento in documentosTasadoras %}
+					'expediente_email_documentos_{{documento}}',
+				{% endfor %}
+			] ;
+
+			var arrayDocNotarias = [
+				{% for documento in documentosNotarias %}
+					'expediente_email_documentos_{{documento}}',
+				{% endfor %}
+			] ;
+
+			if(tipo == 'tasadora'){
+				for(var i = 0;i<arrayDocTasadoras.length;i++){
+					$('#'+arrayDocTasadoras[i]).prop('checked', true);
+				}
+			}else if(tipo == 'notaria'){
+				for(var i = 0;i<arrayDocNotarias.length;i++){
+					$('#'+arrayDocNotarias[i]).prop('checked', true);
+				}
+			}else if(tipo == 'banco'){
+				$('[name="expediente_email[documentos][]"]').prop('checked', true);
+			}
+		}
+	</script>
+	<script src="{{ asset('assets/js/custom/expediente-email.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(expediente_email) }}
+			<div class="form-row">
+				<div class="form-group col-md">
+					{{ form_label(expediente_email.idEntidadColaboradora) }}
+					{{ form_widget(expediente_email.idEntidadColaboradora,{attr:{class:'select2'}}) }}
+					{{ form_errors(expediente_email.idEntidadColaboradora) }}
+				</div>
+				<div class="form-group col-md" style="padding-top: 38px;">
+					{{ form_label(expediente_email.complementar) }}
+					{{ form_widget(expediente_email.complementar) }}
+					{{ form_errors(expediente_email.complementar) }}
+				</div>
+				<div class="form-group col-md">
+					{{ form_label(expediente_email.idAgenteColaborador) }}
+					{{ form_widget(expediente_email.idAgenteColaborador,{attr:{class:'select2'}}) }}
+					{{ form_errors(expediente_email.idAgenteColaborador) }}
+				</div>
+				<div class="form-group col-lg">
+					{{ form_label(expediente_email.asunto) }}
+					{{ form_widget(expediente_email.asunto,{value:'Documentación Grupo Negociador'}) }}
+					{{ form_errors(expediente_email.asunto) }}
+				</div>
+			</div>
+			{% if expediente_email.documentos|length > 0 %}
+				<div class="form-row">
+					{% for documento in expediente_email.documentos %}
+						<div class="form-group col-auto">
+							{{ form_label(documento) }}
+							{{ form_widget(documento,{label_attr:{class: 'checkbox-custom'}}) }}
+							{{ form_errors(documento) }}
+						</div>
+					{% endfor %}
+				</div>
+			{% else %}
+				{% do expediente_email.documentos.setRendered %}
+			{% endif %}
+			<div class="form-row">
+				<div class="form-group col">
+					{{ form_label(expediente_email.mensaje) }}
+					{% if cliente is not null %}
+						{% set usuario = cliente %}
+						{% if usuario.apellidos|length is same as(0) %}
+							{% if usuario.username|length is same as(0) %}
+								{% set nombreCompleto = '' %}
+							{% else %}
+								{% set nombreCompleto = usuario.username %}
+							{% endif %}
+						{% else %}
+							{% if usuario.username|length is same as(0) %}
+								{% set nombreCompleto = usuario.apellidos %}
+							{% else %}
+								{% set nombreCompleto = usuario.apellidos ~ ', ' ~ usuario.username %}
+							{% endif %}
+						{% endif %}
+					{% else %}
+						{% set nombreCompleto = '' %}
+					{% endif %}
+					{{ form_widget(expediente_email.mensaje,{attr:{class:'textarea_editor',rows:15},value:'<div>Buenos días.</div><div><br></div><div>Le adjuntamos la información pertinente al expediente de '~nombreCompleto~'.</div><div><br></div><div>Muchas gracias y un saludo.</div>'}) }}
+					{{ form_errors(expediente_email.mensaje) }}
+				</div>
+			</div>
+			{% if fase is defined %}
+				<h5 class="card-title">Campos a enviar de la fase "{{ fase.nombre }}"</h5>
+				{% if hitos is defined and hitos is iterable and hitos|length>0 %}
+					<div class="form-row">
+						{% for hito in hitos %}
+							{% if hitos_expediente[hito.idHito] is defined and hitos_expediente[hito.idHito] is iterable and hitos_expediente[hito.idHito]|length>0 %}
+								{% for hito_expediente in hitos_expediente[hito.idHito] %}
+									<div class="form-group col-auto">
+										<fieldset>
+											<legend class="col-form-label">{{ hito.nombre }}{% if loop.index>1 %} ({{ loop.index }}){% endif %}</legend>
+											{% if grupos_campos_hito[hito.idHito] is defined and grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+												{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+													{% if grupo_campos_hito.nombre is empty %}
+														<br>
+													{% else %}
+														<div class="col-form-label">{{ grupo_campos_hito.nombre }}</div>
+													{% endif %}
+													{% form_theme formularios_campos_hito[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+													{% set variables_formularios_campos_hito = formularios_campos_hito[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito].campoHito.vars %}
+													{% for opciones_formularios_campos_hito in variables_formularios_campos_hito.choices %}
+														<div class="custom-control custom-checkbox">
+															<input class="custom-control-input" id="{{ variables_formularios_campos_hito.id }}_{{ opciones_formularios_campos_hito.value }}_{{ hito_expediente.idHitoExpediente }}" name="{{ variables_formularios_campos_hito.id }}[{{ opciones_formularios_campos_hito.value }}][{{ hito_expediente.idHitoExpediente }}]" type="checkbox" value="{{ opciones_formularios_campos_hito.value }}">
+															<label class="custom-control-label" for="{{ variables_formularios_campos_hito.id }}_{{ opciones_formularios_campos_hito.value }}_{{ hito_expediente.idHitoExpediente }}">{{ opciones_formularios_campos_hito.label }}</label>
+														</div>
+													{% endfor %}
+												{% endfor %}
+											{% endif %}
+										</fieldset>
+									</div>
+								{% endfor %}
+							{% endif %}
+						{% endfor %}
+					</div>
+				{% endif %}
+			{% endif %}
+			<div class="d-flex">
+				<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_expedientes') }}">Volver</a>
+				{{ form_label(expediente_email.reset) }}
+				{{ form_widget(expediente_email.reset) }}
+
+				<div class="form-check" style="margin-left:50px;">
+					<input type="checkbox" id="previsualizar_pdf" name="previsualizar_pdf" class="form-check-input" value="1" style="margin-top: 15px;">
+					<label class="form-check-label" for="previsualizar_pdf" style="line-height: 40px;">Previsualizar PDF</label>
+				</div>
+				{{ form_label(expediente_email.submit) }}
+				{{ form_widget(expediente_email.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_end(expediente_email) }}
+		</div>
+	</div>
+	<input type="hidden" id="emailBanco" value="{{emailBanco}}">
+	<input type="hidden" id="emailNotaria" value="{{emailNotaria}}">
+	<input type="hidden" id="emailTasadora" value="{{emailTasadora}}">
+
+	<input type="hidden" id="emailBancoC" value="{{emailBancoC}}">
+	<input type="hidden" id="emailNotariaC" value="{{emailNotariaC}}">
+	<input type="hidden" id="emailTasadoraC" value="{{emailTasadoraC}}">
+{% endblock %}

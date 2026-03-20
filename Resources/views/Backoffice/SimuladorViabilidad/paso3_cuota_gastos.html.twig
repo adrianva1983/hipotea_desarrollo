@@ -1,0 +1,320 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+
+{% block customscripts %}
+	<style>
+		.simulador-container {
+			max-width: 900px;
+			margin: 30px auto;
+		}
+		.simulador-card {
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			border: none;
+			margin-bottom: 20px;
+		}
+		.simulador-header {
+			background-color: #0056b3;
+			color: white;
+			border-bottom: 3px solid #003d82;
+			padding: 20px;
+		}
+		.simulador-header h4 {
+			margin: 0;
+			font-weight: 600;
+		}
+		.paso-progreso {
+			font-size: 13px;
+			color: #6c757d;
+			margin-top: 8px;
+		}
+		.resumen-paso2 {
+			background-color: #e7f3ff;
+			border: 1px solid #b3d9ff;
+			padding: 15px;
+			border-radius: 4px;
+			margin-bottom: 25px;
+		}
+		.resumen-paso2-titulo {
+			font-weight: 600;
+			color: #004085;
+			margin-bottom: 10px;
+		}
+		.resumen-dato {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 15px;
+			font-size: 13px;
+		}
+		.resumen-item {
+			color: #004085;
+		}
+		.resumen-item-label {
+			font-weight: 500;
+		}
+		.resumen-item-valor {
+			color: #0056b3;
+			font-weight: 600;
+		}
+		.form-section {
+			margin-bottom: 30px;
+		}
+		.form-section-titulo {
+			font-size: 1.1rem;
+			font-weight: 600;
+			color: #2c3e50;
+			margin-bottom: 15px;
+			padding-bottom: 10px;
+			border-bottom: 2px solid #e9ecef;
+		}
+		.form-group {
+			margin-bottom: 15px;
+		}
+		.form-group label {
+			font-weight: 500;
+			color: #2c3e50;
+			margin-bottom: 6px;
+			font-size: 14px;
+		}
+		.form-control {
+			border: 1px solid #ced4da;
+			border-radius: 4px;
+			font-size: 14px;
+		}
+		.form-control:focus {
+			border-color: #0056b3;
+			box-shadow: 0 0 0 0.2rem rgba(0, 86, 179, 0.25);
+		}
+		.form-text {
+			display: block;
+			margin-top: 5px;
+			font-size: 12px;
+			color: #6c757d;
+		}
+		.form-check {
+			margin-bottom: 10px;
+		}
+		.form-check-input {
+			width: 18px;
+			height: 18px;
+			margin-top: 2px;
+			margin-right: 8px;
+		}
+		.form-check-label {
+			margin-left: 0;
+			font-size: 14px;
+			color: #2c3e50;
+		}
+		.alert-error {
+			background-color: #f8d7da;
+			border: 1px solid #f5c6cb;
+			color: #721c24;
+			padding: 12px 16px;
+			border-radius: 4px;
+			margin-bottom: 20px;
+		}
+		.botones-grupo {
+			display: flex;
+			gap: 10px;
+			margin-top: 30px;
+		}
+		.btn-atras, .btn-continuar {
+			flex: 1;
+			padding: 12px;
+			font-weight: 500;
+		}
+		.btn-atras {
+			background-color: #e9ecef;
+			color: #333;
+			border: 1px solid #dee2e6;
+			text-decoration: none;
+			text-align: center;
+			border-radius: 4px;
+		}
+		.btn-atras:hover {
+			background-color: #dee2e6;
+			color: #333;
+		}
+		.btn-continuar {
+			background-color: #0056b3;
+			color: white;
+			border: 1px solid #0056b3;
+			border-radius: 4px;
+		}
+		.btn-continuar:hover {
+			background-color: #003d82;
+			border-color: #003d82;
+		}
+		.grid-2-cols {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+		}
+		.desglose-gastos {
+			background-color: #f8f9fa;
+			padding: 15px;
+			border-radius: 4px;
+			margin-top: 15px;
+		}
+		.gasto-item {
+			display: flex;
+			justify-content: space-between;
+			padding: 8px 0;
+			border-bottom: 1px solid #dee2e6;
+			font-size: 13px;
+		}
+		.gasto-item:last-child {
+			border-bottom: none;
+		}
+		.gasto-label {
+			font-weight: 500;
+			color: #495057;
+		}
+		.gasto-valor {
+			color: #0056b3;
+			font-weight: 600;
+		}
+		.gasto-total {
+			padding: 12px 0;
+			border-top: 2px solid #0056b3;
+			border-bottom: none;
+			font-weight: 600;
+			color: #0056b3;
+		}
+		@media (max-width: 768px) {
+			.grid-2-cols {
+				grid-template-columns: 1fr;
+			}
+			.resumen-dato {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+{% endblock %}
+
+{% block body %}
+	<div class="simulador-container">
+		<div class="card simulador-card">
+			<div class="card-header simulador-header">
+				<h4>{{ titulo }}</h4>
+				<div class="paso-progreso">
+					Paso {{ paso_numero }} de {{ pasos_totales }}
+				</div>
+			</div>
+
+			<div class="card-body">
+				{% if tiene_error %}
+				<div class="alert-error">
+					<strong>Error en el cálculo:</strong> {{ mensaje_error }}
+				</div>
+				{% endif %}
+
+				<!-- RESUMEN DE DATOS DEL PASO 2 -->
+				{% if simulador.precio is defined %}
+				<div class="resumen-paso2">
+					<div class="resumen-paso2-titulo">
+						📊 Resumen de Paso 2 (Precio Máximo)
+					</div>
+					<div class="resumen-dato">
+						<div class="resumen-item">
+							<span class="resumen-item-label">Precio Máximo Recomendado:</span>
+							<span class="resumen-item-valor">{{ simulador.precio.precioMaximoRecomendado|number_format(2, ',', '.') }} €</span>
+						</div>
+						<div class="resumen-item">
+							<span class="resumen-item-label">Aportación Inicial:</span>
+							<span class="resumen-item-valor">{{ simulador.precio.aportacionNecesaria|number_format(2, ',', '.') }} €</span>
+						</div>
+					</div>
+				</div>
+				{% endif %}
+
+				<p style="color: #666; margin-bottom: 25px;">
+					Completa los siguientes datos para calcular tu cuota mensual y gastos asociados.
+				</p>
+
+				<form method="POST" novalidate>
+					<!-- SECCIÓN 1: DURACIÓN Y CARACTERÍSTICAS -->
+					<div class="form-section">
+						<div class="form-section-titulo">1. Duración y Tipo de Operación</div>
+						
+						<div class="grid-2-cols">
+							<div class="form-group">
+								{{ form_label(formulario.plazoAmortizacion) }}
+								{{ form_widget(formulario.plazoAmortizacion) }}
+								<small class="form-text">Años para amortizar el préstamo</small>
+								{% if formulario.plazoAmortizacion.vars.errors %}
+									<small class="form-text text-danger">
+										{{ formulario.plazoAmortizacion.vars.errors[0].message }}
+									</small>
+								{% endif %}
+							</div>
+
+							<div class="form-group">
+								{{ form_label(formulario.tipoInteres) }}
+								{{ form_widget(formulario.tipoInteres) }}
+								<small class="form-text">¿Qué tipo de interés prefieres?</small>
+							</div>
+						</div>
+
+						<div class="form-group">
+							{{ form_label(formulario.destinoCompra) }}
+							{{ form_widget(formulario.destinoCompra) }}
+							<small class="form-text">Confirma el destino de la compra</small>
+						</div>
+					</div>
+
+					<!-- SECCIÓN 2: CARACTERÍSTICAS ESPECIALES -->
+					<div class="form-section">
+						<div class="form-section-titulo">2. Características Especiales</div>
+						
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+							<div class="form-check">
+								{{ form_widget(formulario.obraNueva) }}
+								{{ form_label(formulario.obraNueva) }}
+							</div>
+
+							<div class="form-check">
+								{{ form_widget(formulario.familiaNumerosa) }}
+								{{ form_label(formulario.familiaNumerosa) }}
+							</div>
+
+							<div class="form-check">
+								{{ form_widget(formulario.monoparental) }}
+								{{ form_label(formulario.monoparental) }}
+							</div>
+
+							<div class="form-check">
+								{{ form_widget(formulario.minusvaliaFamiliaNumerosa) }}
+								{{ form_label(formulario.minusvaliaFamiliaNumerosa) }}
+							</div>
+
+							<div class="form-check">
+								{{ form_widget(formulario.vpo) }}
+								{{ form_label(formulario.vpo) }}
+							</div>
+						</div>
+					</div>
+
+					<!-- SECCIÓN 3: GASTOS ADICIONALES -->
+					<div class="form-section">
+						<div class="form-section-titulo">3. Gastos Adicionales (Opcional)</div>
+						
+						<div class="form-group">
+							{{ form_label(formulario.honorariosInmobiliaria) }}
+							{{ form_widget(formulario.honorariosInmobiliaria) }}
+							<small class="form-text">Si hay gestoría, inmobiliaria u otros costes</small>
+						</div>
+					</div>
+
+					<!-- BOTONES -->
+					<div class="botones-grupo">
+						<a href="{{ path('simulador_paso2') }}" class="btn btn-atras">
+							← Atrás
+						</a>
+						<button type="submit" class="btn btn-continuar">
+							Calcular y Continuar →
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{% endblock %}

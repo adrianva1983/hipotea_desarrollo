@@ -1,0 +1,117 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/expediente.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% for fase in fases %}
+                <div class="fase">
+                    <div class="form-row fila-fase">
+                        <div class="col-12">
+                            <h3>{{ fase }}</h2>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-2">
+                            <label class="titulo-fila">Fecha</label>
+                        </div>
+                        <div class="form-group col-4">
+                            <label class="titulo-fila">Concepto</label>
+                        </div>
+                        <div class="form-group col-4">
+                            <label class="titulo-fila">Comentario</label>
+                        </div>
+                        {% if is_granted('ROLE_CLIENTE') %}
+                            <div class="form-group col-2">
+                                <label class="titulo-fila">Estado</label>
+                            </div>
+                        {% endif %}
+
+                        {% if is_granted('ROLE_COLABORADOR') %}
+                            <div class="form-group col-2">
+                                <label class="titulo-fila">Estado</label>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% set color = 'verde' %}
+                    {% for seguimiento in seguimientos %}
+                        {% if seguimiento.idConceptoSeguimientoExpediente.fase == fase %}
+                            <div class="form-row fila-seguimiento {{ color }}">
+                                <div class="form-group col-2">
+                                    {% if seguimiento.fecha %}
+                                        {{ seguimiento.fecha|date('d-m-Y') }}
+                                    {% else %}
+                                        <center>-</center>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group col-4">
+                                    {{ seguimiento.idConceptoSeguimientoExpediente.concepto }}
+                                </div>
+                                <div class="form-group col-4">
+                                    {{ seguimiento.comentario }}
+                                </div>
+                                <div class="form-group col-2">
+                                    {% if is_granted('ROLE_CLIENTE') %}
+                                        {% if (seguimiento.cliente == 0) %}
+                                            <strong class="amarillo">Pendiente</strong>
+                                        {% elseif (seguimiento.cliente == 1) %}
+                                            <strong class="verde-ok">Terminada</strong>
+                                        {% elseif (seguimiento.cliente == 2) %}
+                                            <strong class="verde-ok">Aprobada</strong>
+                                        {% elseif (seguimiento.cliente == 3) %}
+                                            <strong class="rojo">Denegada</strong>
+                                        {% elseif (seguimiento.cliente == 4) %}
+                                            <strong class="verde-ok">Aceptada</strong>
+                                        {% endif %}
+                                    {% endif %}
+
+                                    {% if is_granted('ROLE_COLABORADOR') %}
+                                        {% if (seguimiento.cliente == 0) %}
+                                            <strong class="amarillo">Pendiente</strong>
+                                        {% elseif (seguimiento.cliente == 1) %}
+                                            <strong class="verde-ok">Terminada</strong>
+                                        {% elseif (seguimiento.cliente == 2) %}
+                                            <strong class="verde-ok">Aprobada</strong>
+                                        {% elseif (seguimiento.cliente == 3) %}
+                                            <strong class="rojo">Denegada</strong>
+                                        {% elseif (seguimiento.cliente == 4) %}
+                                            <strong class="verde-ok">Aceptada</strong>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if color == 'verde' %}
+                            {% set color = '' %}
+                        {% else %}
+                            {% set color = 'verde' %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+			<a class="btn btn-success" href="{{ path('lista_expedientes') }}">Volver</a>
+		</div>
+	</div>
+{% endblock %}

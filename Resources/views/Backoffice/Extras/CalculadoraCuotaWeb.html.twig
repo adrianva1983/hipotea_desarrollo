@@ -1,0 +1,369 @@
+{% extends '@App/Frontoffice/base.html.twig' %}
+{% form_theme calculadora_avanzada '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/countDecimalPlaces.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/round.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/calculadora-cuota-web-v1.js') }}"></script>
+	<script>
+			{% if cambioDeCasa is not defined %}
+				window.addEventListener('load', function () {
+					setTimeout(function() {
+						const select = document.getElementById('calculadora_avanzada_test_producto');
+
+						// Recorremos las opciones y eliminamos la que tenga value="4"
+						for (let i = 0; i < select.options.length; i++) {
+							if (select.options[i].value === "4") {
+								select.remove(i);
+								break; // terminamos el bucle porque ya eliminamos la opción
+							}
+						}
+					}, 100); // Retraso de 100ms
+				});
+			{% else %}
+				window.addEventListener('load', function () {
+					setTimeout(function() {
+						const elemento = document.querySelector('.form-row.cuota.producto');
+						if (elemento) {
+							elemento.style.display = 'none';
+						}
+					}, 100); // Retraso de 100ms
+				});
+			{% endif %}
+	</script>
+	{# // <script>
+		// 	window.addEventListener('load', function () {
+		// 		setTimeout(function() {
+		// 			// Selecciona el elemento con el atributo data-contenedor-resultado
+		// 			const resultadoElement = document.querySelector('[data-contenedor-resultado]');
+					
+		// 			// Verifica si el elemento existe en el DOM
+		// 			if (resultadoElement) {
+		// 				// Obtiene la posición del elemento desde la parte superior de la página
+		// 				const position = resultadoElement.getBoundingClientRect().top + window.scrollY - 60;
+						
+		// 				// Desplaza la página hasta esa posición calculada y lo deja en la parte superior
+		// 				window.scrollTo({
+		// 					top: position,
+		// 					behavior: 'smooth' // Desplazamiento suave
+		// 				});
+		// 			}
+		// 		}, 100); // Retraso de 100ms
+		// 	});
+		// </script> #}
+{% endblock %}
+{% block customstyles %}
+	<link href="{{ asset('assets/css/custom/custom.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/calculadora-avanzada.css') }}" rel="stylesheet">
+	<style>
+		@media (max-width: 576px) {
+			#resultado-final {
+				padding: 50px 10px !important;
+			}
+			
+			#resultado-final a{
+				width: 75vw !important;
+			}
+		}
+	</style>
+{% endblock %}
+{% block body %}
+	{% if resultado is not defined %}
+		<div class="row">
+			<div class="col-lg mb-4 mb-lg-0">
+				<div class="card h-100 mb-0 caja-externa">
+					<div class="card-body p-40 caja-calculadora">
+						<h4 class="card-title mb-1" id="titulo-principal">
+							{% if tipo_calculo is defined and tipo_calculo =='importe_maximo'%}Calcula el precio máximo de vivienda que puedes comprar
+								{% else %}Calcula la cuota de tu hipoteca
+							{% endif %}
+						</h4>
+						<div class="text-muted mb-4">Rellena la siguiente información</div>
+						{{ form_start(calculadora_avanzada) }}
+						<div class="form-row" style="display: none !important;">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.tipologiaOperacion) }}
+								{{ form_widget(calculadora_avanzada.tipologiaOperacion) }}
+								{{ form_errors(calculadora_avanzada.tipologiaOperacion) }}
+							</div>
+						</div>
+						<div class="form-row" style="display: none !important;">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.tipo) }}
+								{{ form_widget(calculadora_avanzada.tipo) }}
+								{{ form_errors(calculadora_avanzada.tipo) }}
+							</div>
+						</div>
+						<div class="form-row cuota2 importe-maximo">
+							<div class="form-group col-9">
+								{{ form_label(calculadora_avanzada.numTitulares) }}
+								{{ form_widget(calculadora_avanzada.numTitulares) }}
+								{{ form_errors(calculadora_avanzada.numTitulares) }}
+							</div>
+						</div>
+						<div class="form-row cuota2 importe-maximo">
+							<div class="form-group col-9">
+								{{ form_label(calculadora_avanzada.edadTitularUno) }}
+								{{ form_widget(calculadora_avanzada.edadTitularUno) }}
+								{{ form_errors(calculadora_avanzada.edadTitularUno) }}
+							</div>
+						</div>
+						<div class="form-row titular-dos">
+							<div class="form-group col-9">
+								{{ form_label(calculadora_avanzada.edadTitularDos) }}
+								{{ form_widget(calculadora_avanzada.edadTitularDos) }}
+								{{ form_errors(calculadora_avanzada.edadTitularDos) }}
+							</div>
+						</div>
+						<div class="form-row cuota2 importe-maximo">
+							<div
+								class="form-group col-9">
+								{# {{ form_label(calculadora_avanzada.plazoAmortizacion) }}
+																													{{ form_widget(calculadora_avanzada.plazoAmortizacion) }}
+																													{{ form_errors(calculadora_avanzada.plazoAmortizacion) }} #}
+								<label for="plazoAmortizacion">{{ form_label(calculadora_avanzada.plazoAmortizacion) }}</label>
+
+								<div class="d-flex justify-content-between">
+									<span id="minValorPlazoMaximo">10</span>
+									<input type="range" id="plazoAmortizacion" {{ form_widget(calculadora_avanzada.plazoAmortizacion) }} <span id="maxValorPlazoMaximo">></div>
+
+								<p>Plazo seleccionado:
+									<span id="valorPlazoMaximo">30</span>
+									años</p>
+							</div>
+						</div>
+
+
+						<div class="form-row cuota1">
+							<div class="form-group col-6">
+								{{ form_label(calculadora_avanzada.edad) }}
+								{{ form_widget(calculadora_avanzada.edad) }}
+								{{ form_errors(calculadora_avanzada.edad) }}
+							</div>
+						</div>
+						<div class="form-row cuota1">
+							<div class="form-groupcol-3 col-sm-12">
+								{{ form_label(calculadora_avanzada.valorInmueble) }}
+								{{ form_widget(calculadora_avanzada.valorInmueble) }}
+								{{ form_errors(calculadora_avanzada.valorInmueble) }}
+							</div>
+						</div>
+						<div class="form-row cuota2">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.aportacionInicial) }}
+								{{ form_widget(calculadora_avanzada.aportacionInicial) }}
+								{{ form_errors(calculadora_avanzada.aportacionInicial) }}
+							</div>
+						</div>
+						<div class="form-row cuota1 preguntas-gastos">
+							<div class="form-groupcol-4 col-sm-12">
+								{{ form_label(calculadora_avanzada.destinoCompra) }}
+								{{ form_widget(calculadora_avanzada.destinoCompra) }}
+								{{ form_errors(calculadora_avanzada.destinoCompra) }}
+							</div>
+						</div>
+						<div class="form-row cuota1 preguntas-gastos">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.obraNueva) }}
+								{{ form_widget(calculadora_avanzada.obraNueva) }}
+								{{ form_errors(calculadora_avanzada.obraNueva) }}
+							</div>
+						</div>
+						<div class="form-row cuota1 preguntas-gastos">
+							<div class="form-groupcol-4 col-sm-12">
+								{{ form_label(calculadora_avanzada.comunidadAutonoma) }}
+								{{ form_widget(calculadora_avanzada.comunidadAutonoma) }}
+								{{ form_errors(calculadora_avanzada.comunidadAutonoma) }}
+							</div>
+						</div>
+						{# <div class="form-row cuota2">
+																																											<div
+																																												class="form-group col"> #}
+						{# {{ form_label(calculadora_avanzada.tieneMenosEdadMaxima|raw) }} #}
+						{# <label for="{{ calculadora_avanzada.tieneMenosEdadMaxima.vars.id }}" class="col-form-label required">¿Tienes menos de
+																																													<span id="edadMaxima">35</span>
+																																													años?<span class="text-warning">&nbsp;*</span>
+																																												</label>
+																																												{{ form_widget(calculadora_avanzada.tieneMenosEdadMaxima) }}
+																																												{{ form_errors(calculadora_avanzada.tieneMenosEdadMaxima) }}
+																																											</div>
+																																										</div> #}
+							<div class="form-row cuota1 preguntas-gastos"> <div class="form-group col">
+								{{ form_label(calculadora_avanzada.minusvaliaFamiliaNumerosa) }}
+								{{ form_widget(calculadora_avanzada.minusvaliaFamiliaNumerosa) }}
+								{{ form_errors(calculadora_avanzada.minusvaliaFamiliaNumerosa) }}
+							</div>
+						</div>
+						<div class="form-row cuota1 preguntas-gastos">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.familiaNumerosa) }}
+								{{ form_widget(calculadora_avanzada.familiaNumerosa) }}
+								{{ form_errors(calculadora_avanzada.familiaNumerosa) }}
+							</div>
+						</div>
+						<div class="form-row cuota1 preguntas-gastos">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.monoparental) }}
+								{{ form_widget(calculadora_avanzada.monoparental) }}
+								{{ form_errors(calculadora_avanzada.monoparental) }}
+							</div>
+						</div>
+						<div class="form-row cuota1 preguntas-gastos">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.vpo) }}
+								{{ form_widget(calculadora_avanzada.vpo) }}
+								{{ form_errors(calculadora_avanzada.vpo) }}
+							</div>
+						</div>
+						<div class="form-row cuota1">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.honorariosInmobiliaria) }}
+								{{ form_widget(calculadora_avanzada.honorariosInmobiliaria) }}
+								{{ form_errors(calculadora_avanzada.honorariosInmobiliaria) }}
+							</div>
+						</div>
+						
+						<div class="form-row cuota producto" {% if cambioDeCasa is defined %}style="display: none !important;"{% endif %}>
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.producto) }}
+								<span tabindex="0" class="popover-icon" data-toggle="popover" data-html="true" data-trigger="hover" data-placement="right" data-content="
+																																																																			<ul>
+																																																																				<li><strong>+80%:</strong> Si necesitas financiar más del 80%</li>
+																																																																				<li><strong>Premium:</strong> Si buscas las mejores condiciones y no financias más del 80%</li>
+																																																																				<li><strong>Sin compromiso:</strong> Tu preferencia es no contratar productos asociados</li>
+																																																																			</ul>">
+									&nbsp;<i class="fas fa-question-circle" style="color: #ff9301;font-size:20px;"></i>
+								</span>
+								{{ form_widget(calculadora_avanzada.producto) }}
+								{{ form_errors(calculadora_avanzada.producto) }}
+							</div>
+						</div>
+						<div class="form-row cambio-casa">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.valorViviendaActual) }}
+								{{ form_widget(calculadora_avanzada.valorViviendaActual) }}
+								{{ form_errors(calculadora_avanzada.valorViviendaActual) }}
+							</div>
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.hipotecaActual) }}
+								{{ form_widget(calculadora_avanzada.hipotecaActual) }}
+								{{ form_errors(calculadora_avanzada.hipotecaActual) }}
+							</div>
+							{#<div class="form-group col">
+																																																																																		{{ form_label(calculadora_avanzada.ventaCasaActual) }}
+																																																																																		{{ form_widget(calculadora_avanzada.ventaCasaActual) }}
+																																																																																		{{ form_errors(calculadora_avanzada.ventaCasaActual) }}
+																																																																																	</div>#}
+						</div>
+						<div class="form-row cambio-casa">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.aportacionTrasVenta) }}
+								{{ form_widget(calculadora_avanzada.aportacionTrasVenta) }}
+								{{ form_errors(calculadora_avanzada.aportacionTrasVenta) }}
+							</div>
+						</div>
+						<div class="form-row importe-maximo">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.ingresosMensuales) }}
+								{{ form_widget(calculadora_avanzada.ingresosMensuales) }}
+								{{ form_errors(calculadora_avanzada.ingresosMensuales) }}
+							</div>
+							<div class="form-group col">
+							</div>
+						</div>
+						<div class="form-row importe-maximo">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.numPagasExtra) }}
+								{{ form_widget(calculadora_avanzada.numPagasExtra) }}
+								{{ form_errors(calculadora_avanzada.numPagasExtra) }}
+							</div>
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.importePagaExtra) }}
+								{{ form_widget(calculadora_avanzada.importePagaExtra) }}
+								{{ form_errors(calculadora_avanzada.importePagaExtra) }}
+							</div>
+						</div>
+						<div class="form-row importe-maximo">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.prestamosMensuales) }}
+								{{ form_widget(calculadora_avanzada.prestamosMensuales) }}
+								{{ form_errors(calculadora_avanzada.prestamosMensuales) }}
+							</div>
+							<div class="form-group col">
+							</div>
+						</div>
+
+						<div class="form-row titular-dos">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.ingresosMensualesDos) }}
+								{{ form_widget(calculadora_avanzada.ingresosMensualesDos) }}
+								{{ form_errors(calculadora_avanzada.ingresosMensualesDos) }}
+							</div>
+							<div class="form-group col">
+							</div>
+						</div>
+						<div class="form-row titular-dos">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.numPagasExtraDos) }}
+								{{ form_widget(calculadora_avanzada.numPagasExtraDos) }}
+								{{ form_errors(calculadora_avanzada.numPagasExtraDos) }}
+							</div>
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.importePagaExtraDos) }}
+								{{ form_widget(calculadora_avanzada.importePagaExtraDos) }}
+								{{ form_errors(calculadora_avanzada.importePagaExtraDos) }}
+							</div>
+						</div>
+						<div class="form-row titular-dos">
+							<div class="form-group col">
+								{{ form_label(calculadora_avanzada.prestamosMensualesDos) }}
+								{{ form_widget(calculadora_avanzada.prestamosMensualesDos) }}
+								{{ form_errors(calculadora_avanzada.prestamosMensualesDos) }}
+							</div>
+							<div class="form-group col">
+							</div>
+						</div>
+						<div
+							class="d-flex">
+							{# <a class="btn btn-success mr-auto waves-effect btn-volver" href="{{ path('inicio') }}">Volver</a> #}
+							<button class="btn btn-success waves-effect" id="{{ calculadora_avanzada.calcular.vars.id }}" name="{{ calculadora_avanzada.calcular.vars.full_name }}">
+								<i class="fas fa-calculator"></i>
+								<span>
+									Calcular</span>
+							</button>
+							{% do calculadora_avanzada.calcular.setRendered %}
+							{{ form_end(calculadora_avanzada) }}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% else %}
+		<div id="resultado-final" style="padding: 50px;font-size: 17px;border: 4px solid #ef6c00;border-radius: 20px;text-align: center;height: 100%;" data-contenedor-resultado-vacio>
+			<h4><strong>¡Gracias por usar nuestra calculadora!</strong></h4>
+			<p>
+				Hemos enviado el resultado de tu consulta a tu correo electrónico (revisa en la bandeja de SPAM). ¿Quieres un estudio totalmente personalizado y adaptado a tu situación?
+			</p>
+			<p>
+				Haz clic en el siguiente botón y rellena nuestro cuestionario online para recibir una propuesta única para ti.
+			</p>
+			<table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 50px auto;">
+				<tr>
+					<td style="padding: 0 25px;">
+						<a href="https://hipotea.com/cuestionario/"
+							target="_blank"
+							style="display: inline-block; padding: 18px; font-size: 20px; width: 450px; border-radius: 40px; box-shadow: 2px 1px 7px 2px #bcbcbc; background-color: #ef6c00; border: 1px solid #ef6c00; color: white; text-decoration: none; text-align: center;">
+							Completar nuestro cuestionario online
+						</a>
+					</td>
+				</tr>
+			</table>
+		</div>
+	{% endif %}
+
+	{% endblock %}
+	{% block modals %}
+		{{ parent() }}
+		{% include '@App/Backoffice/Modal/ErrorCalculadora.html' %}
+		{% include '@App/Backoffice/Modal/EnviarCalculadoraCuota.html.twig' %}
+	{% endblock %}

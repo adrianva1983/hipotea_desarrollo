@@ -1,0 +1,35 @@
+AppBundle\Entity\WhatsappServidor:
+  type: entity
+  table: WhatsappServidores
+  repositoryClass: AppBundle\Repository\WhatsappServidorRepository
+  id:
+    id:
+      column: Id
+      type: integer
+      generator:
+        strategy: IDENTITY
+  fields:
+    ip:
+      column: IP
+      type: string
+      length: 20
+      nullable: false
+    maxConectados:
+      column: MaxConectados
+      type: integer
+      nullable: false
+      options:
+        default: 10
+    estado:
+      column: Estado
+      type: boolean
+      nullable: false
+      options:
+        default: true
+  indexes:
+    IDX_IP:
+      columns:
+        - IP
+    IDX_Estado:
+      columns:
+        - Estado

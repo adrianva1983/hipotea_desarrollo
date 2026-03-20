@@ -1,0 +1,36 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregarModificarGrupoCamposHito '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(agregarModificarGrupoCamposHito) }}
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarGrupoCamposHito.nombre) }}
+					{{ form_widget(agregarModificarGrupoCamposHito.nombre) }}
+					{{ form_errors(agregarModificarGrupoCamposHito.nombre) }}
+				</div>
+				<div class="form-group col-sm-2">
+					{{ form_label(agregarModificarGrupoCamposHito.orden) }}
+					{{ form_widget(agregarModificarGrupoCamposHito.orden) }}
+					{{ form_errors(agregarModificarGrupoCamposHito.orden) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarGrupoCamposHito.repetible) }}
+					{{ form_widget(agregarModificarGrupoCamposHito.repetible) }}
+					{{ form_errors(agregarModificarGrupoCamposHito.repetible) }}
+				</div>
+			</div>
+			<div class="d-flex">
+				<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_fases_hitos_campos_opciones') }}">Volver</a>
+				{{ form_label(agregarModificarGrupoCamposHito.reset) }}
+				{{ form_widget(agregarModificarGrupoCamposHito.reset) }}
+				{{ form_label(agregarModificarGrupoCamposHito.submit) }}
+				{{ form_widget(agregarModificarGrupoCamposHito.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_widget(agregarModificarGrupoCamposHito.idHito) }}
+			{{ form_end(agregarModificarGrupoCamposHito) }}
+		</div>
+	</div>
+{% endblock %}

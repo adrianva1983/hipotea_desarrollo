@@ -1,0 +1,59 @@
+AppBundle\Entity\Noticia:
+  type: entity
+  table: noticia
+  id:
+    idNoticia:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_noticia
+      generator:
+        strategy: IDENTITY
+  fields:
+    titulo:
+      type: string
+      nullable: false
+      length: 80
+      options:
+        fixed: false
+    imagen:
+      type: string
+      nullable: true
+      length: 90
+      options:
+        fixed: false
+    descripcion:
+      type: text
+      nullable: false
+      length: 65535
+      options:
+        fixed: false
+    fecha:
+      type: datetime
+      nullable: true
+    estado:
+      type: boolean
+      nullable: true
+      options:
+        comment: "1: Activa\n0: Inactiva\n"
+        default: '1'
+    url:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+  manyToOne:
+    idUsuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_usuario:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

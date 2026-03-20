@@ -1,0 +1,124 @@
+{% use '@App/Backoffice/Partes/Head/Styles.html.twig' %}
+{% use '@App/Backoffice/Partes/Head/Scripts.html.twig' %}
+{% spaceless %}
+	<!DOCTYPE html>
+	<html lang="es">
+		<head>
+			{% include '@App/Backoffice/Partes/Head/Metas.html' %}
+			<link href="{{ asset('assets/images/cropped-Group-270x270.png') }}" rel="icon" sizes="16x16" type="image/png">
+			<title>Hipotea
+				{% if titulo is defined %}
+					-
+					{{ titulo }}
+				{% endif %}
+			</title>
+			<link href="{{ asset('assets/css/pages/login-register-lock.css') }}" rel="stylesheet">
+			{{ block('styles') }}
+			{% block customstyles %}
+				{{ parent() }}
+				<style>
+					.login-register {
+						background-image: url({{ asset('assets/images/background/login-register.jpg') }});
+					}
+
+					.logo-login {
+						width: 60%;
+						margin-bottom: 30px;
+					}
+
+					.login-box {
+						width: 700px;
+						padding: 40px;
+						margin: 0 auto;
+					}
+
+					@media (max-width: 600px) {
+						.login-box {
+							width: fit-content;
+						}
+					}
+				</style>
+			{% endblock %}
+			{% if app.environment is same as('dev') %}
+				{{ block('devscripts') }}
+				{% block customscripts %}
+					{{ parent() }}
+					<script>
+						function rutaRecuperarCuentaAJAX() {
+							return '{{ path('recuperar_cuenta') }}';
+						}
+					</script>
+					<script src="{{ asset('assets/js/custom/inicio-sesion.min.js') }}"></script>
+				{% endblock %}
+			{% endif %}
+		</head>
+		<body class="skin-default card-no-border">
+			{% include '@App/Backoffice/Partes/Body/Preloader.html' %}
+			<section id="wrapper">
+				<div class="login-register">
+					<div class="login-box card">
+						<div class="card-body">
+							<form class="form-material" id="loginform" method="post">
+								{% if error %}
+									<div class="alert alert-danger" role="alert">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+								{% endif %}
+								{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+								<center>
+									<img src="{{ asset('assets/images/custom/hipotea.png') }}" class="logo-login">
+								</center>
+								<h3 class="text-center mb-3">{{ titulo }}</h3>
+								<div class="form-group col">
+									<input autocomplete="username" class="form-control" name="_username" placeholder="E-Mail" required="" type="text" value="{{ last_username }}">
+								</div>
+								<div class="form-group col">
+									<input autocomplete="current-password" class="form-control" name="_password" placeholder="Contraseña" required="" type="password">
+								</div>
+								<div class="form-group col d-flex justify-content-between">
+									<div class="custom-control custom-checkbox mr-3">
+										<input class="custom-control-input" id="remember_me" name="_remember_me" type="checkbox">
+										<label class="custom-control-label" for="remember_me">Recordarme</label>
+									</div>
+									<a class="text-muted" href="javascript:void(0)" id="to-recover">
+										<i class="fas fa-lock m-r-5"></i>
+										<span>¿Olvidaste tu contraseña?</span>
+									</a>
+								</div>
+								<div class="form-group col text-center">
+									<button class="btn btn-success btn-lg btn-block btn-rounded waves-effect waves-light">Iniciar sesión</button>
+								</div>
+								<div class="text-center">
+									<span>¿No tienes una cuenta?
+									</span>
+									<a href="{{ path('registrar_cuenta') }}" class="text-info">
+										<b>Regístrate</b>
+									</a>
+								</div>
+								<input name="_csrf_token" type="hidden" value="{{ csrf_token('authenticate') }}">
+							</form>
+							<form id="recoverform" method="post">
+								<div class="alert d-none" id="recuperar-cuenta-mensaje-alerta" role="alert"></div>
+								<div class="form-group col">
+									<h3>Recuperar contraseña</h3>
+									<p class="text-muted">Introduce tu correo electrónico</p>
+								</div>
+								<div class="form-group col">
+									<input class="form-control" name="email" placeholder="E-Mail" required type="email">
+								</div>
+								<div class="form-group col text-right">
+									<a class="text-muted" href="javascript:void(0)" id="to-login">Volver</a>
+								</div>
+								<div class="form-group col text-center mb-0">
+									<button class="btn btn-primary btn-lg btn-block text-uppercase waves-effect waves-light">Recuperar</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</section>
+			{% if app.environment is not same as('dev') %}
+				{{ block('cloudscripts') }}
+				{{ block('customscripts') }}
+			{% endif %}
+		</body>
+	</html>
+{% endspaceless %}

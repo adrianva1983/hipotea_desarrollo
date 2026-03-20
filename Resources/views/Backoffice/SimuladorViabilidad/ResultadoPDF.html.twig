@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del Simulador de Viabilidad</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.6;
+            color: #333;
+            background-color: white;
+        }
+        
+        .page-break {
+            page-break-after: always;
+        }
+        
+        .header {
+            border-bottom: 3px solid #0056b3;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #0056b3;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 10px;
+        }
+        
+        .seccion {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        
+        .seccion-titulo {
+            font-size: 13px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #0056b3;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 3px;
+        }
+        
+        /* SEMÁFORO */
+        .semaforo {
+            text-align: center;
+            padding: 25px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .semaforo.rojo {
+            background-color: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        
+        .semaforo.amarillo {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+        
+        .semaforo.verde {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
+        }
+        
+        .semaforo-icono {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .semaforo-titulo {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .semaforo.rojo .semaforo-titulo {
+            color: #721c24;
+        }
+        
+        .semaforo.amarillo .semaforo-titulo {
+            color: #856404;
+        }
+        
+        .semaforo.verde .semaforo-titulo {
+            color: #155724;
+        }
+        
+        .semaforo-mensaje {
+            font-size: 11px;
+            font-style: italic;
+        }
+        
+        /* DATOS EN TABLA */
+        .datos-tabla {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        .datos-tabla tr {
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .datos-tabla td {
+            padding: 10px;
+        }
+        
+        .datos-tabla td:first-child {
+            font-weight: 600;
+            width: 50%;
+            background-color: #f8f9fa;
+        }
+        
+        .datos-tabla td:last-child {
+            text-align: right;
+        }
+        
+        /* LISTAS */
+        .lista-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #0056b3;
+            background-color: #f8f9fa;
+            page-break-inside: avoid;
+        }
+        
+        .lista-item.critico {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        
+        .lista-item.advertencia {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        
+        .lista-item.positivo {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        
+        .lista-item-icono {
+            font-size: 14px;
+            margin-right: 8px;
+        }
+        
+        /* AVISO LEGAL */
+        .aviso-legal {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 3px;
+            font-size: 9px;
+            color: #004085;
+            line-height: 1.5;
+            page-break-inside: avoid;
+        }
+        
+        .aviso-legal strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 10px;
+        }
+        
+        /* FOOTER */
+        .footer {
+            border-top: 2px solid #e9ecef;
+            padding-top: 15px;
+            margin-top: 30px;
+            font-size: 9px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .dos-columnas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ENCABEZADO -->
+    <div class="header">
+        <h1>Simulador de Viabilidad Hipotecaria</h1>
+        <p>Estudio previo de viabilidad de solicitud de hipoteca</p>
+        <p style="margin-top: 10px; font-size: 9px;">Generado: {{ fecha_generacion|date('d/m/Y H:i:s') }}</p>
+    </div>
+
+    <!-- SEMÁFORO RESULTADO -->
+    {% set semaforo = simulador.resultado.semaforo %}
+    <div class="semaforo {{ semaforo }}">
+        <div class="semaforo-icono">
+            {% if semaforo == 'rojo' %}
+                ??
+            {% elseif semaforo == 'amarillo' %}
+                ??
+            {% else %}
+                ??
+            {% endif %}
+        </div>
+        <div class="semaforo-titulo">
+            {% if semaforo == 'rojo' %}
+                Solicitud No Viable
+            {% elseif semaforo == 'amarillo' %}
+                Solicitud Sujeta a Valoración
+            {% else %}
+                Solicitud Viable
+            {% endif %}
+        </div>
+        <div class="semaforo-mensaje">
+            {{ simulador.resultado.mensaje }}
+        </div>
+    </div>
+
+    <!-- DATOS DEL CLIENTE -->
+    <div class="seccion">
+        <div class="seccion-titulo">DATOS DEL CLIENTE</div>
+        
+        {% if simulador.cliente is defined %}
+        <table class="datos-tabla">
+            <tr>
+                <td>Nombre Completo</td>
+                <td>{{ simulador.cliente.nombre ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>DNI / NIE</td>
+                <td>{{ simulador.cliente.dni ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>Teléfono</td>
+                <td>{{ simulador.cliente.telefono ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{ simulador.cliente.email ?? 'N/A' }}</td>
+            </tr>
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- ANÁLISIS ECONÓMICO -->
+    <div class="seccion">
+        <div class="seccion-titulo">ANÁLISIS ECONÓMICO Y FINANCIERO</div>
+        
+        {% if simulador.precio is defined or simulador.cuota is defined %}
+        <table class="datos-tabla">
+            {% if simulador.precio.precioMaximoRecomendado is defined %}
+            <tr>
+                <td>Precio Máximo Recomendado</td>
+                <td>{{ simulador.precio.precioMaximoRecomendado|number_format(2, ',', '.') }} ?</td>
+            </tr>
+            {% endif %}
+            
+            {% if simulador.cuota.aportacionNecesaria is defined %}
+            <tr>
+                <td>Aportación Necesaria (Mínima 20%)</td>
+                <td>{{ simulador.cuota.aportacionNecesaria|number_format(2, ',', '.') }} ?</td>
+            </tr>
+            {% endif %}
+            
+            {% if simulador.cuota.importePrestamo is defined %}
+            <tr>
+                <td>Importe del Préstamo</td>
+                <td>{{ simulador.cuota.importePrestamo|number_format(2, ',', '.') }} ?</td>
+            </tr>
+            {% endif %}
+            
+            {% if simulador.cuota.cuotaHipotecariaEstimada is defined %}
+            <tr>
+                <td>Cuota Hipotecaria Estimada (Mensual)</td>
+                <td>{{ simulador.cuota.cuotaHipotecariaEstimada|number_format(2, ',', '.') }} ?</td>
+            </tr>
+            {% endif %}
+            
+            {% if simulador.cuota.porcentajeFinanciacion is defined %}
+            <tr>
+                <td>Porcentaje de Financiación</td>
+                <td>{{ simulador.cuota.porcentajeFinanciacion|number_format(2, ',', '.') }} %</td>
+            </tr>
+            {% endif %}
+            
+            {% if simulador.cuota.gastosTotalesAproximados is defined %}
+            <tr>
+                <td>Gastos Totales Aproximados</td>
+                <td>{{ simulador.cuota.gastosTotalesAproximados|number_format(2, ',', '.') }} ?</td>
+            </tr>
+            {% endif %}
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- ANÁLISIS DE RIESGO -->
+    <div class="seccion">
+        <div class="seccion-titulo">ANÁLISIS DE RIESGO</div>
+        
+        {% if simulador.riesgo is defined %}
+        <table class="datos-tabla">
+            <tr>
+                <td>Préstamos Impagados</td>
+                <td>{{ simulador.riesgo.tienePrestamosImpagados ? 'Sí' : 'No' }}</td>
+            </tr>
+            <tr>
+                <td>Situación Laboral</td>
+                <td>
+                    {% set situacion = simulador.riesgo.situacionLaboral %}
+                    {% if situacion == 'funcionario' %}Funcionario
+                    {% elseif situacion == 'contrato_indefinido' %}Contrato Indefinido
+                    {% elseif situacion == 'contrato_temporal' %}Contrato Temporal
+                    {% elseif situacion == 'autonomo' %}Autónomo
+                    {% elseif situacion == 'empresario' %}Empresario
+                    {% else %}Otro
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Antigüedad Laboral</td>
+                <td>
+                    {% set antiguedad = simulador.riesgo.antiguedadLaboral %}
+                    {% if antiguedad == 'menos_1_anio' %}Menos de 1 año
+                    {% elseif antiguedad == 'un_anio' %}1 año
+                    {% elseif antiguedad == 'mas_2_anios' %}Más de 2 años
+                    {% else %}N/A
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- MOTIVOS DEL RESULTADO -->
+    {% if simulador.resultado.motivos is defined and simulador.resultado.motivos|length > 0 %}
+    <div class="seccion">
+        <div class="seccion-titulo">MOTIVOS DE LA VALORACIÓN</div>
+        
+        {% for motivo in simulador.resultado.motivos %}
+        <div class="lista-item {{ motivo.tipo }}">
+            <span class="lista-item-icono">
+                {% if motivo.tipo == 'critico' %}??
+                {% elseif motivo.tipo == 'advertencia' %}?
+                {% else %}??
+                {% endif %}
+            </span>
+            {{ motivo.mensaje }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- SUGERENCIAS -->
+    {% if simulador.resultado.sugerencias is defined and simulador.resultado.sugerencias|length > 0 %}
+    <div class="seccion">
+        <div class="seccion-titulo">SUGERENCIAS PARA MEJORAR SU SOLICITUD</div>
+        
+        {% for sugerencia in simulador.resultado.sugerencias %}
+        <div class="lista-item {{ sugerencia.prioridad }}">
+            <span class="lista-item-icono">
+                {% if sugerencia.prioridad == 'alta' %}??
+                {% elseif sugerencia.prioridad == 'media' %}??
+                {% else %}??
+                {% endif %}
+            </span>
+            {{ sugerencia.mensaje }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- AVISO LEGAL -->
+    <div class="aviso-legal">
+        <strong>AVISO LEGAL IMPORTANTE</strong>
+        <p>
+            Este simulador ofrece una valoración orientativa basada en los datos proporcionados. 
+            El resultado <strong>NO constituye una oferta vinculante</strong> ni una aprobación definitiva de crédito. 
+            La viabilidad definitiva de la solicitud dependerá de una valoración completa realizada por nuestro equipo de expertos, 
+            incluyendo análisis de documentación adicional, verificación de solvencia y evaluación detallada de riesgos.
+        </p>
+        <p style="margin-top: 8px;">
+            Los cálculos realizados son aproximados y pueden variar según las condiciones finales de mercado. 
+            Consulte con nuestros asesores financieros para obtener información personalizada y definitiva sobre su caso específico.
+        </p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <p>Este documento ha sido generado de forma automática por el Simulador de Viabilidad Hipotecaria.</p>
+        <p style="margin-top: 5px; font-size: 8px;">Documento confidencial - Uso únicamente informativo</p>
+    </div>
+</body>
+</html>

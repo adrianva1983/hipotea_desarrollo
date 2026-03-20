@@ -1,0 +1,35 @@
+AppBundle\Entity\EntidadColaboradora:
+  type: entity
+  table: entidad_colaboradora
+  id:
+    idEntidadColaboradora:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_entidad_colaboradora
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombre:
+      type: string
+      nullable: false
+      length: 255
+      options:
+        fixed: false
+    tipoEntidad:
+      type: smallint
+      nullable: false
+      options:
+        unsigned: false
+        comment: '1: Banco2: Tasadora3: Notaría'
+      column: tipo_entidad
+    estado:
+      type: smallint
+      nullable: false
+      options:
+        unsigned: false
+        comment: '1: Activo2: Inactivo'
+        default: '1'
+  lifecycleCallbacks: {  }

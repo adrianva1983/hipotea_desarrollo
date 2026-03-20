@@ -1,0 +1,120 @@
+AppBundle\Entity\IaConfig:
+  type: entity
+  table: ia_config
+  repositoryClass: AppBundle\Repository\IaConfigRepository
+  
+  id:
+    id:
+      type: integer
+      generator:
+        strategy: AUTO
+
+  fields:
+    provider:
+      type: string
+      length: 50
+      nullable: false
+      unique: true
+      comment: 'Proveedor: GEMINI, OPENAI, etc'
+
+    apiKey:
+      type: string
+      column: api_key
+      length: 500
+      nullable: false
+      comment: 'API Key (puede estar encriptada)'
+
+    apiUrl:
+      type: string
+      column: api_url
+      length: 500
+      nullable: false
+      comment: 'URL base del proveedor'
+
+    model:
+      type: string
+      length: 100
+      nullable: false
+      comment: 'Modelo a usar (gemini-pro, gpt-3.5-turbo, etc)'
+
+    systemPrompt:
+      type: text
+      column: system_prompt
+      nullable: true
+      comment: 'Prompt del sistema por defecto'
+
+    temperatura:
+      type: decimal
+      precision: 3
+      scale: 2
+      nullable: false
+      options:
+        default: '0.70'
+      comment: 'Temperatura para generación (0-1)'
+
+    maxTokens:
+      type: integer
+      column: max_tokens
+      nullable: false
+      options:
+        default: 1024
+      comment: 'Máximo de tokens en respuesta'
+
+    topP:
+      type: decimal
+      column: top_p
+      precision: 3
+      scale: 2
+      nullable: false
+      options:
+        default: '0.95'
+      comment: 'Top P (solo para Gemini)'
+
+    topK:
+      type: integer
+      column: top_k
+      nullable: false
+      options:
+        default: 40
+      comment: 'Top K (solo para Gemini)'
+
+    activo:
+      type: boolean
+      nullable: false
+      options:
+        default: false
+      comment: 'Si este proveedor está activo'
+
+    esProveedorPorDefecto:
+      type: boolean
+      column: es_proveedor_por_defecto
+      nullable: false
+      options:
+        default: false
+      comment: 'Proveedor por defecto si activo está en FALSE'
+
+    createdAt:
+      type: datetime
+      column: created_at
+      nullable: false
+      options:
+        default: CURRENT_TIMESTAMP
+      comment: 'Fecha de creación'
+
+    updatedAt:
+      type: datetime
+      column: updated_at
+      nullable: false
+      options:
+        default: CURRENT_TIMESTAMP
+      comment: 'Fecha de actualización'
+
+  indexes:
+    idx_provider:
+      columns: [provider]
+    idx_activo:
+      columns: [activo]
+
+  uniqueConstraints:
+    unique_provider:
+      columns: [provider]

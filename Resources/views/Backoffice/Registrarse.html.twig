@@ -1,0 +1,294 @@
+{% use '@App/Backoffice/Partes/Head/Styles.html.twig' %}
+{% use '@App/Backoffice/Partes/Head/Scripts.html.twig' %}
+{% form_theme formulario_usuario '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% spaceless %}
+	<!DOCTYPE html>
+	<html lang="es">
+		<head>
+			{% include '@App/Backoffice/Partes/Head/Metas.html' %}
+			<link href="{{ asset('assets/images/cropped-Group-270x270.png') }}" rel="icon" sizes="16x16" type="image/png">
+			<title>HipoLine Grupo Negociador
+				{% if titulo is defined %}
+					-
+					{{ titulo }}
+				{% endif %}
+			</title>
+			<link href="{{ asset('assets/css/pages/login-register-lock.css') }}" rel="stylesheet">
+			{{ block('styles') }}
+			{% block customstyles %}
+				{{ parent() }}
+				<style>
+					.login-register {
+						background-image: url({{ asset('assets/images/background/login-register.jpg') }});
+					}
+
+					.logo-login {
+						width: 60%;
+						margin-bottom: 30px;
+					}
+
+					.login-box {
+						width: 700px;
+						padding: 40px;
+						margin: 0 auto;
+					}
+				</style>
+			{% endblock %}
+			{% if app.environment is same as('dev') %}
+				{{ block('devscripts') }}
+				{% block customscripts %}
+					{{ parent() }}
+					<script src="{{ asset('assets/js/custom/registrarse.min.js') }}"></script>
+				{% endblock %}
+			{% endif %}
+		</head>
+		<body class="skin-default card-no-border">
+			{% include '@App/Backoffice/Partes/Body/Preloader.html' %}
+			<section id="wrapper">
+				<div class="login-register">
+					<div class="login-box card">
+						<div class="card-body">
+							{{ form_start(formulario_usuario,{attr:{class:'form-material',id:'loginform'}}) }}
+							{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+							<center>
+								<img src="{{ asset('assets/images/custom/hipotea.png') }}" class="logo-login">
+							</center>
+							<h3 class="text-center mb-3">{{ titulo }}</h3>
+							<div class="form-group col">
+								{{ form_widget(formulario_usuario.username,{attr:{placeholder:'Nombre'}}) }}
+								{{ form_errors(formulario_usuario.username) }}
+							</div>
+							<div class="form-group col">
+								{{ form_widget(formulario_usuario.apellidos,{attr:{placeholder:'Apellidos'}}) }}
+								{{ form_errors(formulario_usuario.apellidos) }}
+							</div>
+							<div class="form-group col">
+								{{ form_widget(formulario_usuario.nif,{attr:{maxlength:'10',pattern:'^\\d{8}[\\s-]?[A-Za-z]$',placeholder:'DNI'}}) }}
+								{{ form_errors(formulario_usuario.nif) }}
+							</div>
+							<div class="form-group col">
+								{{ form_widget(formulario_usuario.telefonoMovil,{attr:{placeholder:'Teléfono'}}) }}
+								{{ form_errors(formulario_usuario.telefonoMovil) }}
+							</div>
+							<div class="form-group col">
+								{{ form_widget(formulario_usuario.email.first,{attr:{placeholder:'E-Mail'}}) }}
+								{{ form_errors(formulario_usuario.email.first) }}
+							</div>
+							<div class="form-group col">
+								{{ form_widget(formulario_usuario.email.second,{attr:{placeholder:'Confirmar E-Mail'}}) }}
+								{{ form_errors(formulario_usuario.email.second) }}
+							</div>
+							<div class="form-group col">
+								{{ form_widget(formulario_usuario.plainPassword.first,{attr:{placeholder:'Contraseña'}}) }}
+								{{ form_errors(formulario_usuario.plainPassword.first) }}
+							</div>
+							<div class="form-group col">
+								{{ form_widget(formulario_usuario.plainPassword.second,{attr:{placeholder:'Confirmar contraseña'}}) }}
+								{{ form_errors(formulario_usuario.plainPassword.second) }}
+							</div>
+							<div class="form-group col">
+								<div class="custom-control custom-checkbox">
+									<input class="custom-control-input" id="{{ formulario_usuario.politicaPrivacidad.vars.id }}" name="{{ formulario_usuario.politicaPrivacidad.vars.full_name }}" {% if formulario_usuario.politicaPrivacidad.vars.required %} required {% endif %} type="checkbox">
+									<label class="custom-control-label" for="{{ formulario_usuario.politicaPrivacidad.vars.id }}">Acepto la
+									</label>
+									<a href="javascript:void(0)" data-toggle="modal" data-target="#modal-proteccion-datos">
+										política de privacidad</a>
+								</div>
+								{% do formulario_usuario.politicaPrivacidad.setRendered %}
+							</div>
+							<div class="form-group col">
+								<div class="custom-control custom-checkbox">
+									<input class="custom-control-input" id="{{ formulario_usuario.contratoFipre.vars.id }}" name="{{ formulario_usuario.contratoFipre.vars.full_name }}" {% if formulario_usuario.contratoFipre.vars.required %} required {% endif %} type="checkbox">
+									<label class="custom-control-label" for="{{ formulario_usuario.contratoFipre.vars.id }}">Acepto el
+									</label>
+									<a href="javascript:void(0)" data-toggle="modal" data-target="#modal-fipre">
+										contrato FIPRE</a>
+								</div>
+								{% do formulario_usuario.contratoFipre.setRendered %}
+							</div>
+							<div class="form-group col text-center">
+								{{ form_widget(formulario_usuario.submit,{attr:{class:'btn-success btn-lg btn-block btn-rounded waves-effect waves-light'}}) }}
+							</div>
+							<div class="form-group mb-0">
+								<div class="col-sm text-center">
+									<span>¿Ya tienes una cuenta?
+									</span>
+									<a class="text-info" href="{{ path('iniciar_sesion') }}">
+										<b>Acceder</b>
+									</a>
+								</div>
+							</div>
+							{{ form_end(formulario_usuario) }}
+						</div>
+					</div>
+				</div>
+			</section>
+			<div class="modal fade" id="modal-proteccion-datos">
+				<div class="modal-dialog modal-dialog-centered modal-xl">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title">
+								<strong>Política de privacidad</strong>
+							</h4>
+							<button class="close" data-dismiss="modal" type="button">×</button>
+						</div>
+						<div class="modal-body">
+							<ol  style="color: #99cc00;">
+								<li>
+									<span style="color: #99cc00;">
+										<strong>&iquest;Qui&eacute;n es el responsable del tratamiento de sus datos?</strong>
+									</span>
+								</li>
+							</ol>
+							<p>GRUPO NEGOCIADOR ALR S.L.</p>
+							<p>B14873780</p>
+							<p>C/ ISABEL LA MONJA 7 - 14711 - ENCINAREJO - C&Oacute;RDOBA</p>
+							<p>957050469</p>
+							<p>info@gruponegociador.es</p>
+							<ol start="2" style="color: #99cc00;">
+								<li>
+									<span style="color: #99cc00;">
+										<strong>&iquest;Con qu&eacute; finalidad tratamos sus datos personales?</strong>
+									</span>
+								</li>
+							</ol>
+							<p>En GRUPO NEGOCIADOR ALR S.L. tratamos la informaci&oacute;n que nos facilitan las personas interesadas con el fin de Realizar la gesti&oacute;n administrativa, contable y fiscal de los servicios solicitados, as&iacute; como enviar comunicaciones comerciales sobre nuestros productos y servicios.</p>
+							<ol start="3" style="color: #99cc00;">
+								<li>
+									<span style="color: #99cc00;">
+										<strong>&iquest;Por cu&aacute;nto tiempo conservaremos sus datos?</strong>
+									</span>
+								</li>
+							</ol>
+							<p>Los datos se conservar&aacute;n mientras el interesado no solicite su supresi&oacute;n, y en su caso, durante los a&ntilde;os necesarios para cumplir con las obligaciones legales.</p>
+							<ol start="4" style="color: #99cc00;">
+								<li>
+									<span style="color: #99cc00;">
+										<strong>&iquest;Cu&aacute;l es la legitimaci&oacute;n para el tratamiento de sus datos?</strong>
+									</span>
+								</li>
+							</ol>
+							<p>Le indicamos la base legal para el tratamiento de sus datos:</p>
+							<ul>
+								<li>Ejecuci&oacute;n de un contrato: Prestaci&oacute;n de los servicios solicitados</li>
+								<li>Inter&eacute;s leg&iacute;timo del Responsable: Env&iacute;o de comunicaciones comerciales</li>
+							</ul>
+							<ol start="5" style="color: #99cc00;">
+								<li>
+									<span style="color: #99cc00;">
+										<strong>&iquest;A qu&eacute; destinatarios se comunicar&aacute;n sus datos?</strong>
+									</span>
+								</li>
+							</ol>
+							<p>Los datos se comunicar&aacute;n a los siguientes destinatarios:</p>
+							<ul>
+								<li>Agencia Tributaria, con la finalidad de Cumplir con las obligaciones legales</li>
+								<li>Entidades financieras, con la finalidad de Girar los recibos correspondientes</li>
+							</ul>
+							<ol start="6" style="color: #99cc00;">
+								<li>
+									<span style="color: #99cc00;">
+										<strong>Transferencias de datos a terceros pa&iacute;ses</strong>
+									</span>
+								</li>
+							</ol>
+							<p>No est&aacute;n previstas transferencias de datos a terceros pa&iacute;ses.</p>
+							<ol start="7" style="color: #99cc00;">
+								<li>
+									<span style="color: #99cc00;">
+										<strong>&iquest;Cu&aacute;les son sus derechos cuando nos facilita sus datos?</strong>
+									</span>
+								</li>
+							</ol>
+							<p>Cualquier persona tiene derecho a obtener confirmaci&oacute;n sobre si en GRUPO NEGOCIADOR ALR S.L. estamos tratando datos personales que les conciernan, o no.</p>
+							<p>Las personas interesadas tienen derecho a acceder a sus datos personales, as&iacute; como a solicitar la rectificaci&oacute;n de los datos inexactos o, en su caso, solicitar su supresi&oacute;n cuando, entre otros motivos, los datos ya no sean necesarios para los fines que fueron recogidos.</p>
+							<p>En determinadas circunstancias, los interesados podr&aacute;n solicitar la limitaci&oacute;n del tratamiento de sus datos, en cuyo caso &uacute;nicamente los conservaremos para el ejercicio o la defensa de reclamaciones.</p>
+							<p>En determinadas circunstancias y por motivos relacionados con su situaci&oacute;n particular, los interesados podr&aacute;n oponerse al tratamiento de sus datos. En este caso, GRUPO NEGOCIADOR ALR S.L. dejar&aacute; de tratar los datos, salvo por motivos leg&iacute;timos imperiosos, o el ejercicio o la defensa de posibles reclamaciones.</p>
+							<p>Podr&aacute; ejercitar materialmente sus derechos de la siguiente forma: dirigi&eacute;ndose a la direcci&oacute;n del responsable del tratamiento</p>
+							<p>Si ha otorgado su consentimiento para alguna finalidad concreta, tiene derecho a retirar el consentimiento otorgado en cualquier momento, sin que ello afecte a la licitud del tratamiento basado en el consentimiento previo a su retirada.</p>
+							<p>En caso de que sienta vulnerados sus derechos en lo concerniente a la protecci&oacute;n de sus datos personales, especialmente cuando no haya obtenido satisfacci&oacute;n en el ejercicio de sus derechos, puede presentar una reclamaci&oacute;n ante la Autoridad de Control en materia de Protecci&oacute;n de Datos competente a trav&eacute;s de su sitio web: www.agpd.es.</p>
+							<ol start="8" style="color: #99cc00;">
+								<li>
+									<span style="color: #99cc00;">
+										<strong>&iquest;C&oacute;mo hemos obtenido sus datos?</strong>
+									</span>
+								</li>
+							</ol>
+							<p>Los datos personales que tratamos en GRUPO NEGOCIADOR ALR S.L. proceden del propio interesado.</p>
+							<p>Las categor&iacute;as de datos que se tratan son:</p>
+							<ul>
+								<li>Datos identificativos</li>
+								<li>Direcciones postales y electr&oacute;nicas</li>
+								<li>Informaci&oacute;n comercial</li>
+							</ul>
+							<p>No se tratan categor&iacute;as especiales de datos personales (son aquellos datos que revelen el origen &eacute;tnico o racial, las opiniones pol&iacute;ticas, las convicciones religiosas o filos&oacute;ficas, o la afiliaci&oacute;n sindical, datos gen&eacute;ticos, datos biom&eacute;tricos dirigidos a identificar de manera un&iacute;voca a una persona f&iacute;sica, datos relativos a la salud o datos relativos a la vida sexual o la orientaci&oacute;n sexual de una persona f&iacute;sica).</p>
+						</div>
+						<div class="modal-footer">
+							<button class="btn btn-success waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal fade" id="modal-fipre">
+				<div class="modal-dialog modal-dialog-centered modal-xl">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title">
+								<strong>Contrato FIPRE</strong>
+							</h4>
+							<button class="close" data-dismiss="modal" type="button">×</button>
+						</div>
+						<div class="modal-body">
+							<p>
+								<span style="color: #99cc00;">
+									<strong>FICHA DE IDENTIFICACI&Oacute;N</strong>
+								</span>
+							</p>
+							<p>
+								<span style="color: #99cc00;">
+									<strong>1- IDENTIDAD Y DOMICILIO:</strong>
+								</span>
+							</p>
+							<p><br/>a. Gruponegociador Alr S.L. C.I.F.: B-14873780.<br/>b. Nombre comercial &ldquo;Gruponegociador&rdquo;.<br/>c. Direcci&oacute;n fiscal: C/ Isabel la Monja n&ordm;7, Encinarejo de C&oacute;rdoba, C&oacute;rdoba. 14711<br/>d. Direcci&oacute;n comercial: C/ Tom&aacute;s de Aquino n&ordm;4, C&oacute;rdoba, 14004</p>
+							<p><br/><span style="color: #99cc00;">
+									<strong>2- REGISTRO:</strong>
+								</span>
+							</p>
+							<p><br/>a. Registro de intermediarios de cr&eacute;dito inmobiliario en Banco de Espa&ntilde;a.<br/>b. N&ordm; de registro: 26<br/>c. P&oacute;liza de Responsabilidad suscrita con Lloyd's, N&ordm; p&oacute;liza BNE201917625<br/>d. Medios para comprobar inscripci&oacute;n:
+								<a href="https://www.bde.es/bde/es/secciones/servicios/Particulares_y_e/registro-de-intermediarios/registro-de-intermediarios-de-credito-inmobiliario-y-prestamistas-inmobiliarios.html" target="_blank">https://www.bde.es/bde/es/secciones/servicios/Particulares_y_e/registro-de-intermediarios/registro-de-intermediarios-de-credito-inmobiliario-y-prestamistas-inmobiliarios.html</a>
+							</p>
+							<p><br/><span style="color: #99cc00;">
+									<strong>3- ENTIDADES COLABORADORAS:</strong>
+								</span>
+							</p>
+							<p><br/>a. Gruponegociador es una empresa de intermediaci&oacute;n asesorando de forma independiente, presentando a sus clientes las mejores opciones hipotecarias seg&uacute;n sus condiciones particulares y negociando en su nombre.<br/>b. Para el desarrollo de dicha actividad es conocedor de las ofertas hipotecarias del mercado, y con algunas de las entidades mantiene acuerdos de colaboraci&oacute;n o prescripci&oacute;n, y por ello recibe una retribuci&oacute;n en caso de que la operaci&oacute;n se formalice con alguna de estas entidades. Aunque en la presentaci&oacute;n de ofertas no influir&aacute; tales posibles retribuciones, y por este motivo la opci&oacute;n elegida puede que no sea una entidad de las que mantenga acuerdo remuneratorio.</p>
+							<p><br/><span style="color: #99cc00;">
+									<strong>4- HONORARIOS:</strong>
+								</span>
+							</p>
+							<p><br/>a. Los honorarios ser&aacute;n establecidos tras el estudio de viabilidad de cada cliente, variando en funci&oacute;n de la dificultad de la operaci&oacute;n y de la oferta negociada en conjunto que pueda obtener Gruponegociador.<br/>b. Comisiones:<br/>i. Importe solicitado hasta 500.000&euro;: Se establecer&aacute; un m&iacute;nimo de 0&euro; y un m&aacute;ximo de 7.500 &euro;.<br/>ii. Importe solicitado superior a 500.000 &euro;: Comisi&oacute;n fija del 1,5%, sin m&iacute;nimo.<br/>c. En caso de que la operaci&oacute;n sea con uno de los prestamistas que Gruponegociador tiene acuerdos remuneratorios, se informar&aacute; en la hoja de encargo de financiaci&oacute;n los honorarios directos que se cobrar&aacute;n al cliente y si en los mismos est&aacute;n descontados o no las cesiones por parte del prestamista en caso de existir.</p>
+							<p><br/><span style="color: #99cc00;">
+									<strong>5- PROCEDIMIENTOS RECLAMACIONES EXTRAJUDICIALES:</strong>
+								</span>
+							</p>
+							<p><br/>a. Se dispone de Hoja de Reclamaciones en nuestra oficina comercial seg&uacute;n la disposici&oacute;n adicional 1&ordm; de la Ley 5/2019.<br/>b. Seg&uacute;n la disposici&oacute;n transitoria quinta de la Ley 5/2019, se podr&aacute; dirigir directamente a reclamaciones y quejas de Banco de Espa&ntilde;a.<br/><a href="https://sedeelectronica.bde.es/sede/es/menu/ciudadanos/Reclamaciones___2e85b7714582d21.html" target="_blank">https://sedeelectronica.bde.es/sede/es/menu/ciudadanos/Reclamaciones___2e85b7714582d21.html</a><br/>c. En caso de querer poner alguna reclamaci&oacute;n puede escribirnos tambi&eacute;n a nuestro email
+								<a href="mailto:info@gruponegociador.es">info@gruponegociador.es</a>
+							</p>
+							<p>&nbsp;</p>
+							<p><br/><span style="color: #99cc00;">
+									<strong>CONTACTO</strong>
+								</span><br/>- Persona de contacto: Antonio L&oacute;pez Ruip&eacute;rez (gerente)<br/>- Tel&eacute;fono fijo: (+34) 957050469<br/>- M&oacute;vil: (+34) 607470783<br/>- Direcci&oacute;n: Calle Tom&aacute;s de Aquino n&ordm;4 oficina 14, 14.004, C&oacute;rdoba.<br/>- info@gruponegociador.es<br/>- http://gruponegociador.es/contacto/</p>
+						</div>
+						<div class="modal-footer">
+							<button class="btn btn-success waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			{% if app.environment is not same as('dev') %}
+				{{ block('cloudscripts') }}
+				{{ block('customscripts') }}
+			{% endif %}
+		</body>
+	</html>
+{% endspaceless %}

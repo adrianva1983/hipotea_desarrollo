@@ -1,0 +1,115 @@
+<div aria-modal="true" aria-labelledby="modal-seguimiento-expediente" class="modal fade" id="modal-seguimiento-expediente" role="dialog" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Seguimiento de Expediente</h5>
+				<button aria-label="Close" class="close" data-dismiss="modal" type="button">
+					<span aria-hidden="true">×</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="alert alert-danger d-none" id="error-ajax" role="alert">Se ha producido un error</div>
+                {% for fase,arrayFormularioSeguimientoExpediente in arraySeguimientosFase %}
+                    {% if fase == 'FASE 1' %}
+                        {% set color = '#000000' %}
+                    {% elseif fase == 'FASE 2' %}
+                        {% set color = '#69ade3' %}
+                    {% elseif fase == 'FASE 3' %}
+                        {% set color = '#101069' %}
+                    {% elseif fase == 'FASE 4' %}
+                        {% set color = '#ff9500' %}
+                    {% elseif fase == 'FASE 5' %}
+                        {% set color = '#ff0000' %}
+                    {% else %}
+                        {% set color = '#cccccc' %} {# color por defecto #}
+                    {% endif %}
+
+                    <div class="fase">
+                        <div class="form-row fila-fase" style="background-color: {{ color }};">
+                            <div class="col-12">
+                                <h3 style="color:#FFF;">{{ fase }}</h2>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-2">
+                                <label class="titulo-fila">Fecha</label>
+                            </div>
+                            <div class="form-group col-3">
+                                <label class="titulo-fila">Concepto</label>
+                            </div>
+                            <div class="form-group col-5">
+                                <label class="titulo-fila">Comentario</label>
+                            </div>
+                            <div class="form-group col-2">
+                                <label class="titulo-fila">Estado</label>
+                            </div>
+                            {# <div class="form-group col-2">
+                                <label class="titulo-fila">Colaborador</label>
+                            </div> #}
+                        </div>
+                        {% set color = 'verde' %}
+                        {% for formularioSeguimientoExpediente in arrayFormularioSeguimientoExpediente %}
+                            {% form_theme formularioSeguimientoExpediente '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+                            {{ form_start(formularioSeguimientoExpediente) }}
+                                <div class="form-row fila-seguimiento {{ color }}">
+                                    <div class="form-group col-2">
+                                        {# {{ form_label(formularioSeguimientoExpediente.fecha) }} #}
+                                        {{ form_widget(formularioSeguimientoExpediente.fecha,{attr:{class:'js-datepicker'}}) }}
+                                        {{ form_errors(formularioSeguimientoExpediente.fecha) }}
+                                    </div>
+                                    <div class="form-group col-3">
+                                        {# {{ form_label(formularioSeguimientoExpediente.idConceptoSeguimientoExpediente) }} #}
+                                        {{ form_widget(formularioSeguimientoExpediente.idConceptoSeguimientoExpediente,{attr:{disabled:'disabled'}}) }}
+                                        {{ form_errors(formularioSeguimientoExpediente.idConceptoSeguimientoExpediente) }}
+                                    </div>
+                                    <div class="form-group col-5">
+                                        {# {{ form_label(formularioSeguimientoExpediente.comentario) }} #}
+                                        {{ form_widget(formularioSeguimientoExpediente.comentario) }}
+                                        {{ form_errors(formularioSeguimientoExpediente.comentario) }}
+                                    </div>
+                                    <div class="form-group col-2">
+                                        {# {{ form_label(formularioSeguimientoExpediente.cliente) }} #}
+                                        {{ form_widget(formularioSeguimientoExpediente.cliente) }}
+                                        {{ form_errors(formularioSeguimientoExpediente.cliente) }}
+                                    </div>
+                                    {# <div class="form-group col-2"> #}
+                                        {# {{ form_label(formularioSeguimientoExpediente.colaborador) }} #}
+                                        {# {{ form_widget(formularioSeguimientoExpediente.colaborador) }}
+                                        {{ form_errors(formularioSeguimientoExpediente.colaborador) }}
+                                    </div> #}
+                                </div>
+                                <input type="hidden" name="idExpedienteSeguimiento" value="{{ idExpediente }}">
+                            {{ form_row(formularioSeguimientoExpediente._token) }}
+                            {{ form_end(formularioSeguimientoExpediente, {'render_rest': false}) }}
+                            {% if color == 'verde' %}
+                                {% set color = '' %}
+                            {% else %}
+                                {% set color = 'verde' %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+			</div>
+			<div class="modal-footer">
+				<button class="btn btn-success waves-effect" id="guardar_seguimiento" type="button"><i class="fas fa-save"></i> Guardar</button>
+                <button class="btn btn-warning waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+			</div>
+		</div>
+	</div>
+</div>
+{# <div aria-modal="true" aria-labelledby="modal-expediente-sin-cliente" class="modal fade" id="modal-expediente-sin-cliente" role="dialog" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Sin cliente</h5>
+				<button aria-label="Close" class="close" data-dismiss="modal" type="button">
+					<span aria-hidden="true">×</span>
+				</button>
+			</div>
+			<div class="modal-body">Este expediente no tiene ningún cliente.</div>
+			<div class="modal-footer">
+				<button class="btn btn-success waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+			</div>
+		</div>
+	</div>
+</div> #}

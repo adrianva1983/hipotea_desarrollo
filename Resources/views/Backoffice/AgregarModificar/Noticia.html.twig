@@ -1,0 +1,151 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregar_modificar_noticia '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% form_theme agregar_modificar_noticia_usuario '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/dropify/dist/css/dropify.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/css/dropify.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/dropify/dist/js/dropify.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/bootstrap-datepicker/locales/bootstrap-datepicker.es.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/js/dropify.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/datepicker.min.js') }}"></script>
+	{% if nombres_fichero_mostrar is defined %}
+		<script>
+			function nombreFicheroFuncion() {
+				return '{{ nombres_fichero_mostrar }}';
+			}
+
+			function rutaBorrarFicheroNoticiaAJAX() {
+				return '{{ path('borrar_fichero_noticia_ajax') }}';
+			}
+		</script>
+	{% endif %}
+	<script src="{{ asset('assets/js/custom/Array.prototype.filter.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/noticia.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(agregar_modificar_noticia) }}
+			<div class="border px-3 pt-3 mb-3">
+				<div class="form-row">
+					<div class="form-group col-md">
+						{{ form_label(agregar_modificar_noticia.titulo) }}
+						{{ form_widget(agregar_modificar_noticia.titulo) }}
+						{{ form_errors(agregar_modificar_noticia.titulo) }}
+					</div>
+					<div class="form-group col-md-3">
+						{{ form_label(agregar_modificar_noticia.fecha) }}
+						{{ form_widget(agregar_modificar_noticia.fecha,{attr:{class:'js-datepicker'}}) }}
+						{{ form_errors(agregar_modificar_noticia.fecha) }}
+					</div>
+					<div class="form-group col-md-3">
+						{{ form_label(agregar_modificar_noticia.estado) }}
+						{{ form_widget(agregar_modificar_noticia.estado) }}
+						{{ form_errors(agregar_modificar_noticia.estado) }}
+					</div>
+				</div>
+			</div>
+			<div class="border p-3 mb-3" data-limite-usuarios>
+				<div class="form-row">
+					<div class="form-group col-md">
+						{{ form_label(agregar_modificar_noticia_usuario.roles) }}
+						{{ form_widget(agregar_modificar_noticia_usuario.roles,{attr:{class:'select2','data-selector-rol':''}}) }}
+					</div>
+					<div class="form-group col-md">
+						{{ form_label(agregar_modificar_noticia_usuario.grupos) }}
+						{{ form_widget(agregar_modificar_noticia_usuario.grupos,{attr:{class:'select2','data-selector-grupo':''}}) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col-md">
+						{{ form_label(agregar_modificar_noticia_usuario.idUsuario) }}
+						{{ form_widget(agregar_modificar_noticia_usuario.idUsuario,{attr:{class:'select2','data-selector-usuarios':''}}) }}
+						{{ form_errors(agregar_modificar_noticia_usuario.idUsuario) }}
+					</div>
+					<div class="col-xl-3 col-lg-4 col-md-5 d-flex align-items-center justify-content-around">
+						<button class="btn btn-success btn-sm" type="button" data-marcar-todos>Marcar todos</button>
+						<button class="btn btn-danger btn-sm" type="button" data-desmarcar-todos>Desmarcar todos</button>
+					</div>
+				</div>
+			</div>
+			<div class="border px-3 pt-3 mb-3">
+				<div class="form-row">
+					<div class="col-md">
+						<div class="form-group">
+							{{ form_label(agregar_modificar_noticia.url) }}
+							{{ form_widget(agregar_modificar_noticia.url) }}
+							{{ form_errors(agregar_modificar_noticia.url) }}
+						</div>
+						<div class="form-group">
+							{{ form_label(agregar_modificar_noticia.descripcion) }}
+							{{ form_widget(agregar_modificar_noticia.descripcion,{attr:{rows:4}}) }}
+							{{ form_errors(agregar_modificar_noticia.descripcion) }}
+						</div>
+					</div>
+					<div class="form-group col-md">
+						{{ form_label(agregar_modificar_noticia.fichero) }}
+						{% if fichero_subido is defined %}
+							{{ form_widget(agregar_modificar_noticia.fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido,'data-height':207,'data-max-file-size':max_file_size}}) }}
+						{% else %}
+							{{ form_widget(agregar_modificar_noticia.fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-height':207,'data-max-file-size':max_file_size}}) }}
+						{% endif %}
+						{{ form_errors(agregar_modificar_noticia.fichero) }}
+					</div>
+				</div>
+			</div>
+			<div class="d-flex">
+				<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_noticias') }}">Volver</a>
+				{{ form_label(agregar_modificar_noticia.reset) }}
+				{{ form_widget(agregar_modificar_noticia.reset) }}
+				{{ form_label(agregar_modificar_noticia.submit) }}
+				{{ form_widget(agregar_modificar_noticia.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_end(agregar_modificar_noticia) }}
+		</div>
+	</div>
+	<div class="modal fade" id="mensaje-ajax">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">
+						<strong>Error</strong>
+					</h4>
+					<button class="close" data-dismiss="modal" type="button">×</button>
+				</div>
+				<div class="modal-body" id="mensaje-ajax-body">Error al borrar el archivo</div>
+				<div class="modal-footer">
+					<button class="btn btn-secondary waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

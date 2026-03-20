@@ -1,0 +1,19 @@
+{% use '@App/Backoffice/Partes/Head/Scripts.html.twig' %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/perfect-scrollbar.jquery.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/sticky-kit-master/dist/sticky-kit.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/sparkline/jquery.sparkline.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.perfect-scrollbar/0.7.1/js/perfect-scrollbar.jquery.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/sidebarmenu.min.js') }}"></script>
+	<script>
+		localStorage.setItem('skin', 'skin-green-dark');
+	</script>
+	<script src="{{ asset('assets/js/custom.min.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,846 @@
+inicio:
+  path: /
+  controller: AppBundle:GrupoNegociador:index
+obtener_foto_perfil_base64:
+  path: /AJAX/ObtenerFotoPerfilBase64
+  controller: AppBundle:GrupoNegociador:obtenerFotoPerfilBase64
+iniciar_sesion:
+  path: /Login
+  controller: AppBundle:GrupoNegociador:iniciarSesion
+recuperar_cuenta:
+  path: /AJAX/RecuperarCuenta
+  controller: AppBundle:GrupoNegociador:recuperarCuenta
+reestablecer_cuenta:
+  path: /ReestablecerCuenta/{token}
+  controller: AppBundle:GrupoNegociador:reestablecerCuenta
+cerrar_sesion:
+  path: /Logout
+registrar_cuenta:
+  path: /Registrarse
+  controller: AppBundle:GrupoNegociador:registrarCuenta
+activar_cuenta:
+  path: /ActivarCuenta/{token}
+  controller: AppBundle:GrupoNegociador:activarCuenta
+lista_agentes_colaboradores:
+  path: /Admin/Lista/AgentesColaboradores
+  controller: AppBundle:GrupoNegociador:listaAgenteColaborador
+agregar_modificar_agente_colaborador:
+  path: /Admin/Formulario/AgenteColaborador/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarAgenteColaborador
+  defaults: {id:}
+lista_entidades_colaboradoras:
+  path: /Admin/Lista/EntidadesColaboradoras
+  controller: AppBundle:GrupoNegociador:listaEntidadColaboradora
+agregar_modificar_entidad_colaboradora:
+  path: /Admin/Formulario/EntidadColaboradora/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarEntidadColaboradora
+  defaults: {id:}
+lista_inmobiliarias:
+  path: /Admin/Lista/Colaboradores
+  controller: AppBundle:GrupoNegociador:listaInmobiliaria
+agregar_modificar_inmobiliaria:
+  path: /Admin/Formulario/Colaborador/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarInmobiliaria
+  defaults: {id:}
+lista_usuarios:
+  path: /Admin/Lista/Usuarios
+  controller: AppBundle:GrupoNegociador:listaUsuarios
+agregar_modificar_usuario:
+  path: /Admin/Formulario/Usuario/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarUsuario
+  defaults: {id:}
+lista_usuarios_inmobiliarias:
+  path: /Admin/Lista/UsuariosColaboradores
+  controller: AppBundle:GrupoNegociador:listaUsuariosInmobiliaria
+agregar_modificar_usuario_inmobiliaria:
+  path: /Admin/Formulario/UsuarioColaborador/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarUsuarioInmobiliaria
+  defaults: {id:}
+lista_jefes_inmobiliarias:
+  path: /Admin/Lista/JefesInmobiliarias
+  controller: AppBundle:GrupoNegociador:listaJefesInmobiliaria
+agregar_modificar_jefe_inmobiliaria:
+  path: /Admin/Formulario/JefeInmobiliaria/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarJefeInmobiliaria
+  defaults: {id:}
+lista_jefes_oficinas:
+  path: /Admin/Lista/JefesOficinas
+  controller: AppBundle:GrupoNegociador:listaJefesOficina
+agregar_modificar_jefe_oficina:
+  path: /Admin/Formulario/JefeOficina/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarJefeOficina
+  defaults: {id:}
+lista_responsables_zona:
+  path: /Admin/Lista/ResponsablesZona
+  controller: AppBundle:GrupoNegociador:listaResponsablesZona
+agregar_modificar_responsable_zona:
+  path: /Admin/Formulario/ResponsableZona/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarResponsableZona
+  defaults: {id:}
+agregar_modificar_responsables_zona:
+  path: /Admin/Formulario/ResponsableZona/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarResponsableZona
+  defaults: {id:}
+lista_oficinas:
+  path: /Admin/Lista/Oficinas
+  controller: AppBundle:GrupoNegociador:listaOficinas
+agregar_modificar_oficina:
+  path: /Admin/Formulario/Oficina/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarOficina
+  defaults: {id: null}
+obtener_usuarios_inmobiliaria_oficina_ajax:
+  path: /AJAX/ObtenerUsuariosInmobiliariaOficina
+  controller: AppBundle:GrupoNegociador:obtenerUsuariosInmobiliariaOficina
+mi_perfil:
+  path: /MiPerfil
+  controller: AppBundle:GrupoNegociador:miPerfil
+lista_fases_hitos_campos_opciones:
+  path: /Admin/Lista/FasesHitosCamposOpciones
+  controller: AppBundle:GrupoNegociador:listaFasesHitosCamposOpciones
+agregar_modificar_fase:
+  path: /Admin/Formulario/Fase/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarFase
+  defaults: {id:}
+agregar_modificar_hito:
+  path: /Admin/Formulario/Fase/{idFase}/Hito/{idHito}
+  controller: AppBundle:GrupoNegociador:agregarModificarHito
+  defaults: { idHito: }
+agregar_modificar_grupo_campos_hito:
+  path: /Admin/Formulario/Hito/{idHito}/GrupoCamposHito/{idGrupoCamposHito}
+  controller: AppBundle:GrupoNegociador:agregarModificarGrupoCamposHito
+  defaults: { idGrupoCamposHito: }
+agregar_modificar_campo_hito:
+  path: /Admin/Formulario/GrupoCamposHito/{idGrupoCamposHito}/CampoHito/{idCampoHito}
+  controller: AppBundle:GrupoNegociador:agregarModificarCampoHito
+  defaults: { idCampoHito: }
+agregar_modificar_opciones_campo:
+  path: /Admin/Formulario/CampoHito/{idCampoHito}/OpcionesCampo/{idOpcionesCampo}
+  controller: AppBundle:GrupoNegociador:agregarModificarOpcionesCampo
+  defaults: { idOpcionesCampo: }
+lista_clientes:
+  path: /ColaboradorComercialTecnico/Lista/Clientes
+  controller: AppBundle:GrupoNegociador:listaClientes
+agregar_modificar_cliente:
+  path: /ColaboradorComercialTecnico/Formulario/Usuario/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarCliente
+  defaults: {id:}
+lista_leads:
+  path: /ColaboradorComercialTecnico/Lista/Leads
+  controller: AppBundle:Leads:listaLeads
+# agregar_modificar_lead:
+#   path: /ColaboradorComercialTecnico/Formulario/Usuario/{id}
+#   controller: AppBundle:Leads:agregarModificarLead
+#   defaults: {id:}
+ordenar_fases_hitos_campos_opciones_ajax:
+  path: /AJAX/OrdenarFasesHitosCamposOpciones
+  controller: AppBundle:GrupoNegociador:ordenarFasesHitosCamposOpciones
+lista_expedientes:
+  path: /Lista/Expedientes
+  controller: AppBundle:GrupoNegociador:listaExpedientes1
+lista_expedientes_paginacion:
+  path: /Lista/Expedientes
+  controller: AppBundle:GrupoNegociador:listaExpedientes1
+lista_expedientes_paginacion_ajax:
+  path: ^/AJAX/lista-expedientes-paginacion
+  controller: AppBundle:GrupoNegociador:listaExpedientesAjax1
+lista_expedientes_sin_asignar:
+  path: /Lista/ExpedientesSinAsignar
+  controller: AppBundle:GrupoNegociador:listaExpedientesSinAsignar
+lista_documentos_expediente:
+  path: /Lista/DocumentosExpediente/{id}/{paraFirmar}
+  controller: AppBundle:GrupoNegociador:listaDocumentosExpediente
+  defaults: {paraFirmar:}
+agregar_modificar_expediente:
+  path: /ColaboradorComercialTecnico/Formulario/Expediente/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarExpediente
+  defaults: {id:}
+agregar_expediente_web:
+  path: /web/nuevo-registro
+  controller: AppBundle:Web:nuevoRegistro
+fin_registro:
+  path: /web/fin-registro
+  controller: AppBundle:Web:finRegistro
+agregar_modificar_documentos:
+  path: /ClienteColaborador/Formulario/Expediente/Documentos/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarExpediente
+  defaults: {id:}
+modificar_expediente:
+  path: /ClienteColaborador/Formulario/Expediente/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarExpediente
+borrar_fichero_expediente_ajax:
+  path: /AJAX/BorrarFicheroExpediente
+  controller: AppBundle:GrupoNegociador:borrarFicheroExpediente
+descargar_fichero_expediente:
+  path: /Descargar/FicheroExpediente/{id}
+  controller: AppBundle:GrupoNegociador:obtenerFicheroExpediente
+lista_documentos:
+  path: /Lista/Documentos
+  controller: AppBundle:GrupoNegociador:listaDocumentos
+agregar_modificar_documento:
+  path: /ComercialTecnico/Formulario/Documento/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarDocumento
+  defaults: {id:}
+borrar_fichero_documento_ajax:
+  path: /AJAX/BorrarFicheroDocumento
+  controller: AppBundle:GrupoNegociador:borrarFicheroDocumento
+descargar_fichero_documento:
+  path: /Descargar/Documento/{id}
+  controller: AppBundle:GrupoNegociador:descargarFicheroDocumento
+notificacion_expediente:
+  path: /AJAX/NotificacionExpediente
+  controller: AppBundle:GrupoNegociador:notificacionExpediente
+cancelar_expediente:
+  path: /AJAX/CancelarExpediente
+  controller: AppBundle:GrupoNegociador:cancelarExpediente
+calendario:
+  path: /ColaboradorComercialTecnico/Calendario
+  controller: AppBundle:GrupoNegociador:calendario
+actualizar_calendario_ajax:
+  path: /AJAX/ActualizarCalendario
+  controller: AppBundle:GrupoNegociador:actualizarCalendario
+seleccionar_usuario_calendario_ajax:
+  path: /AJAX/SeleccionarUsuarioCalendario
+  controller: AppBundle:GrupoNegociador:seleccionarUsuarioCalendario
+crear_notificaciones:
+  path: /Admin/CrearNotificaciones
+  controller: AppBundle:GrupoNegociador:crearNotificaciones
+notificacion_confirguar_estado_leida_ajax:
+  path: /AJAX/NotificacionConfigurarEstadoLeida
+  controller: AppBundle:GrupoNegociador:notificacionConfigurarEstadoLeida
+lista_notificaciones:
+  path: /ListaNotificaciones
+  controller: AppBundle:GrupoNegociador:listaNotificaciones
+lista_noticias:
+  path: /Admin/Lista/Noticias
+  controller: AppBundle:GrupoNegociador:listaNoticias
+agregar_modificar_noticia:
+  path: /Admin/Formulario/Noticia/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarNoticia
+  defaults: {id:}
+borrar_fichero_noticia_ajax:
+  path: /AJAX/BorrarFicheroNoticia
+  controller: AppBundle:GrupoNegociador:borrarFicheroNoticia
+refrescar_usuarios_inmobiliarias_ajax:
+  path: /AJAX/RefrescarUsuariosColaborador
+  controller: AppBundle:GrupoNegociador:refrescarUsuariosColaborador
+obtener_oficinas_ajax:
+  path: /AJAX/ObtenerOficinas
+  controller: AppBundle:GrupoNegociador:getOficinasByInmobiliaria
+  methods: [GET, POST]
+lista_clientes_facturas:
+  path: /Admin/Lista/ClientesFactura
+  controller: AppBundle:GrupoNegociador:listaClientesFactura
+agregar_modificar_cliente_factura:
+  path: /Admin/Formulario/ClienteFactura/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarClienteFactura
+  defaults: {id:}
+lista_emisores_facturas:
+  path: /Admin/Lista/EmisoresFactura
+  controller: AppBundle:GrupoNegociador:listaEmisoresFactura
+agregar_modificar_emisor_factura:
+  path: /Admin/Formulario/EmisorFactura/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarEmisorFactura
+  defaults: {id:}
+lista_facturas:
+  path: /Admin/Lista/Facturas
+  controller: AppBundle:GrupoNegociador:listaFacturas
+agregar_modificar_factura:
+  path: /Admin/Formulario/Factura/{id}
+  controller: AppBundle:GrupoNegociador:agregarModificarFactura
+  defaults: {id:}
+obtener_numero_serie_factura_ajax:
+  path: /AJAX/ObtenerNumeroSerieFactura
+  controller: AppBundle:GrupoNegociador:ObtenerNumeroSerieFactura
+ver_factura:
+  path: /Factura/{id}
+  controller: AppBundle:GrupoNegociador:verFactura
+enviar_factura_email_ajax:
+  path: /AJAX/EnviarFacturaEmail
+  controller: AppBundle:GrupoNegociador:enviarFacturaEmail
+calculadora_sencilla:
+  path: /CalculadoraSencilla
+  controller: AppBundle:Calculadoras:calculadoraSencilla
+calculadora_avanzada:
+  path: /CalculadoraAvanzada
+  controller: AppBundle:Calculadoras:calculadoraAvanzadaTest
+calculadora_avanzada_test:
+  path: /CalculadoraAvanzadaTest
+  controller: AppBundle:Calculadoras:calculadoraAvanzada
+calculadora_avanzada_web:
+  path: /web/calculadora-avanzada
+  controller: AppBundle:Calculadoras:calculadoraAvanzadaWeb
+calculadora_cuota_web:
+  path: /web/calculadora-cuota
+  controller: AppBundle:Calculadoras:calculadoraCuotaWeb
+calculadora_precio_maximo_web:
+  path: /web/calculadora-precio-maximo
+  controller: AppBundle:Calculadoras:calculadoraPrecioMaximoWeb
+calculadora_precio_maximo_web_nm:
+  path: /web/calculadora-precio-maximo-nm
+  controller: AppBundle:Calculadoras:calculadoraPrecioMaximoWebNM
+calculadora_cambio_de_casa_web:
+  path: /web/calculadora-cambio-de-casa
+  controller: AppBundle:Calculadoras:calculadoraCambioDeCasaWeb
+calculadora_avanzada_ajax:
+  path: /AJAX/calculadora-avanzada
+  controller: AppBundle:Calculadoras:calculadoraAvanzadaSubmit
+  methods: [POST]
+calculadora_comparativa:
+  path: /CalculadoraComparativa
+  controller: AppBundle:Calculadoras:calculadoraComparativa
+calculadora_comparativa_web:
+  path: /web/CalculadoraComparativa
+  controller: AppBundle:Calculadoras:calculadoraComparativaWeb
+calculadora_comparativa_ajax:
+  path: /AJAX/CalculadoraComparativa
+  controller: AppBundle:Calculadoras:calculadoraComparativaSubmit
+  methods: [POST]
+expediente_email:
+  path: /ColaboradorComercialTecnico/Expediente/{id}/Email
+  controller: AppBundle:GrupoNegociador:expedienteEmail
+obtener_agentes_colaboradores_ajax:
+  path: /AJAX/ObtenerAgentesColaboradores
+  controller: AppBundle:GrupoNegociador:obtenerAgentesColaboradores
+actualizar_seguimiento_expediente_ajax:
+  path: /AJAX/ActualizarSeguimientoExpediente
+  controller: AppBundle:GrupoNegociador:actualizarSeguimientoExpediente
+colaborador_agregar_cliente:
+  path: /Colaborador/AgregarCliente
+  controller: AppBundle:GrupoNegociador:colaboradorAgregarCliente
+activar_cliente_creado_colaborador:
+  path: /ActivarCuentaCreadaColaborador/{token}
+  controller: AppBundle:GrupoNegociador:activarCuentaCreadaColaborador
+estadisticas:
+  path: /Admin/Estadisticas
+  controller: AppBundle:GrupoNegociador:estadisticas
+obtener_registro_expediente:
+  path: /ColaboradorComercialTecnico/Expediente/{id}/Registro
+  controller: AppBundle:GrupoNegociador:obtenerRegistroExpediente
+duplicar_expediente:
+  path: /ColaboradorComercialTecnico/Expediente/{id}/Duplicar
+  controller: AppBundle:GrupoNegociador:duplicarExpediente
+informe_expediente:
+  path: /ColaboradorComercialTecnico/Expediente/{id}/Informe
+  controller: AppBundle:GrupoNegociador:informeExpediente
+informe_pendiente_expediente:
+  path: /ColaboradorComercialTecnico/Expediente/{id}/Pendiente
+  controller: AppBundle:GrupoNegociador:informePendienteExpediente
+seguimiento_expediente:
+  path: /Seguimiento/Expediente/{id}
+  controller: AppBundle:GrupoNegociador:seguimientoExpediente
+parametros_aplicacion:
+  path: /Admin/Formulario/Parametros/{id}
+  controller: AppBundle:Parametros:modificarParametros
+  defaults: {id:}
+obtener_informe_estadisticas:
+  path: /AJAX/ObtenerInformeEstadisticas
+  controller: AppBundle:GrupoNegociador:obtenerInformeEstadisticas
+lista_expedientes_ajax:
+  path: ^/AJAX/lista-expedientes
+  controller: AppBundle:GrupoNegociador:listaExpedientesAjax
+iniciar_sesion_api:
+  path: /API/Login
+  controller: AppBundle:API:iniciarSesion
+  methods: [POST]
+documentos_por_subir:
+  path: /API/DocumentosPorSubir/{idExpediente}
+  controller: AppBundle:API:documentosPorSubir
+  methods: [GET]
+  defaults: {idExpediente:null}
+recupera_documento:
+  path: /API/RecuperaDocumento/{idCampoHitoExpediente}
+  controller: AppBundle:API:recuperaDocumento
+  methods: [GET]
+recibir_imagenes:
+  path: /API/RecibirImagenes/{idCampoHitoExpediente}
+  controller: AppBundle:API:recibirImagenes
+  methods: [POST]
+borrar_documento:
+  path: /API/BorrarDocumento/{idCampoHitoExpediente}
+  controller: AppBundle:API:borrarDocumento
+  methods: [POST]
+documentos_para_firmar:
+  path: /API/DocumentosParaFirmar
+  controller: AppBundle:API:documentosParaFirmar
+  methods: [GET]
+documento_para_firmar:
+  path: /API/DocumentoParaFirmar/{idCampoHitoExpediente}
+  controller: AppBundle:API:documentoParaFirmar
+  methods: [GET]
+recibir_documento_firmado:
+  path: /API/RecibirDocumentoFirmado/{idCampoHitoExpediente}
+  controller: AppBundle:API:recibirDocumentoFirmado
+  methods: [POST]
+listado_de_expedientes:
+  path: /API/ListadoDeExpedientes
+  controller: AppBundle:API:listadoDeExpedientes
+  methods: [GET]
+detalles_de_expediente:
+  path: /API/DetallesDeExpediente/{idExpediente}
+  controller: AppBundle:API:detallesDeExpediente
+  methods: [GET]
+  defaults: {idExpediente:null}
+listado_de_documentos:
+  path: /API/ListadoDeDocumentos
+  controller: AppBundle:API:listadoDeDocumentos
+  methods: [GET]
+listado_de_noticias:
+  path: /API/ListadoDeNoticias
+  controller: AppBundle:API:listadoDeNoticias
+  methods: [GET]
+detalles_de_noticia:
+  path: /API/DetallesDeNoticia/{idNoticia}
+  controller: AppBundle:API:detallesDeNoticia
+  methods: [GET]
+  defaults: {idNoticia:null}
+listado_de_notificaciones:
+  path: /API/ListadoDeNotificaciones
+  controller: AppBundle:API:listadoDeNotificaciones
+  methods: [GET]
+detalles_de_notificacion:
+  path: /API/DetallesDeNotificacion/{idNotificacion}
+  controller: AppBundle:API:detallesDeNotificacion
+  methods: [GET]
+  defaults: {idNotificacion:null}
+notificaciones_sin_leer:
+  path: /API/NotificacionesSinLeer
+  controller: AppBundle:API:notificacionesSinLeer
+  methods: [GET]
+leer_notificacion:
+  path: /API/LeerNotificacion/{idNotificacion}
+  controller: AppBundle:API:leerNotificacion
+  methods: [POST]
+borrar_notificacion:
+  path: /API/BorrarNotificacion/{idNotificacion}
+  controller: AppBundle:API:borrarNotificacion
+  methods: [POST]
+estudio_viabilidad:
+  path: /API/EstudioViabilidad/{idExpediente}
+  controller: AppBundle:API:estudioViabilidad
+  methods: [GET]
+  defaults: {idExpediente:null}
+calcular_avanzada:
+  path: /API/CalcularAvanzada
+  controller: AppBundle:API:calcularAvanzada
+  methods: [POST]
+registrar_cliente:
+  path: /API/RegistrarCliente
+  controller: AppBundle:API:registrarCliente
+  methods: [POST]
+datos_perfil:
+  path: /API/DatosPerfil
+  controller: AppBundle:API:datosPerfil
+  methods: [GET]
+actualizar_perfil:
+  path: /API/ActualizarPerfil
+  controller: AppBundle:API:actualizarPerfil
+  methods: [POST]
+clientes_colaborador:
+  path: /API/ClientesColaborador
+  controller: AppBundle:API:clientesColaborador
+  methods: [GET]
+crear_cliente_colaborador:
+  path: /API/CrearClienteColaborador
+  controller: AppBundle:API:crearClienteColaborador
+  methods: [POST]
+crear_expediente_colaborador:
+  path: /API/CrearExpedienteColaborador
+  controller: AppBundle:API:crearExpedienteColaborador
+  methods: [POST]
+enviar_cuestionario:
+  path: /API/EnviarCuestionario/{idExpediente}
+  controller: AppBundle:API:enviarCuestionario
+  methods: [POST]
+estructura_expediente:
+  path: /API/EstructuraExpediente
+  controller: AppBundle:API:estructuraExpediente
+  methods: [GET]
+crear_cuestionario:
+  path: /API/CrearCuestionario
+  controller: AppBundle:API:crearCuestionario
+  methods: [POST]
+crear_cuestionario_cliente:
+  path: /API/CrearCuestionarioCliente
+  controller: AppBundle:API:crearCuestionarioCliente
+  methods: [POST]
+actualizar_expediente_cliente:
+  path: /API/ActualizarExpedienteCliente
+  controller: AppBundle:API:actualizarExpedienteCliente
+  methods: [POST]
+desRegistrar_dispositivo:
+  path: /API/DesRegistrarDispositivo
+  controller: AppBundle:API:desRegistrarDispositivo
+  methods: [POST]
+registrar_dispositivo:
+  path: /API/RegistrarDispositivo
+  controller: AppBundle:API:registrarDispositivo
+  methods: [POST]
+leer_sheets:
+  path: /sincronizar-sheets
+  controller: AppBundle:Sheets:sincronizarVariasHojas
+crear_uno:
+  path: /crear-uno
+  controller: AppBundle:Sheets:simulacionExpediente
+cargar_json:
+  path: /cargar-json
+  controller: AppBundle:Belender:cargarJson
+document_request:
+  path: /admin/solicitar-documentos
+  controller: AppBundle:Belender:solicitarDocumentos
+document_request_SMS:
+  path: /admin/solicitar-documentos-sms
+  controller: AppBundle:Belender:solicitarDocumentosSMS
+pre_document_request:
+  path: /admin/pre-solicitar-documentos
+  controller: AppBundle:Belender:preSolicitarDocumentos
+document_download:
+  path: /AJAX/descargar-documentos
+  controller: AppBundle:Belender:descargarDocumentos
+obtener_belender_registro:
+    path: /admin/obtener-belender-registro
+    controller: AppBundle:Belender:obtenerBelenderRegistro
+    methods: [GET]
+cargar_documentos_descargados:
+  path: /admin/cargar-documentos-descargados
+  controller: AppBundle:Belender:cargarDocumentosDescargados
+obtener_documento:
+  path: /admin/obtener-documento
+  controller: AppBundle:Belender:obtenerDocumento
+belender_adjuntar_archivos:
+  path: /admin/adjuntar-archivos
+  controller: AppBundle:Belender:adjuntarArchivosBelender
+  methods: [POST]
+procesar_documentos_belender:
+  path: /admin/procesar-documentos-belender
+  controller: AppBundle:Belender:procesarDocumentosBelender
+comparar_datos_expediente:
+  path: /admin/comparar-datos-expediente
+  controller: AppBundle:Belender:compararDatosExpediente
+guardar_datos_consolidados:
+  path: /admin/guardar-datos-consolidados
+  controller: AppBundle:Belender:guardarDatosConsolidados
+  methods: [POST]
+obtener_datos_consolidados:
+  path: /admin/obtener-datos-consolidados
+  controller: AppBundle:Belender:obtenerDatosConsolidados
+  methods: [GET]
+
+check_belender_status:
+  path: /admin/check-belender-status
+  controller: AppBundle:Belender:checkBelenderStatus
+  methods: [GET]
+
+
+belender_webhook:
+  path: /webhook/belender
+  controller: AppBundle:Belender:webhookBelender
+  methods: [GET, POST]
+
+api_webhook_belender_sync:
+  path: /API/belender-sync
+  controller: AppBundle:Belender:webhookBelenderEventos
+  methods: [POST]
+
+check_clave_pin_service:
+  path: /admin/check-clave-pin-service
+  controller: AppBundle:Belender:checkClavePinService
+  methods: [POST]
+
+calculadora_cuota_web_preview:
+  path: /web/calculadora-cuota-preview
+  controller: AppBundle:Calculadoras:calculadoraCuotaWebPreview
+
+
+
+api_chat_list:
+  path: /Chat/List
+  controller: AppBundle:Chat:list
+  methods: [GET]
+
+
+
+api_chat_delete:
+  path: /Chat/Delete/{id}
+  controller: AppBundle:Chat:delete
+  methods: [POST]
+  defaults: {id:}
+
+api_chat_usuario:
+  path: /Chat/Usuario
+  controller: AppBundle:Chat:usuario
+  methods: [GET]
+
+
+
+api_chat_sender:
+  path: /Chat/Sender
+  controller: AppBundle:Chat:sender
+  methods: [POST]
+
+solicitar_cirbe:
+  path: /AJAX/solicitar-cirbe
+  controller: AppBundle:Belender:solicitarCirbe
+
+actualizar_belender_hito:
+  path:     /API/actualizar-belender-hito
+  defaults: { _controller: AppBundle:API:actualizarBelenderHito }
+  methods:  [POST]
+
+auto_whatsapp:
+  path: /Admin/Lista/AutoWhatsApp
+  controller: AppBundle:Whatsapp:autoWhatsapp
+
+mi_conexion_whatsapp:
+  path: /Conexion/WhatsApp
+  controller: AppBundle:Whatsapp:miConexionWhatsapp
+
+agregar_modificar_conexion:
+  path: /Admin/nueva-conexion
+  controller: AppBundle:Whatsapp:agregarModificarConexion
+  defaults: {id: null}
+
+editar_conexion:
+  path: /Admin/AutoWhatsApp/editar/{id}
+  controller: AppBundle:Whatsapp:editarConexion
+  requirements:
+    id: '\d+'
+
+eliminar_conexion:
+  path: /Admin/AutoWhatsApp/eliminar/{id}
+  controller: AppBundle:Whatsapp:eliminarConexion
+  methods: [POST, DELETE]
+  requirements:
+    id: '\d+'
+
+api_chat_gestor:
+  path: /API/Gestor
+  controller: AppBundle:Whatsapp:gestor
+  methods: [GET]
+
+ejecutar_consulta_sql:
+  path: /API/EjecutarSQL
+  controller: AppBundle:Whatsapp:ejecutarConsultaSQL
+  methods: [POST]
+
+api_chat_create:
+  path: /API/Create
+  controller: AppBundle:Whatsapp:create
+  methods: [POST]
+
+api_get_whatsapp_messages:
+  path: /admin/WhatsApp/messages/{id}
+  controller: AppBundle:Whatsapp:getMessages
+  methods: [GET]
+  requirements:
+    id: '\d+'
+
+api_get_expedientes_con_mensajes:
+  path: /admin/WhatsApp/expedientes-con-mensajes
+  controller: AppBundle:Whatsapp:getExpedientesConMensajes
+  methods: [GET]
+api_send_whatsapp_message:
+  path: /admin/WhatsApp/send-message
+  controller: AppBundle:Whatsapp:sendMessage
+  methods: [POST]
+api_get_expediente_datos:
+  path: /admin/WhatsApp/expediente-datos
+  controller: AppBundle:Whatsapp:getExpedienteDatos
+  methods: [GET]
+
+mis_expedientes_con_mensajes:
+  path: /admin/WhatsApp/mis-expedientes-con-mensajes
+  controller: AppBundle:Whatsapp:getMisExpedientesConMensajes
+  methods: [GET]
+
+mis_logs:
+  path: /API/logs
+  controller: AppBundle:Whatsapp:misLogs
+  methods: [GET]
+
+api_datos_expediente:
+  path: /API/datos_expediente/{id}
+  controller: AppBundle:Whatsapp:datosExpediente
+  methods: [POST]
+  requirements:
+    id: '\d+'
+
+api_datos_expediente_prueba:
+  path: /API/datos_expediente_prueba/{id}
+  controller: AppBundle:Whatsapp:datosExpedientePrueba
+  methods: [POST]
+  requirements:
+    id: '\d+'
+
+api_datos_expediente_fase1:
+  path: /API/datos_expediente_fase/{id}
+  controller: AppBundle:Whatsapp:obtenerDatosFase1Prueba
+  methods: [POST]
+  requirements:
+    id: '\d+'
+
+api_prueba:
+  path: /AJAX/prueba/{id}
+  controller: AppBundle:LectorDocumentos:analizarDocumentosFase4
+  methods: [POST]
+  requirements:
+    id: '\d+'
+
+api_analizar_documentos_fase_cuatro:
+  path: /AJAX/analizar_documentos_fase4/{id}
+  controller: AppBundle:LectorDocumentos:analizarDocumentosFase4
+  methods: [POST]
+  requirements:
+    id: '\d+'
+
+api_obtener_analisis_documentos:
+  path: /AJAX/analisis_documentos/{id}
+  controller: AppBundle:LectorDocumentos:obtenerAnalisisDocumentos
+  methods: [GET]
+  requirements:
+    id: '\d+'
+
+api_obtener_analisis_detalle:
+  path: /AJAX/analisis/{id}
+  controller: AppBundle:LectorDocumentos:obtenerAnalisisDetalle
+  methods: [GET]
+  requirements:
+    id: '\d+'
+
+api_especificaciones_documentos_mod:
+  path: /AJAX/especificaciones-documentos/{idExpediente}
+  controller: AppBundle:LectorDocumentos:obtenerEspecificacionesDocumentos
+  methods: [GET]
+  requirements:
+    idExpediente: '\d+'
+
+descargar_informe_especificaciones:
+  path: /AJAX/informe-especificaciones
+  controller: AppBundle:LectorDocumentos:descargarInformeEspecificaciones
+  methods: [GET]
+
+eliminar_documento:
+  path: /AJAX/eliminar-documento/{idDocumento}
+  controller: AppBundle:LectorDocumentos:eliminarDocumento
+  methods: [POST]
+  requirements:
+    idDocumento: '\d+'
+
+eliminar_documento_prueba:
+  path: /AJAX/eliminar-documento-prueba/{idDocumento}
+  controller: AppBundle:LectorDocumentos:eliminarDocumentoPrueba
+  methods: [POST]
+  requirements:
+    idDocumento: '\d+'
+
+generar_informe_ejecutivo:
+  path: /AJAX/generar-informe-ejecutivo/{idExpediente}
+  controller: AppBundle:LectorDocumentos:generarInformeEjecutivo
+  methods: [POST]
+  requirements:
+    idExpediente: '\d+'
+
+generar_consolidado:
+  path: /AJAX/generar-consolidado/{idExpediente}
+  controller: AppBundle:LectorDocumentos:generarConsolidado
+  methods: [POST]
+  requirements:
+    idExpediente: '\d+'
+
+cargar_consolidado:
+  path: /AJAX/consolidado/{idExpediente}
+  controller: AppBundle:LectorDocumentos:cargarConsolidado
+  methods: [GET]
+  requirements:
+    idExpediente: '\d+'
+
+procesar_excel_ia:
+  path: /AJAX/procesar-excel-ia
+  controller: AppBundle:LectorDocumentos:procesarExcelIA
+  methods: [POST]
+
+ia_config_index:
+  path: /Admin/Lista/IA-Proveedores
+  controller: AppBundle:IaConfig:index
+
+ia_config_new:
+  path: /Admin/Lista/IA-Proveedores/nuevo
+  controller: AppBundle:IaConfig:new
+
+ia_config_edit:
+  path: /Admin/Lista/IA-Proveedores/editar/{id}
+  controller: AppBundle:IaConfig:edit
+  requirements:
+    id: '\d+'
+
+ia_config_delete:
+  path: /Admin/Lista/IA-Proveedores/eliminar/{id}
+  controller: AppBundle:IaConfig:delete
+  methods: [POST, GET]
+  requirements:
+    id: '\d+'
+
+obtener_cliente:
+  path: /admin/obtener-cliente/
+  controller: AppBundle:GrupoNegociador:obtenerCliente
+
+simulador_completo:
+  path: /Simulador/Completo
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:simuladorCompleto' }
+  methods: [GET, POST]
+
+simulador_calcular_precio_maximo_ajax:
+  path: /AJAX/simulador-calcular-precio-maximo
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:calcularPrecioMaximoAjax' }
+  methods: [POST]
+
+simulador_inicio:
+  path: /Simulador/Inicio
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:inicio' }
+  methods: [GET, POST]
+
+simulador_paso1:
+  path: /Simulador/Paso1/DatosCliente
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:paso1DatosCliente' }
+  methods: [GET, POST]
+
+simulador_paso2:
+  path: /Simulador/Paso2/PrecioMaximo
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:paso2PrecioMaximo' }
+  methods: [GET, POST]
+
+simulador_paso3:
+  path: /Simulador/Paso3/CuotaGastos
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:paso3CuotaGastos' }
+  methods: [GET, POST]
+
+simulador_paso4:
+  path: /Simulador/Paso4/Riesgo
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:paso4Riesgo' }
+  methods: [GET, POST]
+
+simulador_resultado:
+  path: /Simulador/Resultado
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:resultado' }
+  methods: [GET, POST]
+
+# Acciones finales (sin cambios)
+simulador_enviar_hipotea:
+  path: /Simulador/EnviarAHipotea
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:enviarAHipotea' }
+  methods: [POST]
+
+simulador_descargar_resultado:
+  path: /Simulador/DescargarResultado
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:descargarResultado' }
+  methods: [GET]
+
+calculadora_avanzada_test_ajax:
+  path: /AJAX/CalculadoraAvanzadaTest
+  controller: AppBundle:SimuladorViabilidad:calculadoraAvanzadaTestAjax
+  methods: [POST]
+
+pageNotFound:
+    path:  /{path}
+    defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }
+    requirements:
+        path: .*

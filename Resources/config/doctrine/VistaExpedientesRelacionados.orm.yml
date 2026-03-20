@@ -1,0 +1,12 @@
+AppBundle\Entity\VistaExpedientesRelacionados:
+    type: entity
+    table: vista_expedientes_relacionados
+    read_only: true
+    id:
+        idExpediente:
+            type: integer
+            column: id_expediente
+    fields:
+        idsExpedientesRelacionados:
+            type: text
+            column: ids_expedientes_relacionados

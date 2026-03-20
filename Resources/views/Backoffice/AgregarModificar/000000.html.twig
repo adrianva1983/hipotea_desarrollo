@@ -1,0 +1,653 @@
+<div class="card"  >
+			<div class="card-body">
+				{% if fasesTMP is defined and fasesTMP is iterable and fasesTMP|length>0 %}
+					
+					{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+						{# LEYENDAS DE COLORES #}
+							<div class="leyenda-fases">
+								<div class="fase fase-negra">Fase 1</div>
+								<div class="fase fase-verde">Fase 2</div>
+								<div class="fase fase-amarilla">Fase 3</div>
+								<div class="fase fase-naranja">Fase 4</div>
+								<div class="fase fase-roja">Fase 5</div>
+							</div>
+
+						{# FIN LEYENDAS DE COLORES #}
+						<div role="tablist">
+							<nav class="nav nav-tabs">
+								{% for fase in fasesTMP %}
+									<a aria-controls="nav-fase-{{ fase.idFase }}" aria-selected="true" class="nav-item nav-link{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or ((not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA')) and irADocumentos and fase.tipo is same as(1)) %} active{% endif %}" data-toggle="tab" id="nav-fase-{{ fase.idFase }}-tab" href="#nav-fase-{{ fase.idFase }}" role="tab">
+										<b>{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or (not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') and fase.tipo is same as(1)) %}<u>{% endif %}{{ fase.nombre }}{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or (not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') and fase.tipo is same as(1)) %}</u>{% endif %}</b>
+									</a>
+								{% endfor %}
+							</nav>
+						</div>
+					{% endif %}
+					<div class="tab-content">
+					
+						{% for fase in fasesTMP %}
+							{% if ( not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA')) or (fase.tipo is same as(0) and not irADocumentos) or (fase.tipo is same as(1) and irADocumentos) %}
+								{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+									<div aria-labelledby="nav-fase-{{ fase.idFase }}-tab" class="8888888888 tab-pane fade{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or (not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') and fase.tipo is same as(1) and irADocumentos) %} show active{% endif %} border border-top-0 p-3" id="nav-fase-{{ fase.idFase }}" role="tabpanel">
+									{% endif %}
+										{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+											{% for hito in hitos[fase.idFase] %}
+												{% if hitos_expediente[hito.idHito] is iterable and hitos_expediente[hito.idHito]|length>0 %}
+													{% set iteracion_hito_expediente = 0 %}
+													{% for hito_expediente in hitos_expediente[hito.idHito] %}
+														{% form_theme agregarModificarHitoExpediente[hito.idHito][loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+														<div{% if not loop.parent.loop.last or hito.repetible %} class="mb-3"{% endif %} data-hito-condicional="{{ hito.hitoCondicional }}" data-hito-expediente="{{ hito.idHito }}"{% if loop.index is same as(1) %} data-repetible="{{ hito.repetible?1:0 }}"{% endif %} {% if iteracion_hito_expediente > 0 %} data-agregado="{{ iteracion_hito_expediente }}"{% endif %} {% if hito_expediente.idHitoExpediente %} data-id-hito-expediente={{ hito_expediente.idHitoExpediente }}{% endif %}>
+															<h4 class="card-title bg-success text-light mb-0 p-3 {{ hito.idHito }} 555 {{valores_campo_707[iteracion_hito_expediente]}}" data-hito-titulo>{{ hito.nombre }} {% if loop.index>1 %} ({{ loop.index }}){% endif %} <i class="fas fa-angle-down mostrar"></i><i class="fas fa-angle-up d-none ocultar"></i></h4>
+															<div class="border p-3 d-none">
+																{% if hito.idHito == 31 %} 
+																	{% if not (is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA')) %}
+																		<div class="d-flex flex-wrap gap-3 align-items-center justify-content-end my-2 legend-docs">
+																			<div class="d-flex align-items-center gap-2">
+																				<span class="legend-swatch bg-success" style="background-color: #00800026 !important;"></span>
+																				<small class="text-muted">Documentos ya descargados</small>
+																			</div>
+																			<div class="d-flex align-items-center gap-2">
+																				<span class="legend-swatch bg-danger" style="background-color: #ff000024 !important;"></span>
+																				<small class="text-muted">Documentos no descargables</small>
+																			</div>
+																			<div class="d-flex align-items-center gap-2">
+																				<span class="legend-swatch bg-warning" style="background-color: #ffff0026 !important;"></span>
+																				<small class="text-muted">Documentos descargables</small>
+																			</div>
+																		</div>
+
+																		<div class="form-row align-items-center mb-2 ">
+																			<div class="form-group col-md">
+																				<h6 class="card-title 000111">NIF / NIE  <span style="color:red;">* Sólo GN</span></h6>
+																				<input type="text" id="belenderNif_{{ hito_expediente.idHitoExpediente }}" name="belenderNif_{{ hito_expediente.idHitoExpediente }}" class="form-control" placeholder="Introduzca NIF/NIE" value="{{ hito_expediente.nif|default('') }}" oninput="cambiarBotonesBelender({{ hito_expediente.idHitoExpediente }})">
+																			</div>
+																			<div class="form-group col-md">
+																				<h6 class="card-title">FECHA VALIDEZ  <span style="color:red;">* Sólo GN</span></h6>
+																				<input type="date" id="belenderFechaValidez_{{ hito_expediente.idHitoExpediente }}" name="belenderFechaValidez_{{ hito_expediente.idHitoExpediente }}" class="form-control" placeholder="Introduzca fecha de validez" value="{{ hito_expediente.fechaValidez|default('') }}">
+																			</div>
+																			<div class="form-group col-md-auto mb-0">
+																				<button class="btn btn-success waves-effect mr-2" type="button" onclick="checkClavePinService({{hito_expediente.idHitoExpediente}})">
+																					<i class="fas fa-mobile-alt mr-1"></i> Comprobar clave PIN
+																				</button>
+																				<button id="solicitarDocumentos_{{hito_expediente.idHitoExpediente}}" style="display: none;" class="btn btn-success waves-effect mr-2" type="button" onclick="obtenerDocumentosAdminNewTab({{hito_expediente.idHitoExpediente}})">
+																					<i class="fas fa-file-pdf mr-1"></i> Solicitar documentos descargables
+																				</button>
+																				<button id="solicitarDocumentosSMS_{{hito_expediente.idHitoExpediente}}" style="display: none;" class="btn btn-info waves-effect mr-2" type="button" onclick="obtenerDocumentosAdminNewTabSMS({{hito_expediente.idHitoExpediente}})" title="Solicitar informe CIRBE de riesgos de crédito">
+																					<i class="fas fa-file-pdf mr-1"></i> Solicitar documentos SMS
+																				</button>
+																				<button style="display: none;" id="verificar_{{hito_expediente.idHitoExpediente}}" class="btn btn-success waves-effect mr-2" type="button" onclick="verificarEstadoDocumentosNewTab({{hito_expediente.idHitoExpediente}})">
+																					? Adjuntar documentos disponibles
+																				</button>													
+																				
+																			</div>																
+																		</div>
+																		<div class="form-row align-items-center mb-5 ">
+																			<div class="form-group col-md-auto mb-0">
+																				<button id="solicitarDocumentosICI_{{hito_expediente.idHitoExpediente}}" class="btn btn-info waves-effect mr-2" type="button" onclick="solicitarCirbeDocumentos({{hito_expediente.idHitoExpediente}})" title="Solicitar informe CIRBE de riesgos de crédito">
+																					<i class="fas fa-credit-card mr-1"></i> Solicitar Cirbe ICI
+																				</button>
+																				<button style="display: none;" id="verificarICI_{{hito_expediente.idHitoExpediente}}" class="btn btn-success waves-effect mr-2" type="button" onclick="verificarEstadoDocumentosICI({{hito_expediente.idHitoExpediente}})">
+																					? Adjuntar Cirbe ICI
+																				</button>
+																			</div>
+																		</div>
+
+																	{% elseif is_granted('ROLE_CLIENTE') and valores_campo_707[iteracion_hito_expediente] == 'SI' %}
+																		<div class="d-flex flex-wrap gap-3 align-items-center justify-content-end my-2 legend-docs">
+																			<div class="d-flex align-items-center gap-2">
+																				<span class="legend-swatch bg-success" style="background-color: #00800026 !important;"></span>
+																				<small class="text-muted">Documentos ya descargados</small>
+																			</div>
+																			<div class="d-flex align-items-center gap-2">
+																				<span class="legend-swatch bg-danger" style="background-color: #ff000024 !important;"></span>
+																				<small class="text-muted">Documentos no descargables</small>
+																			</div>
+																			<div class="d-flex align-items-center gap-2">
+																				<span class="legend-swatch bg-warning" style="background-color: #ffff0026 !important;"></span>
+																				<small class="text-muted">Documentos descargables</small>
+																			</div>
+																		</div>
+																		<div class="form-row align-items-center mb-2 ">
+																			<div class="form-group col-md">
+																				<h6 class="card-title 000222">NIF / NIE  </h6>
+																				<input type="text" id="belenderNif_{{ hito_expediente.idHitoExpediente }}" name="belenderNif_{{ hito_expediente.idHitoExpediente }}" class="form-control" placeholder="Introduzca NIF/NIE" value="{{ hito_expediente.nif|default('') }}" oninput="cambiarBotonesBelender({{ hito_expediente.idHitoExpediente }})">
+																			</div>
+																			<div class="form-group col-md">
+																				<h6 class="card-title">FECHA VALIDEZ  </h6>
+																				<input type="date" id="belenderFechaValidez_{{ hito_expediente.idHitoExpediente }}" name="belenderFechaValidez_{{ hito_expediente.idHitoExpediente }}" class="form-control" placeholder="Introduzca fecha de validez" value="{{ hito_expediente.fechaValidez|default('') }}">
+																			</div>
+																			<div class="form-group col-md-auto mb-0">
+																				<button class="btn btn-success waves-effect mr-2" type="button" onclick="checkClavePinService({{hito_expediente.idHitoExpediente}})">
+																					<i class="fas fa-mobile-alt mr-1"></i> Comprobar clave PIN
+																				</button>
+																				<button id="solicitarDocumentos_{{hito_expediente.idHitoExpediente}}" style="display: none;" class="btn btn-success waves-effect mr-2" type="button" onclick="obtenerDocumentosAdminNewTab({{hito_expediente.idHitoExpediente}})">
+																					<i class="fas fa-file-pdf mr-1"></i> Solicitar documentos descargables
+																				</button>
+																				<button id="solicitarDocumentosSMS_{{hito_expediente.idHitoExpediente}}" style="display: none;" class="btn btn-info waves-effect mr-2" type="button" onclick="obtenerDocumentosAdminNewTabSMS({{hito_expediente.idHitoExpediente}})" title="Solicitar informe CIRBE de riesgos de crédito">
+																					<i class="fas fa-file-pdf mr-1"></i> Solicitar documentos SMS
+																				</button>
+																				<button style="display: none;" id="verificar_{{hito_expediente.idHitoExpediente}}" class="btn btn-success waves-effect mr-2" type="button" onclick="verificarEstadoDocumentosNewTab({{hito_expediente.idHitoExpediente}})">
+																					? Adjuntar documentos disponibles
+																				</button>													
+																				
+																			</div>																
+																		</div>
+																	{% endif %}
+																	
+																{% endif %}
+																<div class="form-row d-none">
+																	<div class="form-group col-md">
+																		{{ form_label(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado) }}
+																		{{ form_widget(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado,{attr:{hidden:''}}) }}
+																		{{ form_errors(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado) }}
+																	</div>
+																</div>
+																<hr class="d-none mt-0">
+																{% if grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+																	{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+																		{% for grupo_hito_expediente in grupos_hito_expediente[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] %}
+																			<div{% if grupo_campos_hito.nombre is not empty %} class="border{% if loop.length>1 %} mb-3{% endif %} p-3"{% endif %} data-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" data-id-grupo-expediente="{{ grupo_hito_expediente }}" data-grupo-repetible="{{ grupo_campos_hito.repetible?1:0 }}">
+																				{% if grupo_campos_hito.nombre is not empty %}
+																					<h5 class="card-title titulo-grupo" data-grupo-titulo>{{ grupo_campos_hito.nombre }}</h5>
+																					<hr>
+																				{% endif %}
+																				{% if campos_hito[grupo_campos_hito.idGrupoCamposHito] is iterable and campos_hito[grupo_campos_hito.idGrupoCamposHito]|length>0 %}
+																					<div class="row 159753 accordion">
+																						{% for campo_hito in campos_hito[grupo_campos_hito.idGrupoCamposHito] %}
+																							{% if agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente] is defined %}
+																								{% form_theme agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																							{% endif %}
+																							<div data-id-campo-hito="{{ campo_hito.idCampoHito }}" class="col-lg {% if loop.length>1 and not loop.last and loop.index is odd %} border-lg-right{% endif %}{% if (is_granted('ROLE_CLIENTE') and not campo_hito.mostrarCliente) or (is_granted('ROLE_COLABORADOR') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_JEFE_INMOBILIARIA') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_JEFE_OFICINA') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_RESPONSABLE_ZONA') and not campo_hito.mostrarColaborador) %} d-none{% endif %} {% if hito.idHito == 31 %} {% if campo_hito.tipo is same as(4) %} {% if fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %} color_verde {% elseif campo_hito.idCampoHito in campos_descargables %} color_amarillo {% else %} color_rojo {% endif %}{% endif %}{% endif %}" data-campo-condicional="{{ campo_hito.campoCondicional }}">
+																								{% if campo_hito.tipo is not same as(10) %}
+																									<h6 class="card-title 1111">{{ campo_hito.nombre }} {% if not campo_hito.mostrarCliente and not campo_hito.mostrarColaborador  %} <span style="color:red;">* Sólo GN</span> {% endif %}</h6>
+																								{% endif %}
+																								{% if campo_hito.tipo is same as(4) %}
+																									<div data-contenedor-campo-hito-expediente-colaboradores>
+																										<div class="row 45678911">
+																											<div class="col-md {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}d-none{% endif %}">
+																												<div class="form-row d-none">
+																													<div class="form-group col {{ campo_hito.nombre }}">
+																														{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																														{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor,{attr:{readonly:'',value:campo_hito.nombre}}) }}
+																														{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																													</div>
+																												</div>
+																												<div class="form-row mt-3">
+																													<div class="col">
+																														<button class="btn btn-info waves-effect shadow-sm" type="button" data-toggle="dropdown" aria-haspopup="true">
+																															<i class="fas fa-cog"></i> Configurar
+																														</button>
+																														<div class="dropdown-menu dropdown-menu-right" role="menu">
+																															{% if fase.tipo is same as(1) %}
+																																<h6 class="dropdown-header">Requisitos</h6>
+																																<a class="dropdown-item" href="#" data-field-config="obligatorio">
+																																	{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																																	{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																																</a>
+																																<a class="dropdown-item" href="#" data-field-config="solicitarAlColaborador">
+																																	{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																																	{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																																</a>
+																																<div class="dropdown-divider"></div>
+																															{% endif %}
+																															<h6 class="dropdown-header">Notificaciones</h6>
+																															<a class="dropdown-item" href="#" data-field-config="avisarColaborador">
+																																{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																																{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																															</a>
+																															<div class="dropdown-divider"></div>
+																															<h6 class="dropdown-header">Acciones</h6>
+																															<a class="dropdown-item" href="#" data-field-config="paraFirmar">
+																																{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																																{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																															</a>
+																															<a class="dropdown-item" href="#" data-field-config="enviarAlCliente">
+																																{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																																{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																															</a>
+																															<a class="dropdown-item" href="#" data-field-config="enviarAlColaborador">
+																																{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																																{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																															</a>
+																														</div>
+																													</div>
+																												</div>
+																											</div>
+																											<div class="col-md" data-fichero-campo="{{ agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].vars.value.idFicheroCampo }}" style="flex: 3;">
+																												{% form_theme agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																												<div class="form-row">
+																													<div class="form-group col 77778888999">
+																													 	<pre>{{ agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero|json_encode(constant('JSON_PRETTY_PRINT'))|raw }}</pre>
+
+																														{#{{ form_label(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero) }} #}
+																														{% if fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
+																															{{ form_widget(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente],'data-max-file-size':maxFileSize}}) }}
+																														{% else %}
+																															{{ form_widget(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-max-file-size':maxFileSize}}) }} 
+																														{% endif %}
+																														{{ form_errors(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero) }}
+																													</div>
+																												</div>
+																												
+																											</div>	
+																											<div class="col-md" style="flex: 1; align-self: center;text-align: center;">
+																											{% if fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
+																													<a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] }}" target="_blank">Ver</a>
+																											{% endif %}
+																											</div>	
+																										</div>
+																										{% form_theme agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																									<div class="form-row {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}d-none{% endif %}">
+																											<div class="form-group col-md">
+																												{{ form_label(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora) }}
+																												{{ form_widget(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora,{attr:{class:'select2'}}) }}
+																												{{ form_errors(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora) }}
+																											</div>
+																											<div class="form-group col-md">
+																												{{ form_label(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador) }}
+																												{{ form_widget(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																												{{ form_errors(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador) }}
+																											</div>
+																										</div>
+																									</div>
+																								{% else %}
+																									<div class="form-row 98765">
+																										<div class="form-group col">
+																											{% if campo_hito.tipo is same as(2) or campo_hito.tipo is same as(3) %}
+																												{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idOpcionesCampo) }} #}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idOpcionesCampo) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idOpcionesCampo) }}
+																											{% elseif campo_hito.tipo is same as(6) %}
+																												{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }} #}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor,{attr:{class:'js-datepicker'}}) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																											{% elseif campo_hito.tipo is same as(7) or campo_hito.tipo is same as(8) or campo_hito.tipo is same as(9) %}
+																												{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idAgenteColaborador) }} #}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idAgenteColaborador) }}
+																											{% elseif campo_hito.tipo is same as(10) %}
+																											{% else %}
+																												{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }} #}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																											{% endif %}
+																										</div>
+																									</div>
+																								{% endif %}
+																							</div>
+																							{% if loop.index is even and not loop.last %}
+																								<div class="col-12 d-none d-lg-block" {% if hito.idHito == 31 %} style="display: none !important;" {% endif %}>
+																									<hr>
+																								</div>
+																							{% endif %}
+																						{% endfor %}
+																					</div>
+																				{% else %}
+																					<div class="alert alert-info" role="alert">
+																						<span>No hay campos hito.</span>
+																					</div>
+																				{% endif %}
+																				{% if grupo_campos_hito.repetible and grupos_campos_hito[hito.idHito]|length>1 %}
+																					<div class="d-flex justify-content-end border-top pt-3">
+																						<button class="btn btn-danger waves-effect {% if not loop.last or loop.index <= 1 %}oculto{% endif %}" data-borrar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+																							<i class="far fa-trash-alt"></i> Eliminar {{ grupo_campos_hito.nombre }}
+																						</button>
+																					</div>
+																				{% endif %}
+																			</div>
+																			{% if grupo_campos_hito.repetible and loop.last %}
+																				<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-grupo-expediente-contenedor>
+																					<button class="btn btn-success waves-effect" data-agregar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+																						<i class="fas fa-plus"></i> Añadir {{ grupo_campos_hito.nombre }}
+																					</button>
+																				</div>
+																			{% endif %}
+																		{% endfor %}
+																	{% endfor %}
+																{% else %}
+																	<div class="alert alert-info" role="alert">
+																		<span>No hay grupos de campos hito.</span>
+																	</div>
+																{% endif %}
+																{% if hito.repetible and hitos_expediente[hito.idHito]|length>1 %}
+																	<div class="d-flex justify-content-end border-top pt-3">
+																		<button class="btn btn-danger waves-effect btn-hito-rojo {% if not loop.last or loop.index <= 1 %}oculto{% endif %}" data-borrar-hito-expediente="{{ hito.idHito }}" type="button">
+																			<i class="far fa-trash-alt"></i> Eliminar {{ hito.nombre }}
+																		</button>
+																	</div>
+																{% endif %}
+															</div>
+														</div>
+														{% if hito.repetible and loop.last %}
+															<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-hito-expediente-contenedor>
+																<button class="btn btn-success waves-effect btn-hito" data-agregar-hito-expediente="{{ hito.idHito }}" type="button">
+																	<i class="fas fa-plus"></i> Añadir {{ hito.nombre }}
+																</button>
+															</div>
+														{% endif %}
+														{% set iteracion_hito_expediente = iteracion_hito_expediente + 1 %}
+													{% endfor %}
+												{% endif %}
+											{% endfor %}
+										{% else %}
+											<div class="alert alert-info" role="alert">
+												<span>No hay hitos.</span>
+											</div>
+										{% endif %}
+								{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+									</div>
+								{% endif %}
+							{% elseif fase.tipo is same as(0) and  irADocumentos %}	
+								<section class="999999999" style="display:none !important;">Entro en else {{fase.tipo}}
+									{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+										<div aria-labelledby="nav-fase-{{ fase.idFase }}-tab" class="tab-pane fade{% if (fase.idFase is same as(faseActual.idFase) and not irADocumentos) or (not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') and fase.tipo is same as(1) and irADocumentos) %} show active{% endif %} border border-top-0 p-3" id="nav-fase-{{ fase.idFase }}" role="tabpanel">
+									{% endif %}
+									{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+										{% for hito in hitos[fase.idFase] %}
+											{% if hitos_expediente[hito.idHito] is iterable and hitos_expediente[hito.idHito]|length>0 and (hito.idHito is same as(29) or hito.idHito is same as(54)) %}
+												{% set iteracion_hito_expediente = 0 %}
+												{% for hito_expediente in hitos_expediente[hito.idHito] %}
+													{% form_theme agregarModificarHitoExpediente[hito.idHito][loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+													<div{% if not loop.parent.loop.last or hito.repetible %} class="mb-3"{% endif %} data-hito-condicional="{{ hito.hitoCondicional }}" data-hito-expediente="{{ hito.idHito }}"{% if loop.index is same as(1) %} data-repetible="{{ hito.repetible?1:0 }}"{% endif %} {% if iteracion_hito_expediente > 0 %} data-agregado="{{ iteracion_hito_expediente }}"{% endif %} {% if hito_expediente.idHitoExpediente %} data-id-hito-expediente={{ hito_expediente.idHitoExpediente }}{% endif %}>
+														<h4 class="card-title bg-success text-light mb-0 p-3 {{ hito.idHito }} 555 {{valores_campo_707[iteracion_hito_expediente]}}" data-hito-titulo>{{ hito.nombre }} {% if loop.index>1 %} ({{ loop.index }}){% endif %} <i class="fas fa-angle-down mostrar"></i><i class="fas fa-angle-up d-none ocultar"></i></h4>
+														<div class="border p-3 d-none">
+															{% if hito.idHito == 31 %} 
+																{% if not (is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA')) %}
+																	<div class="d-flex flex-wrap gap-3 align-items-center justify-content-end my-2 legend-docs">
+																		<div class="d-flex align-items-center gap-2">
+																			<span class="legend-swatch bg-success" style="background-color: #00800026 !important;"></span>
+																			<small class="text-muted">Documentos ya descargados</small>
+																		</div>
+																		<div class="d-flex align-items-center gap-2">
+																			<span class="legend-swatch bg-danger" style="background-color: #ff000024 !important;"></span>
+																			<small class="text-muted">Documentos no descargables</small>
+																		</div>
+																		<div class="d-flex align-items-center gap-2">
+																			<span class="legend-swatch bg-warning" style="background-color: #ffff0026 !important;"></span>
+																			<small class="text-muted">Documentos descargables</small>
+																		</div>
+																	</div>
+																	<div class="form-row align-items-center mb-2 ">
+																		<div class="form-group col-md">
+																			<h6 class="card-title 000333">NIF / NIE  <span style="color:red;">* Sólo GN</span></h6>
+																			<input type="text" id="belenderNif_{{ hito_expediente.idHitoExpediente }}" name="belenderNif_{{ hito_expediente.idHitoExpediente }}" class="form-control" placeholder="Introduzca NIF/NIE" value="{{ hito_expediente.nif|default('') }}" oninput="cambiarBotonesBelender({{ hito_expediente.idHitoExpediente }})">
+																		</div>
+																		<div class="form-group col-md">
+																			<h6 class="card-title">FECHA VALIDEZ  <span style="color:red;">* Sólo GN</span></h6>
+																			<input type="date" id="belenderFechaValidez_{{ hito_expediente.idHitoExpediente }}" name="belenderFechaValidez_{{ hito_expediente.idHitoExpediente }}" class="form-control" placeholder="Introduzca fecha de validez" value="{{ hito_expediente.fechaValidez|default('') }}">
+																		</div>
+																		<div class="form-group col-md-auto mb-0">
+																			<button class="btn btn-success waves-effect mr-2" type="button" onclick="checkClavePinService({{hito_expediente.idHitoExpediente}})">
+																				<i class="fas fa-mobile-alt mr-1"></i> Comprobar clave PIN
+																			</button>
+																			<button id="solicitarDocumentos_{{hito_expediente.idHitoExpediente}}" style="display: none;" class="btn btn-success waves-effect mr-2" type="button" onclick="obtenerDocumentosAdminNewTab({{hito_expediente.idHitoExpediente}})">
+																				<i class="fas fa-file-pdf mr-1"></i> Solicitar documentos descargables
+																			</button>
+																			<button id="solicitarDocumentosSMS_{{hito_expediente.idHitoExpediente}}" style="display: none;" class="btn btn-info waves-effect mr-2" type="button" onclick="obtenerDocumentosAdminNewTabSMS({{hito_expediente.idHitoExpediente}})" title="Solicitar informe CIRBE de riesgos de crédito">
+																				<i class="fas fa-file-pdf mr-1"></i> Solicitar documentos SMS
+																			</button>
+																			<button style="display: none;" id="verificar_{{hito_expediente.idHitoExpediente}}" class="btn btn-success waves-effect mr-2" type="button" onclick="verificarEstadoDocumentosNewTab({{hito_expediente.idHitoExpediente}})">
+																				? Adjuntar documentos disponibles
+																			</button>													
+																			
+																		</div>																
+																	</div>
+																	<div class="form-row align-items-center mb-5 ">
+																		<div class="form-group col-md-auto mb-0">
+																			<button id="solicitarDocumentosICI_{{hito_expediente.idHitoExpediente}}" class="btn btn-info waves-effect mr-2" type="button" onclick="solicitarCirbeDocumentos({{hito_expediente.idHitoExpediente}})" title="Solicitar informe CIRBE de riesgos de crédito">
+																				<i class="fas fa-credit-card mr-1"></i> Solicitar Cirbe ICI
+																			</button>
+																			<button style="display: none;" id="verificarICI_{{hito_expediente.idHitoExpediente}}" class="btn btn-success waves-effect mr-2" type="button" onclick="verificarEstadoDocumentosICI({{hito_expediente.idHitoExpediente}})">
+																				? Adjuntar Cirbe ICI
+																			</button>
+																		</div>
+																	</div>
+
+																{% elseif is_granted('ROLE_CLIENTE') and valores_campo_707[iteracion_hito_expediente] == 'SI' %}
+																	<div class="d-flex flex-wrap gap-3 align-items-center justify-content-end my-2 legend-docs">
+																		<div class="d-flex align-items-center gap-2">
+																			<span class="legend-swatch bg-success" style="background-color: #00800026 !important;"></span>
+																			<small class="text-muted">Documentos ya descargados</small>
+																		</div>
+																		<div class="d-flex align-items-center gap-2">
+																			<span class="legend-swatch bg-danger" style="background-color: #ff000024 !important;"></span>
+																			<small class="text-muted">Documentos no descargables</small>
+																		</div>
+																		<div class="d-flex align-items-center gap-2">
+																			<span class="legend-swatch bg-warning" style="background-color: #ffff0026 !important;"></span>
+																			<small class="text-muted">Documentos descargables</small>
+																		</div>
+																	</div>
+																	<div class="form-row align-items-center mb-2 ">
+																		<div class="form-group col-md">
+																			<h6 class="card-title 000444">NIF / NIE  <span style="color:red;">* Sólo GN</span></h6>
+																			<input type="text" id="belenderNif_{{ hito_expediente.idHitoExpediente }}" name="belenderNif_{{ hito_expediente.idHitoExpediente }}" class="form-control" placeholder="Introduzca NIF/NIE" value="{{ hito_expediente.nif|default('') }}" oninput="cambiarBotonesBelender({{ hito_expediente.idHitoExpediente }})">
+																		</div>
+																		<div class="form-group col-md">
+																			<h6 class="card-title">FECHA VALIDEZ  <span style="color:red;">* Sólo GN</span></h6>
+																			<input type="date" id="belenderFechaValidez_{{ hito_expediente.idHitoExpediente }}" name="belenderFechaValidez_{{ hito_expediente.idHitoExpediente }}" class="form-control" placeholder="Introduzca fecha de validez" value="{{ hito_expediente.fechaValidez|default('') }}">
+																		</div>
+																		<div class="form-group col-md-auto mb-0">
+																			<button class="btn btn-success waves-effect mr-2" type="button" onclick="checkClavePinService({{hito_expediente.idHitoExpediente}})">
+																				<i class="fas fa-mobile-alt mr-1"></i> Comprobar clave PIN
+																			</button>
+																			<button id="solicitarDocumentos_{{hito_expediente.idHitoExpediente}}" style="display: none;" class="btn btn-success waves-effect mr-2" type="button" onclick="obtenerDocumentosAdminNewTab({{hito_expediente.idHitoExpediente}})">
+																				<i class="fas fa-file-pdf mr-1"></i> Solicitar documentos descargables
+																			</button>
+																			<button id="solicitarDocumentosSMS_{{hito_expediente.idHitoExpediente}}" style="display: none;" class="btn btn-info waves-effect mr-2" type="button" onclick="obtenerDocumentosAdminNewTabSMS({{hito_expediente.idHitoExpediente}})" title="Solicitar informe CIRBE de riesgos de crédito">
+																				<i class="fas fa-file-pdf mr-1"></i> Solicitar documentos SMS
+																			</button>
+																			<button style="display: none;" id="verificar_{{hito_expediente.idHitoExpediente}}" class="btn btn-success waves-effect mr-2" type="button" onclick="verificarEstadoDocumentosNewTab({{hito_expediente.idHitoExpediente}})">
+																				? Adjuntar documentos disponibles
+																			</button>													
+																			
+																		</div>																
+																	</div>
+																{% endif %}
+																
+															{% endif %}
+															<div class="form-row d-none">
+																<div class="form-group col-md">
+																	{{ form_label(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado) }}
+																	{{ form_widget(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado,{attr:{hidden:''}}) }}
+																	{{ form_errors(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado) }}
+																</div>
+															</div>
+															<hr class="d-none mt-0">
+															{% if grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+																{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+																	{% for grupo_hito_expediente in grupos_hito_expediente[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] %}
+																		<div{% if grupo_campos_hito.nombre is not empty %} class="border{% if loop.length>1 %} mb-3{% endif %} p-3"{% endif %} data-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" data-id-grupo-expediente="{{ grupo_hito_expediente }}" data-grupo-repetible="{{ grupo_campos_hito.repetible?1:0 }}">
+																			{% if grupo_campos_hito.nombre is not empty %}
+																				<h5 class="card-title titulo-grupo" data-grupo-titulo>{{ grupo_campos_hito.nombre }}</h5>
+																				<hr>
+																			{% endif %}
+																			{% if campos_hito[grupo_campos_hito.idGrupoCamposHito] is iterable and campos_hito[grupo_campos_hito.idGrupoCamposHito]|length>0 %}
+																				<div class="row">
+																					{% for campo_hito in campos_hito[grupo_campos_hito.idGrupoCamposHito] %}
+																						{% if agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente] is defined %}
+																							{% form_theme agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																						{% endif %}
+																						<div data-id-campo-hito="{{ campo_hito.idCampoHito }}" class="col-lg {% if loop.length>1 and not loop.last and loop.index is odd %} border-lg-right{% endif %}{% if (is_granted('ROLE_CLIENTE') and not campo_hito.mostrarCliente) or (is_granted('ROLE_COLABORADOR') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_JEFE_INMOBILIARIA') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_JEFE_OFICINA') and not campo_hito.mostrarColaborador) or (is_granted('ROLE_RESPONSABLE_ZONA') and not campo_hito.mostrarColaborador) %} d-none{% endif %}" data-campo-condicional="{{ campo_hito.campoCondicional }}">
+																							{% if campo_hito.tipo is not same as(10) %}
+																								<h6 class="card-title 22222">{{ campo_hito.nombre }} {% if not campo_hito.mostrarCliente and not campo_hito.mostrarColaborador  %} <span style="color:red;">* Sólo GN</span> {% endif %}</h6>
+																							{% endif %}
+																							{% if campo_hito.tipo is same as(4) %}
+																								<div data-contenedor-campo-hito-expediente-colaboradores>
+																									<div class="row">
+																										<div class="col-md {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}d-none{% endif %}">
+																											<div class="form-row d-none">
+																												<div class="form-group col">
+																													{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																													{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor,{attr:{readonly:'',value:campo_hito.nombre}}) }}
+																													{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																												</div>
+																											</div>
+																											<div class="form-row">
+																												<div class="col">
+																													{% if fase.tipo is same as(1) %}
+																														<div class="form-group">
+																															{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																															{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																															{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																														</div>
+																														<div class="form-group">
+																															{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																															{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																															{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																														</div>
+																													{% endif %}
+																													<div class="form-group">
+																														{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																														{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																														{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																													</div>
+																													<div class="form-group">
+																														{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																														{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																														{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																													</div>
+																													<div class="form-group">
+																														{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																														{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																														{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																													</div>
+																													<div class="form-group">
+																														{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																														{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																														{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																													</div>
+																												</div>
+																											</div>
+																										</div>
+																										<div class="col-md" data-fichero-campo="{{ agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].vars.value.idFicheroCampo }}">
+																											{% form_theme agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																											<div class="form-row">
+																												<div class="form-group col">
+																													{{ form_label(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero) }}
+																													{% if fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
+																														{{ form_widget(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente],'data-max-file-size':maxFileSize}}) }}
+																													{% else %}
+																														{{ form_widget(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-max-file-size':maxFileSize}}) }}
+																													{% endif %}
+																													{{ form_errors(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero) }}
+																												</div>
+																											</div>
+																											{% if fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
+																												<a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] }}" target="_blank">Ver</a>
+																											{% endif %}
+																										</div>
+																									</div>
+																									{% form_theme agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																								<div class="form-row {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}d-none{% endif %}">
+																										<div class="form-group col-md">
+																											{{ form_label(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora) }}
+																											{{ form_widget(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora,{attr:{class:'select2'}}) }}
+																											{{ form_errors(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora) }}
+																										</div>
+																										<div class="form-group col-md">
+																											{{ form_label(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador) }}
+																											{{ form_widget(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																											{{ form_errors(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador) }}
+																										</div>
+																									</div>
+																								</div>
+																							{% else %}
+																								<div class="form-row">
+																									<div class="form-group col">
+																										{% if campo_hito.tipo is same as(2) or campo_hito.tipo is same as(3) %}
+																											{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idOpcionesCampo) }} #}
+																											{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idOpcionesCampo) }}
+																											{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idOpcionesCampo) }}
+																										{% elseif campo_hito.tipo is same as(6) %}
+																											{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }} #}
+																											{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor,{attr:{class:'js-datepicker'}}) }}
+																											{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																										{% elseif campo_hito.tipo is same as(7) or campo_hito.tipo is same as(8) or campo_hito.tipo is same as(9) %}
+																											{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idAgenteColaborador) }} #}
+																											{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																											{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idAgenteColaborador) }}
+																										{% elseif campo_hito.tipo is same as(10) %}
+																										{% else %}
+																											{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }} #}
+																											{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																											{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																										{% endif %}
+																									</div>
+																								</div>
+																							{% endif %}
+																						</div>
+																						{% if loop.index is even and not loop.last %}
+																							<div class="col-12 d-none d-lg-block" {% if hito.idHito == 31 %} style="display: none !important;" {% endif %}>
+																								<hr>
+																							</div>
+																						{% endif %}
+																					{% endfor %}
+																				</div>
+																			{% else %}
+																				<div class="alert alert-info" role="alert">
+																					<span>No hay campos hito.</span>
+																				</div>
+																			{% endif %}
+																			{% if grupo_campos_hito.repetible and grupos_campos_hito[hito.idHito]|length>1 %}
+																				<div class="d-flex justify-content-end border-top pt-3">
+																					<button class="btn btn-danger waves-effect {% if not loop.last or loop.index <= 1 %}oculto{% endif %}" data-borrar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+																						<i class="far fa-trash-alt"></i> Eliminar {{ grupo_campos_hito.nombre }}
+																					</button>
+																				</div>
+																			{% endif %}
+																		</div>
+																		{% if grupo_campos_hito.repetible and loop.last %}
+																			<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-grupo-expediente-contenedor>
+																				<button class="btn btn-success waves-effect" data-agregar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+																					<i class="fas fa-plus"></i> Añadir {{ grupo_campos_hito.nombre }}
+																				</button>
+																			</div>
+																		{% endif %}
+																	{% endfor %}
+																{% endfor %}
+															{% else %}
+																<div class="alert alert-info" role="alert">
+																	<span>No hay grupos de campos hito.</span>
+																</div>
+															{% endif %}
+															{% if hito.repetible and hitos_expediente[hito.idHito]|length>1 %}
+																<div class="d-flex justify-content-end border-top pt-3">
+																	<button class="btn btn-danger waves-effect btn-hito-rojo {% if not loop.last or loop.index <= 1 %}oculto{% endif %}" data-borrar-hito-expediente="{{ hito.idHito }}" type="button">
+																		<i class="far fa-trash-alt"></i> Eliminar {{ hito.nombre }}
+																	</button>
+																</div>
+															{% endif %}
+														</div>
+													</div>
+													{% if hito.repetible and loop.last %}
+														<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-hito-expediente-contenedor>
+															<button class="btn btn-success waves-effect btn-hito" data-agregar-hito-expediente="{{ hito.idHito }}" type="button">
+																<i class="fas fa-plus"></i> Añadir {{ hito.nombre }}
+															</button>
+														</div>
+													{% endif %}
+													{% set iteracion_hito_expediente = iteracion_hito_expediente + 1 %}
+												{% endfor %}
+											{% endif %}
+										{% endfor %}
+									{% else %}
+										<div class="alert alert-info" role="alert">
+											<span>No hay hitos.</span>
+										</div>
+									{% endif %}
+										
+									{% if not is_granted('ROLE_CLIENTE') and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+									</div>
+									{% endif %}
+								</section>
+							{% endif %}
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay fases.</span>
+					</div>
+				{% endif %}
+			</div>
+		</div>

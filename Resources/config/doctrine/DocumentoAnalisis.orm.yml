@@ -1,0 +1,70 @@
+AppBundle\Entity\DocumentoAnalisis:
+  type: entity
+  table: documento_analisis
+  repositoryClass: AppBundle\Repository\DocumentoAnalisisRepository
+  id:
+    idAnalisis:
+      type: integer
+      column: id_analisis
+      generator:
+        strategy: AUTO
+  fields:
+    idExpediente:
+      type: integer
+      column: id_expediente
+    idFicheroCampo:
+      type: integer
+      column: id_fichero_campo
+      nullable: true
+    nombreDocumento:
+      type: string
+      column: nombre_documento
+      length: 255
+    tipoDocumento:
+      type: string
+      column: tipo_documento
+      length: 50
+      nullable: true
+    contenidoExtraido:
+      type: text
+      column: contenido_extraido
+      nullable: true
+    confianza:
+      type: decimal
+      column: confianza
+      precision: 3
+      scale: 2
+      nullable: true
+    proveedorIa:
+      type: string
+      column: proveedor_ia
+      length: 20
+    modeloIa:
+      type: string
+      column: modelo_ia
+      length: 100
+      nullable: true
+    tokensUsados:
+      type: integer
+      column: tokens_usados
+      nullable: true
+    tokensEntrada:
+      type: integer
+      column: tokens_entrada
+      nullable: true
+    tokensSalida:
+      type: integer
+      column: tokens_salida
+      nullable: true
+    fechaAnalisis:
+      type: datetime
+      column: fecha_analisis
+    estado:
+      type: string
+      column: estado
+      length: 20
+    mensajeError:
+      type: text
+      column: mensaje_error
+      nullable: true
+  lifecycleCallbacks: {}

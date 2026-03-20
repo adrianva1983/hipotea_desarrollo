@@ -1,0 +1,34 @@
+<header class="topbar">
+	<nav class="navbar top-navbar navbar-expand-md navbar-dark">
+		{% include '@App/Backoffice/Partes/Body/Logo.html.twig' %}
+		<div class="navbar-collapse">
+			<ul class="navbar-nav mr-auto">
+				<li class="nav-item">
+					<a class="nav-link nav-toggler d-block d-md-none waves-effect waves-dark" href="javascript:void(0)">
+						<i class="ti-menu"></i>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link sidebartoggler d-none d-lg-block d-md-block waves-effect waves-dark" href="javascript:void(0)">
+						<i class="icon-menu"></i>
+					</a>
+				</li>
+				{#<li class="nav-item">
+					<form class="app-search d-none d-md-block d-lg-block">
+						<input class="form-control" placeholder="Buscar…">
+					</form>
+				</li>#}
+			</ul>
+			<ul class="navbar-nav my-lg-0">
+				{% include '@App/Backoffice/Partes/Body/Comment.html.twig' %}
+				{#{% include '@App/Backoffice/Partes/Body/Messages.html.twig' %}
+				{% include '@App/Backoffice/Partes/Body/Mega-Menu.html.twig' %}
+				<li class="nav-item right-side-toggle">
+					<a class="nav-link waves-effect waves-light" href="javascript:void(0)">
+						<i class="ti-settings"></i>
+					</a>
+				</li>#}
+			</ul>
+		</div>
+	</nav>
+</header>

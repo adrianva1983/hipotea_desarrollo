@@ -1,0 +1,93 @@
+{% set crearnuevo = path('ia_config_new') %}
+{% set crearnuevo_texto = 'Crear nueva proveedor' %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+    {{ parent() }}
+    <link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+    {{ parent() }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+    {{ parent() }}
+    <script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+    {{ parent() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+    {{ parent() }}
+    <script src="{{ asset('assets/js/custom/borrar-entidades.min.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/tabla-boton-borrar.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+    <div class="card">
+        <div class="card-body">
+            {% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+            <h4 class="card-title">Proveedores IA</h4>
+            {% if items is defined %}
+                {% if items is empty %}
+                    <div class="alert alert-info" role="alert">
+                        <span>No hay proveedores configurados.</span>
+                    </div>
+                {% else %}
+                    <form class="text-truncate mb-3" id="formulario-borrar-entidades" method="post">
+                        <table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+                            <thead>
+                            <tr>
+                                <th scope="col">Proveedor</th>
+                                <th scope="col">Modelo</th>
+                                <th scope="col">API URL</th>
+                                <th scope="col">Activo</th>
+                                <th scope="col">Por defecto</th>
+                                <th scope="col">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for item in items %}
+                                <tr>
+                                    <td>{{ item.provider }}</td>
+                                    <td>{{ item.model }}</td>
+                                    <td>{{ item.apiUrl }}</td>
+                                    <td>
+                                        {% if item.activo %}
+                                            <span class="badge badge-success">Sí</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.esProveedorPorDefecto %}
+                                            <span class="badge badge-primary">Sí</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ path('ia_config_edit',{'id': item.id}) }}">
+                                            <i class="far fa-edit"></i>
+                                            <span> Editar</span>
+                                        </a>
+                                        <a href="{{ path('ia_config_delete',{'id': item.id}) }}" onclick="return confirm('¿Estás seguro?');">
+                                            <i class="far fa-trash-alt"></i>
+                                            <span> Borrar</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </form>
+                {% endif %}
+            {% endif %}
+            <a class="btn btn-success waves-effect" href="{{ path('inicio') }}">Volver</a>
+        </div>
+    </div>
+{% endblock %}
+{% block modals %}
+    {{ parent() }}
+    {% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+{% endblock %}

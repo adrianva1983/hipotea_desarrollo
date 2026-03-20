@@ -1,0 +1,676 @@
+{% extends '@App/Frontoffice/base.html.twig' %}
+{% form_theme agregarModificarExpediente '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<link href="{{ asset('assets/node_modules/dropify/dist/css/dropify.min.css') }}" rel="stylesheet">
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<link href="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.css') }}" rel="stylesheet">
+	{% endif %}
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/css/dropify.min.css" rel="stylesheet">
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+	{% endif %}
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/expediente.min.css') }}" rel="stylesheet">
+	<style>
+		.bg-success, .btn-success, .btn-secondary {
+			border-radius: 25px;
+		}
+		.btn-hito {
+			border-radius: 40px;
+		}
+		h5.card-title.titulo-grupo {
+			border-top-right-radius: 25px;
+			border-top-left-radius: 25px;
+		}
+		.bloque-redondo {
+			margin-bottom: 20px;
+			border-radius: 25px;
+		}
+
+		h6.card-title {
+			margin-top: 25px;
+		}
+
+		[data-agregar-hito-expediente-contenedor] {
+			display: none !important;
+		}
+
+		.titulo-hito:hover h4, .tit-grupo h5 {
+			cursor: pointer;
+		}
+
+		.tit-izq {
+			width: 90%;
+			display: inline-block; /* Para que ocupen el ancho especificado y se muestren en línea */
+		}
+
+		.tit-dcha {
+			width: 10%;
+			display: inline-block; /* Para que ocupen el ancho especificado y se muestren en línea */
+			text-align: right; /* Para alinear el contenido del span a la derecha */
+		}
+
+
+	</style>
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<script src="{{ asset('assets/node_modules/dropify/dist/js/dropify.min.js') }}"></script>
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<script src="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.js') }}"></script>
+		<script src="{{ asset('assets/node_modules/bootstrap-datepicker/locales/bootstrap-datepicker.es.min.js') }}"></script>
+	{% endif %}
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+	{% if incluir_dropify is defined and incluir_dropify %}
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/js/dropify.min.js"></script>
+	{% endif %}
+	{% if incluir_datepicker is defined and incluir_datepicker %}
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+	{% endif %}
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script>
+		{% if nombres_fichero is defined %}
+		function nombresFicheroFuncion() {
+			return JSON.parse({{ nombres_fichero|json_encode|raw }});
+		}
+
+		function rutaBorrarFicheroExpedienteAJAX() {
+			return '{{ path('borrar_fichero_expediente_ajax') }}';
+		}
+		{% endif %}
+		function rutaObtenerAgentesColaboradoresAJAX() {
+			return '{{ path('obtener_agentes_colaboradores_ajax') }}';
+		}
+
+		function actualizarSeguimientoExpedienteAJAX() {
+			return '{{ path('actualizar_seguimiento_expediente_ajax') }}';
+		}
+	</script>
+	<script src="{{ asset('assets/js/custom/Element.hasAttribute.min.js') }}"></script>
+	{# <script src="{{ asset('assets/js/custom/expediente.min.js') }}"></script> #}
+	<script src="{{ asset('assets/js/custom/registroweb.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<form enctype="multipart/form-data" method="post">
+		<div class="card">
+			<div class="card-body oculto">
+				{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+					{# <h4 class="card-title">{{ fases[0].nombre }}</h4> #}
+					<div class="form-row">
+						<div class="form-group col-xl oculto">
+							<input type="hidden" id="expediente_idCliente" name="expediente[idCliente]" value="{{ idCliente }}">
+							{# {{ form_label(agregarModificarExpediente.idCliente) }}
+							{{ form_widget(agregarModificarExpediente.idCliente,{attr:{class:'select2'}}) }}
+							{{ form_errors(agregarModificarExpediente.idCliente) }} #}
+						</div>
+						<div class="form-group col-xl oculto">
+							{# {{ form_label(agregarModificarExpediente.vivienda) }}
+							{{ form_widget(agregarModificarExpediente.vivienda) }}
+							{{ form_errors(agregarModificarExpediente.vivienda) }} #}
+							{{ form_widget(agregarModificarExpediente.vivienda, {'value' : 'NUEVO REGISTRO WEB'}) }}
+						</div>
+						{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined %}
+							<div class="form-group col-md oculto">
+								{{ form_label(agregarModificarExpediente.idFaseActual) }}
+								{{ form_widget(agregarModificarExpediente.idFaseActual) }}
+								{{ form_errors(agregarModificarExpediente.idFaseActual) }}
+							</div>
+							<div class="form-group col-md oculto">
+								{{ form_label(agregarModificarExpediente.estado) }}
+								{{ form_widget(agregarModificarExpediente.estado) }}
+								{{ form_errors(agregarModificarExpediente.estado) }}
+							</div>
+						{% endif %}
+					</div>
+			</div>
+		</div>
+		{{ form_widget(agregarModificarExpediente._token) }}
+		<div class="card">
+			<div class="card-body">
+				{% if fases is defined and fases is iterable and fases|length>0 %}
+					<div class="tab-content">
+						{% for fase in fases %}
+							{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+								{% for hito in hitos[fase.idFase] %}
+									{% if hitos_expediente[hito.idHito] is iterable and hitos_expediente[hito.idHito]|length>0 %}
+										{% set iteracion_hito_expediente = 0 %}
+										{% for hito_expediente in hitos_expediente[hito.idHito] %}
+											{% form_theme agregarModificarHitoExpediente[hito.idHito][loop.index-1] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+											<div{% if not loop.parent.loop.last or hito.repetible %} class="mb-3"{% endif %} data-hito-condicional="{{ hito.hitoCondicional }}" data-hito-expediente="{{ hito.idHito }}"{% if loop.index is same as(1) %} data-repetible="{{ hito.repetible?1:0 }}"{% endif %} {% if iteracion_hito_expediente > 0 %} data-agregado="{{ iteracion_hito_expediente }}"{% endif %} {% if hito_expediente.idHitoExpediente %} data-id-hito-expediente={{ hito_expediente.idHitoExpediente }}{% endif %}>
+												<div class="titulo-hito">
+													<h4 class="card-title bg-success text-light mb-0 p-3" data-hito-titulo><span class="tit-izq">{{ hito.nombre }} {% if loop.index>1 %} ({{ loop.index }}){% endif %}</span> <span class="tit-dcha"><i class="fas fa-angle-down mostrar"></i><i class="fas fa-angle-up d-none ocultar"></i></span></h4>
+												</div>
+												<div class="bloque-redondo border p-3 d-none">
+													<div class="form-row d-none">
+														<div class="form-group col-md">
+															{{ form_label(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado) }}
+															{{ form_widget(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado,{attr:{hidden:''}}) }}
+															{{ form_errors(agregarModificarHitoExpediente[hito.idHito][loop.index-1].estado) }}
+														</div>
+													</div>
+													<hr class="d-none mt-0">
+													{% if grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+														{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+															{% for grupo_hito_expediente in grupos_hito_expediente[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] %}
+																<div{% if grupo_campos_hito.nombre is not empty %} class="bloque-redondo border{% if loop.length>1 %} mb-3{% endif %} p-3"{% endif %} data-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" data-id-grupo-expediente="{{ grupo_hito_expediente }}" data-grupo-repetible="{{ grupo_campos_hito.repetible?1:0 }}">
+																	{% if grupo_campos_hito.nombre is not empty %}
+																		<div class="tit-grupo">
+																			<h5 class="card-title titulo-grupo" data-grupo-titulo><span class="tit-izq">{{ grupo_campos_hito.nombre }}</span><span class="tit-dcha"><i class="fas fa-angle-down d-none mostrar"></i><i class="fas fa-angle-up ocultar"></i><span></h5>
+																		</div>
+																		{# <hr> #}
+																	{% endif %}
+																	{% if campos_hito[grupo_campos_hito.idGrupoCamposHito] is iterable and campos_hito[grupo_campos_hito.idGrupoCamposHito]|length>0 %}
+																		<div class="row bloque-datos">
+																			{% for campo_hito in campos_hito[grupo_campos_hito.idGrupoCamposHito] %}
+																				{% if agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente] is defined %}
+																					{% form_theme agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																				{% endif %}
+																				<div data-id-campo-hito="{{ campo_hito.idCampoHito }}" class="col-lg {% if loop.length>1 and not loop.last and loop.index is odd %} border-lg-rightno{% endif %}{% if (not campo_hito.mostrarCliente) %} d-none{% endif %}" data-campo-condicional="{{ campo_hito.campoCondicional }}">
+																					{% if campo_hito.tipo is not same as(10) %}
+																						<h6 class="card-title">{{ campo_hito.nombre }} {% if not campo_hito.mostrarCliente and not campo_hito.mostrarColaborador  %} <span style="color:red;">* Sólo GN</span> {% endif %}</h6>
+																					{% endif %}
+																					{% if campo_hito.tipo is same as(4) %}
+																						<div data-contenedor-campo-hito-expediente-colaboradores>
+																							<div class="row">
+																								<div class="col-md {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}d-none{% endif %}">
+																									<div class="form-row d-none">
+																										<div class="form-group col">
+																											{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																											{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor,{attr:{readonly:'',value:campo_hito.nombre}}) }}
+																											{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																										</div>
+																									</div>
+																									<div class="form-row">
+																										<div class="col">
+																											{% if fase.tipo is same as(1) %}
+																												<div class="form-group">
+																													{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																													{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																													{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].obligatorio) }}
+																												</div>
+																												<div class="form-group">
+																													{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																													{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																													{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].solicitarAlColaborador) }}
+																												</div>
+																											{% endif %}
+																											<div class="form-group">
+																												{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].avisarColaborador) }}
+																											</div>
+																											<div class="form-group">
+																												{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].paraFirmar) }}
+																											</div>
+																											<div class="form-group">
+																												{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlCliente) }}
+																											</div>
+																											<div class="form-group">
+																												{{ form_label(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																												{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																												{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].enviarAlColaborador) }}
+																											</div>
+																										</div>
+																									</div>
+																								</div>
+																								<div class="col-md" data-fichero-campo="{{ agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].vars.value.idFicheroCampo }}">
+																									{% form_theme agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																									<div class="form-row">
+																										<div class="form-group col">
+																											{{ form_label(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero) }}
+																											{% if fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
+																												{{ form_widget(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[campo_hito.idCampoHito][hito_expediente.idHitoExpediente],'data-max-file-size':maxFileSize}}) }}
+																											{% else %}
+																												{{ form_widget(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-max-file-size':maxFileSize}}) }}
+																											{% endif %}
+																											{{ form_errors(agregarModificarFicheroCampo[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].fichero) }}
+																										</div>
+																									</div>
+																									{% if fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
+																										<a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] }}" target="_blank">Ver</a>
+																									{% endif %}
+																								</div>
+																							</div>
+																							{% form_theme agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																							<div class="form-row {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}d-none{% endif %}">
+																								<div class="form-group col-md">
+																									{{ form_label(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora) }}
+																									{{ form_widget(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora,{attr:{class:'select2'}}) }}
+																									{{ form_errors(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idEntidadColaboradora) }}
+																								</div>
+																								<div class="form-group col-md">
+																									{{ form_label(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador) }}
+																									{{ form_widget(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																									{{ form_errors(agregarModificarCampoHitoExpedienteColaboradores[campo_hito.idCampoHito][hito_expediente.idHitoExpediente].idAgenteColaborador) }}
+																								</div>
+																							</div>
+																						</div>
+																					{% else %}
+																						<div class="form-row">
+																							<div class="form-group col">
+																								{% if campo_hito.tipo is same as(2) or campo_hito.tipo is same as(3) %}
+																									{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idOpcionesCampo) }} #}
+																									{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idOpcionesCampo) }}
+																									{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idOpcionesCampo) }}
+																								{% elseif campo_hito.tipo is same as(6) %}
+																									{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }} #}
+																									{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor,{attr:{class:'js-datepicker'}}) }}
+																									{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																								{% elseif campo_hito.tipo is same as(7) or campo_hito.tipo is same as(8) or campo_hito.tipo is same as(9) %}
+																									{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].idAgenteColaborador) }} #}
+																									{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																									{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].idAgenteColaborador) }}
+																								{% elseif campo_hito.tipo is same as(10) %}
+																								{% else %}
+																									{# {{ form_label(agregarModificarCampoHitoExpediente[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1].valor) }} #}
+																									{{ form_widget(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																									{{ form_errors(agregarModificarCampoHitoExpediente[grupo_campos_hito.idGrupoCamposHito][campo_hito.idCampoHito][grupo_hito_expediente].valor) }}
+																								{% endif %}
+																							</div>
+																						</div>
+																					{% endif %}
+																				</div>
+																				{% if loop.index is even and not loop.last %}
+																					<div class="col-12 d-none d-lg-block">
+																						{# <hr> #}
+																					</div>
+																				{% endif %}
+																			{% endfor %}
+																		</div>
+																	{% else %}
+																		<div class="alert alert-info" role="alert">
+																			<span>No hay campos hito.</span>
+																		</div>
+																	{% endif %}
+																	{% if grupo_campos_hito.repetible and grupos_campos_hito[hito.idHito]|length>0 %}
+																		<div class="d-flex justify-content-end border-top pt-3">
+																			<button class="btn btn-danger waves-effect {% if not loop.last or loop.index <= 1 %}oculto{% endif %}" data-borrar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+																				<i class="far fa-trash-alt"></i> Eliminar1 {{ grupo_campos_hito.nombre }}
+																			</button>
+																		</div>
+																	{% endif %}
+																</div>
+																{% if grupo_campos_hito.repetible and loop.last %}
+																	<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-grupo-expediente-contenedor>
+																		<button class="btn btn-success waves-effect" data-agregar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+																			<i class="fas fa-plus"></i> Añadir {{ grupo_campos_hito.nombre }}
+																		</button>
+																	</div>
+																{% endif %}
+															{% endfor %}
+														{% endfor %}
+													{% else %}
+														<div class="alert alert-info" role="alert">
+															<span>No hay grupos de campos hito.</span>
+														</div>
+													{% endif %}
+													{% if hito.repetible and hitos_expediente[hito.idHito]|length>1 %}
+														<div class="d-flex justify-content-end border-top pt-3">
+															<button class="btn btn-danger waves-effect btn-hito-rojo {% if not loop.last or loop.index <= 1 %}oculto{% endif %}" data-borrar-hito-expediente="{{ hito.idHito }}" type="button">
+																<i class="far fa-trash-alt"></i> Eliminar {{ hito.nombre }}
+															</button>
+														</div>
+													{% endif %}
+												</div>
+											</div>
+											{% if hito.repetible and loop.last %}
+												<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-hito-expediente-contenedor>
+													<button class="btn btn-success waves-effect btn-hito" data-agregar-hito-expediente="{{ hito.idHito }}" type="button">
+														<i class="fas fa-plus"></i> Añadir {{ hito.nombre }}
+													</button>
+												</div>
+											{% endif %}
+											{% set iteracion_hito_expediente = iteracion_hito_expediente + 1 %}
+										{% endfor %}
+									{% endif %}
+								{% endfor %}
+							{% else %}
+								<div class="alert alert-info" role="alert">
+									<span>No hay hitos.</span>
+								</div>
+							{% endif %}
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay fases.</span>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<div class="d-flex">
+					{# <a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_expedientes') }}">Volver</a> #}
+					{% if attribute(agregarModificarExpediente, 'idFaseActual') is not defined %}
+						<button class="btn btn-secondary waves-effect" type="reset">Limpiar</button>
+					{% endif %}
+					<button class="btn btn-success waves-effect ml-3" data-boton-enviar>Enviar</button>
+				</div>
+			</div>
+		</div>
+		<br>
+		<br>
+		<br>
+		<br>
+		<br>
+		<br>
+		<br>
+		<br>
+		<br>
+		<br>
+		<br>
+		<br>
+		<button class="btn btn-warning waves-effect shadow-sm position-fixed d-none boton-flotante" data-boton-flotante>
+			<i class="fas fa-save"></i>
+			<span> Enviar</span>
+		</button>
+		{% if numero_hitos_expediente_duplicados is defined %}
+			{% if fases is defined and fases is iterable and fases|length>0 %}
+				{% for fase in fases %}
+					{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+						{% for hito in hitos[fase.idFase] %}
+							{% if hito.repetible and numero_hitos_expediente_duplicados[hito.idHito] is defined and numero_hitos_expediente_duplicados[hito.idHito] > 0 %}
+								<input name="numero-hitos-expediente-duplicados[{{ hito.idHito }}]" type="hidden" value="{{ numero_hitos_expediente_duplicados[hito.idHito] }}">
+							{% endif %}
+						{% endfor %}
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		{% endif %}
+		{# {% if numero_grupos_hito_expediente_duplicados is defined %}
+			{% if fases is defined and fases is iterable and fases|length>0 %}
+				{% for fase in fases %}
+					{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+						{% for hito in hitos[fase.idFase] %}
+							{% for hito_expediente in hitos_expediente[hito.idHito] %}
+								{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+									{% if grupo_campos_hito.repetible and numero_grupos_hito_expediente_duplicados[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] is defined and numero_grupos_hito_expediente_duplicados[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] > 0 %}
+										{% for grupo_hito_exp in grupos_hito_expediente[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] %}
+											<input name="numero-grupos-hito-expediente-duplicados[{{ grupo_hito_exp }}]" type="hidden" value=1">
+										{% endfor %}
+									{% endif %}
+								{% endfor %}
+							{% endfor %}
+						{% endfor %}
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		{% endif %} #}
+		{% if numero_grupos_hito_expediente_duplicados is defined %}
+			{% if fases is defined and fases is iterable and fases|length>0 %}
+				{% for fase in fases %}
+					{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+						{% for hito in hitos[fase.idFase] %}
+							{% for hito_expediente in hitos_expediente[hito.idHito] %}
+								{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+									{% if grupo_campos_hito.repetible %}
+										{# KKK: {{ hito.idHito }} - {{ loop.parent.loop.index - 1 }} - {{ grupo_campos_hito.idGrupoCamposHito }} #}
+										{% set miIndex = loop.parent.loop.index -1 %}
+										{% set miClave =  hito.idHito ~ '_' ~ miIndex ~ '_' ~ grupo_campos_hito.idGrupoCamposHito %}
+										{# {% set full_name = content.field_firstname.value ~ ' ' ~ content.field_lastname.value %} #}
+										{# {% set miClave =  {hito.idHito}"_"{loop.parent.loop.index - 1}"_"{grupo_campos_hito.idGrupoCamposHito} %} #}
+										{# KKK: {{ miClave }} #}
+										{% if numero_grupos_hito_expediente_duplicados[miClave] is defined %}
+											{% if numero_grupos_hito_expediente_duplicados[miClave] > 0 %}
+											{# {% for grupo_hito_exp in grupos_hito_expediente[hito_expediente.idHitoExpediente][grupo_campos_hito.idGrupoCamposHito] %} #}
+												<input name="numero-grupos-hito-expediente-duplicados[{{ miClave }}]" type="hidden" value="{{ numero_grupos_hito_expediente_duplicados[miClave]-1 }}">
+											{# {% endfor %} #}
+											{% endif %}
+										{% endif %}
+									{% endif %}
+								{% endfor %}
+							{% endfor %}
+						{% endfor %}
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		{% endif %}
+		<input name="ids-hitos-expedientes-borrar" type="hidden">
+	</form>
+	{% if fases is defined and fases is iterable and fases|length>0 %}
+		{% for fase in fases %}
+			{% if hitos[fase.idFase] is iterable and hitos[fase.idFase]|length>0 %}
+				{% set hitoActual = '' %}
+				{% set hitoAnterior = '' %}
+				{% for hito in hitos[fase.idFase] %}
+					{% set hitoActual = hito.idHito %}
+					{% if hito.repetible %}
+						{% form_theme agregarModificarHitoExpedienteModelo[hito.idHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+						<div class="d-none">
+							<div{% if not loop.parent.loop.last or hito.repetible %} class="mb-3"{% endif %} data-modelo-hito-condicional="{{ hito.hitoCondicional }}" data-modelo-hito-expediente="{{ hito.idHito }}">
+								<h4 class="card-title bg-success text-light mb-0 p-3" data-hito-titulo>{{ hito.nombre }}{% if hitoActual == hitoAnterior and loop.index>1 %} ({{ loop.index }}){% endif %}</h4>
+								<div class="bloque-redondo border p-3">
+									<div class="form-row d-none">
+										<div class="form-group col-md">
+											{{ form_label(agregarModificarHitoExpedienteModelo[hito.idHito].estado) }}
+											{{ form_widget(agregarModificarHitoExpedienteModelo[hito.idHito].estado,{attr:{hidden:''}}) }}
+											{{ form_errors(agregarModificarHitoExpedienteModelo[hito.idHito].estado) }}
+										</div>
+									</div>
+									<hr class="d-none mt-0">
+									{% if grupos_campos_hito[hito.idHito] is iterable and grupos_campos_hito[hito.idHito]|length>0 %}
+										{% for grupo_campos_hito in grupos_campos_hito[hito.idHito] %}
+											<div{% if grupo_campos_hito.nombre is not empty %} class="titulo-grupo bloque-redondo border{% if loop.length>1 %} mb-3{% endif %} p-3"{% endif %} data-modelo-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" data-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" data-grupo-repetible="{{ grupo_campos_hito.repetible?1:0 }}">
+												{% if grupo_campos_hito.nombre is not empty %}
+													<h5 class="card-title titulo-grupo">{{ grupo_campos_hito.nombre }}<i class="fas fa-angle-down mostrar"></i><i class="fas fa-angle-up d-none ocultar"></i></h5>
+													{# <hr> #}
+												{% endif %}
+												{% if campos_hito[grupo_campos_hito.idGrupoCamposHito] is iterable and campos_hito[grupo_campos_hito.idGrupoCamposHito]|length>0 %}
+													<div class="row">
+														{% for campo_hito in campos_hito[grupo_campos_hito.idGrupoCamposHito] %}
+															{% if agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito] is defined %}
+																{% form_theme agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+															{% endif %}
+															<div data-id-campo-hito="{{ campo_hito.idCampoHito }}" class="col-lg {% if loop.length>1 and not loop.last and loop.index is odd %} border-lg-rightno{% endif %}{% if (not campo_hito.mostrarCliente) %} d-none{% endif %}" data-campo-condicional="{{ campo_hito.campoCondicional }}">
+																{% if campo_hito.tipo is not same as(10) %}
+																	<h6 class="card-title">{{ campo_hito.nombre }}</h6>
+																{% endif %}
+																{% if campo_hito.tipo is same as(4) %}
+																	<div data-contenedor-campo-hito-expediente-colaboradores>
+																		<div class="row">
+																			<div class="col-md {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}d-none{% endif %}">
+																				<div class="form-row d-none">
+																					<div class="form-group col">
+																						{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																						{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor,{attr:{readonly:'',value:campo_hito.nombre}}) }}
+																						{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																					</div>
+																				</div>
+																				<div class="form-row">
+																					<div class="col">
+																						{% if fase.tipo is same as(1) %}
+																							<div class="form-group">
+																								{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].obligatorio) }}
+																								{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].obligatorio,{attr:{checked:'checked'}}) }}
+																								{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].obligatorio) }}
+																							</div>
+																							<div class="form-group">
+																								{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].solicitarAlColaborador) }}
+																								{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].solicitarAlColaborador,{attr:{checked:'checked'}}) }}
+																								{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].solicitarAlColaborador) }}
+																							</div>
+																						{% endif %}
+																						<div class="form-group">
+																							{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].avisarColaborador) }}
+																							{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].avisarColaborador) }}
+																							{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].avisarColaborador) }}
+																						</div>
+																						<div class="form-group">
+																							{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].paraFirmar) }}
+																							{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].paraFirmar) }}
+																							{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].paraFirmar) }}
+																						</div>
+																						<div class="form-group">
+																							{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlCliente) }}
+																							{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlCliente) }}
+																							{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlCliente) }}
+																						</div>
+																						<div class="form-group">
+																							{{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlColaborador) }}
+																							{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlColaborador) }}
+																							{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].enviarAlColaborador) }}
+																						</div>
+																					</div>
+																				</div>
+																			</div>
+																			<div class="col-md">
+																				{% form_theme agregarModificarFicheroCampoModelo[campo_hito.idCampoHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																				<div class="form-row">
+																					<div class="form-group col">
+																						{{ form_label(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero) }}
+																						{% if fichero_subido[campo_hito.idCampoHito] is defined %}
+																							{# {{ form_widget(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1],'data-max-file-size':maxFileSize}}) }} #}
+																							{{ form_widget(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido[campo_hito.idCampoHito]|first,'data-max-file-size':maxFileSize}}) }}
+																						{% else %}
+																							{{ form_widget(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-max-file-size':maxFileSize}}) }}
+																						{% endif %}
+																						{{ form_errors(agregarModificarFicheroCampoModelo[campo_hito.idCampoHito].fichero) }}
+																					</div>
+																				</div>
+																				{# {% if fichero_subido_ruta[campo_hito.idCampoHito] is defined %} #}
+																					{# <a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][loop.parent.loop.parent.loop.index-1] }}" target="_blank">Descargar</a> #}
+																					{# <a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito]|first }}" target="_blank">Ver</a>
+																				{% endif %} #}
+																			</div>
+																		</div>
+																		{% form_theme agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito] '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+																		<div class="form-row {% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') %}d-none{% endif %}"">
+																			<div class="form-group col-md">
+																				{{ form_label(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idEntidadColaboradora) }}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idEntidadColaboradora,{attr:{class:'select2'}}) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idEntidadColaboradora) }}
+																			</div>
+																			<div class="form-group col-md">
+																				{{ form_label(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idAgenteColaborador) }}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteColaboradoresModelo[campo_hito.idCampoHito].idAgenteColaborador) }}
+																			</div>
+																		</div>
+																	</div>
+																{% else %}
+																	<div class="form-row">
+																		<div class="form-group col">
+																			{% if campo_hito.tipo is same as(2) or campo_hito.tipo is same as(3) %}
+																				{# {{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }} #}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idOpcionesCampo) }}
+																			{% elseif campo_hito.tipo is same as(6) %}
+																				{# {{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }} #}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor,{attr:{class:'js-datepicker'}}) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																			{% elseif campo_hito.tipo is same as(7) or campo_hito.tipo is same as(8) or campo_hito.tipo is same as(9) %}
+																				{# {{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador) }} #}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador,{attr:{class:'select2'}}) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].idAgenteColaborador) }}
+																			{% elseif campo_hito.tipo is same as(10) %}
+																			{% else %}
+																				{# {{ form_label(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }} #}
+																				{{ form_widget(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																				{{ form_errors(agregarModificarCampoHitoExpedienteModelo[campo_hito.idCampoHito].valor) }}
+																			{% endif %}
+																		</div>
+																	</div>
+																{% endif %}
+															</div>
+															{% if loop.index is even and not loop.last %}
+																<div class="col-12 d-none d-lg-block">
+																	{# <hr> #}
+																</div>
+															{% endif %}
+														{% endfor %}
+													</div>
+												{% else %}
+													<div class="alert alert-info" role="alert">
+														<span>No hay campos hito.</span>
+													</div>
+												{% endif %}
+												{% if grupo_campos_hito.repetible and grupos_campos_hito[hito.idHito]|length>0 %}
+													<div class="d-flex justify-content-end border-top pt-3">
+														{# <button class="btn btn-danger waves-effect {%if not loop.last%}oculto{% endif %}" data-borrar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button"> #}
+														<button class="btn btn-danger waves-effect oculto" data-borrar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+															<i class="far fa-trash-alt"></i> Eliminar {{ grupo_campos_hito.nombre }}
+														</button>
+													</div>
+												{% endif %}
+											</div>
+											{% if grupo_campos_hito.repetible %}
+												<div class="d-flex justify-content-end{% if not loop.parent.loop.last %} mb-3{% endif %} mr-3" data-agregar-grupo-expediente-contenedor>
+													<button class="btn btn-success waves-effect" data-agregar-grupo-expediente="{{ grupo_campos_hito.idGrupoCamposHito }}" type="button">
+														<i class="fas fa-plus"></i> Añadir {{ grupo_campos_hito.nombre }}
+													</button>
+												</div>
+											{% endif %}
+										{% endfor %}
+									{% else %}
+										<div class="alert alert-info" role="alert">
+											<span>No hay grupos de campos hito.</span>
+										</div>
+									{% endif %}
+									<div class="d-flex justify-content-end border-top pt-3">
+										<button class="btn btn-danger waves-effect btn-hito-rojo" data-borrar-hito-expediente type="button">
+											<i class="far fa-trash-alt"></i> Eliminar {{ hito.nombre }}
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					{% endif %}
+					{% set hitoAnterior = hito.idHito %}
+				{% endfor %}
+			{% endif %}
+		{% endfor %}
+	{% endif %}
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% if nombres_fichero is defined %}
+		<div class="modal fade" id="mensaje-ajax">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">
+							<strong>Error</strong>
+						</h4>
+						<button class="close" data-dismiss="modal" type="button">×</button>
+					</div>
+					<div class="modal-body" id="mensaje-ajax-body">Error al borrar el archivo</div>
+					<div class="modal-footer">
+						<button class="btn btn-secondary waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endif %}
+	{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined and (is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')) %}
+		{% include '@App/Backoffice/Modal/SeguimientoExpediente.html.twig' %}
+	{% endif %}
+{% endblock %}

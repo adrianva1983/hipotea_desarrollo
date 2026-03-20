@@ -1,0 +1,20 @@
+{% form_theme formularionCancelarExpediente '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+<div aria-modal="true" aria-labelledby="modal-cancelar-expediente" class="modal fade" id="modal-cancelar-expediente" role="dialog" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Cancelar Expediente</h5>
+				<button aria-label="Close" class="close" data-dismiss="modal" type="button">
+					<span aria-hidden="true">×</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="alert alert-danger d-none" id="error-ajax" role="alert">Se ha producido un error</div>
+				{{ form(formularionCancelarExpediente) }}
+			</div>
+			<div class="modal-footer">
+				<button class="btn btn-success waves-effect" data-dismiss="modal" type="button">Cerrar</button>
+			</div>
+		</div>
+	</div>
+</div>

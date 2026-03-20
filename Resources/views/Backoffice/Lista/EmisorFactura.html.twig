@@ -1,0 +1,93 @@
+{% set crearnuevo = path('agregar_modificar_emisor_factura') %}
+{% set crearnuevo_texto = 'Crear nuevo' %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/borrar-entidades.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/tabla-boton-borrar.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{% if emisores_facturas is defined %}
+				{% if emisores_facturas is empty %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay emisores de facturas.</span>
+					</div>
+				{% else %}
+					<form class="text-truncate mb-3" id="formulario-borrar-entidades" method="post">
+						<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+							<thead>
+							<tr>
+								<th scope="col">
+									<div class="custom-control custom-checkbox">
+										<input class="custom-control-input" id="seleccionar-todas-entidades" type="checkbox">
+										<label class="custom-control-label" for="seleccionar-todas-entidades"></label>
+									</div>
+								</th>
+								<th scope="col">Razón social</th>
+								<th scope="col">CIF</th>
+								<th scope="col">Teléfono</th>
+								<th scope="col">Dirección</th>
+								<th scope="col">CP</th>
+								<th scope="col">Municipio</th>
+								<th scope="col">Provincia</th>
+								<th scope="col">Acciones</th>
+							</tr>
+							</thead>
+							<tbody>
+							{% for emisor_factura in emisores_facturas %}
+								<tr>
+									<td>
+										<div class="custom-control custom-checkbox">
+											<input class="custom-control-input" id="entidad[{{ emisor_factura.idEmisorFactura }}]" name="emisor_factura[]" type="checkbox" value="{{ emisor_factura.idEmisorFactura }}">
+											<label class="custom-control-label" for="entidad[{{ emisor_factura.idEmisorFactura }}]"></label>
+										</div>
+									</td>
+									<td>{{ emisor_factura.razonSocial }}</td>
+									<td>{{ emisor_factura.cif }}</td>
+									<td>{{ emisor_factura.telefono }}</td>
+									<td>{{ emisor_factura.direccion }}</td>
+									<td>{{ emisor_factura.cp }}</td>
+									<td>{{ emisor_factura.municipio }}</td>
+									<td>{{ emisor_factura.provincia }}</td>
+									<td>
+										<a href="{{ path('agregar_modificar_emisor_factura',{'id':emisor_factura.idEmisorFactura}) }}">
+											<i class="far fa-edit"></i>
+											<span> Editar</span>
+										</a>
+									</td>
+								</tr>
+							{% endfor %}
+							</tbody>
+						</table>
+						<div>
+							<button class="btn btn-success waves-effect" id="boton-borrar-entidades">Borrar marcados</button>
+						</div>
+					</form>
+				{% endif %}
+			{% endif %}
+			<a class="btn btn-success waves-effect" href="{{ path('inicio') }}">Volver</a>
+		</div>
+	</div>
+	{% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+{% endblock %}

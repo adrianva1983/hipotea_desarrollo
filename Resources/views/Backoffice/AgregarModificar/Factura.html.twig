@@ -1,0 +1,319 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregar_modificar_factura '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% form_theme agregar_linea_factura '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/bootstrap-datepicker/locales/bootstrap-datepicker.es.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	{% if lineas_factura is defined and lineas_factura is iterable %}
+		<script>
+			function numeroLineasFactura() {
+				return {{ lineas_factura|length }};
+			}
+
+			function rutaObtenerNumeroSerieFacturaAJAX() {
+				return '{{ path('obtener_numero_serie_factura_ajax') }}';
+			}
+		</script>
+	{% endif %}
+	{% if fecha_inicial_factura is defined %}
+		<script>
+			function fechaInicialFacturaFuncion() {
+				return '{{ fecha_inicial_factura|date('d/m/Y') }}';
+			}
+		</script>
+	{% endif %}
+	<script src="{{ asset('assets/js/custom/round.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/factura.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(agregar_modificar_factura) }}
+			<div class="form-row">
+				<div class="form-group col-md">
+					{{ form_label(agregar_modificar_factura.idEmisorFactura) }}
+					{{ form_widget(agregar_modificar_factura.idEmisorFactura) }}
+					{{ form_errors(agregar_modificar_factura.idEmisorFactura) }}
+				</div>
+				<div class="form-group col-md">
+					{{ form_label(agregar_modificar_factura.idClienteFactura) }}
+					{{ form_widget(agregar_modificar_factura.idClienteFactura) }}
+					{{ form_errors(agregar_modificar_factura.idClienteFactura) }}
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-md-2">
+					{{ form_label(agregar_modificar_factura.serie) }}
+					{{ form_widget(agregar_modificar_factura.serie) }}
+					{{ form_errors(agregar_modificar_factura.serie) }}
+				</div>
+				<div class="form-group col-md-2">
+					<label for="factura_numero">Número</label>
+					<input class="form-control" readonly id="factura_numero" value="{{ factura.numero }}">
+				</div>
+				<div class="form-group col-md-3 col-lg-2">
+					{{ form_label(agregar_modificar_factura.fecha) }}
+					{{ form_widget(agregar_modificar_factura.fecha,{attr:{class:'js-datepicker'}}) }}
+					{{ form_errors(agregar_modificar_factura.fecha) }}
+				</div>
+				<div class="form-group col-md">
+					{{ form_label(agregar_modificar_factura.descripcion) }}
+					{{ form_widget(agregar_modificar_factura.descripcion) }}
+					{{ form_errors(agregar_modificar_factura.descripcion) }}
+				</div>
+			</div>
+			<div id="lineas-factura">
+				{% if lineas_factura is defined and lineas_factura is iterable %}
+					{% for linea_factura in lineas_factura %}
+						<div class="border p-3 mb-3" data-linea-factura>
+							<div class="form-row">
+								<div class="form-group col-sm-3 d-none">
+									<label for="linea_factura_unidades[{{ loop.index -1 }}]">Unidades</label>
+									<input class="form-control" hidden id="linea_factura_unidades[{{ loop.index -1 }}]" min="1" name="linea_factura[{{ loop.index -1 }}][unidades]" placeholder="1" readonly type="number" value="{#{{ linea_factura.unidades }}#}1">
+								</div>
+								<div class="form-group col-sm">
+									<label for="linea_factura_concepto[{{ loop.index -1 }}]" class="required">
+										<span>Concepto</span>
+										<span class="text-danger"> *</span>
+									</label>
+									<input class="form-control" id="linea_factura_concepto[{{ loop.index -1 }}]" name="linea_factura[{{ loop.index -1 }}][concepto]" required value="{{ linea_factura.concepto }}">
+								</div>
+							</div>
+							<div class="form-row">
+								<div class="form-group col-lg">
+									<label for="linea_factura_importe[{{ loop.index -1 }}]">Importe</label>
+									<div class="input-group">
+										<input class="form-control" id="linea_factura_importe[{{ loop.index -1 }}]" name="linea_factura[{{ loop.index -1 }}][importe]" placeholder="0" value="{{ linea_factura.importe }}">
+										<div class="input-group-append">
+											<span class="input-group-text"> €</span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-lg">
+									<label class="required" for="linea_factura_tipoIva[{{ loop.index -1 }}]">
+										<span>% IVA</span>
+										<span class="text-danger"> *</span>
+									</label>
+									<select class="form-control" id="linea_factura_tipoIva[{{ loop.index -1 }}]" name="linea_factura[{{ loop.index -1 }}][tipoIva]">
+										<option {% if linea_factura.tipoIva is same as(21) %}selected {% endif %}value="21">21</option>
+										<option {% if linea_factura.tipoIva is same as(10) %}selected {% endif %}value="10">10</option>
+										<option {% if linea_factura.tipoIva is same as(4) %}selected {% endif %}value="4">4</option>
+										<option {% if linea_factura.tipoIva is same as(0) %}selected {% endif %}value="0">0</option>
+									</select>
+								</div>
+								<div class="form-group col-lg">
+									<label for="linea_factura_tipoRetencion[{{ loop.index -1 }}]">Tipo retención</label>
+									<div class="input-group">
+										<input class="form-control" id="linea_factura_tipoRetencion[{{ loop.index -1 }}]" name="linea_factura[{{ loop.index -1 }}][tipoRetencion]" placeholder="0" value="{{ linea_factura.tipoRetencion }}">
+										<div class="input-group-append">
+											<span class="input-group-text"> %</span>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg"></div>
+							</div>
+							<div class="form-row">
+								<div class="form-group col-lg">
+									<label for="linea_factura_base_imponible[{{ loop.index - 1 }}]">Base imponible</label>
+									<div class="input-group">
+										<input class="form-control" readonly id="linea_factura_base_imponible[{{ loop.index - 1 }}]" value="{{ linea_factura.totalBaseImponible }}">
+										<div class="input-group-append">
+											<span class="input-group-text"> €</span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-lg">
+									<label for="linea_factura_impuestos[{{ loop.index - 1 }}]">Impuestos</label>
+									<div class="input-group">
+										<input class="form-control" readonly id="linea_factura_impuestos[{{ loop.index - 1 }}]" value="{{ linea_factura.impuestos }}">
+										<div class="input-group-append">
+											<span class="input-group-text"> €</span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-lg">
+									<label for="linea_factura_retencion[{{ loop.index - 1 }}]">Retención</label>
+									<div class="input-group">
+										<input class="form-control" readonly id="linea_factura_retencion[{{ loop.index - 1 }}]" value="{{ linea_factura.retencion }}">
+										<div class="input-group-append">
+											<span class="input-group-text"> €</span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-lg">
+									<label for="linea_factura_total[{{ loop.index - 1 }}]">Total</label>
+									<div class="input-group">
+										<input class="form-control" readonly id="linea_factura_total[{{ loop.index - 1 }}]" value="{{ linea_factura.total }}">
+										<div class="input-group-append">
+											<span class="input-group-text"> €</span>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="d-flex justify-content-end">
+								<button class="btn btn-danger waves-effect" data-quitar-linea-factura type="button">
+									<i class="far fa-trash-alt"></i>
+								</button>
+							</div>
+						</div>
+					{% endfor %}
+				{% endif %}
+			</div>
+			<div class="d-flex mb-3">
+				<button class="btn btn-success waves-effect ml-auto" id="agregar-linea" type="button">
+					<i class="fas fa-plus"></i>
+				</button>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-lg">
+					<label for="factura_base_imponible">Base imponible</label>
+					<div class="input-group">
+						<input class="form-control" readonly id="factura_base_imponible" value="{{ factura.baseImponible }}">
+						<div class="input-group-append">
+							<span class="input-group-text"> €</span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group col-lg">
+					<label for="factura_impuestos">Impuestos</label>
+					<div class="input-group">
+						<input class="form-control" readonly id="factura_impuestos" value="{{ factura.impuestos }}">
+						<div class="input-group-append">
+							<span class="input-group-text"> €</span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group col-lg">
+					<label for="factura_retenciones">Retenciones</label>
+					<div class="input-group">
+						<input class="form-control" readonly id="factura_retenciones" value="{{ factura.retenciones }}">
+						<div class="input-group-append">
+							<span class="input-group-text"> €</span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group col-lg">
+					<label for="factura_total">Total</label>
+					<div class="input-group">
+						<input class="form-control" readonly id="factura_total" value="{{ factura.total }}">
+						<div class="input-group-append">
+							<span class="input-group-text"> €</span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="d-flex">
+				<a class="btn btn-success waves-effect mr-auto" href="{{ path('lista_facturas') }}">Volver</a>
+				{{ form_label(agregar_modificar_factura.reset) }}
+				{{ form_widget(agregar_modificar_factura.reset) }}
+				{{ form_label(agregar_modificar_factura.submit) }}
+				{{ form_widget(agregar_modificar_factura.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_end(agregar_modificar_factura) }}
+			<div class="d-none">
+				{{ form_start(agregar_linea_factura) }}
+				<div class="border p-3 mb-3" data-modelo-lineas-factura>
+					<div class="form-row">
+						<div class="form-group col-sm-3 d-none">
+							{{ form_label(agregar_linea_factura.unidades) }}
+							{{ form_widget(agregar_linea_factura.unidades,{attr:{hidden:'',readonly:'',value:1}}) }}
+							{{ form_errors(agregar_linea_factura.unidades) }}
+						</div>
+						<div class="form-group col-sm">
+							{{ form_label(agregar_linea_factura.concepto) }}
+							{{ form_widget(agregar_linea_factura.concepto) }}
+							{{ form_errors(agregar_linea_factura.concepto) }}
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group col-lg">
+							{{ form_label(agregar_linea_factura.importe) }}
+							{{ form_widget(agregar_linea_factura.importe) }}
+							{{ form_errors(agregar_linea_factura.importe) }}
+						</div>
+						<div class="form-group col-lg">
+							{{ form_label(agregar_linea_factura.tipoIva) }}
+							{{ form_widget(agregar_linea_factura.tipoIva) }}
+							{{ form_errors(agregar_linea_factura.tipoIva) }}
+						</div>
+						<div class="form-group col-lg">
+							{{ form_label(agregar_linea_factura.tipoRetencion) }}
+							<div class="input-group">
+								{{ form_widget(agregar_linea_factura.tipoRetencion) }}
+								<div class="input-group-append">
+									<span class="input-group-text"> %</span>
+								</div>
+							</div>
+							{{ form_errors(agregar_linea_factura.tipoRetencion) }}
+						</div>
+						<div class="col-lg"></div>
+					</div>
+					<div class="form-row">
+						<div class="form-group col-lg">
+							<label for="linea_factura_base_imponible">Base imponible</label>
+							<div class="input-group">
+								<input class="form-control" readonly id="linea_factura_base_imponible">
+								<div class="input-group-append">
+									<span class="input-group-text"> €</span>
+								</div>
+							</div>
+						</div>
+						<div class="form-group col-lg">
+							<label for="linea_factura_impuestos">Impuestos</label>
+							<div class="input-group">
+								<input class="form-control" readonly id="linea_factura_impuestos">
+								<div class="input-group-append">
+									<span class="input-group-text"> €</span>
+								</div>
+							</div>
+						</div>
+						<div class="form-group col-lg">
+							<label for="linea_factura_retencion">Retención</label>
+							<div class="input-group">
+								<input class="form-control" readonly id="linea_factura_retencion">
+								<div class="input-group-append">
+									<span class="input-group-text"> €</span>
+								</div>
+							</div>
+						</div>
+						<div class="form-group col-lg">
+							<label for="linea_factura_total">Total</label>
+							<div class="input-group">
+								<input class="form-control" readonly id="linea_factura_total">
+								<div class="input-group-append">
+									<span class="input-group-text"> €</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex justify-content-end">
+						<button class="btn btn-danger waves-effect" data-quitar-linea-factura type="button">
+							<i class="far fa-trash-alt"></i>
+						</button>
+					</div>
+				</div>
+				{% do agregar_linea_factura._token.setRendered %}
+				{{ form_end(agregar_linea_factura) }}
+			</div>
+		</div>
+	</div>
+{% endblock %}

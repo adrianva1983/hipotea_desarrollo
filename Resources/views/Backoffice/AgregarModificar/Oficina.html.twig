@@ -1,0 +1,187 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregarModificarOficina '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block customscripts %}
+	{{ parent() }}
+	<script>
+		$(document).ready(function() {
+			// Al cambiar la inmobiliaria, actualizar la lista de usuarios
+			$('#oficina_idInmobiliaria').change(function() {
+				var idInmobiliaria = $(this).val();
+				var $selectUsuario = $('#select_usuario_responsable');
+				var $hiddenUsuario = $('#oficina_usuarioId');
+				
+				if (idInmobiliaria) {
+					// Mostrar loading
+					$selectUsuario.html('<option value="">Cargando usuarios...</option>');
+					$selectUsuario.prop('disabled', true);
+					$hiddenUsuario.val('');
+					
+					// Hacer petición AJAX
+					$.ajax({
+						url: '{{ path('obtener_usuarios_inmobiliaria_oficina_ajax') }}',
+						type: 'POST',
+						dataType: 'json',
+						headers: {
+							'X-Requested-With': 'XMLHttpRequest'
+						},
+						data: {
+							idInmobiliaria: idInmobiliaria
+						},
+						success: function(response) {
+							if (response.error === 0 && response.usuarios) {
+								// Limpiar select
+								$selectUsuario.html('');
+								
+								// Agregar usuarios
+								$.each(response.usuarios, function(index, usuario) {
+									$selectUsuario.append('<option value="' + usuario.id + '">' + usuario.text + '</option>');
+								});
+								
+								// Establecer el primer usuario en el campo hidden
+								if (response.usuarios.length > 0) {
+									$hiddenUsuario.val(response.usuarios[0].id);
+								}
+								
+								$selectUsuario.prop('disabled', false);
+							} else {
+								$selectUsuario.html('<option value="">Error al cargar usuarios</option>');
+							}
+						},
+						error: function(xhr, status, error) {
+							$selectUsuario.html('<option value="">Error al cargar usuarios</option>');
+						}
+					});
+				} else {
+					// Si no hay inmobiliaria seleccionada, limpiar usuarios
+					$selectUsuario.html('<option value="">Primero seleccione una inmobiliaria</option>');
+					$selectUsuario.prop('disabled', true);
+					$hiddenUsuario.val('');
+				}
+			});
+			
+			// Al cambiar el select visible, actualizar el campo hidden
+			$('#select_usuario_responsable').change(function() {
+				$('#oficina_usuarioId').val($(this).val());
+			});
+			
+			// Disparar el evento change al cargar la página si hay una inmobiliaria preseleccionada
+			if ($('#oficina_idInmobiliaria').val()) {
+				// Guardar el valor actual del usuario para reseleccionarlo después
+				var usuarioActual = $('#oficina_usuarioId').val();
+				
+				$('#oficina_idInmobiliaria').trigger('change');
+				
+				// Después de cargar los usuarios, reseleccionar el usuario actual
+				setTimeout(function() {
+					if (usuarioActual) {
+						$('#select_usuario_responsable').val(usuarioActual);
+						$('#oficina_usuarioId').val(usuarioActual);
+					}
+				}, 500);
+			} else {
+				// Si no hay inmobiliaria, deshabilitar select de usuarios
+				$('#select_usuario_responsable').html('<option value="">Primero seleccione una inmobiliaria</option>');
+				$('#select_usuario_responsable').prop('disabled', true);
+			}
+		});
+		
+		// Validar formulario antes de enviar
+		$('form').on('submit', function(e) {
+			var inmobiliaria = $('#oficina_idInmobiliaria').val();
+			var usuario = $('#select_usuario_responsable').val();
+			
+			if (!inmobiliaria) {
+				e.preventDefault();
+				alert('Por favor, seleccione una inmobiliaria.');
+				return false;
+			}
+			
+			if (!usuario) {
+				e.preventDefault();
+				alert('Por favor, seleccione un responsable.');
+				return false;
+			}
+		});
+	</script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{{ titulo }}</h4>
+			{{ form_start(agregarModificarOficina) }}
+			<div class="form-row">
+				<div class="form-group col-sm-6">
+					{{ form_label(agregarModificarOficina.nombre) }}
+					{{ form_widget(agregarModificarOficina.nombre) }}
+					{{ form_errors(agregarModificarOficina.nombre) }}
+				</div>
+				<div class="form-group col-sm-6">
+					{{ form_label(agregarModificarOficina.idInmobiliaria) }}
+					{{ form_widget(agregarModificarOficina.idInmobiliaria) }}
+					{{ form_errors(agregarModificarOficina.idInmobiliaria) }}
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm-6">
+					<label for="select_usuario_responsable" class="required">Responsable</label>
+					<select id="select_usuario_responsable" name="select_usuario_responsable" class="form-control" disabled>
+						<option value="">Primero seleccione una inmobiliaria</option>
+					</select>
+					{{ form_widget(agregarModificarOficina.usuarioId) }}
+					<span class="invalid-feedback d-block" id="error_usuario_responsable" style="display:none !important;"></span>
+				</div>
+				<div class="form-group col-sm-6">
+					{{ form_label(agregarModificarOficina.telefono) }}
+					{{ form_widget(agregarModificarOficina.telefono) }}
+					{{ form_errors(agregarModificarOficina.telefono) }}
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm-12">
+					{{ form_label(agregarModificarOficina.direccion) }}
+					{{ form_widget(agregarModificarOficina.direccion) }}
+					{{ form_errors(agregarModificarOficina.direccion) }}
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm-6">
+					{{ form_label(agregarModificarOficina.email) }}
+					{{ form_widget(agregarModificarOficina.email) }}
+					{{ form_errors(agregarModificarOficina.email) }}
+				</div>
+				<div class="form-group col-sm-3">
+					{{ form_label(agregarModificarOficina.codigoPostal) }}
+					{{ form_widget(agregarModificarOficina.codigoPostal) }}
+					{{ form_errors(agregarModificarOficina.codigoPostal) }}
+				</div>
+				<div class="form-group col-sm-3">
+					<div class="form-check mt-4">
+						{{ form_widget(agregarModificarOficina.activa) }}
+						{{ form_label(agregarModificarOficina.activa) }}
+						{{ form_errors(agregarModificarOficina.activa) }}
+					</div>
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm-6">
+					{{ form_label(agregarModificarOficina.ciudad) }}
+					{{ form_widget(agregarModificarOficina.ciudad) }}
+					{{ form_errors(agregarModificarOficina.ciudad) }}
+				</div>
+				<div class="form-group col-sm-6">
+					{{ form_label(agregarModificarOficina.provincia) }}
+					{{ form_widget(agregarModificarOficina.provincia) }}
+					{{ form_errors(agregarModificarOficina.provincia) }}
+				</div>
+			</div>
+			<div class="d-flex">
+				<a class="btn btn-success waves-effect mr-auto" href="{{ path('lista_oficinas') }}">Volver</a>
+				{{ form_label(agregarModificarOficina.reset) }}
+				{{ form_widget(agregarModificarOficina.reset) }}
+				{{ form_label(agregarModificarOficina.submit) }}
+				{{ form_widget(agregarModificarOficina.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+			{{ form_end(agregarModificarOficina) }}
+		</div>
+	</div>
+{% endblock %}

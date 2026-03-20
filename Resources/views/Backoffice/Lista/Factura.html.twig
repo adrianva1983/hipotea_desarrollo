@@ -1,0 +1,140 @@
+{% set crearnuevo = path('agregar_modificar_factura') %}
+{% set crearnuevo_texto = 'Crear nueva' %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	{% if facturas is defined and facturas is not empty %}
+		<script>
+			function rutaEnviarFacturaEmailAJAX() {
+				return '{{ path('enviar_factura_email_ajax') }}';
+			}
+		</script>
+	{% endif %}
+	<script src="{{ asset('assets/js/custom/lista-facturas.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/tabla-usuarios.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+			{% if facturas is defined %}
+				{% if facturas is empty %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay facturas.</span>
+					</div>
+				{% else %}
+					<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+						<thead>
+						<tr>
+							<th scope="col">Serie</th>
+							<th scope="col">Numero</th>
+							<th scope="col">Fecha</th>
+							<th scope="col">Descripción</th>
+							<th scope="col">Cliente</th>
+							<th scope="col">Emisor</th>
+							<th scope="col">Base</th>
+							<th scope="col">Impuestos</th>
+							<th scope="col">Retenciones</th>
+							<th scope="col">Total</th>
+							<th scope="col">Acciones</th>
+						</tr>
+						</thead>
+						<tbody>
+						{% for factura in facturas %}
+							<tr>
+								<td>{{ factura.serie }}</td>
+								<td>{{ factura.numero }}</td>
+								{% if factura.fecha %}
+									<td data-order="{{ factura.fecha|date('U') }}">{{ factura.fecha|date('d/m/Y') }}</td>
+								{% else %}
+									<td></td>
+								{% endif %}
+								<td>{{ factura.descripcion|length>24?factura.descripcion|slice(0,24)~'…':factura.descripcion }}</td>
+								<td>{{ factura.idClienteFactura }}</td>
+								<td>{{ factura.idEmisorFactura }}</td>
+								<td>{{ factura.baseImponible }}€</td>
+								<td>{{ factura.impuestos }}€</td>
+								<td>{{ factura.retenciones }}€</td>
+								<td>{{ factura.total }}€</td>
+								<td class="text-nowrap">
+									<a href="{{ path('agregar_modificar_factura',{'id':factura.idFactura}) }}">
+										<i class="far fa-edit"></i>
+										<span> Editar</span>
+									</a>
+									<span> | </span>
+									<a href="{{ path('ver_factura',{'id':factura.idFactura}) }}" target="_blank">
+										<i class="fas fa-eye"></i>
+										<span> Ver</span>
+									</a>
+									<span> | </span>
+									<a href="javascript:void(0)" data-id-factura="{{ factura.idFactura }}" id="mostrar-modal-email">
+										<i class="far fa-envelope"></i>
+										<span> Email</span>
+									</a>
+								</td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+				{% endif %}
+			{% endif %}
+			<a class="btn btn-success" href="{{ path('lista_facturas') }}">Volver</a>
+		</div>
+	</div>
+	<div class="modal fade show" id="modal-email">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title">Enviar factura por E-mail</h4>
+					<button class="close" data-dismiss="modal" type="button">×</button>
+				</div>
+				<form id="modal-email-formulario" method="post">
+					<div class="modal-body">
+						<div class="alert alert-warning d-none" id="mensaje-alerta" role="alert">Se ha producido un error</div>
+						<div class="form-row">
+							<div class="form-group col">
+								<label for="email-destinatario">Destinatario</label>
+								<input class="form-control" id="email-destinatario" name="email-destinatario" required type="email">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group col">
+								<label for="email-asunto">Asunto</label>
+								<input class="form-control" id="email-asunto" name="asunto" required>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group col">
+								<label for="email-texto">Texto</label>
+								<textarea class="form-control" id="email-texto" name="email-texto" required rows="5">Estimado cliente.&#10;Aquí le adjuntamos su factura.&#10;Un saludo.</textarea>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button class="btn btn-danger waves-effect mr-3" data-dismiss="modal" type="button">Cancelar</button>
+						<button class="btn btn-success waves-effect">Enviar</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+	{% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+{% endblock %}

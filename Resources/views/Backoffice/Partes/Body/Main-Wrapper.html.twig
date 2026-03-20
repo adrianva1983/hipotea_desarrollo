@@ -1,0 +1,9 @@
+{% use '@App/Backoffice/Partes/Body/Page-Wrapper.html.twig' %}
+{% block main_wrapper %}
+<div id="main-wrapper">
+	{% include '@App/Backoffice/Partes/Body/Topbar-Header.html.twig' %}
+	{% include '@App/Backoffice/Partes/Body/Left-Sidebar.html.twig' %}
+	{{ block('page_wrapper') }}
+	{% include '@App/Backoffice/Partes/Body/Footer.html.twig' %}
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+	<p>
+		<span>Pulse en siguiente enlace para reestablecer su contraseña: </span>
+		<a href="{{ urlgenerada }}">REESTABLECER</a>
+	</p>
+
+	<img src="https://areaprivada.gruponegociador.es/uploads/firma_base.jpg">
+	<p style="font-size:9px;color:#CCC;">Este mensaje ha sido enviado por GRUPO NEGOCIADOR, SLU, Este mensaje y sus archivos adjuntos van dirigidos exclusivamente a su destinatario, pudiendo contener información confidencial sometida a secreto profesional. No está permitida su reproducción o distribución sin la autorización expresa. Si usted no es el destinatario final por favor elimínelo e infórmenos por esta vía. De acuerdo con lo establecido por el Reglamento (UE) 2016/679, en materia de Protección de datos, le informamos que el Responsable del Tratamiento de sus datos es GRUPO NEGOCIADOR ALR, S.L. Utilizamos sus datos para prestarle los servicios que nos ha solicitado así como enviarle comunicaciones comerciales que sean de su interés. Legitimados en Ejecución de un contrato: Prestación de los servicios solicitados. Interés legítimo del Responsable: Envío de comunicaciones comerciales. No se cederán sus datos a terceros salvo obligación legal. Asimismo, le informamos que tiene derecho a acceder, rectificar y suprimir los datos, así como otros derechos, indicados en la información adicional, que puede ejercer dirigiéndose a C/ Isabel La Monja 7, 14711, Córdoba. Puede consultar información adicional y detallada sobre protección de datos dirigiéndose al correo electrónico info@gruponegociador.es o se puede enviar un archivo adjunto al mensaje.</p>
+	

@@ -1,0 +1,157 @@
+{% set crearnuevo = path('agregar_modificar_fase') %}
+{% set crearnuevo_texto = 'Crear nueva fase' %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/nestable/nestable.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/css/custom/fases-hitos-campos-opciones.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/sticky-kit-master/dist/sticky-kit.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/sparkline/jquery.sparkline.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-sparklines/2.1.2/jquery.sparkline.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/nestable/jquery.nestable.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/ObjectIsEqual.min.js') }}"></script>
+	<script>
+		function rutaOrdenarFases() {
+			return '{{ path('ordenar_fases_hitos_campos_opciones_ajax') }}';
+		}
+
+		function rutaAgregarModificarOpcionesCampo(id) {
+			var ruta = '{{ path('agregar_modificar_opciones_campo',{'idCampoHito':0}) }}'.split('/');
+			ruta[3] = id;
+			ruta = ruta.join('/');
+			return ruta
+		}
+	</script>
+	<script src="{{ asset('assets/js/custom/lista-fases-hitos-campos-opciones.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">Fases, hitos, campos y opciones</h4>
+			{% if fases is defined %}
+				{% if fases is empty %}
+					<div class="alert alert-info" role="alert">
+						<span>No hay fases.</span>
+					</div>
+				{% else %}
+					<div class="alert alert-info" id="lista-mensaje" role="alert">Se pueden ordenar los campos pulsando sobre ellos y arrastrandolos, y solamente se pueden borrar los campos sin descendientes.</div>
+					<div class="mb-3">
+						<button class="btn btn-success waves-effect mr-3" id="anidable-desplegar-todos" type="button">Desplegar todos</button>
+						<button class="btn btn-success waves-effect" id="anidable-replegar-todos" type="button">Replegar todos</button>
+					</div>
+					<form id="formulario-borrar-entidades" method="post">
+						<div class="myadmin-dd dd mw-100 mb-3 text-nowrap">
+							<ol class="dd-list">
+								{% for tabla in fases %}
+									{% set id = tabla.idFase %}
+									{% set nombre = tabla.nombre %}
+									{% set rutaAgregarHijo = path('agregar_modificar_hito',{'idFase':id}) %}
+									{% set tituloAgregar = 'Añadir hito a la fase' %}
+									{% set rutaModificarElemento = path('agregar_modificar_fase') %}
+									{% set tituloEditar = 'Editar fase “'~nombre~'”' %}
+									{% set tituloBorrar = 'fase “'~nombre~'”' %}
+									{% set inputBorrarNombre = 'borrar-fase[]' %}
+									{% set idFase = id %}
+									<li class="dd-item" data-id="{{ id }}">
+										{% include '@App/Backoffice/Lista/ContenidoListaAnidable.html.twig' %}
+										{% if hitos[id]|length>0 %}
+											<ol class="dd-list">
+												{% for tabla in hitos[id] %}
+													{% set id = tabla.idHito %}
+													{% set nombre = tabla.nombre %}
+													{% set rutaAgregarHijo = path('agregar_modificar_grupo_campos_hito',{'idHito':id}) %}
+													{% set tituloAgregar = 'Añadir grupo de campos hito al hito' %}
+													{% set rutaModificarElemento = path('agregar_modificar_hito',{'idFase':idFase}) %}
+													{% set tituloEditar = 'Editar hito “'~nombre~'”' %}
+													{% set tituloBorrar = 'hito “'~nombre~'”' %}
+													{% set inputBorrarNombre = 'borrar-hito[]' %}
+													{% set idHito = id %}
+													<li class="dd-item" data-id="{{ id }}">
+														{% include '@App/Backoffice/Lista/ContenidoListaAnidable.html.twig' %}
+														{% if grupos_campos_hito[id]|length>0 %}
+															<ol class="dd-list">
+																{% for tabla in grupos_campos_hito[id] %}
+																	{% set id = tabla.idGrupoCamposHito %}
+																	{% set nombre = tabla.nombre %}
+																	{% set rutaAgregarHijo = path('agregar_modificar_campo_hito',{'idGrupoCamposHito':id}) %}
+																	{% set tituloAgregar = 'Añadir campo al grupo de campos hito' %}
+																	{% set rutaModificarElemento = path('agregar_modificar_grupo_campos_hito',{'idHito':idHito}) %}
+																	{% set tituloEditar = 'Editar grupo de campos hito “'~nombre~'”' %}
+																	{% set tituloBorrar = 'grupo de campos hito “'~nombre~'”' %}
+																	{% set inputBorrarNombre = 'borrar-grupo-campos-hito[]' %}
+																	{% set idGrupoCamposHito = id %}
+																	<li class="dd-item" data-id="{{ id }}">
+																		{% include '@App/Backoffice/Lista/ContenidoListaAnidable.html.twig' %}
+																		{% if campos_hito[id]|length>0 %}
+																			<ol class="dd-list">
+																				{% for tabla in campos_hito[id] %}
+																					{% set id = tabla.idCampoHito %}
+																					{% set nombre = tabla.nombre %}
+																					{% set rutaAgregarHijo = path('agregar_modificar_opciones_campo',{'idCampoHito':id}) %}
+																					{% set tituloAgregar = 'Añadir opciones al campo' %}
+																					{% set rutaModificarElemento = path('agregar_modificar_campo_hito',{'idGrupoCamposHito':idGrupoCamposHito}) %}
+																					{% set tituloEditar = 'Editar campo “'~nombre~'”' %}
+																					{% set tituloBorrar = 'campo “'~nombre~'”' %}
+																					{% set inputBorrarNombre = 'borrar-campo-hito[]' %}
+																					{% set idCampoHito = id %}
+																					{% set tipoPadre = tabla.tipo %}
+																					<li class="dd-item" data-id="{{ id }}" data-tipo="{{ tabla.tipo }}">
+																						{% include '@App/Backoffice/Lista/ContenidoListaAnidable.html.twig' %}
+																						{% if opciones_campo[id]|length>0 %}
+																							<ol class="dd-list">
+																								{% for tabla in opciones_campo[id] %}
+																									{% set id = tabla.idOpcionesCampo %}
+																									{% set nombre = tabla.valor %}
+																									{% set rutaModificarElemento = path('agregar_modificar_opciones_campo',{'idCampoHito':idCampoHito}) %}
+																									{% set tituloEditar = 'Editar opción “'~nombre~'”' %}
+																									{% set tituloBorrar = 'opcion “'~nombre~'”' %}
+																									{% set inputBorrarNombre = 'borrar-opciones-campo[]' %}
+																									{% set ultimo = true %}
+																									<li class="dd-item" data-id="{{ id }}" data-tipo="{{ tipoPadre }}">
+																										{% include '@App/Backoffice/Lista/ContenidoListaAnidable.html.twig' %}
+																									</li>
+																								{% endfor %}
+																							</ol>
+																						{% endif %}
+																					</li>
+																				{% endfor %}
+																			</ol>
+																		{% endif %}
+																	</li>
+																{% endfor %}
+															</ol>
+														{% endif %}
+													</li>
+												{% endfor %}
+											</ol>
+										{% endif %}
+									</li>
+								{% endfor %}
+							</ol>
+						</div>
+						<div class="d-flex align-items-center">
+							<a class="btn btn-success waves-effect mr-auto" href="{{ path('inicio') }}">Volver</a>
+							<button class="btn btn-success waves-effect mr-3" id="boton-desmarcar-entidades" type="button">Desmarcar todos los elementos</button>
+							<button class="btn btn-success waves-effect" id="boton-borrar-entidades" name="borrar-entidades">Borrar elementos marcados</button>
+						</div>
+					</form>
+				{% endif %}
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+{% endblock %}

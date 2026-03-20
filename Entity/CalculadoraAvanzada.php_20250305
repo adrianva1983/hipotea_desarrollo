@@ -1,0 +1,2120 @@
+<?php
+
+namespace AppBundle\Entity;
+
+use Doctrine\ORM\EntityManagerInterface;
+
+/**
+ * CalculadoraAvanzada
+ */
+class CalculadoraAvanzada
+{
+	private $tipo;
+	private $numTitulares;
+	private $aportacionInicial;
+	private $edad;
+	private $edadTitularUno;
+	private $edadTitularDos;
+	private $valorInmueble;
+	private $producto;
+	private $hipotecaActual;
+	private $valorViviendaActual;
+	// private $ventaCasaActual;
+	private $aportacionTrasVenta;
+	private $ingresosMensuales;
+	private $numPagasExtra;
+	private $importePagaExtra;
+	private $prestamosMensuales;
+
+	private $ingresosMensualesDos;
+	private $numPagasExtraDos;
+	private $importePagaExtraDos;
+	private $prestamosMensualesDos;
+
+	private $tipologiaOperacion;
+	private $comunidadAutonoma;
+	private $obraNueva;
+	private $tieneMenosEdadMaxima;
+	private $minusvaliaFamiliaNumerosa;
+	private $familiaNumerosa;
+	private $monoparental;
+	private $vpo;
+	private $honorariosInmobiliaria;
+	private $destinoCompra;
+
+	private $plazoAmortizacion;
+
+	/**
+	 * @return double
+	 */
+	public function getTipo()
+	{
+		return $this->tipo;
+	}
+
+	/**
+	 * @param double $tipo
+	 */
+	public function setTipo($tipo)
+	{
+		$this->tipo = $tipo;
+	}
+
+	/**
+	 * @return double
+	 */
+	public function getAportacionInicial()
+	{
+		return $this->aportacionInicial;
+	}
+
+	/**
+	 * @param double $aportacionInicial
+	 */
+	public function setAportacionInicial($aportacionInicial)
+	{
+		$this->aportacionInicial = $aportacionInicial;
+	}
+
+	/**
+	 * @return double
+	 */
+	public function getEdad()
+	{
+		return $this->edad;
+	}
+
+	/**
+	 * @param double $edad
+	 */
+	public function setEdad($edad)
+	{
+		$this->edad = $edad;
+	}
+
+	/**
+	 * @return integer
+	 */
+	public function getValorInmueble()
+	{
+		return $this->valorInmueble;
+	}
+
+	/**
+	 * @param integer $valorInmueble
+	 */
+	public function setValorInmueble($valorInmueble)
+	{
+		$this->valorInmueble = $valorInmueble;
+	}
+
+	/**
+	 * @return integer
+	 */
+	public function getProducto()
+	{
+		return $this->producto;
+	}
+
+	/**
+	 * @param integer $producto
+	 */
+	public function setProducto($producto)
+	{
+		$this->producto = $producto;
+	}
+
+	/**
+	 * Get the value of hipotecaActual
+	 */
+	public function getHipotecaActual()
+	{
+		return $this->hipotecaActual;
+	}
+
+	/**
+	 * Set the value of hipotecaActual
+	 *
+	 * @param $hipotecaActual
+	 * @return  self
+	 */
+	public function setHipotecaActual($hipotecaActual)
+	{
+		$this->hipotecaActual = $hipotecaActual;
+		return $this;
+	}
+
+	/**
+	 * Get the value of aportacionTrasVenta
+	 */
+	public function getAportacionTrasVenta()
+	{
+		return $this->aportacionTrasVenta;
+	}
+
+	/**
+	 * Set the value of aportacionTrasVenta
+	 *
+	 * @param $aportacionTrasVenta
+	 * @return  self
+	 */
+	public function setAportacionTrasVenta($aportacionTrasVenta)
+	{
+		$this->aportacionTrasVenta = $aportacionTrasVenta;
+		return $this;
+	}
+
+	/**
+	 * Get the value of ingresosMensuales
+	 */
+	public function getIngresosMensuales()
+	{
+		return $this->ingresosMensuales;
+	}
+
+	/**
+	 * Set the value of ingresosMensuales
+	 *
+	 * @param $ingresosMensuales
+	 * @return  self
+	 */
+	public function setIngresosMensuales($ingresosMensuales)
+	{
+		$this->ingresosMensuales = $ingresosMensuales;
+		return $this;
+	}
+
+	/**
+	 * Get the value of numPagasExtra
+	 */
+	public function getNumPagasExtra()
+	{
+		return $this->numPagasExtra;
+	}
+
+	/**
+	 * Set the value of numPagasExtra
+	 *
+	 * @param $numPagasExtra
+	 * @return  self
+	 */
+	public function setNumPagasExtra($numPagasExtra)
+	{
+		$this->numPagasExtra = $numPagasExtra;
+		return $this;
+	}
+
+	/**
+	 * Get the value of importePagaExtra
+	 */
+	public function getImportePagaExtra()
+	{
+		return $this->importePagaExtra;
+	}
+
+	/**
+	 * Set the value of importePagaExtra
+	 *
+	 * @param $importePagaExtra
+	 * @return  self
+	 */
+	public function setImportePagaExtra($importePagaExtra)
+	{
+		$this->importePagaExtra = $importePagaExtra;
+		return $this;
+	}
+
+	/**
+	 * Get the value of prestamosMensuales
+	 */
+	public function getPrestamosMensuales()
+	{
+		return $this->prestamosMensuales;
+	}
+
+	/**
+	 * Set the value of prestamosMensuales
+	 *
+	 * @param $prestamosMensuales
+	 * @return  self
+	 */
+	public function setPrestamosMensuales($prestamosMensuales)
+	{
+		$this->prestamosMensuales = $prestamosMensuales;
+		return $this;
+	}
+
+	/**
+	 * Get the value of ingresosMensualesDos
+	 */
+	public function getIngresosMensualesDos()
+	{
+		return $this->ingresosMensualesDos;
+	}
+
+	/**
+	 * Set the value of ingresosMensualesDos
+	 *
+	 * @param $ingresosMensualesDos
+	 * @return  self
+	 */
+	public function setIngresosMensualesDos($ingresosMensualesDos)
+	{
+		$this->ingresosMensualesDos = $ingresosMensualesDos;
+		return $this;
+	}
+
+	/**
+	 * Get the value of numPagasExtraDos
+	 */
+	public function getNumPagasExtraDos()
+	{
+		return $this->numPagasExtraDos;
+	}
+
+	/**
+	 * Set the value of numPagasExtraDos
+	 *
+	 * @param $numPagasExtraDos
+	 * @return  self
+	 */
+	public function setNumPagasExtraDos($numPagasExtraDos)
+	{
+		$this->numPagasExtraDos = $numPagasExtraDos;
+		return $this;
+	}
+
+	/**
+	 * Get the value of importePagaExtraDos
+	 */
+	public function getImportePagaExtraDos()
+	{
+		return $this->importePagaExtraDos;
+	}
+
+	/**
+	 * Set the value of importePagaExtraDos
+	 *
+	 * @param $importePagaExtraDos
+	 * @return  self
+	 */
+	public function setImportePagaExtraDos($importePagaExtraDos)
+	{
+		$this->importePagaExtraDos = $importePagaExtraDos;
+		return $this;
+	}
+
+	/**
+	 * Get the value of prestamosMensualesDos
+	 */
+	public function getPrestamosMensualesDos()
+	{
+		return $this->prestamosMensualesDos;
+	}
+
+	/**
+	 * Set the value of prestamosMensualesDos
+	 *
+	 * @param $prestamosMensualesDos
+	 * @return  self
+	 */
+	public function setPrestamosMensualesDos($prestamosMensualesDos)
+	{
+		$this->prestamosMensualesDos = $prestamosMensualesDos;
+		return $this;
+	}
+
+	/**
+	 * @return double
+	 */
+	public function getPlazoAmortizacion()
+	{
+		return $this->plazoAmortizacion;
+	}
+
+	/**
+	 * @param double $plazoAmortizacion
+	 */
+	public function setPlazoAmortizacion($plazoAmortizacion)
+	{
+		$this->plazoAmortizacion = $plazoAmortizacion;
+	}
+
+	/*public function calcularProducto()
+	{
+		$this->producto['interest'] = $this->getEdad() / 100;
+		$this->producto['capital_less_initial_amount'] = $this->getTipo() - $this->getAportacionInicial();
+		$this->producto['interest_payment'][] = ($this->producto['capital_less_initial_amount'] * $this->producto['interest']) / 12;
+		$this->producto['total_timelines'] = $this->getValorInmueble() * 12;
+		$this->producto['apr'] = 1 - (1 / (pow(1 + ($this->producto['interest'] / 12), $this->producto['total_timelines'])));
+		$this->producto['fee'] = $this->producto['interest_payment'][0] / $this->producto['apr'];
+		$this->producto['interest_discharged'] = $this->producto['interest_payment'][0];
+		$this->producto['interest_discharged_total'] = $this->producto['interest_payment'][0];
+		$this->producto['capital_payment'][] = $this->producto['fee'] - $this->producto['interest_payment'][0];
+		$this->producto['capital_discharged'] = $this->producto['capital_payment'][0];
+		$this->producto['capital_discharged_total'] = $this->producto['capital_payment'][0];
+		$this->producto['capital_pending'][] = $this->producto['capital_less_initial_amount'] - $this->producto['capital_discharged_total'];
+		for ($i = 1, $j = 2; $i < $this->producto['total_timelines']; $i += 1) {
+			$this->producto['interest_payment'][] = ($this->producto['capital_pending'][$i - 1] * $this->producto['interest']) / 12;
+			$this->producto['interest_discharged'] += $this->producto['interest_payment'][$i];
+			$this->producto['interest_discharged_total'] += $this->producto['interest_payment'][$i];
+			$this->producto['capital_payment'][] = $this->producto['fee'] - $this->producto['interest_payment'][$i];
+			$this->producto['capital_discharged'] += $this->producto['capital_payment'][$i];
+			$this->producto['capital_discharged_total'] += $this->producto['capital_payment'][$i];
+			$this->producto['capital_pending'][] = $this->producto['capital_less_initial_amount'] - $this->producto['capital_discharged_total'];
+			if ($j < 12) {
+				$j += 1;
+			} else {
+				$j = 1;
+				$this->producto['interest_discharged_deadline'][] = $this->producto['interest_discharged'];
+				$this->producto['interest_discharged'] = 0;
+				$this->producto['interest_discharged_total_deadline'][] = $this->producto['interest_discharged_total'];
+				$this->producto['capital_discharged_deadline'][] = $this->producto['capital_discharged'];
+				$this->producto['capital_discharged'] = 0;
+				$this->producto['capital_discharged_total_deadline'][] = $this->producto['capital_discharged_total'];
+			}
+		}
+		return $this->producto;
+	}*/
+	public function calcularAvanzada(EntityManagerInterface $entityManager)
+	{
+		$respuesta = array(
+			'cuota_fija' => 0,
+			'cuota_variable' => 0,
+			'importe_maximo' => 0,
+			'mensaje' => ''
+		);
+		// $datos = json_decode($request->getContent())->datos;
+		$edad = $this->getEdad();
+		$amortizacion = 75 - $edad;
+		if ($this->getTipo() == 2) {
+			$tipo_calculo = 'importe-maximo';
+			$precio_maximo = true;
+		} else {
+			$tipo_calculo = 'cuota';
+			$precio_maximo = false;
+		}
+		$valor_inmueble = (is_null($this->getValorInmueble())) ? 0 : $this->getValorInmueble();
+		$aportacion = (is_null($this->getAportacionInicial())) ? 0 : $this->getAportacionInicial();
+		$tipo_hipoteca1 = $this->getProducto();
+		switch ($tipo_hipoteca1) {
+			case '1':
+				$tipo_hipoteca = 'cien';
+				break;
+			case '2':
+				$tipo_hipoteca = 'premium';
+				break;
+			case '3':
+				$tipo_hipoteca = 'sin_compromiso';
+				break;
+			case '4':
+				$tipo_hipoteca = 'cambio_casa';
+				break;
+		}
+		// Vamos a ver segun la CCAA y si es nueva o usada los gastos e impuestos
+		$ccaa = $this->getComunidadAutonoma();
+		// $entityManager = $this->getDoctrine()->getManager();
+		$parametrosObj = new Parametros();
+		$parametros = $parametrosObj->obtenerParametros($entityManager);
+		// var_dump($parametros);
+		// die;
+		$nombreCCAA = $parametrosObj->obtenerNombreCCAA($ccaa);
+		// var_dump($nombreCCAA);
+		// die;
+		$nueva = $this->getObraNueva();
+		$minusvaliaFamiliaNumerosa = $this->getMinusvaliaFamiliaNumerosa();
+		$familiaNumerosa = $this->getFamiliaNumerosa();
+		$vpo = $this->getVpo();
+		$monoparental = $this->getMonoparental();
+		$habitual = $this->getDestinoCompra()===1?true:false;
+
+		$resTipoInteres = $this->obtenerInteres($edad, $nombreCCAA, $minusvaliaFamiliaNumerosa, $familiaNumerosa, $nueva, $valor_inmueble, $habitual, 
+		$vpo, $monoparental, $precio_maximo);
+		$tipo_interes_ccaa = $resTipoInteres['tipo'];
+		$respuesta['mensaje'] = $resTipoInteres['mensaje'];
+		$bonificacion = $resTipoInteres['bonificacion'];
+		// var_dump($tipo_interes_ccaa);
+		// die;
+
+		$gasto_inmobiliaria = (is_null($this->getHonorariosInmobiliaria())) ? 0 : $this->getHonorariosInmobiliaria();// * 1.21;
+		$comision_apertura = $valor_inmueble * (is_null($parametros->getPorComisionApertura()) ? 0 : $parametros->getPorComisionApertura());
+		$honorarios_financiacion = (is_null($parametros->getHonorariosFinanciacion())) ? 0 : $parametros->getHonorariosFinanciacion();
+		$tasacion = (is_null($parametros->getTasacion())) ? 0 : $parametros->getTasacion();
+		$vinculaciones = (is_null($parametros->getVinculaciones())) ? 0 : $parametros->getVinculaciones();
+		$escritura_compra_notario = (is_null($parametros->getEscrituraCompraNotario())) ? 0 : $parametros->getEscrituraCompraNotario();
+		$escritura_compra_registro = (is_null($parametros->getEscrituraCompraRegistro())) ? 0 : $parametros->getEscrituraCompraRegistro();
+		$escritura_compra_gestoria = (is_null($parametros->getEscrituraCompraGestoria())) ? 0 : $parametros->getEscrituraCompraGestoria();
+		$tipo_importe_maximo = (is_null($parametros->getInteresImporteMaximo())) ? 0 : $parametros->getInteresImporteMaximo();
+
+		$valor_vivienda_actual = (is_null($this->getValorViviendaActual())) ? 0 : $this->getValorViviendaActual();
+		$hipoteca_actual = (is_null($this->getHipotecaActual())) ? 0 : $this->getHipotecaActual();
+		// $venta_casa_actual = (is_null($this->getVentaCasaActual())) ? 0 : $this->getVentaCasaActual();
+		// $numero_pagas = 12;
+		$aportacion_tras_venta = (is_null($this->getAportacionTrasVenta())) ? 0 : $this->getAportacionTrasVenta();
+		$ingresos_mensuales = (is_null($this->getIngresosMensuales())) ? 0 : $this->getIngresosMensuales();
+		$numero_pagas_extra = (is_null($this->getNumPagasExtra())) ? 0 : $this->getNumPagasExtra();
+		$importe_paga_extra = (is_null($this->getImportePagaExtra())) ? 0 : $this->getImportePagaExtra();
+		$prestamos_mensuales = (is_null($this->getPrestamosMensuales())) ? 0 : $this->getPrestamosMensuales();
+
+		$ingresos_mensuales_dos = (is_null($this->getIngresosMensualesDos())) ? 0 : $this->getIngresosMensualesDos();
+		$numero_pagas_extra_dos = (is_null($this->getNumPagasExtraDos())) ? 0 : $this->getNumPagasExtraDos();
+		$importe_paga_extra_dos = (is_null($this->getImportePagaExtraDos())) ? 0 : $this->getImportePagaExtraDos();
+		$prestamos_mensuales_dos = (is_null($this->getPrestamosMensualesDos())) ? 0 : $this->getPrestamosMensualesDos();
+
+		$numTitulares = (is_null($this->getNumTitulares())) ? 0 : $this->getNumTitulares();
+		$edadTitularUno = (is_null($this->getEdadTitularUno())) ? 0 : $this->getEdadTitularUno();
+		$edadTitularDos = (is_null($this->getEdadTitularDos())) ? 0 : $this->getEdadTitularDos();
+
+		$levantamiento_registral = 0;
+		if ($amortizacion > 30) {
+			$amortizacion = 30;
+		} elseif ($amortizacion < 15) {
+			$respuesta['mensaje'] = 'No es posible realizar la operación debido a la edad del cliente.';
+			$respuesta['importe_fijo'] = 0;
+			$respuesta['importe_variable'] = 0;
+			$respuesta['amortizacion'] = 0;
+			$respuesta['entrada'] = 0;
+			$respuesta['con_interes_fijo'] = 0;
+			$respuesta['con_interes_variable'] = 0;
+			$respuesta['con_entrada_fijo'] = 0;
+			$respuesta['con_entrada_variable'] = 0;
+			$respuesta['tipo_calculo'] = 0;
+			$respuesta['cuota_mixta'] = 0;
+			$respuesta['gastos'] = 0;
+			$respuesta['tipo_fijo'] = 0;
+			$respuesta['tipo_variable'] = 0;
+			$respuesta['tipo_mixto'] = 0;
+			$respuesta['tipo_luego_mixto'] = 0;
+			$respuesta['intereses'] = 0;
+			$respuesta['importe_total'] = 0;
+			$respuesta['tasacion'] = 0;
+			$respuesta['vinculaciones'] = 0;
+			$respuesta['notario'] = 0;
+			$respuesta['registro'] = 0;
+			$respuesta['gestoria'] = 0;
+			$respuesta['obraNueva'] = 0;
+			$respuesta['escritura_compra_impuesto_transmisiones'] = 0;
+			$respuesta['importe_iva'] = 0;
+			return $respuesta;
+		}
+		
+		// if ($edad >= 35) {
+		// 	$escritura_compra_impuesto_transmisiones = $valor_inmueble * 0.08;
+		// } elseif ($edad < 35 && $valor_inmueble <= 130000) {
+		// 	$escritura_compra_impuesto_transmisiones = $valor_inmueble * 0.035;
+		// } else {
+		// 	$escritura_compra_impuesto_transmisiones = $valor_inmueble * 0.08;
+		// }
+
+		// Cambio a nueva calculadora
+		// if ($edad >= 35 && $valor_inmueble <= 150000) {
+		// 	$escritura_compra_impuesto_transmisiones = $valor_inmueble * 0.07;
+		// } elseif ($edad >= 35 && $valor_inmueble > 150000) {
+		// 	$escritura_compra_impuesto_transmisiones = $valor_inmueble * 0.07;
+		// } elseif ($edad < 35 && $valor_inmueble <= 150000) {
+		// 	$escritura_compra_impuesto_transmisiones = $valor_inmueble * 0.035;
+		// } elseif ($edad < 35 && $valor_inmueble > 150000) {
+		// 	$escritura_compra_impuesto_transmisiones = $valor_inmueble * 0.07;
+		// }
+
+		$valor_bonificacion = $valor_inmueble * $tipo_interes_ccaa * $bonificacion;
+		$escritura_compra_impuesto_transmisiones = ($valor_inmueble * $tipo_interes_ccaa) - $valor_bonificacion;
+		// echo "habitual: ".$habitual."<br>";
+		// echo "edad: ".$habitual."<br>";
+		// echo "minus: ".$minusvaliaFamiliaNumerosa."<br>";
+		// echo "valor inmueble: ".$valor_inmueble."<br>";
+		// echo "tipo_interes_ccaa: ".$tipo_interes_ccaa."<br>";
+		// echo "valor_inmueble * tipo_interes_ccaa: ".$valor_inmueble * $tipo_interes_ccaa."<br>";
+
+		// echo "bonificacion: ".$bonificacion."<br>";
+		// echo "escritura_compra_impuesto_transmisiones: ".$escritura_compra_impuesto_transmisiones."<br>";
+		// die;
+		if($nueva && $habitual && $vpo){
+			$tipo_iva = 0.04;
+		}else{
+			$tipo_iva = 0.1;
+		}
+		if($nueva){
+			$importe_iva = $valor_inmueble * $tipo_iva;
+		}else{
+			$importe_iva = 0;
+		}
+
+		$escritura_prestamo_hipotecario_notario = 0; //1100; Nueva Ley
+		$escritura_prestamo_hipotecario_registro = 0; // 300; Nueva Ley
+		$escritura_prestamo_hipotecario_gestoria = 0; //300; Nueva Ley
+		if ($edad < 35 && $valor_inmueble <= 150000) {
+			$escritura_prestamo_hipotecario_impuesto_ajd = (($valor_inmueble + 16000 - $aportacion) * 1.3) * 0.003;
+		} elseif ($valor_inmueble > 150000 && $valor_inmueble <= 200000) {
+			$escritura_prestamo_hipotecario_impuesto_ajd = (($valor_inmueble + 25000 - $aportacion) * 1.3) * 0.015;
+		} elseif ($valor_inmueble > 200000) {
+			$escritura_prestamo_hipotecario_impuesto_ajd = (($valor_inmueble + 40000 - $aportacion) * 1.3) * 0.015;
+		}
+		$escritura_prestamo_hipotecario_impuesto_ajd = 0; // Nueva Ley
+		if ($tipo_calculo === 'importe-maximo') {
+			// $amortizacion = 75 - max($edadTitularUno, $edadTitularDos);
+			// if ($amortizacion > 30) {
+			// 	$amortizacion = 30;
+			// }
+			if($edadTitularDos > 0){
+				$edad = min($edadTitularUno, $edadTitularDos);
+			}else{
+				$edad = $edadTitularUno;
+			}
+			$amortizacion = $this->getPlazoAmortizacion();
+			$respuesta['mensaje'] = '';
+			if ($numTitulares == 1){
+				$cuota = (((($ingresos_mensuales * 12) + ($importe_paga_extra * $numero_pagas_extra)) / 12) * 0.35) - $prestamos_mensuales;
+			}else{
+				$cuota = ((($ingresos_mensuales * 12) + ($ingresos_mensuales_dos * 12) + ($importe_paga_extra * $numero_pagas_extra) + ($importe_paga_extra_dos * $numero_pagas_extra_dos)) /12 * 0.35) - $prestamos_mensuales - $prestamos_mensuales_dos;
+			}
+			// dump($cuota);
+			// die;
+			// $gastos = 15000;
+			
+			// $interes_fijo = 0.015;
+			$interes_fijo = $tipo_importe_maximo; // Interes para este calculo sera 2% siempre, ni fijo ni variable
+			$interes_variable = 0.025;
+			$interes_fijo_l = "1,5%";
+			$interes_variable_l = "2,5%";
+			$aportacion_inicial = $aportacion;
+			
+			$datos_calculo = array(
+				'cuota' => $cuota,
+				'entrada' => $aportacion_inicial,
+				'intereses' => $interes_fijo,
+				'plazo' => $amortizacion,
+				'gastos' => 0,
+				'edad' => $edad
+			);
+			$resultado_f = $this->calculoImporteMaximo($datos_calculo);
+			// dump($resultado_f);
+			// die;
+			// $datos_calculo = array(
+			// 	'cuota' => $cuota,
+			// 	'entrada' => $aportacion_inicial,
+			// 	'intereses' => $interes_variable,
+			// 	'plazo' => $amortizacion,
+			// 	'gastos' => $gastos
+			// );
+			// $resultado_v = $this->calculoImporteMaximo($datos_calculo);
+
+			$valor_inmueble = $resultado_f['importe'];
+			$gastosDiez = $resultado_f['gastos'];
+			
+			
+			$resTipoInteres = $this->obtenerInteres($edad, $nombreCCAA, $minusvaliaFamiliaNumerosa, $familiaNumerosa, $nueva, $valor_inmueble, $habitual, 
+			$vpo, $monoparental, $precio_maximo);
+			// dump($edad);
+			// dump($valor_inmueble);
+			// dump($resTipoInteres);
+			// die();
+			$tipo_interes_ccaa = $resTipoInteres['tipo'];
+			$respuesta['mensaje'] = $resTipoInteres['mensaje'];
+			$bonificacion = $resTipoInteres['bonificacion'];
+
+			// $valor_inmueble_sin_entrada = $resultado_f['importe'] - $aportacion_inicial;
+			$valor_bonificacion = $valor_inmueble * $tipo_interes_ccaa * $bonificacion;
+			$escritura_compra_impuesto_transmisiones = ($valor_inmueble * $tipo_interes_ccaa) - $valor_bonificacion;
+
+			
+			
+			if($nueva){
+				$importe_iva = $valor_inmueble * $tipo_iva;
+			}else{
+				$importe_iva = 0;
+			}
+
+			$gastos = $gasto_inmobiliaria + $honorarios_financiacion + $tasacion + $vinculaciones + $escritura_compra_notario + $escritura_compra_registro + $escritura_compra_gestoria + $escritura_compra_impuesto_transmisiones + $comision_apertura + $importe_iva;
+
+			$escritura_compra_impuesto_transmisiones_anteriores = $escritura_compra_impuesto_transmisiones;
+			$importe_iva_anterior = $importe_iva;
+			$respuesta['importe_fijo'] = $this->redondear500($resultado_f['importe'] - $gastosDiez + $gastos);
+			$escritura_compra_impuesto_transmisiones = ($respuesta['importe_fijo'] * $tipo_interes_ccaa) - $valor_bonificacion;
+			if($nueva){
+				$importe_iva = $respuesta['importe_fijo'] * $tipo_iva;
+			}else{
+				$importe_iva = 0;
+			}
+			$gastos = $gastos - $escritura_compra_impuesto_transmisiones_anteriores + $escritura_compra_impuesto_transmisiones - $importe_iva_anterior + $importe_iva;
+			// $respuesta['importe_fijo'] = $resultado_f['importe'];
+			if ($edad < 35 && $resultado_f['importe'] <= 150000) {
+				// $respuesta['mensaje'] = 'Tiene bonificación por ser menor de 35 años.';
+			}
+			// $respuesta['importe_variable'] = $resultado_v['importe'];
+			// $respuesta['con_entrada_fijo'] = $resultado_f['conEntrada'];
+			// $respuesta['con_entrada_variable'] = $resultado_v['conEntrada'];
+			$respuesta['gastos'] = $gastos;
+
+			$datos_calculo = array(
+				'precio' => $respuesta['importe_fijo'] + $gastos,
+				'entrada' => $aportacion_inicial,
+				'intereses' => $interes_fijo,
+				'plazo' => $amortizacion
+			);
+			
+			$resultado = $this->calculoSencillo($datos_calculo);
+
+			$respuesta['cuota'] = $resultado['cuota'];
+			// $respuesta['con_interes_fijo'] = $resultado_f['interes'];
+			// $respuesta['con_interes_variable'] = $resultado_v['interes'];
+			$respuesta['entrada'] = $aportacion_inicial;
+			$respuesta['tipo_calculo'] = $tipo_calculo;
+			$respuesta['amortizacion'] = $amortizacion;
+
+			$respuesta['tasacion'] = $tasacion;
+			$respuesta['vinculaciones'] = $vinculaciones;
+			$respuesta['notario'] = $escritura_compra_notario;
+			$respuesta['registro'] = $escritura_compra_registro;
+			$respuesta['gestoria'] = $escritura_compra_gestoria;
+			$respuesta['obraNueva'] = $nueva;
+			$respuesta['escritura_compra_impuesto_transmisiones'] = $escritura_compra_impuesto_transmisiones;
+			$respuesta['importe_iva'] = $importe_iva;
+			$respuesta['tipo_importe_maximo'] = $tipo_importe_maximo * 100;
+			$respuesta['tipo_interes_ccaa'] = $tipo_interes_ccaa;
+			return $respuesta;
+		}
+		if (isset($tipo_hipoteca)) {
+			switch ($tipo_hipoteca) {
+				case 'cien':
+					$tipo_variable = $parametros->getTipoCienVariable();
+					$tipo_fijo = $parametros->getTipoCienFijo2530();
+					$tipo_mixto = $parametros->getTipoCienFijo2024();
+					$tipo_luego_mixto = 0.5;
+					// if ($amortizacion >= 25 && $amortizacion <= 30) {
+					// 	$tipo_fijo = $parametros->getTipoCienFijo2530();
+					// } elseif ($amortizacion >= 20 && $amortizacion <= 24) {
+					// 	$tipo_fijo = $parametros->getTipoCienFijo2024();
+					// } elseif ($amortizacion >= 15 && $amortizacion <= 19) {
+					// 	$tipo_fijo = $parametros->getTipoCienFijo1519();
+					// }
+					break;
+				case 'premium':
+					$comision_apertura = 0;
+					$vinculaciones = 0;
+					$tipo_variable = $parametros->getTipoPremiumVariable();
+					$tipo_fijo = $parametros->getTipoPremiumFijo2530();
+					$tipo_mixto = $parametros->getTipoPremiumFijo2024();
+					$tipo_luego_mixto = 0.3;
+					// if ($amortizacion >= 25 && $amortizacion <= 30) {
+					// 	$tipo_fijo = $parametros->getTipoPremiumFijo2530();
+					// } elseif ($amortizacion >= 20 && $amortizacion <= 24) {
+					// 	$tipo_fijo = $parametros->getTipoPremiumFijo2024();
+					// } elseif ($amortizacion >= 15 && $amortizacion <= 19) {
+					// 	$tipo_fijo = $parametros->getTipoPremiumFijo1519();
+					// }
+					break;
+				case 'sin_compromiso':
+					$vinculaciones = 0;
+					$tipo_variable = $parametros->getTipoSinCompromisoVariable();
+					$tipo_fijo = $parametros->getTipoSinCompromisoFijo2030();
+					$tipo_mixto = $parametros->getTipoSinCompromisoFijoMenos20();
+					$tipo_luego_mixto = 0.75;
+					// if ($amortizacion >= 20 && $amortizacion <= 30) {
+					// 	$tipo_fijo = $parametros->getTipoSinCompromisoFijo2030();
+					// } elseif ($amortizacion < 20) {
+					// 	$tipo_fijo = $parametros->getTipoSinCompromisoFijoMenos20();
+					// }
+					break;
+				case 'cambio_casa':
+					$tipo_variable = $parametros->getTipoCambioCasaVariable();
+					$tipo_fijo = $parametros->getTipoCambioCasaFijo();
+					$tipo_mixto = $parametros->getTipoCienFijo1519(); //Hemos reutilizado el campo
+					$tipo_luego_mixto = 0.5;
+					// if ($amortizacion >= 25 && $amortizacion <= 30) {
+					// 	$tipo_fijo = $parametros->getTipoCambioCasaFijo();
+					// } elseif ($amortizacion >= 20 && $amortizacion <= 24) {
+					// 	$tipo_fijo = 0.02;
+					// } elseif ($amortizacion >= 15 && $amortizacion <= 19) {
+					// 	$tipo_fijo = 0.0175;
+					// }
+					$levantamiento_registral = $parametros->getLevantamientoRegistral();
+					$tasacion = $tasacion * 2;
+					$escritura_prestamo_hipotecario_notario = $escritura_prestamo_hipotecario_notario * 2;
+					$escritura_prestamo_hipotecario_registro = $escritura_prestamo_hipotecario_registro * 2;
+					$escritura_prestamo_hipotecario_gestoria = $escritura_prestamo_hipotecario_gestoria * 2;
+					if ($edad < 35 && $valor_inmueble <= 150000) {
+						$escritura_prestamo_hipotecario_impuesto_ajd = (($valor_inmueble + 20000 - $aportacion) * 1.3) * 0.003;
+					} elseif ($valor_inmueble > 150000 && $valor_inmueble <= 200000) {
+						$escritura_prestamo_hipotecario_impuesto_ajd = (($valor_inmueble + 30000 - $aportacion) * 1.3) * 0.015;
+					} elseif ($valor_inmueble > 200000) {
+						$escritura_prestamo_hipotecario_impuesto_ajd = (($valor_inmueble + 45000 - $aportacion) * 1.3) * 0.015;
+					}
+					$escritura_prestamo_hipotecario_impuesto_ajd = 0; // Nueva Ley
+					if ($valor_inmueble < 200000) {
+						if ($edad < 35) {
+							// $escritura_compra_impuesto_transmisiones = 15000;
+						} else {
+							// $escritura_compra_impuesto_transmisiones = 25000;
+						}
+					} else {
+						// $escritura_compra_impuesto_transmisiones = 40000;
+					}
+					break;
+			}
+		}
+		if ($tipo_calculo === 'cuota' && isset($tipo_fijo) && isset($tipo_variable)) {
+			if ($tipo_hipoteca != 'cambio_casa') {
+				$gastos_totales = $gasto_inmobiliaria + $honorarios_financiacion + $tasacion + $vinculaciones + $escritura_compra_notario + $escritura_compra_registro + $escritura_compra_gestoria + $escritura_compra_impuesto_transmisiones + $comision_apertura + $importe_iva;
+
+				// echo "Inmobiliaria: " . $gasto_inmobiliaria . "<br>";
+				// echo "Honorarios financiacion: " . $honorarios_financiacion . "<br>";
+				// echo "Tasacion: " . $tasacion . "<br>";
+				// echo "Vinculaciones: " . $vinculaciones . "<br>";
+				// echo "Notario: " . $escritura_compra_notario . "<br>";
+				// echo "Registro: " . $escritura_compra_registro . "<br>";
+				// echo "Gestoria: " . $escritura_compra_gestoria . "<br>";
+				// echo "AJD/ITP: " . $escritura_compra_impuesto_transmisiones . "<br>";
+				// echo "Comision apertura: " . $comision_apertura . "<br>";
+				// echo "IVA: " . $importe_iva . "<br>";
+				// echo "TOTAL: " . $gastos_totales . "<br>";
+				// die;
+				$valor_inmueble += $gastos_totales;
+				$datos_calculo = array(
+					'precio' => $valor_inmueble,
+					'entrada' => $aportacion,
+					'intereses' => $tipo_fijo,
+					'plazo' => $amortizacion
+				);
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$respuesta['importe_fijo'] = $resultado['cuota'];
+				if ($edad < 35 && $valor_inmueble <= 150000) {
+					// $respuesta['mensaje'] = 'Tiene bonificación por ser menor de 35 años.';
+				}
+				// $respuesta['mensaje'] .= 'Esta calculadora sólo esta destinada para vivienda habitual (descartando locales, naves, segunda residencia, etc.), y no contempla excepciones (minusvalía, etc.).';
+				$respuesta['cuota_fija'] = $resultado['cuota'];
+				$respuesta['con_entrada_fijo'] = $resultado['conEntrada'];
+				$respuesta['con_interes_fijo'] = $resultado['interes'];
+				$respuesta['entrada'] = $aportacion;
+				$datos_calculo = array(
+					'precio' => $valor_inmueble,
+					'entrada' => $aportacion,
+					'intereses' => $tipo_variable,
+					'plazo' => $amortizacion
+				);
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$respuesta['con_entrada_variable'] = $resultado['conEntrada'];
+				$respuesta['con_interes_variable'] = $resultado['interes'];
+				$respuesta['cuota_variable'] = $resultado['cuota'];
+				$respuesta['tipo_calculo'] = $tipo_calculo;
+				$respuesta['amortizacion'] = $amortizacion;
+				$respuesta['importe_variable'] = $resultado['cuota'];
+				$respuesta['importe_total'] = $valor_inmueble - $aportacion;
+				$respuesta['gastos'] = $gastos_totales;
+				$respuesta['intereses'] = $resultado['interes']-$respuesta['gastos']-$valor_inmueble;
+
+				// Ahora calculamos el tipo mixto
+				$datos_calculo = array(
+					'precio' => $valor_inmueble,
+					'entrada' => $aportacion,
+					'intereses' => $tipo_mixto,
+					'plazo' => $amortizacion
+				);
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$respuesta['cuota_mixta'] = $resultado['cuota'];
+				$respuesta['tipo_luego_mixto'] = $tipo_luego_mixto;
+
+				$respuesta['tipo_fijo'] = $tipo_fijo*100;
+				$respuesta['tipo_variable'] = $tipo_variable*100;
+				$respuesta['tipo_mixto'] = $tipo_mixto*100;
+				$respuesta['tasacion'] = $tasacion;
+				$respuesta['vinculaciones'] = $vinculaciones;
+				$respuesta['notario'] = $escritura_compra_notario;
+				$respuesta['registro'] = $escritura_compra_registro;
+				$respuesta['gestoria'] = $escritura_compra_gestoria;
+				$respuesta['obraNueva'] = $nueva;
+				$respuesta['escritura_compra_impuesto_transmisiones'] = $escritura_compra_impuesto_transmisiones;
+				$respuesta['importe_iva'] = $importe_iva;
+				$respuesta['tipo_interes_ccaa'] = $tipo_interes_ccaa;
+				return $respuesta;
+			} else {
+				// CAMBIO DE CASA:
+				// Una persona de 30 años tiene una casa que vale 100000€ y le quedan 40000€ de hipoteca. Se quiere comprar una casa que vale 150000€
+				// El precio serían los 150000 + 40000 + 15000(Gastos) - 10000 (aportación) = 195000€
+				// Tenemos que calcular la cuota hasta la venta y la cuota después de la venta.
+				// Si el importe total necesario (195000) supera el 80% del valor de las dos casas, mostrar mensaje de que se tiene que estudiar y se pongan en contacto.
+				// Para el cálculo de la cuota antes de la venta tomamos como cantidad a financiar el 80% del valor de la casa a vender. Ahora calculamos con el interés fijo y variable con la carencia y con el importe restante.
+				// La normal sería  con un interés fijo del 2,75% y un variable de 1,59%, el cálculo de la calculadora normal para 115000€ (195000 -80000) de importe, con entrada 0, el interés correspondiente y el plazo será de 30 años. Por lo que nos sale un importe de 401€ para variable y de 469€ para fijo. Ahora hay que sumarle la cuota de los 80000 de carencia con los interes correspondientes y la calculadora normal.
+				// 80000  x 1.59% = 1272 /12 = 106€
+				// 80000  x 2.75% = 2200 /12 = 183€
+				// Sumando la carencia con la normal, la cuota a pagar hasta la venta sería de :
+				// 507€ variable y 652€ fijo
+				// // NOOOOOO Sin carencia serían 280€ para variable y 327€ de fijo por lo que al finalizar la carencia quedarían unas cuotas de 681€ (variable) y 796€ (fijo)
+				// Tras la venta, si se vende por 100000 y se entregan los 100000, serían= 195000 - 100000 = 95000 Saldría 331€ variable y 387€ fijo
+				$importe_total_inmuebles = $valor_inmueble + $valor_vivienda_actual;
+				$ochenta_por_ciento_total = 0.8 * $importe_total_inmuebles;
+				// echo "<br>Valor Inmueble: ".$valor_inmueble;
+				// echo "<br>Hipoteca pendiente actual: ".$hipoteca_actual;
+				// echo "<br>Gasto Inmobiliaria: ".$gasto_inmobiliaria;
+				// echo "<br>Honorarios financiacion: ".$honorarios_financiacion;
+				// echo "<br>Tasacion: ".$tasacion;
+				// echo "<br>Escritura compra notario: ".$escritura_compra_notario;
+				// echo "<br>Escritura compra registro: ".$escritura_compra_registro;
+				// echo "<br>Escritura compra gestoria: ".$escritura_compra_gestoria;
+				// echo "<br>Escritura compra impuesto transmisiones: ".$escritura_compra_impuesto_transmisiones;
+				// echo "<br>Comision apertura: ".$comision_apertura;
+				$gastos_totales = $hipoteca_actual + $gasto_inmobiliaria + $honorarios_financiacion + $tasacion + $vinculaciones + $escritura_compra_notario + $escritura_compra_registro + $escritura_compra_gestoria + $escritura_compra_impuesto_transmisiones + $comision_apertura +$levantamiento_registral + $importe_iva;
+				$valor_inmueble += $gastos_totales-$aportacion;
+
+
+				$respuesta['cuota_mixta_final'] = 0;
+				$respuesta['gastos'] = $gastos_totales;
+
+				$respuesta['tipo_fijo'] = $tipo_fijo*100;
+				$respuesta['tipo_variable'] = $tipo_variable*100;
+				$respuesta['tipo_mixto'] = $tipo_mixto*100;
+				$respuesta['tasacion'] = $tasacion;
+				$respuesta['vinculaciones'] = $vinculaciones;
+				$respuesta['notario'] = $escritura_compra_notario;
+				$respuesta['registro'] = $escritura_compra_registro;
+				$respuesta['gestoria'] = $escritura_compra_gestoria;
+				$respuesta['obraNueva'] = $nueva;
+				$respuesta['escritura_compra_impuesto_transmisiones'] = $escritura_compra_impuesto_transmisiones;
+				$respuesta['importe_iva'] = $importe_iva;
+				$respuesta['tipo_luego_mixto'] = $tipo_luego_mixto;
+				$respuesta['intereses'] = 0;
+				$respuesta['importe_total'] = $valor_inmueble - $aportacion;
+				$respuesta['cuota_mixta'] = 0;
+				$respuesta['tipo_interes_ccaa'] = $tipo_interes_ccaa;
+
+				if ($valor_inmueble > $ochenta_por_ciento_total) {
+					// echo "<br><br>Suma Valor Inmueble Total: ".$valor_inmueble;
+					// echo "<br>Precio vivienda actual ".$valor_vivienda_actual;
+					// echo "<br>80% total dos viviendas ".$ochenta_por_ciento_total;
+					// die();
+					$respuesta['mensaje'] = 'Con los datos facilitados no es posible ofrecerte un resultado, debe ser estudiado con más detalle por nuestros asesores. Por favor ponte en contacto con nosotros.';
+					$respuesta['importe_fijo'] = 0;
+					$respuesta['importe_variable'] = 0;
+					$respuesta['amortizacion'] = 0;
+					$respuesta['entrada'] = 0;
+					$respuesta['con_interes_fijo'] = 0;
+					$respuesta['con_interes_variable'] = 0;
+					$respuesta['con_entrada_fijo'] = 0;
+					$respuesta['con_entrada_variable'] = 0;
+					$respuesta['tipo_calculo'] = 0;
+					$respuesta['cuota_fija'] = 0;
+					$respuesta['cuota_variable'] = 0;
+					$respuesta['cuota_variable_final'] = 0;
+					$respuesta['cuota_fija_final'] = 0;
+					
+
+					return $respuesta;
+				}
+				// Primero calculamos el importe antes de la venta
+				// Y primero la cuota para el 80% del valor de la vivienda a vender
+				$nuevo_interes_fijo = 0.0225;
+				$nuevo_interes_variable = 0.0159;
+
+				$valor_80_actual = 0.8 * $valor_vivienda_actual;
+				$datos_calculo = array(
+					'precio' => $valor_80_actual,
+					'entrada' => 0,
+					'intereses' => $tipo_fijo,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$cuota_fija_80_casa_vender= $resultado['cuota'];
+				$datos_calculo = array(
+					'precio' => $valor_80_actual,
+					'entrada' => 0,
+					'intereses' => $tipo_variable,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+
+				$datos_calculo = array(
+					'precio' => $valor_80_actual,
+					'entrada' => 0,
+					'intereses' => $tipo_mixto,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+
+				$cuota_variable_80_casa_vender= $resultado['cuota'];
+				$valor_resto = $valor_inmueble - $valor_80_actual;
+				$datos_calculo = array(
+					'precio' => $valor_resto,
+					'entrada' => 0,
+					'intereses' => $tipo_fijo,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$cuota_fija_resto = $resultado['cuota'];
+				$datos_calculo = array(
+					'precio' => $valor_resto,
+					'entrada' => 0,
+					'intereses' => $tipo_variable,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$cuota_variable_resto = $resultado['cuota'];
+
+				$datos_calculo = array(
+					'precio' => $valor_resto,
+					'entrada' => 0,
+					'intereses' => $tipo_mixto,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$cuota_mixta_resto = $resultado['cuota'];
+
+
+				$intereses_fijo_80_vender = $valor_80_actual * $tipo_fijo / 12;
+				$intereses_variable_80_vender = $valor_80_actual * $tipo_variable / 12;
+				$intereses_mixto_80_vender = $valor_80_actual * $tipo_mixto / 12;
+				$cuota_fija_antes_venta = $cuota_fija_resto + $intereses_fijo_80_vender;
+				$cuota_variable_antes_venta = $cuota_variable_resto + $intereses_variable_80_vender;
+				$cuota_mixta_antes_venta = $cuota_mixta_resto + $intereses_mixto_80_vender;
+				$valor_final = $valor_inmueble - $aportacion_tras_venta;
+				$datos_calculo = array(
+					'precio' => $valor_final,
+					'entrada' => 0,
+					'intereses' => $tipo_fijo,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$cuota_fija_final = $resultado['cuota'];
+				$datos_calculo = array(
+					'precio' => $valor_final,
+					'entrada' => 0,
+					'intereses' => $tipo_variable,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$cuota_variable_final = $resultado['cuota'];
+				$datos_calculo = array(
+					'precio' => $valor_final,
+					'entrada' => 0,
+					'intereses' => $tipo_mixto,
+					'plazo' => $amortizacion
+				);
+				
+				$resultado = $this->calculoSencillo($datos_calculo);
+				$cuota_mixta_final = $resultado['cuota'];
+				if ($edad < 35 && $valor_inmueble <= 150000) {
+					// $respuesta['mensaje'] = 'Tiene bonificación por ser menor de 35 años.';
+				}
+				// $respuesta['mensaje'] .= 'Esta calculadora sólo esta destinada para vivienda habitual (descartando locales, naves, segunda residencia, etc.), y no contempla excepciones (minusvalía, etc.).';
+				$respuesta['importe_fijo'] = $cuota_fija_antes_venta;
+				$respuesta['importe_variable'] = $cuota_variable_antes_venta;
+				$respuesta['cuota_fija'] = $cuota_fija_antes_venta;
+				$respuesta['cuota_variable'] = $cuota_variable_antes_venta;
+				$respuesta['cuota_mixta'] = $cuota_mixta_antes_venta;
+				$respuesta['cuota_fija_final'] = $cuota_fija_final;
+				$respuesta['cuota_variable_final'] = $cuota_variable_final;
+				$respuesta['cuota_mixta_final'] = $cuota_mixta_final;
+				$respuesta['con_entrada_fijo'] = 0;
+				$respuesta['con_interes_fijo'] = 0;
+				$respuesta['entrada'] = $aportacion;
+				$respuesta['con_entrada_variable'] = 0;
+				$respuesta['con_interes_variable'] = 0;
+				$respuesta['tipo_calculo'] = $tipo_calculo;
+				$respuesta['amortizacion'] = $amortizacion;
+				return $respuesta;
+			}
+		} else {
+			return null;
+		}
+	}
+
+	private function obtenerInteres($edad, $ccaa, $minusvaliaFamiliaNumerosa, $familiaNumerosa, $nueva, $importeVivienda, $habitual, $vpo, $monoparental, $precio_maximo)
+	{
+		$respuesta['bonificacion'] = 0;
+		if($precio_maximo){
+			$margen_error = 5000;
+		}else{
+			$margen_error = 0;
+		}
+		
+		switch ($ccaa) {
+			case 'Andalucia':
+				if($nueva){
+					if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= (250000 + $margen_error)){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual es menor de 250.000€ y presenta una discapacidad igual o superior al 33%.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda <= (250000 + $margen_error)){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual es menor de 250.000€ y ser familia numerosa.";
+					}else if($habitual && $importeVivienda<=(150000 + $margen_error) && $edad < 35){
+						$respuesta['tipo'] = 0.003;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual es menor de 150.000€ y además es menor de 35 años.";
+					}else {
+						$respuesta['tipo'] = 0.012;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= (250000 + $margen_error)){
+						$respuesta['tipo'] = 0.035;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 250.000€ y presenta una discapacidad igual o superior al 33%.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda <= (250000 + $margen_error)){
+						$respuesta['tipo'] = 0.035;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 250.000€ y es familia numerosa.";
+					}else if($habitual && $importeVivienda<=(150000 + $margen_error) && $edad < 35){
+						$respuesta['tipo'] = 0.035;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 150.000€ y es menor de 35 años.";
+					}else if($habitual && $importeVivienda<=(150000 + $margen_error) && $edad >= 35){
+						$respuesta['tipo'] = 0.06;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 150.000€.";
+					}else {
+						$respuesta['tipo'] = 0.07;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}
+				break;
+			
+			case 'Aragon':
+				if($nueva){
+					$respuesta['tipo'] = 0.015;
+					$respuesta['mensaje'] = "";
+					if($habitual && $importeVivienda<=(100000 + $margen_error) && $familiaNumerosa){
+						$respuesta['bonificacion'] = 0.6;
+						$respuesta['mensaje'] = "Tiene una bonificación del 60% sobre la cuota íntegra por la compra de la vivienda habitual, ser familia numerosa y el valor real del bien inmueble no supere los 100.000 euros ";
+					}else if($habitual && $edad <35 && $importeVivienda <= (100000 + $margen_error)){
+						$respuesta['bonificacion'] = 0.3;
+						$respuesta['mensaje'] = "Tiene una bonificación del 30% sobre la cuota íntegra por la compra de la vivienda habitual, menor de 35 años y el valor real del bien inmueble no supera los 100.000 €.";
+					}else if($habitual && $importeVivienda<=(100000 + $margen_error) && $minusvaliaFamiliaNumerosa){
+						$respuesta['bonificacion'] = 0.3;
+						$respuesta['mensaje'] = "Tiene una bonificación del 30% sobre la cuota íntegra por la compra de la vivienda habitual, presentar una discapacidad mayor o igual al 33% y el valor real del bien inmueble no supere los 100.000 euros ";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $familiaNumerosa){
+						$respuesta['bonificacion'] = 0.5;
+						$respuesta['mensaje'] = "Tiene una bonificación del 50% por ser familia numerosa.";
+					}else if($habitual && $importeVivienda<=(100000 + $margen_error) && $edad < 35){
+						$respuesta['bonificacion'] = 0.125;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 100.000€ y es menor de 35 años.";
+					}
+					if($importeVivienda<=(400000 + $margen_error)){
+						$respuesta['tipo'] = 0.08;
+					}else if($importeVivienda<=(700000 + $margen_error)){
+						$respuesta['tipo'] = 0.09;
+					}else if($importeVivienda>(700000 + $margen_error)){
+						$respuesta['tipo'] = 0.10;
+					}
+					return $respuesta;
+				}
+				break;
+			case 'Asturias':
+				if($nueva){
+					$respuesta['tipo'] = 0.012;
+					$respuesta['mensaje'] = "";
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $vpo){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación porque la vivienda habitual es de protección oficial.";
+					}else if($habitual && ($familiaNumerosa || $edad <= 35) && $importeVivienda<=(150000 + $margen_error)){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual no supera los 150.000€ y es menor o igual de 35 años y/o es familia numerosa.";
+					}else if($habitual && ($familiaNumerosa || $edad <= 35) && $importeVivienda>(150000 + $margen_error)){
+						$respuesta['tipo'] = 0.06;
+						$respuesta['mensaje'] = "Tiene una bonificación porque es menor o igual de 35 años y/o es familia numerosa y el importe de la vivienda habitual es mayor de 150.000€.";
+					}else if($importeVivienda<=(300000 + $margen_error)){
+						$respuesta['tipo'] = 0.08;
+					}else if($importeVivienda<=(500000 + $margen_error)){
+						$respuesta['tipo'] = 0.09;
+					}else if($importeVivienda>(500000 + $margen_error)){
+						$respuesta['tipo'] = 0.10;
+					}
+					return $respuesta;
+				}
+				break;
+			
+			case 'Baleares':
+				if($nueva){
+					if($habitual && $importeVivienda <= (270151.20 + $margen_error)){
+						$respuesta['tipo'] = 0.012;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual es menor de 270.151,20€.";
+					}else {
+						$respuesta['tipo'] = 0.015;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					if($habitual && $importeVivienda<=(270151.20 + $margen_error) && ($edad < 30 || $minusvaliaFamiliaNumerosa)){
+						$respuesta['tipo'] = 0;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 270.151,20€ y es menor de 30 años o presenta una discapacidad superior al 33%.";
+					}else if($habitual && $importeVivienda<=(270151.20 + $margen_error) && ($edad >= 30 && $edad <= 35)){
+						$respuesta['tipo'] = 0.02;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 270.151,20€ y tiene una edad mayor o igual de 30 y menor de 35 años.";
+					}else if($habitual && $importeVivienda <= (350000 + $margen_error) && $familiaNumerosa){
+						$respuesta['tipo'] = 0.02;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 350.000€ y es familia numerosa.";
+					}else if($habitual && $importeVivienda <= (350000 + $margen_error) && $monoparental){
+						$respuesta['tipo'] = 0.02;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 350.000€ y es familia monoparental.";
+					}else if($habitual && $importeVivienda <= (350000 + $margen_error) && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.02;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 350.000€ y presenta una discapacidad superior al 33%.";
+					}else if($habitual && $importeVivienda <= (270151.20 + $margen_error) ){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 270.151,20€.";
+					}else {
+						$respuesta['tipo'] = 0.08;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}
+				break;
+			case 'Canarias':
+				if($nueva){
+					if($habitual && $edad < 35){
+						$respuesta['tipo'] = 0.004;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 35 años.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.004;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.004;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior al 33%.";
+					}else if($habitual && $monoparental){
+						$respuesta['tipo'] = 0.004;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else if($habitual && $vpo){
+						$respuesta['tipo'] = 0.004;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else{
+						$respuesta['tipo'] = 0.0075;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación porque presenta una discapacidad mayor del 65%.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda<(300000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa y el importe de la vivienda habitual ser menor de 300.000€.";
+					}else if($habitual && $edad <35 && $importeVivienda<=(120000 + $margen_error)){
+						$respuesta['tipo'] = 0.052;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 35 años y el importe de la vivienda habitual ser menor o igual de 120.000€.";
+					}else {
+						$respuesta['tipo'] = 0.065;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			case 'Cantabria':
+				if($nueva){
+					if($habitual && $edad < 36){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 36 años.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior al 33%.";
+					}else if($habitual && $monoparental){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else if($habitual && $vpo){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser vivienda de protección oficial.";
+					}else{
+						$respuesta['tipo'] = 0.01;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación porque presenta una discapacidad mayor o igual del 33%.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $monoparental){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else if($habitual && $edad <36){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 36 años.";
+					}else if($habitual && $vpo){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else if($habitual){
+						$respuesta['tipo'] = 0.07;
+					}else {
+						$respuesta['tipo'] = 0.09;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			case 'CastillaYLeon':
+				if($nueva){
+					if($habitual && $edad < 36){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 36 años.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior o igual al 65%.";
+					}else if($habitual && $vpo){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else{
+						$respuesta['tipo'] = 0.015;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación porque presenta una discapacidad mayor o igual del 65%.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $vpo){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else if($habitual && $edad <36){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 36 años.";
+					}else {
+						$respuesta['tipo'] = 0.08;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			case 'CastillaLaMancha':
+				if($nueva){
+					if($habitual && $edad < 36){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 36 años.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $monoparental){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior o igual al 65%.";
+					}else if($habitual && $importeVivienda<=(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.0075;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor o igual de 180.000€.";
+					}else{
+						$respuesta['tipo'] = 0.015;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					if($habitual && $edad < 36 && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 36 años y porque el importe de la vivienda habitual es menor de 180.000€.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa y porque el importe de la vivienda habitual es menor de 180.000€.";
+					}else if($habitual && $monoparental && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental y porque el importe de la vivienda habitual es menor de 180.000€.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior o igual al 65% y porque el importe de la vivienda habitual es menor de 180.000€.";
+					}else if($habitual && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.06;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual es menor de 180.000€.";
+					}else{
+						$respuesta['tipo'] = 0.09;
+						$respuesta['mensaje'] = "";
+					}
+
+					return $respuesta;
+				}
+				break;
+
+			case 'Catalunya':
+				if($nueva){
+					if($habitual && $vpo){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else if($habitual && $edad < 33){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 33 años.";
+					// }else if($habitual && $familiaNumerosa){
+					// 	$respuesta['tipo'] = 0.005;
+					// 	$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					// }else if($habitual && $monoparental){
+					// 	$respuesta['tipo'] = 0.005;
+					// 	$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior o igual al 33%.";
+					}else{
+						$respuesta['tipo'] = 0.015;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= (1000000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación porque presenta una discapacidad mayor o igual del 65%.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda <= (1000000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $monoparental && $importeVivienda <= (1000000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else if($habitual && $vpo && $importeVivienda <= (1000000 + $margen_error)){
+						$respuesta['tipo'] = 0.07;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else if($habitual && $edad <= 32 && $importeVivienda <= (1000000 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor o igual de 32 años.";
+					}else if($edad > 32 && $importeVivienda > (1000000 + $margen_error)){
+						$respuesta['tipo'] = 0.11;
+					}else {
+						$respuesta['tipo'] = 0.10;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			case 'ComunidadValenciana':
+				if($nueva){
+					if($habitual){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser vivienda habitual.";
+					// }else if($habitual && $minusvaliaFamiliaNumerosa){
+					// 	$respuesta['tipo'] = 0.001;
+					// 	$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior al 33%.";
+					// }else if($habitual && $monoparental){
+					// 	$respuesta['tipo'] = 0.001;
+					// 	$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else{
+						$respuesta['tipo'] = 0.015;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda<=(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación porque presenta una discapacidad mayor o igual del 33% y el importe de la vivienda habitual ser menor de 180.000€ .";
+					}else if($habitual && $familiaNumerosa && $importeVivienda<=(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa y el importe de la vivienda habitual ser menor de 180.000€.";
+					}else if($habitual && $monoparental && $importeVivienda<=(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental y el importe de la vivienda habitual ser menor de 180.000€.";
+					}else if($habitual && $edad <35 && $importeVivienda<=(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.06;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 35 años y el importe de la vivienda habitual ser menor de 180.000€.";
+					}else if($habitual && $vpo && $importeVivienda<=(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.06;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial y el importe menor de 180.000€.";
+					}else if($habitual && $vpo && $importeVivienda>(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.08;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial y el importe mayor de 180.000€.";
+					}else if($habitual && $edad <35 && $importeVivienda>(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.08;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 35 años y el importe de la vivienda habitual ser mayor de 180.000€.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda>(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa y el importe de la vivienda habitual ser mayor de 180.000€.";
+					}else if($habitual && $monoparental && $importeVivienda>(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental y el importe de la vivienda habitual ser mayor de 180.000€.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda>(180000 + $margen_error)){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación porque presenta una discapacidad físico o sensorial, con un grado de minusvalía igual o superior al 65%, o psíquico, con un grado de minusvalía igual o superior al 33% y el importe de la vivienda habitual ser mayor de 180.000€ .";
+					}else {
+						$respuesta['tipo'] = 0.10;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			case 'Extremadura':
+				if($nueva){
+					$respuesta['tipo'] = 0.015;
+					$respuesta['mensaje'] = "";
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $vpo){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else if($habitual && $edad <=35 && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.04;
+						// $respuesta['bonificacion'] = 0.2;
+						$respuesta['mensaje'] = "Tiene una bonificación del por la compra de la vivienda habitual, ser menor de 36 años y el valor real del bien inmueble no supera los 180.000€.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.07;
+						$respuesta['bonificacion'] = 0.2;
+						$respuesta['mensaje'] = "Tiene una bonificación del 20% en la cuota íntegra por la compra de la vivienda habitual, presentar una discapacidad mayor o igual al 65% y el valor real del bien inmueble no supera los 180.000€.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.07;
+						$respuesta['bonificacion'] = 0.2;
+						$respuesta['mensaje'] = "Tiene una bonificación bonificación del 20% en la cuota íntegra por la compra de la vivienda habitual, ser familia numerosa y el valor real del bien inmueble no supera los 180.000€.";
+					}else if($habitual && $monoparental && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.07;
+						// $respuesta['bonificacion'] = 0.2;
+						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual, ser familia monoparental y el valor real del bien inmueble no supera los 180.000€.";
+					}else if($habitual && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.07;
+						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual y el valor real del bien inmueble no supera los 180.000€.";
+					}else if($importeVivienda <= (360000 + $margen_error)){
+						$respuesta['tipo'] = 0.08;
+					}else if($importeVivienda <= (600000 + $margen_error)){
+						$respuesta['tipo'] = 0.10;
+					}else {
+						$respuesta['tipo'] = 0.11;
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			case 'Galicia':
+				if($nueva){
+					if($habitual && $edad < 36){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 36 años.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $monoparental){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior o igual al 65%.";
+					// }else if($habitual && $importeVivienda <= 200000){
+					// 	$respuesta['tipo'] = 0.01;
+					// 	$respuesta['mensaje'] = "";
+					}else{
+						$respuesta['tipo'] = 0.01;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación porque presenta una discapacidad mayor o igual del 65%.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $monoparental){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia monoparental.";
+					}else if($habitual && $edad <36){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 36 años.";
+					// }else if($importeVivienda <= 200000){
+					// 	$respuesta['tipo'] = 0.07;
+					}else if($habitual){
+						$respuesta['tipo'] = 0.08;
+						$respuesta['mensaje'] = "* El AJD sería de un 7% si tu patrimonio no es de más de 200.000€";
+					// }else if($importeVivienda <= 200000){
+					// 	$respuesta['tipo'] = 0.07;
+					}else {
+						$respuesta['tipo'] = 0.08;
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			case 'Madrid':
+				if($nueva){
+					if($habitual && $vpo){
+						$respuesta['tipo'] = 0.002;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else if($habitual && $importeVivienda <= (120000 + $margen_error)){
+						$respuesta['tipo'] = 0.004;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser el importe de la vivienda inferior o igual a 120.000€.";
+					}else if($habitual && $importeVivienda <= (180000 + $margen_error)){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser el importe de la vivienda inferior o igual a 180.000€.";
+					}else{
+						$respuesta['tipo'] = 0.0075;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $edad <35){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 35 años.";
+					}else {
+						$respuesta['tipo'] = 0.06;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			case 'Murcia':
+				if($nueva){
+					if($habitual && $edad <= 40){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por tener una edad menor o igual de 40 años.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior o igual al 65%.";
+					// }else if($habitual && $vpo){
+					// 	$respuesta['tipo'] = 0.001;
+					// 	$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else{
+						$respuesta['tipo'] = 0.015;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= (150000 + $margen_error)){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación porque presenta una discapacidad mayor o igual del 65%.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda <= (150000 + $margen_error)){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $edad <=40 && $importeVivienda <= (150000 + $margen_error)){
+						$respuesta['tipo'] = 0.03;
+						$respuesta['mensaje'] = "Tiene una bonificación por tener una edad menor o igual de 40 años.";
+					}else if($habitual && $vpo && $importeVivienda <= (150000 + $margen_error)){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else {
+						$respuesta['tipo'] = 0.08;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			case 'Navarra':
+				if($nueva){
+					$respuesta['tipo'] = 0.01;
+					$respuesta['mensaje'] = "";
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $importeVivienda <= (180304 + $margen_error)){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda no supera los 180.304€.";
+					}else {
+						$respuesta['tipo'] = 0.06;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			
+			
+			case 'PaisVasco':
+				if($nueva){
+					$respuesta['tipo'] = 0.005;
+					$respuesta['mensaje'] = "";
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $edad <35){
+						$respuesta['tipo'] = 0.025;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 35 años.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda <= (250000 + $margen_error)){
+						$respuesta['tipo'] = 0.025;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa y el precio del inmueble inferior o igual a 250.000€.";
+					}else if($habitual && $habitual){
+						$respuesta['tipo'] = 0.04;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda Habitual.";
+					}else {
+						$respuesta['tipo'] = 0.07;
+
+					}
+
+					return $respuesta;
+				}
+				break;
+			case 'Rioja':
+				if($nueva){
+					if($habitual && $familiaNumerosa && $importeVivienda <= (150253 + $margen_error)){
+						$respuesta['tipo'] = 0.004;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa y el importe del inmbueble inferior o igual a 150.253€.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= (150253 + $margen_error)){
+						$respuesta['tipo'] = 0.004;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad igual o superior al 33% y el importe del inmbueble inferior o igual a 150.253€.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.005;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad igual o superior al 33%.";
+					}else{
+						$respuesta['tipo'] = 0.01;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					$respuesta['mensaje'] = "";
+					if($habitual && $edad <35){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 35 años.";
+					}else if($habitual && $familiaNumerosa){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por ser familia numerosa.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['tipo'] = 0.05;
+						$respuesta['mensaje'] = "Tiene una bonificación por presentar una discapacidad superior o igual al 33%.";
+					}else {
+						$respuesta['tipo'] = 0.07;
+
+					}
+
+					return $respuesta;
+				}
+				break;	
+				
+			
+			
+			
+			default:
+				if($nueva){
+					if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= (250000 + $margen_error)){
+						$respuesta['tipo'] = 0.001;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual es menor de 250.000€ y además es familia numerosa, presenta una discapacidad igual o superior al 33%, es vícitma de violencia de género y/o víctima de terrorismo.";
+					}else if($habitual && $importeVivienda<=(150000 + $margen_error) && $edad < 35){
+						$respuesta['tipo'] = 0.003;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual es menor de 150.000€ y además es vícitma de violencia doméstica y/o víctima de terrorismo.";
+					}else if($habitual && $importeVivienda<=(150000 + $margen_error)){
+						$respuesta['tipo'] = 0.01;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda habitual es menor de 150.000€.";
+					}else {
+						$respuesta['tipo'] = 0.012;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}else{
+					if($minusvaliaFamiliaNumerosa && $importeVivienda <= (250000 + $margen_error)){
+						$respuesta['tipo'] = 0.035;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 250.000€ y además es familia numerosa, presenta una discapacidad igual o superior al 33%, es vícitma de violencia de género y/o víctima de terrorismo.";
+					}else if($importeVivienda<=(150000 + $margen_error) && $edad < 35){
+						$respuesta['tipo'] = 0.035;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 150.000€ y es menor de 35 años.";
+					}else if($importeVivienda<=(150000 + $margen_error) && $edad >= 35){
+						$respuesta['tipo'] = 0.06;
+						$respuesta['mensaje'] = "Tiene una bonificación porque el importe de la vivienda es menor de 150.000€.";
+					}else {
+						$respuesta['tipo'] = 0.07;
+						$respuesta['mensaje'] = "";
+					}
+					return $respuesta;
+				}
+				break;
+		}
+	}
+
+	private function calculoSencillo($datos)
+	{
+		$precio = $datos['precio'];
+		$entrada = $datos['entrada'];
+		$interes = $datos['intereses'];
+		$plazos = $datos['plazo'];
+		$ta = $precio;
+		$dp = $entrada;
+		$ir = $interes;
+		$am = $plazos;
+		$pp = 12;
+		$cp = 12;
+		$loan = $ta - $dp;
+		$np = $am * $pp;
+		if (!$ir) {
+			$payment = $loan / $np;
+		} else {
+			$rNom = $ir;
+			$rPeriod = pow(1 + $rNom / $cp, $cp / $pp) - 1;
+			$rFactor = pow($rPeriod + 1, $np);
+			$payment = $loan * (($rPeriod * $rFactor) / ($rFactor - 1));
+		}
+		// echo 'loan: '.$loan;
+		// echo 'np: '.$np;
+		// echo 'rNom: '.$rNom;
+		// echo 'rPeriod: '.$rPeriod;
+		// echo 'rFactor: '.$rFactor;
+		// echo 'payment: '.$payment;
+		$result = round($payment, 2);
+		$display_total = $ta - $dp;
+		// echo 'result: '.$result;
+		$conIntereses = round($payment * $np, 2);
+		$conEntrada = $conIntereses + $entrada;
+		// $resultado = new Object('cuota', $result, 'interes', $conIntereses, 'conEntrada', $conEntrada);
+		$resultado = array(
+			'cuota' => $result,
+			'interes' => $conIntereses,
+			'conEntrada' => $conEntrada
+		);
+		return $resultado;
+	}
+
+	private function calculoImporteMaximo($datos)
+	{
+		$cuota = $datos['cuota'];
+		$entrada = $datos['entrada'];
+		$interes = $datos['intereses'];
+		$plazos = $datos['plazo'];
+		$gastos = $datos['gastos'];
+		$edad = $datos['edad'];
+		// $ta = $precio;
+		$dp = $entrada;
+		$ir = $interes;
+		$am = $plazos;
+		$pp = 12;
+		$cp = 12;
+		// $loan = $ta - $dp;
+		$np = $am * $pp;
+		if (!$ir) {
+			$loan = $cuota * $np;
+		} else {
+			$rNom = $ir;
+			$rPeriod = pow(1 + $rNom / $cp, $cp / $pp) - 1;
+			$rFactor = pow($rPeriod + 1, $np);
+			$loan = $cuota / (($rPeriod * $rFactor) / ($rFactor - 1));
+		}
+		$resultado_sin_gastos = round($loan - $entrada, 2);
+		// if ($resultado_sin_gastos <= 150000 && $edad < 35) {
+		// 	$gastos = 15000;
+		// } elseif ($resultado_sin_gastos <= 150000 && $edad >= 35) {
+		// 	$gastos = 20000;
+		// } elseif ($resultado_sin_gastos > 150000 && $resultado_sin_gastos <= 200000) {
+		// 	$gastos = 25000;
+		// } elseif ($resultado_sin_gastos > 200000) {
+		// 	$gastos = 25000 + (5000 * (floor($resultado_sin_gastos / 50000) - 1));
+		// }
+		$gastos = $loan * 0.10;
+		$resultado = round($loan + $entrada - $gastos, 2);
+		$resultado = array(
+			'importe' => $resultado,
+			'gastos' => $gastos
+		);
+		return $resultado;
+	}
+
+	private function redondear500($numero) {
+		// Obtenemos el residuo del número al dividirlo por 500
+		$resto = $numero % 500;
+	
+		// Si el resto es mayor o igual a 250, redondeamos hacia arriba
+		if ($resto >= 250) {
+			$resultado = $numero + (500 - $resto);
+		} else {
+			$resultado = $numero - $resto;
+		}
+	
+		// Convertimos el resultado a entero
+		return (int) $resultado;
+	}
+	/**
+	 * Get the value of valorViviendaActual
+	 */
+	public function getValorViviendaActual()
+	{
+		return $this->valorViviendaActual;
+	}
+
+	/**
+	 * Set the value of valorViviendaActual
+	 *
+	 * @return  self
+	 */
+	public function setValorViviendaActual($valorViviendaActual)
+	{
+		$this->valorViviendaActual = $valorViviendaActual;
+		return $this;
+	}
+
+	/**
+	 * Get the value of tipologiaOperacion
+	 */ 
+	public function getTipologiaOperacion()
+	{
+		return $this->tipologiaOperacion;
+	}
+
+	/**
+	 * Set the value of tipologiaOperacion
+	 *
+	 * @return  self
+	 */ 
+	public function setTipologiaOperacion($tipologiaOperacion)
+	{
+		$this->tipologiaOperacion = $tipologiaOperacion;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of comunidadAutonoma
+	 */ 
+	public function getComunidadAutonoma()
+	{
+		return $this->comunidadAutonoma;
+	}
+
+	/**
+	 * Set the value of comunidadAutonoma
+	 *
+	 * @return  self
+	 */ 
+	public function setComunidadAutonoma($comunidadAutonoma)
+	{
+		$this->comunidadAutonoma = $comunidadAutonoma;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of obraNueva
+	 */ 
+	public function getObraNueva()
+	{
+		return $this->obraNueva;
+	}
+
+	/**
+	 * Set the value of obraNueva
+	 *
+	 * @return  self
+	 */ 
+	public function setObraNueva($obraNueva)
+	{
+		$this->obraNueva = $obraNueva;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of tieneMenosEdadMaxima
+	 */ 
+	public function getTieneMenosEdadMaxima()
+	{
+		return $this->tieneMenosEdadMaxima;
+	}
+
+	/**
+	 * Set the value of tieneMenosEdadMaxima
+	 *
+	 * @return  self
+	 */ 
+	public function setTieneMenosEdadMaxima($tieneMenosEdadMaxima)
+	{
+		$this->tieneMenosEdadMaxima = $tieneMenosEdadMaxima;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of minusvaliaFamiliaNumerosa
+	 */ 
+	public function getMinusvaliaFamiliaNumerosa()
+	{
+		return $this->minusvaliaFamiliaNumerosa;
+	}
+
+	/**
+	 * Set the value of minusvaliaFamiliaNumerosa
+	 *
+	 * @return  self
+	 */ 
+	public function setMinusvaliaFamiliaNumerosa($minusvaliaFamiliaNumerosa)
+	{
+		$this->minusvaliaFamiliaNumerosa = $minusvaliaFamiliaNumerosa;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of familiaNumerosa
+	 */ 
+	public function getFamiliaNumerosa()
+	{
+		return $this->familiaNumerosa;
+	}
+
+	/**
+	 * Set the value of familiaNumerosa
+	 *
+	 * @return  self
+	 */ 
+	public function setFamiliaNumerosa($familiaNumerosa)
+	{
+		$this->familiaNumerosa = $familiaNumerosa;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of vpo
+	 */ 
+	public function getVpo()
+	{
+		return $this->vpo;
+	}
+
+	/**
+	 * Set the value of vpo
+	 *
+	 * @return  self
+	 */ 
+	public function setVpo($vpo)
+	{
+		$this->vpo = $vpo;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of monoparental
+	 */ 
+	public function getMonoparental()
+	{
+		return $this->monoparental;
+	}
+
+	/**
+	 * Set the value of monoparental
+	 *
+	 * @return  self
+	 */ 
+	public function setMonoparental($monoparental)
+	{
+		$this->monoparental = $monoparental;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of honorariosInmobiliaria
+	 */ 
+	public function getHonorariosInmobiliaria()
+	{
+		return $this->honorariosInmobiliaria;
+	}
+
+	/**
+	 * Set the value of honorariosInmobiliaria
+	 *
+	 * @return  self
+	 */ 
+	public function setHonorariosInmobiliaria($honorariosInmobiliaria)
+	{
+		$this->honorariosInmobiliaria = $honorariosInmobiliaria;
+
+		return $this;
+	}
+
+	/**
+	 * Get the value of destinoCompra
+	 */ 
+	public function getDestinoCompra()
+	{
+		return $this->destinoCompra;
+	}
+
+	/**
+	 * Set the value of destinoCompra
+	 *
+	 * @return  self
+	 */ 
+	public function setDestinoCompra($destinoCompra)
+	{
+		$this->destinoCompra = $destinoCompra;
+
+		return $this;
+	}
+
+	/**
+	 * @return double
+	 */
+	public function getEdadTitularUno()
+	{
+		return $this->edadTitularUno;
+	}
+
+	/**
+	 * @param double $edadTitularUno
+	 */
+	public function setEdadTitularUno($edadTitularUno)
+	{
+		$this->edadTitularUno = $edadTitularUno;
+	}
+
+	/**
+	 * @return double
+	 */
+	public function getEdadTitularDos()
+	{
+		return $this->edadTitularDos;
+	}
+
+	/**
+	 * @param double $edadTitularDos
+	 */
+	public function setEdadTitularDos($edadTitularDos)
+	{
+		$this->edadTitularDos = $edadTitularDos;
+	}
+
+	/**
+	 * Get the value of numTitulares
+	 */ 
+	public function getNumTitulares()
+	{
+		return $this->numTitulares;
+	}
+
+	/**
+	 * Set the value of numTitulares
+	 *
+	 * @return  self
+	 */ 
+	public function setNumTitulares($numTitulares)
+	{
+		$this->numTitulares = $numTitulares;
+
+		return $this;
+	}
+}
+
+
+

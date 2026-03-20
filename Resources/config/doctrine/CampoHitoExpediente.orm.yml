@@ -1,0 +1,150 @@
+AppBundle\Entity\CampoHitoExpediente:
+  type: entity
+  table: campo_hito_expediente
+  indexes:
+    fk_campo_hito_expediente_campo_hito1_idx:
+      columns:
+        - id_campo_hito
+    fk_campo_hito_expediente_hito_expediente1_idx:
+      columns:
+        - id_hito_expediente
+    fk_campo_hito_expediente_grupo_hito_expediente1_idx:
+      columns:
+        - id_grupo_hito_expediente
+    fk_campo_hito_expediente_expediente1_idx:
+      columns:
+        - id_expediente
+    fk_campo_hito_expediente_opciones_campo1_idx:
+      columns:
+        - id_opciones_campo
+    fk_campo_hito_expediente_agente_colaborador1_idx:
+      columns:
+        - id_agente_colaborador
+  id:
+    idCampoHitoExpediente:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_campo_hito_expediente
+      generator:
+        strategy: IDENTITY
+  fields:
+    valor:
+      type: string
+      nullable: true
+      length: 999999
+      options:
+        fixed: false
+    fechaModificacion:
+      type: datetime
+      nullable: true
+      column: fecha_modificacion
+    obligatorio:
+      type: boolean
+      nullable: false
+      options:
+        comment: "0: Opcional\n1: Solicitar al cliente"
+        default: '0'
+    solicitarAlColaborador:
+      type: boolean
+      nullable: false
+      options:
+        comment: '0: No1: Si'
+        default: '0'
+      column: solicitar_al_colaborador
+    avisarColaborador:
+      type: boolean
+      nullable: false
+      options:
+        comment: "0: No\n1: Si"
+        default: '0'
+      column: avisar_colaborador
+    paraFirmar:
+      type: boolean
+      nullable: false
+      options:
+        comment: 'Se marcará, si es un fichero, si debe firmarse por el cliente el pdf.'
+        default: '0'
+      column: para_firmar
+    firmado:
+      type: boolean
+      nullable: false
+      options:
+        comment: 'Indica si en el caso de tener que firmarse por el cliente, lo está ya'
+        default: '0'
+    enviarAlCliente:
+      type: boolean
+      nullable: true
+      options:
+        default: '0'
+      column: enviar_al_cliente
+    enviarAlColaborador:
+      type: boolean
+      nullable: true
+      options:
+        default: '0'
+      column: enviar_al_colaborador
+  manyToOne:
+    idCampoHito:
+      targetEntity: CampoHito
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_campo_hito:
+          referencedColumnName: id_campo_hito
+      orphanRemoval: false
+    idHitoExpediente:
+      targetEntity: HitoExpediente
+      cascade: ['persist']
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_hito_expediente:
+          referencedColumnName: id_hito_expediente
+      orphanRemoval: false
+    idGrupoHitoExpediente:
+      targetEntity: GrupoHitoExpediente
+      cascade: ['persist']
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_grupo_hito_expediente:
+          referencedColumnName: id_grupo_hito_expediente
+      orphanRemoval: false
+    idExpediente:
+      targetEntity: Expediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_expediente:
+          referencedColumnName: id_expediente
+      orphanRemoval: false
+    idOpcionesCampo:
+      targetEntity: OpcionesCampo
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_opciones_campo:
+          referencedColumnName: id_opciones_campo
+      orphanRemoval: false
+    idAgenteColaborador:
+      targetEntity: AgenteColaborador
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_agente_colaborador:
+          referencedColumnName: id_agente_colaborador
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

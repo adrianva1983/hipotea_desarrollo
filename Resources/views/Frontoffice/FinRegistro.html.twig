@@ -1,0 +1,60 @@
+{% use '@App/Frontoffice/Partes/Head/Styles.html.twig' %}
+{% use '@App/Frontoffice/Partes/Head/Scripts.html.twig' %}
+{% spaceless %}
+	<!DOCTYPE html>
+	<html lang="es">
+		<head>
+			{% include '@App/Frontoffice/Partes/Head/Metas.html' %}
+			<link href="{{ asset('assets/images/cropped-Group-270x270.png') }}" rel="icon" sizes="16x16" type="image/png">
+			<title>Hipotea
+				{% if titulo is defined %}
+					-
+					{{ titulo }}
+				{% endif %}
+			</title>
+			<link href="{{ asset('assets/css/pages/login-register-lock.css') }}" rel="stylesheet">
+			{{ block('styles') }}
+			{% block customstyles %}
+				{{ parent() }}
+				<style>
+					.login-register {
+						background-image: url({{ asset('assets/images/background/login-register.jpg') }});
+					}
+
+					.logo-login {
+						width: 60%;
+						margin-bottom: 30px;
+					}
+
+					.login-box {
+						width: 700px;
+						padding: 40px;
+						margin: 0 auto;
+					}
+
+					@media (max-width: 767px) {
+						.login-box {
+							width: 100%;
+						}
+					}
+				</style>
+			{% endblock %}
+		</head>
+		<body class="skin-default card-no-border">
+			{# {% include '@App/Frontoffice/Partes/Body/Preloader.html' %} #}
+			<section id="wrapper">
+				<div class="login-register">
+					<div class="login-box card">
+						<div class="card-body">
+							{{ mensaje | raw }}
+						</div>
+					</div>
+				</div>
+			</section>
+			{% if app.environment is not same as('dev') %}
+				{{ block('cloudscripts') }}
+				{{ block('customscripts') }}
+			{% endif %}
+		</body>
+	</html>
+{% endspaceless %}

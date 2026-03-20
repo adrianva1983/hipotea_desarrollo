@@ -1,0 +1,105 @@
+AppBundle\Entity\Oficina:
+  type: entity
+  table: oficina
+  indexes:
+    idx_inmobiliaria:
+      columns:
+        - id_inmobiliaria
+    idx_usuario:
+      columns:
+        - id_usuario
+    idx_nombre:
+      columns:
+        - nombre
+    idx_activa:
+      columns:
+        - activa
+  id:
+    idOficina:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_oficina
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombre:
+      type: string
+      nullable: false
+      length: 100
+      options:
+        fixed: false
+    direccion:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+    telefono:
+      type: string
+      nullable: true
+      length: 20
+      options:
+        fixed: false
+    email:
+      type: string
+      nullable: true
+      length: 100
+      options:
+        fixed: false
+    codigoPostal:
+      type: string
+      nullable: true
+      length: 10
+      options:
+        fixed: false
+      column: codigo_postal
+    ciudad:
+      type: string
+      nullable: true
+      length: 100
+      options:
+        fixed: false
+    provincia:
+      type: string
+      nullable: true
+      length: 100
+      options:
+        fixed: false
+    activa:
+      type: boolean
+      nullable: true
+      options:
+        default: 1
+    fechaCreacion:
+      type: datetime
+      nullable: true
+      column: fecha_creacion
+    fechaModificacion:
+      type: datetime
+      nullable: true
+      column: fecha_modificacion
+  manyToOne:
+    idInmobiliaria:
+      targetEntity: Inmobiliaria
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_inmobiliaria:
+          referencedColumnName: id_inmobiliaria
+      orphanRemoval: false
+    idUsuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_usuario:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

@@ -1,0 +1,52 @@
+AppBundle\Entity\Dispositivo:
+  type: entity
+  table: dispositivo
+  indexes:
+    fk_dispositivo_usuario1_idx:
+      columns:
+        - id_usuario
+  id:
+    idDispositivo:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_dispositivo
+      generator:
+        strategy: IDENTITY
+  fields:
+    tipo:
+      type: string
+      nullable: false
+      length: 10
+      options:
+        fixed: false
+        comment: "android\nios\nweb"
+    identificador:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+        comment: 'token para notificaciones push'
+    fechaRegistro:
+      type: datetime
+      nullable: true
+      column: fecha_registro
+    fechaAcceso:
+      type: datetime
+      nullable: true
+      column: fecha_acceso
+  manyToOne:
+    idUsuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_usuario:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

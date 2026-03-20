@@ -1,0 +1,67 @@
+AppBundle\Entity\FicheroCampo:
+  type: entity
+  table: fichero_campo
+  indexes:
+    fk_fichero_campo_campo_hito1_idx:
+      columns:
+        - id_campo_hito
+    fk_fichero_campo_campo_hito_expediente1_idx:
+      columns:
+        - id_campo_hito_expediente
+    fk_fichero_campo_expediente1_idx:
+      columns:
+        - id_expediente
+  id:
+    idFicheroCampo:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_fichero_campo
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombreFichero:
+      type: string
+      nullable: true
+      length: 90
+      options:
+        fixed: false
+      column: nombre_fichero
+    contenidoJson:
+      type: text
+      nullable: true
+      column: contenido_json
+  manyToOne:
+    idCampoHito:
+      targetEntity: CampoHito
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_campo_hito:
+          referencedColumnName: id_campo_hito
+      orphanRemoval: false
+    idCampoHitoExpediente:
+      targetEntity: CampoHitoExpediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_campo_hito_expediente:
+          referencedColumnName: id_campo_hito_expediente
+      orphanRemoval: false
+    idExpediente:
+      targetEntity: Expediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_expediente:
+          referencedColumnName: id_expediente
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

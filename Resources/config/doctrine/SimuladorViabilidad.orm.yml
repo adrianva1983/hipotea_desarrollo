@@ -1,0 +1,310 @@
+AppBundle\Entity\SimuladorViabilidad:
+  type: entity
+  table: simulador_viabilidad
+  repositoryClass: AppBundle\Repository\SimuladorViabilidadRepository
+  indexes:
+    idx_usuario_id:
+      columns:
+        - usuario_id
+    idx_inmobiliaria_id:
+      columns:
+        - inmobiliaria_id
+    idx_estado:
+      columns:
+        - estado
+    idx_fecha_creacion:
+      columns:
+        - fecha_creacion
+    idx_expediente_id:
+      columns:
+        - expediente_id
+  id:
+    id:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id
+      generator:
+        strategy: IDENTITY
+  fields:
+    uuid:
+      type: string
+      nullable: false
+      unique: true
+      length: 36
+      column: uuid
+    estado:
+      type: string
+      nullable: true
+      length: 50
+      column: estado
+      options:
+        comment: 'Estado del simulador: borrador, en_proceso, enviado, completado'
+    pasoActual:
+      type: integer
+      nullable: true
+      column: paso_actual
+      options:
+        comment: 'Paso actual del simulador'
+    avisoAceptado:
+      type: boolean
+      nullable: true
+      column: aviso_aceptado
+    tipoOperacion:
+      type: string
+      nullable: true
+      length: 50
+      column: tipo_operacion
+      options:
+        comment: 'Tipo de operación: compra, refinanciacion, etc'
+    operacionPermitida:
+      type: boolean
+      nullable: true
+      column: operacion_permitida
+    nombre:
+      type: string
+      nullable: true
+      length: 255
+      column: nombre
+      options:
+        comment: 'Nombre del cliente'
+    dni:
+      type: string
+      nullable: true
+      length: 20
+      column: dni
+      options:
+        comment: 'DNI/NIF del cliente'
+    telefono:
+      type: string
+      nullable: true
+      length: 20
+      column: telefono
+    email:
+      type: string
+      nullable: true
+      length: 255
+      column: email
+    datosPrecioMaximoJson:
+      type: text
+      nullable: true
+      column: datos_precio_maximo_json
+      options:
+        comment: 'Datos JSON del cálculo de precio máximo'
+    precioMaximoRecomendado:
+      type: decimal
+      nullable: true
+      precision: 12
+      scale: 2
+      column: precio_maximo_recomendado
+      options:
+        comment: 'Precio máximo recomendado'
+    precioViviendaObjetivo:
+      type: decimal
+      nullable: true
+      precision: 12
+      scale: 2
+      column: precio_vivienda_objetivo
+      options:
+        comment: 'Precio de la vivienda objetivo'
+    viviendaDentroPrecioMaximo:
+      type: boolean
+      nullable: true
+      column: vivienda_dentro_precio_maximo
+      options:
+        comment: 'Indica si la vivienda está dentro del precio máximo'
+    mensajeCoherencia:
+      type: text
+      nullable: true
+      column: mensaje_coherencia
+      options:
+        comment: 'Mensaje de coherencia entre precio y capacidad de financiación'
+    datosCuotaGastosJson:
+      type: text
+      nullable: true
+      column: datos_cuota_gastos_json
+      options:
+        comment: 'Datos JSON del cálculo de cuotas y gastos'
+    tipoVivienda:
+      type: string
+      nullable: true
+      length: 100
+      column: tipo_vivienda
+      options:
+        comment: 'Tipo de vivienda: piso, casa, etc'
+    comunidadAutonoma:
+      type: string
+      nullable: true
+      length: 100
+      column: comunidad_autonoma
+    gastosTotalesAproximados:
+      type: decimal
+      nullable: true
+      precision: 12
+      scale: 2
+      column: gastos_totales_aproximados
+      options:
+        comment: 'Gastos totales aproximados'
+    aportacionNecesaria:
+      type: decimal
+      nullable: true
+      precision: 12
+      scale: 2
+      column: aportacion_necesaria
+      options:
+        comment: 'Aportación necesaria del cliente'
+    importePrestamo:
+      type: decimal
+      nullable: true
+      precision: 12
+      scale: 2
+      column: importe_prestamo
+      options:
+        comment: 'Importe del préstamo hipotecario'
+    cuotaHipotecariaEstimada:
+      type: decimal
+      nullable: true
+      precision: 12
+      scale: 2
+      column: cuota_hipotecaria_estimada
+      options:
+        comment: 'Cuota hipotecaria estimada mensual'
+    porcentajeFinanciacion:
+      type: decimal
+      nullable: true
+      precision: 5
+      scale: 2
+      column: porcentaje_financiacion
+      options:
+        comment: 'Porcentaje de financiación (LTV)'
+    tienePrestamosImpagados:
+      type: boolean
+      nullable: true
+      column: tiene_prestamos_impagados
+      options:
+        comment: 'Indica si tiene préstamos impagados'
+    situacionLaboral:
+      type: string
+      nullable: true
+      length: 100
+      column: situacion_laboral
+      options:
+        comment: 'Situación laboral del cliente'
+    antiguedadLaboral:
+      type: string
+      nullable: true
+      length: 100
+      column: antiguedad_laboral
+      options:
+        comment: 'Antigüedad laboral del cliente'
+    resultadoSemaforo:
+      type: string
+      nullable: true
+      length: 50
+      column: resultado_semaforo
+      options:
+        comment: 'Resultado del semáforo: verde, amarillo, rojo'
+    resultadoMensaje:
+      type: text
+      nullable: true
+      column: resultado_mensaje
+      options:
+        comment: 'Mensaje de resultado del simulador'
+    motivosResultadoJson:
+      type: text
+      nullable: true
+      column: motivos_resultado_json
+      options:
+        comment: 'Motivos del resultado en formato JSON'
+    sugerenciasResultadoJson:
+      type: text
+      nullable: true
+      column: sugerencias_resultado_json
+      options:
+        comment: 'Sugerencias del resultado en formato JSON'
+    informePdfPath:
+      type: string
+      nullable: true
+      length: 500
+      column: informe_pdf_path
+      options:
+        comment: 'Ruta del PDF de informe generado'
+    informeHash:
+      type: string
+      nullable: true
+      length: 64
+      column: informe_hash
+      options:
+        comment: 'Hash SHA256 del informe PDF'
+    leadId:
+      type: string
+      nullable: true
+      length: 100
+      column: lead_id
+      options:
+        comment: 'ID del lead en sistema externo'
+    expedienteId:
+      type: string
+      nullable: true
+      length: 100
+      column: expediente_id
+      options:
+        comment: 'ID del expediente asociado'
+    fechaCreacion:
+      type: datetime
+      nullable: false
+      column: fecha_creacion
+      options:
+        comment: 'Fecha de creación del simulador'
+    fechaActualizacion:
+      type: datetime
+      nullable: false
+      column: fecha_actualizacion
+      columnDefinition: "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+      options:
+        comment: 'Fecha de última actualización'
+    fechaFinalizacion:
+      type: datetime
+      nullable: true
+      column: fecha_finalizacion
+      options:
+        comment: 'Fecha de finalización del simulador'
+    fechaEnvioHipotea:
+      type: datetime
+      nullable: true
+      column: fecha_envio_hipotea
+      options:
+        comment: 'Fecha de envío a Hipotea'
+  manyToOne:
+    usuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        usuario_id:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    inmobiliaria:
+      targetEntity: Inmobiliaria
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        inmobiliaria_id:
+          referencedColumnName: id_inmobiliaria
+      orphanRemoval: false
+    asesor:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        asesor_id:
+          referencedColumnName: id_usuario
+      orphanRemoval: false

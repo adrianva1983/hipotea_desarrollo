@@ -1,0 +1,1144 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block customstyles %}
+	{{ parent() }}
+	<style>
+		.btn-group-custom {
+			display: flex;
+			gap: 10px;
+			margin-top: 30px;
+		}
+
+		.conversaciones-table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-top: 20px;
+		}
+
+		.conversaciones-table thead {
+			background: #f8f9fa;
+		}
+
+		.conversaciones-table th {
+			padding: 12px;
+			text-align: left;
+			font-weight: 600;
+			border-bottom: 2px solid #dee2e6;
+			color: #333;
+		}
+
+		.conversaciones-table td {
+			padding: 12px;
+			border-bottom: 1px solid #dee2e6;
+		}
+
+		.conversaciones-table tbody tr {
+			transition: background-color 0.2s;
+			cursor: pointer;
+		}
+
+		.conversaciones-table tbody tr:hover {
+			background-color: #f8f9fa;
+		}
+
+		.conversaciones-table .expediente-id {
+			font-weight: bold;
+			color: #25D366;
+		}
+
+		.conversaciones-table .cliente-nombre {
+			color: #333;
+		}
+
+		.conversaciones-table .ultimo-mensaje {
+			color: #666;
+			font-size: 13px;
+			max-width: 300px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.conversaciones-table .fecha {
+			color: #999;
+			font-size: 12px;
+			white-space: nowrap;
+		}
+
+		.btn-abrir {
+			padding: 5px 12px;
+			font-size: 12px;
+		}
+
+		.badge-mensajes {
+			background: #25D366;
+			color: white;
+			padding: 3px 8px;
+			border-radius: 12px;
+			font-size: 11px;
+			font-weight: bold;
+		}
+
+		.loading-spinner {
+			text-align: center;
+			padding: 30px;
+		}
+
+		.spinner {
+			border: 4px solid #f3f3f3;
+			border-top: 4px solid #25D366;
+			border-radius: 50%;
+			width: 40px;
+			height: 40px;
+			animation: spin 1s linear infinite;
+			margin: 0 auto 10px;
+		}
+
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+
+		.sin-conversaciones {
+			text-align: center;
+			padding: 40px 20px;
+			color: #999;
+		}
+
+		.sin-conversaciones i {
+			font-size: 48px;
+			margin-bottom: 10px;
+			color: #ddd;
+		}
+
+		/* Estilos para el modal de WhatsApp */
+		.whatsapp-messages-container {
+			max-height: 500px;
+			overflow-y: auto;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 10px;
+			background-color: #ece5dd;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.whatsapp-message {
+			margin-bottom: 10px;
+			padding: 10px;
+			border-radius: 5px;
+			word-wrap: break-word;
+			display: inline-block;
+			max-width: 70%;
+		}
+
+		.whatsapp-message.user {
+			background-color: #ffffff;
+			text-align: left;
+			margin-right: auto;
+			border: 1px solid #ddd;
+			align-self: flex-start;
+		}
+		.whatsapp-message.assistant {
+			background-color: #83eeab;
+			text-align: left;
+			margin-left: auto;
+			border: 1px solid #ddd;
+			align-self: flex-start;
+		}
+
+		.whatsapp-message.bot,
+		.whatsapp-message.whatsapp_bot {
+			background-color: #dcf8c6;
+			text-align: left;
+			align-self: flex-end;
+		}
+
+		.whatsapp-message-time {
+			font-size: 0.75rem;
+			color: #666;
+			margin-top: 5px;
+		}
+
+		.whatsapp-message-role {
+			font-weight: bold;
+			font-size: 0.85rem;
+			color: #333;
+			margin-bottom: 5px;
+		}
+
+		/* Estilos para el input de envío de mensajes */
+		#whatsappInputArea {
+			background-color: #f0f0f0;
+		}
+
+		#whatsappMessageInput {
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 10px;
+			resize: vertical;
+			font-size: 14px;
+		}
+
+		#whatsappMessageInput:focus {
+			border-color: #25D366;
+			box-shadow: 0 0 5px rgba(37, 211, 102, 0.3);
+			outline: none;
+		}
+
+		#enviarMensajeWhatsapp {
+			background-color: #25D366;
+			border-color: #25D366;
+		}
+
+		#enviarMensajeWhatsapp:hover:not(:disabled) {
+			background-color: #1eac4f;
+			border-color: #1eac4f;
+		}
+
+		#enviarMensajeWhatsapp:disabled {
+			background-color: #a8d5ba;
+			border-color: #a8d5ba;
+			cursor: not-allowed;
+		}
+	</style>
+{% endblock %}
+
+{% block body %}
+	<div class="card">
+		<div class="card-body">
+			{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+			<h4 class="card-title">{{ titulo }}</h4>
+
+			{% if conexion %}
+				<div class="row mt-4">
+					<div class="col-12">
+						<div class="card">
+							<div class="card-header bg-info">
+								<h5 class="text-white m-0">
+									<i class="fab fa-whatsapp"></i>
+									Mi Conexión WhatsApp
+								</h5>
+							</div>
+							<div class="card-body">
+								<div class="row">
+									<div class="col-md-6">
+										<div class="form-group">
+											<label><strong>ID Conexión:</strong></label>
+											<p>{{ conexion.id }}</p>
+										</div>
+										<div class="form-group">
+											<label><strong>Teléfono:</strong></label>
+											<p>{{ conexion.telefono }}</p>
+										</div>
+										<div class="form-group">
+											<label><strong>Agencia:</strong></label>
+											<p>{{ conexion.idAgencia }}</p>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<label><strong>Servidor Asignado:</strong></label>
+											<p>{% if conexion.servidor %}{{ conexion.servidor.ip }}{% else %}<span class="badge badge-warning">Sin asignar</span>{% endif %}</p>
+										</div>
+										<div class="form-group">
+											<label><strong>Última Interacción:</strong></label>
+											<p>{% if conexion.fechaUltimaInteraccion %}{{ conexion.fechaUltimaInteraccion|date('d/m/Y H:i') }}{% else %}<span class="text-muted">-</span>{% endif %}</p>
+										</div>
+										<div class="form-group">
+											<label><strong>Piloto Automático:</strong></label>
+											<p>
+												{% if conexion.pilotoAutomatico %}
+													<span class="badge badge-success">Activado</span>
+												{% else %}
+													<span class="badge badge-secondary">Desactivado</span>
+												{% endif %}
+											</p>
+										</div>
+									</div>
+								</div>
+
+								{% if conexion.pilotoAutomaticoSystemPrompt %}
+									<div class="row mt-3">
+										<div class="col-12">
+											<div class="form-group">
+												<label><strong>Instrucciones del Sistema:</strong></label>
+												<div class="alert alert-light border">
+													<p class="mb-0">{{ conexion.pilotoAutomaticoSystemPrompt }}</p>
+												</div>
+											</div>
+										</div>
+									</div>
+								{% endif %}
+
+								<div class="row mt-4">
+									<div class="col-12 btn-group-custom">
+										<a href="{{ path('editar_conexion', {'id': conexion.id}) }}" class="btn btn-primary btn-lg">
+											<i class="fas fa-edit"></i>
+											Editar Piloto Automático
+										</a>
+										<button type="button" class="btn btn-danger btn-lg" onclick="eliminarConexion({{ conexion.id }})">
+											<i class="fas fa-trash"></i>
+											Desconectar
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Sección de Conversaciones -->
+				<div class="row mt-5">
+					<div class="col-12">
+						<div class="card">
+							<div class="card-header bg-success">
+								<h5 class="text-white m-0">
+									<i class="fas fa-comments"></i>
+									Mis Conversaciones WhatsApp
+								</h5>
+							</div>
+							<div class="card-body">
+								<div id="conversacionesContainer">
+									<div class="loading-spinner">
+										<div class="spinner"></div>
+										<p>Cargando conversaciones...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			{% else %}
+				<div class="alert alert-info" role="alert">
+					<i class="fas fa-info-circle"></i>
+					<strong>No tienes una conexión WhatsApp asignada.</strong>
+					<p class="mt-2 mb-0">Por favor, contacta con tu administrador para configurar tu conexión.</p>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+
+	<!-- Modal para ver conversaciones de WhatsApp -->
+	<div class="modal fade" id="whatsappChatModal" tabindex="-1" role="dialog" aria-labelledby="whatsappChatModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="whatsappChatModalLabel">
+						<i class="fab fa-whatsapp" style="color: #25D366;"></i>
+						<span id="whatsappModalTitle"></span>
+					</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div id="whatsappMessagesContent" class="whatsapp-messages-container">
+						<div class="text-center">
+							<div class="spinner-border" role="status">
+								<span class="sr-only">Cargando...</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="border-top" id="whatsappInputArea" style="display:none; padding: 15px;">
+					<div class="form-group">
+						<textarea id="whatsappMessageInput" class="form-control" placeholder="Escribe tu mensaje..." rows="3"></textarea>
+					</div>
+					<button type="button" class="btn btn-success btn-sm" id="enviarMensajeWhatsapp">
+						<i class="fas fa-paper-plane"></i> Enviar
+					</button>
+					<button type="button" class="btn btn-secondary btn-sm" id="limpiarMensajeWhatsapp">
+						Limpiar
+					</button>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block customscripts %}
+	{{ parent() }}
+	<script>
+		// Variable global para almacenar expedientes con mensajes
+		var expedientesConMensajes = [];
+		
+		// Datos del usuario logueado
+		var usuarioLogueado = {
+			id: {{ usuarioLogueado.idUsuario }},
+			role: '{{ rolUsuario }}',
+			phone: '{{ telefonoUsuario }}'
+		};
+		
+		// Variable para guardar el ID del expediente actual
+		var expedienteActual = null;
+		
+		// Variable para rastrear el número de mensajes y controlar el botón
+		var numeroMensajesActual = 0;
+		var mensajeEnviadoAstPendiente = false;
+		// Variable para polling automático de mensajes
+		var pollingIntervalId = null;
+		
+		console.log('Usuario logueado:', usuarioLogueado);
+
+		// Cargar expedientes con mensajes al cargar la página
+		$(document).ready(function() {
+			cargarExpedientesConMensajes();
+		});
+
+
+		function cargarExpedientesConMensajes() {
+			console.log('Iniciando carga de conversaciones...');
+			$.ajax({
+				url: '{{ path('mis_expedientes_con_mensajes') }}',
+				method: 'GET',
+				dataType: 'json',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) {
+					console.log('Respuesta del servidor:', response);
+					
+					if (response.expedientes && response.expedientes.length > 0) {
+						console.log('Se encontraron ' + response.expedientes.length + ' conversaciones');
+						renderizarTablaConversaciones(response.expedientes);
+					} else {
+						console.log('No hay conversaciones disponibles');
+						mostrarSinConversaciones();
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al cargar conversaciones:', {
+						status: xhr.status,
+						statusText: xhr.statusText,
+						error: error,
+						response: xhr.responseJSON
+					});
+					mostrarSinConversaciones();
+				}
+			});
+		}
+
+		function mostrarSinConversaciones() {
+			var html = '<div class="sin-conversaciones">' +
+						'<i class="fas fa-comments"></i>' +
+						'<p>No tienes conversaciones aún</p>' +
+						'</div>';
+			$('#conversacionesContainer').html(html);
+		}
+
+		function renderizarTablaConversaciones(expedientes) {
+			var html = '<table class="table table-hover conversaciones-table">' +
+						'<thead class="thead-light">' +
+						'<tr>' +
+						'<th>Expediente #</th>' +
+						'<th>Cliente</th>' +
+						'<th>Último Mensaje</th>' +
+						'<th>Total</th>' +
+						'<th>Fecha</th>' +
+						'</tr>' +
+						'</thead>' +
+						'<tbody>';
+			
+			expedientes.forEach(function(exp) {
+				var clienteNombre = (exp.cliente_nombre || '') + ' ' + (exp.cliente_apellidos || '');
+				clienteNombre = clienteNombre.trim() || 'Cliente sin datos';
+				
+				var ultimoMensaje = exp.ultimo_mensaje_texto || 'Sin mensajes';
+				if (ultimoMensaje.length > 50) {
+					ultimoMensaje = ultimoMensaje.substring(0, 50) + '...';
+				}
+				
+				var fecha = exp.ultimo_mensaje_fecha ? new Date(exp.ultimo_mensaje_fecha).toLocaleDateString('es-ES') : '-';
+				
+				html += '<tr class="fila-conversacion" data-exp-id="' + exp.id_expediente + '" ' +
+						'data-exp-nombre="' + exp.id_expediente + '" ' +
+						'data-client-phone="' + (exp.cliente_telefono || '') + '">' +
+						'<td class="expediente-id">#' + exp.id_expediente + '</td>' +
+						'<td class="cliente-nombre">' + clienteNombre + '</td>' +
+						'<td class="ultimo-mensaje">' + ultimoMensaje + '</td>' +
+						'<td><span class="badge badge-mensajes">' + (exp.total_mensajes || 0) + '</span></td>' +
+						'<td class="fecha">' + fecha + '</td>' +
+						'</tr>';
+			});
+			
+			html += '</tbody></table>';
+			$('#conversacionesContainer').html(html);
+			
+			// Agregar click handler a las filas
+			$('.fila-conversacion').on('click', function() {
+				var idExp = $(this).data('exp-id');
+				var nombre = $(this).data('exp-nombre');
+				var clientPhone = $(this).data('client-phone');
+				abrirConversacion(idExp, nombre, clientPhone);
+			});
+		}
+		
+		// Manejar click en botón de WhatsApp para ver conversaciones
+		$(document).on('click', 'a.whatsapp-chat', function(e) {
+			e.preventDefault();
+			
+			// Si el botón está deshabilitado, no hacer nada
+			if ($(this).hasClass('disabled')) {
+				return;
+			}
+			
+			var expedienteId = $(this).data('expediente-id');
+			expedienteActual = expedienteId;
+			
+			
+			
+			// Obtener datos del expediente para mostrar teléfono del cliente
+			$.ajax({
+				url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteId,
+				method: 'GET',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) {
+					// Mostrar el modal
+					$('#whatsappChatModal').modal('show');
+					var telefonoCliente = response.telefono_cliente || 'N/A';
+					
+					// Actualizar título del modal con la información completa
+					$('#whatsappChatModalLabel').html(
+						'<i class="fab fa-whatsapp" style="color: #25D366;"></i> ' +
+						'Expediente #' + expedienteId + 
+						' | Mi teléfono: ' + usuarioLogueado.phone +
+						' | Cliente: ' + telefonoCliente
+					);
+				},
+				error: function() {
+					// Si falla, mostrar solo la información que tenemos
+					$('#whatsappChatModalLabel').html(
+						'<i class="fab fa-whatsapp" style="color: #25D366;"></i> ' +
+						'Expediente #' + expedienteId + 
+						' | Mi teléfono: ' + usuarioLogueado.phone +
+						' | Cliente: N/A'
+					);
+				}
+			});
+			
+			// Limpiar input
+			$('#whatsappMessageInput').val('');
+			$('#whatsappInputArea').hide();
+			
+			// Cargar los mensajes del expediente
+			console.log('Cargando mensajes de WhatsApp para expediente ID:', expedienteId);
+			cargarMensajesWhatsApp(expedienteId);
+			// Iniciar polling automático de mensajes cada 3 segundos
+			if (pollingIntervalId) {
+				clearInterval(pollingIntervalId);
+			}
+			pollingIntervalId = setInterval(function() {
+				cargarMensajesWhatsApp(expedienteId);
+			}, 3000);
+			console.log('✓ Polling iniciado para expediente:', expedienteId);
+		});
+		
+		function cargarMensajesWhatsApp(expedienteId) {
+			var url = '{{ path('api_get_whatsapp_messages', {'id': 'EXPEDIENTE_ID'}) }}'.replace('EXPEDIENTE_ID', expedienteId);
+			
+			$.ajax({
+				url: url,
+				method: 'GET',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) 
+				{
+					console.log('cargarMensajesWhatsApp', response);
+					renderizarMensajes(response);
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al cargar mensajes:', error);
+					$('#whatsappMessagesContent').html(
+						'<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+						'<strong>No hay mensajes</strong> o ocurrió un error al cargar la conversación.' +
+						'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+						'<span aria-hidden="true">&times;</span></button></div>'
+					);
+					$('#whatsappInputArea').hide();
+				}
+			});
+		}
+		
+		function renderizarMensajes(messages) {
+			if (!messages || messages.length === 0) {
+				$('#whatsappMessagesContent').html(
+					'<div class="alert alert-info alert-dismissible fade show" role="alert">' +
+					'<strong>Sin mensajes</strong> - No hay conversaciones de WhatsApp para este expediente.' +
+					'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+					'<span aria-hidden="true">&times;</span></button></div>'
+				);
+				numeroMensajesActual = 0;
+				
+				// Verificar si es técnico/comercial asignado para permitir iniciar conversación
+				if (usuarioLogueado.role === 'ROLE_TECNICO' || usuarioLogueado.role === 'ROLE_COMERCIAL') {
+					$.ajax({
+						url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteActual,
+						method: 'GET',
+						async: false,
+						headers: {
+							'X-Requested-With': 'XMLHttpRequest'
+						},
+						success: function(expedienteData) {
+							var idUsuario = parseInt(usuarioLogueado.id);
+							var idTecnico = expedienteData.id_tecnico ? parseInt(expedienteData.id_tecnico) : null;
+							var idComercial = expedienteData.id_comercial ? parseInt(expedienteData.id_comercial) : null;
+							
+							if (idTecnico === idUsuario || idComercial === idUsuario) {
+								console.log('✓ Técnico/Comercial asignado - Mostrando área de envío para iniciar conversación');
+								$('#whatsappInputArea').show();
+								return;
+							}
+							$('#whatsappInputArea').hide();
+						},
+						error: function(xhr, status, error) {
+							console.error('Error al verificar técnico/comercial:', error);
+							$('#whatsappInputArea').hide();
+						}
+					});
+				} else {
+					$('#whatsappInputArea').hide();
+				}
+				return;
+			}
+			
+			var html = '<div class="whatsapp-messages-container">';
+			
+			// Filtrar mensajes según el rol del usuario
+			var mensajesFiltrados = messages;
+			if (usuarioLogueado.role !== 'ROLE_ADMIN' && usuarioLogueado.phone) {
+				mensajesFiltrados = messages.filter(function(msg) {
+					return msg.phone_number === usuarioLogueado.phone;
+				});
+			}
+			
+			if (mensajesFiltrados.length === 0) {
+				$('#whatsappMessagesContent').html(
+					'<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+					'<strong>Sin acceso</strong> - No tienes mensajes en esta conversación.' +
+					'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+					'<span aria-hidden="true">&times;</span></button></div>'
+				);
+				$('#whatsappInputArea').hide();
+				numeroMensajesActual = 0;
+				return;
+			}
+			
+			// Guardar el número de mensajes anterior
+			var numeroMensajesAnterior = numeroMensajesActual;
+			numeroMensajesActual = mensajesFiltrados.length;
+			
+			// Si hay un mensaje pendiente y el número de mensajes aumentó, habilitar el botón
+			if (mensajeEnviadoAstPendiente && numeroMensajesActual > numeroMensajesAnterior) {
+				console.log('✓ Mensaje encontrado en la base de datos. Botón habilitado.');
+				console.log('Mensajes anteriores:', numeroMensajesAnterior, 'Mensajes actuales:', numeroMensajesActual);
+				mensajeEnviadoAstPendiente = false;
+				
+				// Eliminar la alerta de mensaje enviado
+				$('.alert-success').fadeOut(400, function() {
+					$(this).remove();
+				});
+				
+				$('#enviarMensajeWhatsapp').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Enviar');
+			}
+			
+			$.each(mensajesFiltrados, function(index, msg) {
+				var roleClass = msg.role || 'user';
+				var roleLabel = msg.role_label || msg.role || 'Usuario';
+				var timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
+				
+				html += '<div class="whatsapp-message ' + roleClass + '">';
+				html += '<div class="whatsapp-message-role">' + roleLabel + '</div>';
+				html += '<div>' + escapeHtml(msg.text) + '</div>';
+				if (timestamp) {
+					html += '<div class="whatsapp-message-time">' + timestamp + '</div>';
+				}
+				html += '</div>';
+			});
+			
+			html += '</div>';
+			$('#whatsappMessagesContent').html(html);
+			
+			// Verificar si el usuario tiene permiso para enviar mensajes
+			// Solo TECNICO/COMERCIAL del expediente puede enviar
+			// ADMIN NUNCA puede enviar, solo ver
+			var puedeEnviar = false;
+			console.log('=== VERIFICANDO PERMISOS DE ENVÍO ===');
+			console.log('Role del usuario:', usuarioLogueado.role);
+			console.log('Teléfono del usuario:', usuarioLogueado.phone);
+			console.log('Expediente actual:', expedienteActual);
+			
+			if (usuarioLogueado.role === 'ROLE_ADMIN') {
+				console.log('El usuario es ADMIN, NO puede enviar (solo ver)');
+				puedeEnviar = false;
+			} else if (usuarioLogueado.role === 'ROLE_TECNICO' || usuarioLogueado.role === 'ROLE_COMERCIAL') {
+				// Verificar si es el técnico o comercial asignado al expediente
+				$.ajax({
+					url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteActual,
+					method: 'GET',
+					async: false,
+					headers: {
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+					success: function(expedienteData) {
+						var idUsuario = parseInt(usuarioLogueado.id);
+						var idTecnico = expedienteData.id_tecnico ? parseInt(expedienteData.id_tecnico) : null;
+						var idComercial = expedienteData.id_comercial ? parseInt(expedienteData.id_comercial) : null;
+						
+						console.log('ID Usuario:', idUsuario, 'Técnico:', idTecnico, 'Comercial:', idComercial);
+						
+						// Verificar si es técnico o comercial del expediente
+						if (idTecnico === idUsuario || idComercial === idUsuario) {
+							console.log('✓ El usuario es Técnico/Comercial asignado, puede enviar');
+							puedeEnviar = true;
+						} else {
+							console.log('✗ El usuario NO es Técnico/Comercial asignado, NO puede enviar');
+							puedeEnviar = false;
+						}
+					},
+					error: function(xhr, status, error) {
+						console.error('Error al verificar técnico/comercial asignado:', error);
+						puedeEnviar = false;
+					}
+				});
+			} else {
+				console.log('El usuario no tiene rol suficiente');
+				puedeEnviar = false;
+			}
+			
+			// Mostrar input de envío solo si puede enviar
+			console.log('¿Puede enviar?', puedeEnviar);
+			if (puedeEnviar) {
+				console.log('Mostrando área de envío');
+				$('#whatsappInputArea').show();
+			} else {
+				console.log('Ocultando área de envío');
+				$('#whatsappInputArea').hide();
+			}
+			
+			// Scroll al final (últimos mensajes)
+			var container = $('#whatsappMessagesContent').find('.whatsapp-messages-container');
+			if (container.length) {
+				container.scrollTop(container[0].scrollHeight);
+			}
+		}
+		
+		// Función para verificar si el usuario logueado es técnico o comercial del expediente
+		function verificarSiEsTecnicoOComercialDelExpediente(expedienteId) {
+			// Hacer una consulta AJAX para obtener los datos del expediente
+			var esValido = false;
+			$.ajax({
+				url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteId,
+				method: 'GET',
+				async: false, // Sincrónico para que retorne el valor correctamente
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(response) {
+					console.log('Datos del expediente:', response);
+					console.log('Usuario logueado ID:', usuarioLogueado.id, 'Técnico:', response.id_tecnico, 'Comercial:', response.id_comercial);
+					
+					// Convertir a números para comparación segura
+					var idUsuario = parseInt(usuarioLogueado.id);
+					var idTecnico = response.id_tecnico ? parseInt(response.id_tecnico) : null;
+					var idComercial = response.id_comercial ? parseInt(response.id_comercial) : null;
+					
+					// Verificar si el usuario logueado es técnico o comercial
+					if (idTecnico === idUsuario || idComercial === idUsuario) {
+						console.log('Usuario SÍ es técnico o comercial del expediente');
+						esValido = true;
+					} else {
+						console.log('Usuario NO es técnico o comercial del expediente');
+						esValido = false;
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al verificar técnico/comercial:', error);
+					esValido = false;
+				}
+			});
+			console.log('Resultado final de verificación:', esValido);
+			return esValido;
+		}
+		
+		function enviarMensajeWhatsApp() {
+			var mensaje = $('#whatsappMessageInput').val().trim();
+			
+			if (!mensaje) {
+				alert('Por favor escribe un mensaje');
+				return;
+			}
+			
+			if (!expedienteActual) {
+				alert('Error: No hay expediente seleccionado');
+				return;
+			}
+			
+			// SIEMPRE validar que el cliente tiene teléfono antes de enviar
+			var validacionPasada = false;
+			
+			$.ajax({
+				url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteActual,
+				method: 'GET',
+				async: false,
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(expedienteData) {
+					var telefonoCliente = expedienteData.telefono_cliente;
+					console.log('Validando cliente - Teléfono cliente:', telefonoCliente);
+					
+					if (!telefonoCliente || telefonoCliente === 'N/A' || telefonoCliente === '') {
+						alert('❌ Error: El cliente no tiene teléfono registrado. No se puede enviar mensajes a este expediente.');
+						validacionPasada = false;
+					} else {
+						validacionPasada = true;
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al validar cliente:', error);
+					alert('❌ Error: No se pudo validar los datos del cliente');
+					validacionPasada = false;
+				}
+			});
+			
+			// Si la validación no pasó, detener el envío
+			if (!validacionPasada) {
+				console.log('Envío cancelado: Cliente sin teléfono');
+				return;
+			}
+			
+			// Preparar datos para enviar
+			var datos = {
+				id_expediente: expedienteActual,
+				phone_number: usuarioLogueado.phone,
+				text: mensaje
+			};
+			
+			console.log('Enviando mensaje:', datos);
+			
+			// Mostrar estado de carga
+			$('#enviarMensajeWhatsapp').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
+			
+			$.ajax({
+				url: '{{ path('api_send_whatsapp_message') }}?api_key=123456',
+				method: 'POST',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest',
+					'Content-Type': 'application/json',
+					'X-API-KEY': '123456'
+				},
+				data: JSON.stringify(datos),
+				success: function(response) {
+					console.log('Mensaje enviado exitosamente:', response);
+					
+					// Marcar que hay un mensaje pendiente de confirmación
+					mensajeEnviadoAstPendiente = true;
+					
+					// Limpiar input
+					$('#whatsappMessageInput').val('');
+					
+					// Mostrar notificación de éxito
+					var alertHtml = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+						'<strong>¡Mensaje enviado!</strong> Guardando en base de datos...' +
+						'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+						'<span aria-hidden="true">&times;</span></button></div>';
+					
+					// Inserta la alerta al inicio del modal body
+					$('#whatsappMessagesContent').before(alertHtml);
+					
+					// Recargar los mensajes con reintentos automáticos
+					// Primer intento: 2.5 segundos
+					setTimeout(function() {
+						console.log('Intento 1: Cargando mensajes después de 2.5 segundos');
+						cargarMensajesWhatsApp(expedienteActual);
+					}, 2500);
+					
+					// Segundo intento: 10 segundos
+					setTimeout(function() {
+						console.log('Intento 2: Recargando mensajes después de 10 segundos');
+						cargarMensajesWhatsApp(expedienteActual);
+					}, 10000);
+					
+					// Tercer intento: 20 segundos
+					setTimeout(function() {
+						console.log('Intento 3: Recargando mensajes después de 20 segundos');
+						cargarMensajesWhatsApp(expedienteActual);
+					}, 20000);
+				},
+				error: function(xhr, status, error) {
+					console.error('Error al enviar mensaje:', {
+						status: xhr.status,
+						statusText: xhr.statusText,
+						error: error,
+						response: xhr.responseJSON
+					});
+					
+					var mensajeError = 'Error al enviar el mensaje';
+					if (xhr.responseJSON && xhr.responseJSON.error) {
+						mensajeError = xhr.responseJSON.error;
+					}
+					
+					// Mostrar notificación de error detallada
+					var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+						'<strong>Error:</strong> ' + mensajeError +
+						'<br><small>Revisa la consola para más detalles</small>' +
+						'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+						'<span aria-hidden="true">&times;</span></button></div>';
+					
+					$('#whatsappMessagesContent').before(alertHtml);
+					
+					// Habilitar botón en caso de error
+					mensajeEnviadoAstPendiente = false;
+					$('#enviarMensajeWhatsapp').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Enviar');
+				},
+				complete: function() {
+					// Solo restaurar botón si no está pendiente
+					if (!mensajeEnviadoAstPendiente) {
+						$('#enviarMensajeWhatsapp').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Enviar');
+					}
+				}
+			});
+		}
+		
+
+		// Función auxiliar para escapar HTML
+		function escapeHtml(text) {
+			var map = {
+				'&': '&amp;',
+				'<': '&lt;',
+				'>': '&gt;',
+				'"': '&quot;',
+				"'": '&#039;'
+			};
+			return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+		}
+
+		// Abre el modal de conversación con un expediente
+		var expedienteActualModal = null;
+		var pollingIntervalId = null;
+		var ultimoNumeroMensajes = 0;
+
+		function abrirConversacion(idExp, nombre, clientPhone) {
+			expedienteActualModal = idExp;
+			ultimoNumeroMensajes = 0;
+			
+			$('#whatsappModalTitle').text('Expediente #' + idExp + ' | Mi teléfono: ' + usuarioLogueado.phone + ' | Cliente: ' + (clientPhone || 'N/A'));
+			
+			// Limpiar textarea y mostrar modal
+			$('#whatsappMessageInput').val('');
+			$('#whatsappChatModal').modal('show');
+			
+			// Cargar mensajes inmediatamente Y hacer scroll al final
+			console.log('Abriendo conversación ' + idExp + ', cargando mensajes iniciales...');
+			cargarMensajesDelModal(true); // true = hacer scroll
+			
+			// Detener cualquier polling anterior
+			if (pollingIntervalId) {
+				clearInterval(pollingIntervalId);
+			}
+			
+			// Iniciar polling cada 2 segundos mientras el modal está abierto
+			console.log('Iniciando polling cada 2 segundos para expediente ' + idExp);
+			pollingIntervalId = setInterval(function() {
+				if (expedienteActualModal) {
+					cargarMensajesDelModal(false); // false = no hacer scroll
+				}
+			}, 2000);
+		}
+
+		function cargarMensajesDelModal(forzarScroll) {
+			if (!expedienteActualModal) {
+				console.warn('No hay expediente actual para cargar mensajes');
+				return;
+			}
+			
+			console.log('Cargando mensajes para expediente ' + expedienteActualModal);
+			$.ajax({
+				url: '{{ path('api_get_whatsapp_messages', {'id': 'EXPEDIENTE_ID'}) }}'.replace('EXPEDIENTE_ID', expedienteActualModal),
+				method: 'GET',
+				dataType: 'json',
+				timeout: 5000,
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(messages) {
+					console.log('✓ Mensajes cargados: ' + (messages ? messages.length : 0) + ' mensajes');
+					
+					// Verificar si hay nuevos mensajes
+					if (messages && messages.length > ultimoNumeroMensajes) {
+						console.log('✓ Se encontraron ' + (messages.length - ultimoNumeroMensajes) + ' nuevos mensajes');
+					}
+					ultimoNumeroMensajes = messages ? messages.length : 0;
+					
+					// Pasar el parámetro de scroll solo si lo especifican explícitamente
+					renderizarMensajesEnModal(messages, forzarScroll === true);
+				},
+				error: function(xhr, status, error) {
+					console.error('✗ Error al cargar mensajes:', {
+						status: xhr.status,
+						error: error,
+						expediente: expedienteActualModal
+					});
+				}
+			});
+		}
+
+		function renderizarMensajesEnModal(messages, debeScrollear) {
+			if (!messages || messages.length === 0) {
+				$('#whatsappMessagesContent').html(
+					'<div class="alert alert-info">Sin mensajes aún. Envía el primer mensaje.</div>'
+				);
+				$('#whatsappInputArea').show();
+				return;
+			}
+
+			var html = '<div class="whatsapp-messages-container">';
+			
+			messages.forEach(function(msg) {
+				var cssClass = msg.role === 'user' ? 'whatsapp-message user' : 'whatsapp-message assistant';
+				var roleLabel = msg.role_label || msg.role;
+				var timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('es-ES', {
+					hour: '2-digit',
+					minute: '2-digit',
+					second: '2-digit'
+				}) : '';
+				
+				html += '<div class="' + cssClass + '">' +
+						'<strong>' + escapeHtml(roleLabel) + ':</strong><br>' +
+						escapeHtml(msg.text) +
+						'<br><small style="opacity: 0.7;">' + timestamp + '</small>' +
+						'</div>';
+			});
+			
+			html += '</div>';
+			$('#whatsappMessagesContent').html(html);
+			
+			// Solo hacer scroll si se especifica explícitamente (primera carga o después de enviar)
+			if (debeScrollear === true) {
+				setTimeout(function() {
+					var container = $('#whatsappMessagesContent');
+					if (container.length > 0) {
+						container.animate({ scrollTop: container[0].scrollHeight }, 300);
+					}
+				}, 50);
+			}
+			
+			$('#whatsappInputArea').show();
+		}
+
+		function enviarMensajeDesdeModal() {
+			var texto = $('#whatsappMessageInput').val().trim();
+			if (!texto) {
+				alert('Por favor, escribe un mensaje');
+				return;
+			}
+			
+			if (!expedienteActualModal) {
+				alert('Error: No hay expediente seleccionado');
+				return;
+			}
+
+			console.log('Enviando mensaje para expediente ' + expedienteActualModal);
+			
+			// Validar que tenemos el teléfono del cliente
+			$.ajax({
+				url: '{{ path('api_get_expediente_datos') }}?id=' + expedienteActualModal,
+				method: 'GET',
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				success: function(expedienteData) {
+					var clientPhone = expedienteData.telefono_cliente;
+					if (!clientPhone || clientPhone === 'N/A') {
+						alert('No se encontró el teléfono del cliente');
+						return;
+					}
+
+					// Enviar el mensaje
+					console.log('Enviando a bot: origen=' + usuarioLogueado.phone + ', destino=' + clientPhone);
+					$.ajax({
+						url: '{{ path('api_send_whatsapp_message') }}?api_key=123456',
+						method: 'POST',
+						contentType: 'application/json',
+						data: JSON.stringify({
+							id_expediente: expedienteActualModal,
+							phone_number: usuarioLogueado.phone,
+							text: texto,
+							api_key: '123456'
+						}),
+						success: function(response) {
+							console.log('✓ Mensaje enviado correctamente:', response);
+							$('#whatsappMessageInput').val('');
+							
+							// Mostrar notificación de éxito
+							var alertHtml = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+								'<strong>¡Éxito!</strong> Mensaje enviado correctamente.' +
+								'<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+								'<span aria-hidden="true">&times;</span></button></div>';
+							$('#whatsappMessagesContent').before(alertHtml);
+							
+							// El polling cada 2 segundos cargará automáticamente el nuevo mensaje
+							// Forzar carga inmediata después de 1.5 segundos para confirmar el envío
+							setTimeout(function() {
+								console.log('Recargando mensajes post-envío (intento 1)...');
+								cargarMensajesDelModal();
+							}, 1500);
+						},
+						error: function(xhr, status, error) {
+							console.error('✗ Error al enviar mensaje:', {
+								status: xhr.status,
+								error: error,
+								response: xhr.responseJSON
+							});
+							var mensajeError = 'Error desconocido';
+							if (xhr.responseJSON && xhr.responseJSON.error) {
+								mensajeError = xhr.responseJSON.error;
+							}
+							alert('Error al enviar: ' + mensajeError);
+						}
+					});
+				},
+				error: function(xhr, status, error) {
+					console.error('✗ Error al obtener datos del expediente:', error);
+					alert('Error al validar el expediente');
+				}
+			});
+		}
+
+		// Event handlers para el modal
+		$(document).ready(function() {
+			// Al cerrar el modal, detener el polling
+			$('#whatsappChatModal').on('hidden.bs.modal', function() {
+				if (pollingIntervalId) {
+					clearInterval(pollingIntervalId);
+					pollingIntervalId = null;
+				}
+				expedienteActualModal = null;
+			});
+
+			// Botón enviar
+			$(document).on('click', '#enviarMensajeWhatsapp', function() {
+				enviarMensajeDesdeModal();
+			});
+
+			// Limpiar
+			$(document).on('click', '#limpiarMensajeWhatsapp', function() {
+				$('#whatsappMessageInput').val('');
+			});
+
+			// Enter para enviar (Shift+Enter para salto de línea)
+			$(document).on('keydown', '#whatsappMessageInput', function(e) {
+				if (e.key === 'Enter' && !e.shiftKey) {
+					e.preventDefault();
+					enviarMensajeDesdeModal();
+				}
+			});
+		});
+	</script>
+{% endblock %}

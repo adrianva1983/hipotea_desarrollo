@@ -1,0 +1,27 @@
+AppBundle\Entity\SincronizacionSheets:
+  type: entity
+  table: sincronizacion_sheets
+  id:
+    id:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombreCampania:
+      type: string
+      nullable: false
+      length: 255
+      options:
+        fixed: false
+      column: nombre_campania
+    fechaSincronizacionSheets:
+      type: datetime
+      nullable: true
+      options:
+        column: fecha_sincronizacion_sheets
+  lifecycleCallbacks: {}

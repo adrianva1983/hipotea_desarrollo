@@ -1,0 +1,1949 @@
+<?php
+
+namespace AppBundle\Controller;
+
+use AppBundle\Entity\AgenteColaborador as AgenteColaboradorEntidad;
+use AppBundle\Entity\CampoHito as CampoHitoEntidad;
+use AppBundle\Entity\CampoHitoExpediente as CampoHitoExpedienteEntidad;
+use AppBundle\Entity\CampoHitoExpedienteColaboradores as CampoHitoExpedienteColaboradoresEntidad;
+use AppBundle\Entity\ClienteFactura as ClienteFacturaEntidad;
+use AppBundle\Entity\Dispositivo as DispositivoEntidad;
+use AppBundle\Entity\Documento as DocumentoEntidad;
+use AppBundle\Entity\EmisorFactura as EmisorFacturaEntidad;
+use AppBundle\Entity\EntidadColaboradora as EntidadColaboradoraEntidad;
+use AppBundle\Entity\Expediente as ExpedienteEntidad;
+use AppBundle\Entity\ExpedienteEmail as ExpedienteEmailEntidad;
+use AppBundle\Entity\Factura as FacturaEntidad;
+use AppBundle\Entity\Fase as FaseEntidad;
+use AppBundle\Entity\FicheroCampo as FicheroCampoEntidad;
+use AppBundle\Entity\ImagenFichero as ImagenFicheroEntidad;
+use AppBundle\Entity\GrupoCamposHito as GrupoCamposHitoEntidad;
+use AppBundle\Entity\GrupoHitoExpediente as GrupoHitoExpedienteEntidad;
+use AppBundle\Entity\Hito as HitoEntidad;
+use AppBundle\Entity\HitoExpediente as HitoExpedienteEntidad;
+use AppBundle\Entity\Inmobiliaria as InmobiliariaEntidad;
+use AppBundle\Entity\LineaFactura as LineaFacturaEntidad;
+use AppBundle\Entity\Log as LogEntidad;
+use AppBundle\Entity\Noticia as NoticiaEntidad;
+use AppBundle\Entity\NoticiaUsuario as NoticiaUsuarioEntidad;
+use AppBundle\Entity\Notificacion as NotificacionEntidad;
+use AppBundle\Entity\OpcionesCampo as OpcionesCampoEntidad;
+use AppBundle\Entity\RegistrarActividad;
+use AppBundle\Entity\SeguimientoHorario as SeguimientoHorarioEntidad;
+use AppBundle\Entity\Usuario as UsuarioEntidad;
+use AppBundle\Form\AgenteColaborador as AgenteColaboradorFormulario;
+use AppBundle\Form\CampoHito as CampoHitoFormulario;
+use AppBundle\Form\CampoHitoExpedienteBanco as CampoHitoExpedienteBancoFormulario;
+use AppBundle\Form\CampoHitoExpedienteColaboradores as CampoHitoExpedienteColaboradoresFormulario;
+use AppBundle\Form\CampoHitoExpedienteDesplegable as CampoHitoExpedienteDesplegableFormulario;
+use AppBundle\Form\CampoHitoExpedienteEmail as CampoHitoExpedienteEmailFormulario;
+use AppBundle\Form\CampoHitoExpedienteFecha as CampoHitoExpedienteFechaFormulario;
+use AppBundle\Form\CampoHitoExpedienteFichero as CampoHitoExpedienteFicheroFormulario;
+use AppBundle\Form\CampoHitoExpedienteFicheroCliente as CampoHitoExpedienteFicheroClienteFormulario;
+use AppBundle\Form\CampoHitoExpedienteNotaria as CampoHitoExpedienteNotariaFormulario;
+use AppBundle\Form\CampoHitoExpedienteTasadora as CampoHitoExpedienteTasadoraFormulario;
+use AppBundle\Form\CampoHitoExpedienteTexto as CampoHitoExpedienteTextoFormulario;
+use AppBundle\Form\CampoHitoModificar as CampoHitoModificarFormulario;
+use AppBundle\Form\ClienteFactura as ClienteFacturaFormulario;
+use AppBundle\Form\CompletarDatosCliente;
+use AppBundle\Form\CrearCliente;
+use AppBundle\Form\Documento as DocumentoFormulario;
+use AppBundle\Form\EmisorFactura as EmisorFacturaFormulario;
+use AppBundle\Form\EntidadColaboradora as EntidadColaboradoraFormulario;
+use AppBundle\Form\Estadisticas;
+use AppBundle\Form\Expediente as ExpedienteFormulario;
+use AppBundle\Form\ExpedienteEmail as ExpedienteEmailFormulario;
+use AppBundle\Form\ExpedienteEmailCheckboxes;
+use AppBundle\Form\Factura as FacturaFormulario;
+use AppBundle\Form\Fase as FaseFormulario;
+use AppBundle\Form\FaseModificar as FaseModificarFormulario;
+use AppBundle\Form\FicheroCampo as FicheroCampoFormulario;
+use AppBundle\Form\GrupoCamposHito as GrupoCamposHitoFormulario;
+use AppBundle\Form\GrupoCamposHitoModificar as GrupoCamposHitoModificarFormulario;
+use AppBundle\Form\Hito as HitoFormulario;
+use AppBundle\Form\HitoExpediente as HitoExpedienteFormulario;
+use AppBundle\Form\HitoModificar as HitoModificarFormulario;
+use AppBundle\Form\Inmobiliaria as InmobiliariaFormulario;
+use AppBundle\Form\LineaFactura as LineaFacturaFormulario;
+use AppBundle\Form\Noticia as NoticiaFormulario;
+use AppBundle\Form\NoticiaUsuario as NoticiaUsuarioFormulario;
+use AppBundle\Form\Notificacion as NotificacionFormulario;
+use AppBundle\Form\CancelarExpediente;
+use AppBundle\Form\NotificacionExpediente;
+use AppBundle\Form\OpcionesCampo as OpcionesCampoFormulario;
+use AppBundle\Form\OpcionesCampoModificar as OpcionesCampoModificarFormulario;
+use AppBundle\Form\RecuperarUsuario as RecuperarUsuarioFormulario;
+use AppBundle\Form\RegistrarUsuario as RegistrarUsuarioFormulario;
+use AppBundle\Form\SeguimientoHorario as SeguimientoHorarioFormulario;
+use AppBundle\Form\Usuario as UsuarioFormulario;
+use AppBundle\Form\UsuarioCliente as UsuarioClienteFormulario;
+use AppBundle\Form\UsuarioClienteModificar as UsuarioClienteModificarFormulario;
+use AppBundle\Form\UsuarioModificar as UsuarioModificarFormulario;
+use AppBundle\Form\UsuarioInmobiliaria as UsuarioInmobiliariaFormulario;
+use AppBundle\Form\UsuarioInmobiliariaModificar as UsuarioInmobiliariaModificarFormulario;
+use AppBundle\Form\SeguimientoExpediente as FormularioSeguimientoExpediente;
+use AppBundle\Entity\SeguimientoExpediente as SeguimientoExpedienteEntidad;
+use AppBundle\Entity\ConceptoSeguimientoExpediente as ConceptoSeguimientoExpedienteEntidad;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
+use Knp\Bundle\SnappyBundle\Snappy\Response\PdfResponse;
+use Psr\Log\LoggerInterface;
+
+use AppBundle\Utils\UsuariosNombreCompleto;
+use DateInterval;
+use DateTime;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
+use Exception;
+use ReflectionClass;
+use ReflectionException;
+use Swift_Attachment;
+use Swift_Mailer;
+use Swift_Message;
+use Swift_SmtpTransport;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use PDFMerger;
+
+class CalculadorasController extends Controller
+{
+	private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+	}
+
+    public function calculadoraSencillaAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraSencilla');
+		$formulario->handleRequest($request);
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Sencilla',
+			'calculadora_sencilla' => $formulario->createView(),
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$formulario->getData()->calcularHipoteca();
+			$variablesTwig['hipoteca'] = $formulario->getData()->getHipoteca()['capital_less_initial_amount'];
+			$variablesTwig['pago_mensual'] = $formulario->getData()->getHipoteca()['fee'];
+			$variablesTwig['hipoteca_total_con_interes'] = $formulario->getData()->getHipoteca()['capital_less_initial_amount'] + $formulario->getData()->getHipoteca()['interest_discharged_total'];
+			$variablesTwig['total_con_anticipo'] = $formulario->getData()->getPrecioTotal() + $formulario->getData()->getHipoteca()['interest_discharged_total'];
+			$variablesTwig['resultado'] = null;
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraSencilla.html.twig', $variablesTwig);
+	}
+
+	public function calculadoraAvanzadaAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzada');
+		$formulario->handleRequest($request);
+		// dump($request);
+		// die();
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			// $respuesta['importe_fijo'] = $resultado_f['importe'];
+			// $respuesta['importe_variable'] = $resultado_v['importe'];
+			// $respuesta['entrada'] = $aportacion_inicial;
+			// $respuesta['gastos'] = $gastos;
+			// $respuesta['interes_fijo'] = $interes_fijo_l;
+			// $respuesta['interes_variable'] = $interes_variable_l;
+			// $respuesta['tipo_calculo'] = $tipo_calculo;
+			// $respuesta['cuota_fija'] = $resultado['cuota'];
+			// $respuesta['cuota_variable'] = $resultado['cuota'];
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				// $variablesTwig['gastos'] = $resultado['gastos'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final',$resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final',$resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+					// $variablesTwig['tipo_calculo'] = $formulario->getData()->getTipo();
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					// $variablesTwig['importe_variable'] = $resultado['importe_variable'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					// $variablesTwig['interes_fijo'] = $resultado['interes_fijo'];
+					// $variablesTwig['interes_variable'] = $resultado['interes_variable'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					// $variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+					// $variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			// $variablesTwig['hipoteca_total_con_interes'] = $resultado['capital_less_initial_amount'] + $resultado['interest_discharged_total'];
+			// $variablesTwig['total_con_anticipo'] = $formulario->getData()->getPrecioTotal() + $resultado['interest_discharged_total'];
+			$variablesTwig['resultado'] = null;
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzada.html.twig', $variablesTwig);
+	}
+
+	public function calculadoraAvanzadaTestAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest');
+		$formulario->handleRequest($request);
+		// dump($request);
+		// die();
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			// $respuesta['importe_fijo'] = $resultado_f['importe'];
+			// $respuesta['importe_variable'] = $resultado_v['importe'];
+			// $respuesta['entrada'] = $aportacion_inicial;
+			// $respuesta['gastos'] = $gastos;
+			// $respuesta['interes_fijo'] = $interes_fijo_l;
+			// $respuesta['interes_variable'] = $interes_variable_l;
+			// $respuesta['tipo_calculo'] = $tipo_calculo;
+			// $respuesta['cuota_fija'] = $resultado['cuota'];
+			// $respuesta['cuota_variable'] = $resultado['cuota'];
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				// $variablesTwig['gastos'] = $resultado['gastos'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final',$resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final',$resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				if (array_key_exists('cuota_mixta_final',$resultado)) {
+					$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'];
+				} else {
+					$variablesTwig['cuota_mixta_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'];
+                if (array_key_exists('hipoteca_actual',$resultado)) {
+				    $variablesTwig['hipoteca_actual'] = $resultado['hipoteca_actual'];
+                }
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'];
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'];
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'];
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'];
+				$variablesTwig['intereses'] = $resultado['intereses'];
+				$variablesTwig['importe_total'] = $resultado['importe_total'];
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'];
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+				$variablesTwig['notario'] = $resultado['notario'];
+				$variablesTwig['registro'] = $resultado['registro'];
+				$variablesTwig['gestoria'] = $resultado['gestoria'];
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['tipo000'] = $formulario->getData()->getTipo();
+					$variablesTwig['aportacion000'] = $formulario->getData()->getAportacionInicial();
+					$variablesTwig['aportacion_tras_venta000'] = $formulario->getData()->getAportacionTrasVenta();
+					$variablesTwig['comunidad_autonoma000'] = $formulario->getData()->getComunidadAutonoma();
+					$variablesTwig['destino_compra000'] = $formulario->getData()->getDestinoCompra();
+					$variablesTwig['edad000'] = $formulario->getData()->getEdadTitularUno();
+					$variablesTwig['familia_numerosa000'] = $formulario->getData()->getFamiliaNumerosa();
+					$variablesTwig['hipoteca_actual000'] = $formulario->getData()->getHipotecaActual();
+					$variablesTwig['importe_pagas000'] = $formulario->getData()->getImportePagaExtra();
+					$variablesTwig['ingresos_mensuales000'] = $formulario->getData()->getIngresosMensuales();
+					$variablesTwig['minusvalia_familia_numerosa000'] = $formulario->getData()->getMinusvaliaFamiliaNumerosa();
+					$variablesTwig['monoparental000'] = $formulario->getData()->getMonoparental();
+					$variablesTwig['num_titulares000'] = $formulario->getData()->getNumTitulares();
+					$variablesTwig['numero_pagas000'] = $formulario->getData()->getNumPagasExtra();
+					$variablesTwig['obra_nueva000'] = $formulario->getData()->getObraNueva();
+					$variablesTwig['plazo000'] = $formulario->getData()->getPlazoAmortizacion();
+					$variablesTwig['prestamos_mensuales000'] = $formulario->getData()->getPrestamosMensuales();
+					$variablesTwig['tipo_calculo000'] = $formulario->getData()->getTipo();
+					$variablesTwig['tipo_hipoteca000'] = $formulario->getData()->getProducto();
+					$variablesTwig['valor_inmueble000'] = $formulario->getData()->getValorInmueble();
+					$variablesTwig['valor_vivienda_actual000'] = $formulario->getData()->getValorViviendaActual();
+					$variablesTwig['vpo000'] = $formulario->getData()->getVpo();
+
+
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					// $variablesTwig['tipo_calculo'] = $formulario->getData()->getTipo();
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					// $variablesTwig['importe_variable'] = $resultado['importe_variable'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					// $variablesTwig['interes_fijo'] = $resultado['interes_fijo'];
+					// $variablesTwig['interes_variable'] = $resultado['interes_variable'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					// $variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+					// $variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+					$variablesTwig['notario'] = $resultado['notario'];
+					$variablesTwig['registro'] = $resultado['registro'];
+					$variablesTwig['gestoria'] = $resultado['gestoria'];
+					$variablesTwig['tasacion'] = $resultado['tasacion'];
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'];
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + $resultado['gastos'] - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;					
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			// $variablesTwig['hipoteca_total_con_interes'] = $resultado['capital_less_initial_amount'] + $resultado['interest_discharged_total'];
+			// $variablesTwig['total_con_anticipo'] = $formulario->getData()->getPrecioTotal() + $resultado['interest_discharged_total'];
+			$variablesTwig['resultado'] = null;
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzadaTest.html.twig', $variablesTwig);
+	}
+
+	public function calculadoraAvanzadaWebAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest');
+		$formulario->handleRequest($request);
+		// dump($formulario);
+		// die();
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+		);
+		// if ($formulario->isSubmitted() && $formulario->isValid()) {
+		if ($formulario->isSubmitted()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final',$resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final',$resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				if (array_key_exists('cuota_mixta_final',$resultado)) {
+					$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'];
+				} else {
+					$variablesTwig['cuota_mixta_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'];
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'];
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'];
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'];
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'];
+				$variablesTwig['intereses'] = $resultado['intereses'];
+				$variablesTwig['importe_total'] = $resultado['importe_total'];
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'];
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+				$variablesTwig['notario'] = $resultado['notario'];
+				$variablesTwig['registro'] = $resultado['registro'];
+				$variablesTwig['gestoria'] = $resultado['gestoria'];
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+					$variablesTwig['notario'] = $resultado['notario'];
+					$variablesTwig['registro'] = $resultado['registro'];
+					$variablesTwig['gestoria'] = $resultado['gestoria'];
+					$variablesTwig['tasacion'] = $resultado['tasacion'];
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'];
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + $resultado['gastos'] - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			$variablesTwig['resultado'] = null;
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzadaWeb.html.twig', $variablesTwig);
+	}
+
+	public function calculadoraAvanzadaSubmitAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest');
+		$formulario->handleRequest($request);
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+		);
+		// if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final',$resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final',$resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				if (array_key_exists('cuota_mixta_final',$resultado)) {
+					$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'];
+				} else {
+					$variablesTwig['cuota_mixta_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'];
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'];
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'];
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'];
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'];
+				$variablesTwig['intereses'] = $resultado['intereses'];
+				$variablesTwig['importe_total'] = $resultado['importe_total'];
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'];
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+				$variablesTwig['notario'] = $resultado['notario'];
+				$variablesTwig['registro'] = $resultado['registro'];
+				$variablesTwig['gestoria'] = $resultado['gestoria'];
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+					$variablesTwig['notario'] = $resultado['notario'];
+					$variablesTwig['registro'] = $resultado['registro'];
+					$variablesTwig['gestoria'] = $resultado['gestoria'];
+					$variablesTwig['tasacion'] = $resultado['tasacion'];
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'];
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + $resultado['gastos'] - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			$variablesTwig['resultado'] = null;
+		// }
+		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzadaWeb.html.twig', $variablesTwig);
+	}
+
+	public function calculadoraComparativaAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraComparativa');
+		$formulario->handleRequest($request);
+		// dump($request);
+		// die();
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Comparativa',
+			'calculadora_comparativa' => $formulario->createView(),
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularComparativa($this->getDoctrine()->getManager());
+			$destino = $formulario->getData()->getDestino();
+			$tipoHipoteca = $formulario->getData()->getTipoHipoteca();
+			$variablesTwig['tipoOferta'] = $resultado['tipoOferta'];
+			$tipoOferta = $resultado['tipoOferta'];
+			$variablesTwig['nombreOferta'] = $resultado['nombreOferta'];
+			$variablesTwig['destino'] = $resultado['destino'];
+			$variablesTwig['tipo'] = $resultado['tipo'];
+			$variablesTwig['plazoAmortizacion'] = $resultado['plazoAmortizacion'];
+			$variablesTwig['margen'] = $resultado['margen'];
+
+			if ($destino == 1) { //Comprar
+				if($tipoOferta == 'Fijo'){ // Compara con una de tipo fijo
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}elseif ($tipoOferta == 'Mixto'){
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}elseif ($tipoOferta == 'Variable'){
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}
+			} else { // Mejorar
+				if($tipoOferta == 'Fijo'){ // Compara con una de tipo fijo
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}elseif ($tipoOferta == 'Mixto'){
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}elseif ($tipoOferta == 'Variable'){
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}
+			}
+			$variablesTwig['resultado'] = null;
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraComparativa.html.twig', $variablesTwig);
+	}
+
+	public function calculadoraComparativaWebAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraComparativa');
+		$formulario->handleRequest($request);
+		// dump($request);
+		// die();
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Comparativa',
+			'calculadora_comparativa' => $formulario->createView(),
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularComparativa($this->getDoctrine()->getManager());
+			$destino = $formulario->getData()->getDestino();
+			$tipoHipoteca = $formulario->getData()->getTipoHipoteca();
+			$variablesTwig['tipoOferta'] = $resultado['tipoOferta'];
+			$variablesTwig['nombreOferta'] = $resultado['nombreOferta'];
+			$tipoOferta = $resultado['tipoOferta'];
+			$variablesTwig['destino'] = $resultado['destino'];
+			$variablesTwig['tipo'] = $resultado['tipo'];
+			$variablesTwig['plazoAmortizacion'] = $resultado['plazoAmortizacion'];
+			$variablesTwig['margen'] = $resultado['margen'];
+
+			if ($destino == 1) { //Comprar
+				if($tipoOferta == 'Fijo'){ // Compara con una de tipo fijo
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}elseif ($tipoOferta == 'Mixto'){
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}
+			} else { // Mejorar
+				if($tipoOferta == 'Fijo'){ // Compara con una de tipo fijo
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}elseif ($tipoOferta == 'Mixto'){
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}
+			}
+			$variablesTwig['resultado'] = null;
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraComparativaWeb.html.twig', $variablesTwig);
+	}
+
+	public function calculadoraComparativaSubmitAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraComparativa');
+		$formulario->handleRequest($request);
+		// dump($formulario);
+		// die();
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Comparativa',
+			'calculadora_comparativa' => $formulario->createView(),
+		);
+		// if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularComparativa($this->getDoctrine()->getManager());
+			$destino = $formulario->getData()->getDestino();
+			$tipoHipoteca = $formulario->getData()->getTipoHipoteca();
+			$variablesTwig['tipoOferta'] = $resultado['tipoOferta'];
+			$variablesTwig['nombreOferta'] = $resultado['nombreOferta'];
+			$tipoOferta = $resultado['tipoOferta'];
+			$variablesTwig['destino'] = $resultado['destino'];
+			$variablesTwig['tipo'] = $resultado['tipo'];
+			$variablesTwig['plazoAmortizacion'] = $resultado['plazoAmortizacion'];
+			$variablesTwig['margen'] = $resultado['margen'];
+
+			if ($destino == 1) { //Comprar
+				if($tipoOferta == 'Fijo'){ // Compara con una de tipo fijo
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}elseif ($tipoOferta == 'Mixto'){
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}
+			} else { // Mejorar
+				if($tipoOferta == 'Fijo'){ // Compara con una de tipo fijo
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}elseif ($tipoOferta == 'Mixto'){
+					if($tipoHipoteca == 1) { // Fijo
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+					}elseif($tipoHipoteca == 2) { // Mixta
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}elseif($tipoHipoteca == 3) { // Variable
+						$variablesTwig['cuota_mensual_original'] = $resultado['cuota_mensual_original'];
+						$variablesTwig['cuota_mensual_oferta'] = $resultado['cuota_mensual_oferta'];
+						$variablesTwig['cuota_mensual_ahorro'] = $resultado['cuota_mensual_ahorro'];
+
+						$variablesTwig['cuota_mensual_original_variable'] = $resultado['cuota_mensual_original_variable'];
+						$variablesTwig['cuota_mensual_oferta_variable'] = $resultado['cuota_mensual_oferta_variable'];
+						$variablesTwig['cuota_mensual_ahorro_variable'] = $resultado['cuota_mensual_ahorro_variable'];
+
+						$variablesTwig['intereses_original'] = $resultado['intereses_original'];
+						$variablesTwig['intereses_oferta'] = $resultado['intereses_oferta'];
+						$variablesTwig['intereses_ahorro'] = $resultado['intereses_ahorro'];
+						
+						$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+						$variablesTwig['primerosAnios'] = $resultado['primerosAnios'];
+					}
+				}
+			}
+			$variablesTwig['resultado'] = null;
+		// }
+		return $this->render('@App/Backoffice/Extras/CalculadoraComparativaWeb.html.twig', $variablesTwig);
+	}
+
+    public function calculadoraCuotaWebAction(Request $request, Swift_Mailer $mailer)
+	{
+		$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
+		$enviarCalculadora = new \AppBundle\Entity\EnvioCalculadora();
+
+        $calculadora->setTipo(1); // <- AquÃ­ defines el valor por defecto
+
+        $formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
+        $formularioEnviarCalculadora = $this->createForm('AppBundle\Form\EnviarCalculadora', $enviarCalculadora);
+
+		$formulario->handleRequest($request);
+		$formularioEnviarCalculadora->handleRequest($request);
+
+        $variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+            'formularioEnviarCalculadora' => $formularioEnviarCalculadora->createView()
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final',$resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final',$resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				if (array_key_exists('cuota_mixta_final',$resultado)) {
+					$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'];
+				} else {
+					$variablesTwig['cuota_mixta_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'];
+                if (array_key_exists('hipoteca_actual',$resultado)) {
+				    $variablesTwig['hipoteca_actual'] = $resultado['hipoteca_actual'];
+                }
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'];
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'];
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'];
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'];
+				$variablesTwig['intereses'] = $resultado['intereses'];
+				$variablesTwig['importe_total'] = $resultado['importe_total'];
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'];
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+				$variablesTwig['notario'] = $resultado['notario'];
+				$variablesTwig['registro'] = $resultado['registro'];
+				$variablesTwig['gestoria'] = $resultado['gestoria'];
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+
+				$variablesTwig['edad'] = $formulario->getData()->getEdad();
+				$variablesTwig['valorInmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['aportacionInicial'] = $formulario->getData()->getAportacionInicial();
+				$variablesTwig['destinoCompra'] = $formulario->getData()->getTextDestinoCompra();
+				$variablesTwig['obraNuevaText'] = $formulario->getData()->getTextObraNueva();
+				$variablesTwig['comunidadAutonoma'] = $formulario->getData()->getTextComunidadAutonoma();
+				$variablesTwig['discapacidad'] = $formulario->getData()->getTextMinusvaliaFamiliaNumerosa();
+				$variablesTwig['familiaNumerosa'] = $formulario->getData()->getTextFamiliaNumerosa();
+				$variablesTwig['monoparental'] = $formulario->getData()->getTextMonoparental();
+				$variablesTwig['vpo'] = $formulario->getData()->getTextVpo();
+				$variablesTwig['honorariosInmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['producto'] = $formulario->getData()->getTextProducto();
+
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+					$variablesTwig['notario'] = $resultado['notario'];
+					$variablesTwig['registro'] = $resultado['registro'];
+					$variablesTwig['gestoria'] = $resultado['gestoria'];
+					$variablesTwig['tasacion'] = $resultado['tasacion'];
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'];
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + $resultado['gastos'] - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			$variablesTwig['resultado'] = true;
+			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
+			
+
+            $from = array($this->getParameter('mailer_user') => 'Hipotea');
+			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
+				->setFrom($from)
+				->setTo($formularioEnviarCalculadora->getData()->getEmail())
+				// ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+
+            // PROBANDO CON PDF ADJUNTO
+            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+            $this->get('knp_snappy.pdf')->generateFromHtml(
+                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+                // $contenido,
+                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+                [],
+                true
+            );
+            
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            // FIN PROBANDO CON PDF ADJUNTO
+
+            $mailer->send($mensaje);
+
+            // Ahora para Hipotea
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('Consulta calculadora cuota'))
+				->setFrom($from)
+				->setTo('adrian.verdecia@semillaproyectos.com')
+				// ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
+	}
+
+    public function calculadoraPrecioMaximoWebAction(Request $request, Swift_Mailer $mailer)
+	{
+		$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
+		$enviarCalculadora = new \AppBundle\Entity\EnvioCalculadora();
+
+        $calculadora->setTipo(2); // <- AquÃ­ defines el valor por defecto
+
+        $formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
+        $formularioEnviarCalculadora = $this->createForm('AppBundle\Form\EnviarCalculadora', $enviarCalculadora);
+
+		$formulario->handleRequest($request);
+		$formularioEnviarCalculadora->handleRequest($request);
+
+        $variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+            'formularioEnviarCalculadora' => $formularioEnviarCalculadora->createView(),
+            'tipo_calculo' => 'importe_maximo'
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final',$resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final',$resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				if (array_key_exists('cuota_mixta_final',$resultado)) {
+					$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'];
+				} else {
+					$variablesTwig['cuota_mixta_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'];
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'];
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'];
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'];
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'];
+				$variablesTwig['intereses'] = $resultado['intereses'];
+				$variablesTwig['importe_total'] = $resultado['importe_total'];
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'];
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+				$variablesTwig['notario'] = $resultado['notario'];
+				$variablesTwig['registro'] = $resultado['registro'];
+				$variablesTwig['gestoria'] = $resultado['gestoria'];
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+					$variablesTwig['notario'] = $resultado['notario'];
+					$variablesTwig['registro'] = $resultado['registro'];
+					$variablesTwig['gestoria'] = $resultado['gestoria'];
+					$variablesTwig['tasacion'] = $resultado['tasacion'];
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'];
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + $resultado['gastos'] - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+
+                    $variablesTwig['numTitulares'] = $formulario->getData()->getNumTitulares();
+                    $variablesTwig['edadTitularUno'] = $formulario->getData()->getEdadTitularUno();
+                    $variablesTwig['edadTitularDos'] = $formulario->getData()->getEdadTitularDos();
+                    $variablesTwig['plazoAmortizacion'] = $formulario->getData()->getPlazoAmortizacion();
+                    $variablesTwig['aportacionInicial'] = $formulario->getData()->getAportacionInicial();
+                    $variablesTwig['destinoCompra'] = $formulario->getData()->getTextDestinoCompra();
+                    $variablesTwig['obraNuevaText'] = $formulario->getData()->getTextObraNueva();
+                    $variablesTwig['comunidadAutonoma'] = $formulario->getData()->getTextComunidadAutonoma();
+                    $variablesTwig['discapacidad'] = $formulario->getData()->getTextMinusvaliaFamiliaNumerosa();
+                    $variablesTwig['familiaNumerosa'] = $formulario->getData()->getTextFamiliaNumerosa();
+                    $variablesTwig['monoparental'] = $formulario->getData()->getTextMonoparental();
+                    $variablesTwig['vpo'] = $formulario->getData()->getTextVpo();
+                    $variablesTwig['ingresosMensuales'] = $formulario->getData()->getIngresosMensuales();
+                    $variablesTwig['numPagasExtra'] = $formulario->getData()->getNumPagasExtra();
+                    $variablesTwig['importePagaExtra'] = $formulario->getData()->getImportePagaExtra();
+                    $variablesTwig['prestamosMensuales'] = $formulario->getData()->getPrestamosMensuales();
+                    $variablesTwig['ingresosMensualesDos'] = $formulario->getData()->getIngresosMensualesDos();
+                    $variablesTwig['numPagasExtraDos'] = $formulario->getData()->getNumPagasExtraDos();
+                    $variablesTwig['importePagaExtraDos'] = $formulario->getData()->getImportePagaExtraDos();
+                    $variablesTwig['prestamosMensualesDos'] = $formulario->getData()->getPrestamosMensualesDos();
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			$variablesTwig['resultado'] = true;
+			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
+			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+
+            $from = array($this->getParameter('mailer_user') => 'Hipotea');
+			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
+				->setFrom($from)
+				->setTo($formularioEnviarCalculadora->getData()->getEmail())
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            
+            // PROBANDO CON PDF ADJUNTO
+            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+            $this->get('knp_snappy.pdf')->generateFromHtml(
+                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+                // $contenido,
+                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+                [],
+                true
+            );
+            
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            // FIN PROBANDO CON PDF ADJUNTO
+
+            $mailer->send($mensaje);
+
+            // Ahora para Hipotea
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('Consulta calculadora precio mÃ¡ximo'))
+				->setFrom($from)
+				->setTo('adrian.verdecia@semillaproyectos.com')
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
+	}
+
+    public function calculadoraCambioDeCasaWebAction(Request $request, Swift_Mailer $mailer)
+	{
+		$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
+		$enviarCalculadora = new \AppBundle\Entity\EnvioCalculadora();
+
+        $calculadora->setTipo(1); // <- AquÃ­ defines el valor por defecto
+        $calculadora->setProducto(4); // <- AquÃ­ defines el valor por defecto
+
+        $formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
+        $formularioEnviarCalculadora = $this->createForm('AppBundle\Form\EnviarCalculadora', $enviarCalculadora);
+
+		$formulario->handleRequest($request);
+		$formularioEnviarCalculadora->handleRequest($request);
+
+        $variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+            'formularioEnviarCalculadora' => $formularioEnviarCalculadora->createView(),
+            'cambioDeCasa' => true
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final',$resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final',$resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				if (array_key_exists('cuota_mixta_final',$resultado)) {
+					$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'];
+				} else {
+					$variablesTwig['cuota_mixta_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'];
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'];
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'];
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'];
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'];
+				$variablesTwig['intereses'] = $resultado['intereses'];
+				$variablesTwig['importe_total'] = $resultado['importe_total'];
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'];
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+				$variablesTwig['notario'] = $resultado['notario'];
+				$variablesTwig['registro'] = $resultado['registro'];
+				$variablesTwig['gestoria'] = $resultado['gestoria'];
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+
+				$variablesTwig['edad'] = $formulario->getData()->getEdad();
+				$variablesTwig['valorInmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['aportacionInicial'] = $formulario->getData()->getAportacionInicial();
+				$variablesTwig['destinoCompra'] = $formulario->getData()->getTextDestinoCompra();
+				$variablesTwig['obraNuevaText'] = $formulario->getData()->getTextObraNueva();
+				$variablesTwig['comunidadAutonoma'] = $formulario->getData()->getTextComunidadAutonoma();
+				$variablesTwig['discapacidad'] = $formulario->getData()->getTextMinusvaliaFamiliaNumerosa();
+				$variablesTwig['familiaNumerosa'] = $formulario->getData()->getTextFamiliaNumerosa();
+				$variablesTwig['monoparental'] = $formulario->getData()->getTextMonoparental();
+				$variablesTwig['vpo'] = $formulario->getData()->getTextVpo();
+				$variablesTwig['honorariosInmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['producto'] = $formulario->getData()->getTextProducto();
+
+				$variablesTwig['valorViviendaActual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipotecaActual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacionTrasVenta'] = $formulario->getData()->getAportacionTrasVenta();
+
+
+                
+
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+					$variablesTwig['notario'] = $resultado['notario'];
+					$variablesTwig['registro'] = $resultado['registro'];
+					$variablesTwig['gestoria'] = $resultado['gestoria'];
+					$variablesTwig['tasacion'] = $resultado['tasacion'];
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'];
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + $resultado['gastos'] - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			$variablesTwig['resultado'] = true;
+			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
+			
+
+            $from = array($this->getParameter('mailer_user') => 'Hipotea');
+			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
+				->setFrom($from)
+				->setTo($formularioEnviarCalculadora->getData()->getEmail())
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            // PROBANDO CON PDF ADJUNTO
+            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+            $this->get('knp_snappy.pdf')->generateFromHtml(
+                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+                // $contenido,
+                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+                [],
+                true
+            );
+            
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            // FIN PROBANDO CON PDF ADJUNTO
+            $mailer->send($mensaje);
+
+            // Ahora para Hipotea
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('Consulta calculadora cuota'))
+				->setFrom($from)
+				->setTo('adrian.verdecia@semillaproyectos.com')
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
+	}
+
+    public function calculadoraPrecioMaximoWebNMAction(Request $request, Swift_Mailer $mailer)
+	{
+		$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
+		$enviarCalculadora = new \AppBundle\Entity\EnvioCalculadora();
+
+        $calculadora->setTipo(2); // <- AquÃ­ defines el valor por defecto
+
+        $formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
+        $formularioEnviarCalculadora = $this->createForm('AppBundle\Form\EnviarCalculadora', $enviarCalculadora);
+
+		$formulario->handleRequest($request);
+		$formularioEnviarCalculadora->handleRequest($request);
+
+        $variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+            'formularioEnviarCalculadora' => $formularioEnviarCalculadora->createView(),
+            'tipo_calculo' => 'importe_maximo'
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final',$resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final',$resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				if (array_key_exists('cuota_mixta_final',$resultado)) {
+					$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'];
+				} else {
+					$variablesTwig['cuota_mixta_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'];
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'];
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'];
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'];
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'];
+				$variablesTwig['intereses'] = $resultado['intereses'];
+				$variablesTwig['importe_total'] = $resultado['importe_total'];
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'];
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+				$variablesTwig['notario'] = $resultado['notario'];
+				$variablesTwig['registro'] = $resultado['registro'];
+				$variablesTwig['gestoria'] = $resultado['gestoria'];
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+					$variablesTwig['notario'] = $resultado['notario'];
+					$variablesTwig['registro'] = $resultado['registro'];
+					$variablesTwig['gestoria'] = $resultado['gestoria'];
+					$variablesTwig['tasacion'] = $resultado['tasacion'];
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'];
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + $resultado['gastos'] - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+
+                    $variablesTwig['numTitulares'] = $formulario->getData()->getNumTitulares();
+                    $variablesTwig['edadTitularUno'] = $formulario->getData()->getEdadTitularUno();
+                    $variablesTwig['edadTitularDos'] = $formulario->getData()->getEdadTitularDos();
+                    $variablesTwig['plazoAmortizacion'] = $formulario->getData()->getPlazoAmortizacion();
+                    $variablesTwig['aportacionInicial'] = $formulario->getData()->getAportacionInicial();
+                    $variablesTwig['destinoCompra'] = $formulario->getData()->getTextDestinoCompra();
+                    $variablesTwig['obraNuevaText'] = $formulario->getData()->getTextObraNueva();
+                    $variablesTwig['comunidadAutonoma'] = $formulario->getData()->getTextComunidadAutonoma();
+                    $variablesTwig['discapacidad'] = $formulario->getData()->getTextMinusvaliaFamiliaNumerosa();
+                    $variablesTwig['familiaNumerosa'] = $formulario->getData()->getTextFamiliaNumerosa();
+                    $variablesTwig['monoparental'] = $formulario->getData()->getTextMonoparental();
+                    $variablesTwig['vpo'] = $formulario->getData()->getTextVpo();
+                    $variablesTwig['ingresosMensuales'] = $formulario->getData()->getIngresosMensuales();
+                    $variablesTwig['numPagasExtra'] = $formulario->getData()->getNumPagasExtra();
+                    $variablesTwig['importePagaExtra'] = $formulario->getData()->getImportePagaExtra();
+                    $variablesTwig['prestamosMensuales'] = $formulario->getData()->getPrestamosMensuales();
+                    $variablesTwig['ingresosMensualesDos'] = $formulario->getData()->getIngresosMensualesDos();
+                    $variablesTwig['numPagasExtraDos'] = $formulario->getData()->getNumPagasExtraDos();
+                    $variablesTwig['importePagaExtraDos'] = $formulario->getData()->getImportePagaExtraDos();
+                    $variablesTwig['prestamosMensualesDos'] = $formulario->getData()->getPrestamosMensualesDos();
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			$variablesTwig['resultado'] = true;
+			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
+			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+
+            $from = array($this->getParameter('mailer_user') => 'Hipotea');
+			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
+				->setFrom($from)
+				->setTo($formularioEnviarCalculadora->getData()->getEmail())
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            // PROBANDO CON PDF ADJUNTO
+            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+            $this->get('knp_snappy.pdf')->generateFromHtml(
+                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+                // $contenido,
+                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+                [],
+                true
+            );
+            
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            // FIN PROBANDO CON PDF ADJUNTO
+            $mailer->send($mensaje);
+
+            // Ahora para Hipotea
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('NUEVO MILENIO: Consulta calculadora precio mÃ¡ximo'))
+				->setFrom($from)
+				->setTo('adrian.verdecia@semillaproyectos.com')
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
+
+            // Ahora para Nuevo Milenio
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('Consulta calculadora precio mÃ¡ximo'))
+				->setFrom($from)
+				->setTo('direccion@nuevomilenio-inmo.com')
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
+	}
+
+	public function calculadoraCuotaWebPreviewAction(Request $request)
+	{
+		$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
+		$enviarCalculadora = new \AppBundle\Entity\EnvioCalculadora();
+
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
+		$formularioEnviarCalculadora = $this->createForm('AppBundle\Form\EnviarCalculadora', $enviarCalculadora);
+
+		$variablesTwig = array(
+		'titulo' => 'Vista Previa - Resultado Calculadora Cuota',
+		'resultado' => true,
+		'nombre' => 'Cliente de Prueba',
+		'valor_inmueble' => 300000,
+		'importe_fijo' => 240000,
+		'importe_variable' => 150000,
+		'amortizacion' => 300000,
+		'entrada' => 60000,
+		'interes_fijo' => 3.50,
+		'interes_variable' => 2.50,
+		'con_entrada_fijo' => 245000,
+		'con_entrada_variable' => 155000,
+		'tipo_calculo' => 'Fijo',
+		'cuota_fija' => 1250.50,
+		'cuota_variable' => 875.25,
+		'cuota_mixta' => 1062.87,
+		'cuota_fija_final' => 1250.50,
+		'cuota_variable_final' => 875.25,
+		'cuota_mixta_final' => 1062.87,
+		'valor_vivienda_actual' => 200000,
+		'hipoteca_actual' => 100000,
+		'aportacion_tras_venta' => 50000,
+		'gastos' => 5000,
+		'tipo_fijo' => 3.50,
+		'tipo_variable' => 2.50,
+		'tipo_mixto' => 3.00,
+		'tipo_luego_mixto' => 2.75,
+		'intereses' => 15000,
+		'importe_total' => 255000,
+		'gastos_inmobiliaria' => 0,
+		'tasacion' => 1800,
+		'vinculaciones' => 2500,
+		'notario' => 600,
+		'registro' => 450,
+		'gestoria' => 500,
+		'obraNueva' => false,
+		'escritura_compra_impuesto_transmisiones' => 0,
+		'importe_iva' => 3000,
+		'tipo_interes_ccaa' => 3.50,
+		'edad' => 35,
+		'valorInmueble' => 300000,
+		'aportacionInicial' => 60000,
+		'destinoCompra' => 'Vivienda habitual',
+		'obraNuevaText' => 'No',
+		'comunidadAutonoma' => 'Madrid',
+		'discapacidad' => 'No',
+		'familiaNumerosa' => 'No',
+		'monoparental' => 'No',
+		'vpo' => 'No',
+		'honorariosInmobiliaria' => 0,
+		'producto' => 'Hipoteca variable',
+		'mensaje' => 'Cálculo realizado correctamente',
+		'calculadora_avanzada' => $formulario->createView(),
+		'formularioEnviarCalculadora' => $formularioEnviarCalculadora->createView()
+		);
+		return $this->render('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig', $variablesTwig);
+	}
+}

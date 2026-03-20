@@ -1,0 +1,38 @@
+AppBundle\Entity\ImagenFichero:
+  type: entity
+  table: imagen_fichero
+  indexes:
+    fk_imagen_fichero_fichero_campo1_idx:
+      columns:
+        - id_fichero_campo
+  id:
+    idImagenFichero:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_imagen_fichero
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombreImagen:
+      type: string
+      nullable: false
+      length: 90
+      options:
+        fixed: false
+        comment: 'Nombre de cada una de las imágenes que formaran el pdf final'
+      column: nombre_imagen
+  manyToOne:
+    idFicheroCampo:
+      targetEntity: FicheroCampo
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_fichero_campo:
+          referencedColumnName: id_fichero_campo
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

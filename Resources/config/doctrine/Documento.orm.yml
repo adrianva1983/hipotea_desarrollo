@@ -1,0 +1,67 @@
+AppBundle\Entity\Documento:
+  type: entity
+  table: documento
+  indexes:
+    fk_documento_usuario1_idx:
+      columns:
+        - id_usuario
+  id:
+    idDocumento:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_documento
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombre:
+      type: string
+      nullable: false
+      length: 255
+      options:
+        fixed: false
+    nombreFichero:
+      type: string
+      nullable: true
+      length: 90
+      options:
+        fixed: false
+      column: nombre_fichero
+    descripcion:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+    fechaSubida:
+      type: datetime
+      nullable: false
+      column: fecha_subida
+    estado:
+      type: boolean
+      nullable: false
+      options:
+        comment: "0:Desactivado\n1:Publicado"
+        default: '1'
+    visiblePara:
+      type: smallint
+      nullable: true
+      options:
+        unsigned: false
+        comment: '0: Colaboradores y clientes\n1: Colaboradores\n2: Clientes'
+        default: '0'
+      column: visible_para
+  manyToOne:
+    idUsuario:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_usuario:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

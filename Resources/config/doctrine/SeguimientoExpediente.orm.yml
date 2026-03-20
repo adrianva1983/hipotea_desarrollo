@@ -1,0 +1,64 @@
+AppBundle\Entity\SeguimientoExpediente:
+  type: entity
+  table: seguimiento_expediente
+  indexes:
+    fk_seguimiento_expediente_expediente1:
+      columns:
+        - id_expediente
+    fk_seguimiento_expediente_concepto_seguimiento_expediente1:
+      columns:
+        - id_concepto_seguimiento_expediente
+  id:
+    idSeguimientoExpediente:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_seguimiento_expediente
+      generator:
+        strategy: IDENTITY
+  fields:
+    fecha:
+      type: datetime
+      nullable: true
+    comentario:
+      type: text
+      nullable: true
+      length: 65535
+      options:
+        fixed: false
+    cliente:
+      type: integer
+      nullable: true
+      options:
+        default: '0'
+      column: cliente
+    colaborador:
+      type: integer
+      nullable: true
+      options:
+        default: '0'
+      column: colaborador
+  manyToOne:
+    idExpediente:
+      targetEntity: Expediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_expediente:
+          referencedColumnName: id_expediente
+      orphanRemoval: false
+    idConceptoSeguimientoExpediente:
+      targetEntity: ConceptoSeguimientoExpediente
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_concepto_seguimiento_expediente:
+          referencedColumnName: id_concepto_seguimiento_expediente
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

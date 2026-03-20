@@ -1,0 +1,292 @@
+AppBundle\Entity\Usuario:
+  type: entity
+  repositoryClass: AppBundle\Repository\RepositorioUsuario
+  table: usuario
+  indexes:
+    fk_usuario_inmobiliaria1_idx:
+      columns:
+        - id_inmobiliaria
+    fk_usuario_oficina_idx:
+      columns:
+        - id_oficina
+  uniqueConstraints:
+    nif_UNIQUE:
+      columns:
+        - nif
+    email_UNIQUE:
+      columns:
+        - email
+  id:
+    idUsuario:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_usuario
+      generator:
+        strategy: IDENTITY
+  fields:
+    nif:
+      type: string
+      nullable: false
+      length: 10
+      options:
+        fixed: false
+    email:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    password:
+      type: string
+      nullable: true
+      length: 63
+      options:
+        fixed: false
+    role:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+        comment: "ROLE_CLIENTE: Usuario de cliente\nROLE_COLABORADOR: Usuario colaborador de inmobiliaria\nROLE_COMERCIAL: Usuario Comercial\nROLE_TECNICO:\nUsuario Tecnico\nROLE_ADMIN: Usuario Administrador\n"
+        default: ROLE_CLIENTE
+    nombre:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    apellidos:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    empresa:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    telefonoMovil:
+      type: string
+      nullable: true
+      length: 15
+      options:
+        fixed: false
+      column: telefono_movil
+    telefonoFijo:
+      type: string
+      nullable: true
+      length: 15
+      options:
+        fixed: false
+      column: telefono_fijo
+    direccion:
+      type: string
+      nullable: true
+      length: 85
+      options:
+        fixed: false
+    cp:
+      type: string
+      nullable: true
+      length: 10
+      options:
+        fixed: false
+    provincia:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    municipio:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    pais:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    fechaRegistro:
+      type: datetime
+      nullable: false
+      column: fecha_registro
+    fechaConexion:
+      type: datetime
+      nullable: false
+      column: fecha_conexion
+    fechaCaducidad:
+      type: datetime
+      nullable: true
+      options:
+        comment: 'En caso de que sea un colaborador, el tiempo de validez de su usuario'
+      column: fecha_caducidad
+    politicaPrivacidad:
+      type: boolean
+      nullable: false
+      options:
+        comment: "0: Sin aceptar\n1: Aceptado"
+        default: '0'
+      column: politica_privacidad
+    contratoFipre:
+      type: boolean
+      nullable: false
+      options:
+        comment: "0: Sin aceptar\n1: Aceptado"
+        default: '0'
+      column: contrato_fipre
+    estado:
+      type: boolean
+      nullable: true
+      options:
+        comment: "1: Activo\n0: Inactivo\n"
+    tokenActivacion:
+      type: string
+      nullable: true
+      length: 120
+      options:
+        fixed: false
+    tokenFecha:
+      type: datetime
+      nullable: true
+      column: token_fecha
+    tag:
+      type: string
+      nullable: true
+      length: 45
+      options:
+        fixed: false
+    zona:
+      type: smallint
+      nullable: true
+      options:
+        unsigned: false
+    mailerTransport:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: mailer_transport
+    mailerHost:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: mailer_host
+    mailerUser:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: mailer_user
+    mailerPassword:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: mailer_password
+    mailerPort:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: mailer_port
+    mailerEncryption:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: mailer_encryption
+    mailerAuthMode:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: mailer_auth_mode
+    firmaCorreo:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: firma_correo
+    maxOperacionesVivas:
+      type: integer
+      nullable: true
+      options:
+        unsigned: false
+      column: max_operaciones_vivas
+    fotoPerfil:
+      type: string
+      nullable: true
+      length: 255
+      options:
+        fixed: false
+      column: foto_perfil
+  manyToOne:
+    idInmobiliaria:
+      targetEntity: Inmobiliaria
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_inmobiliaria:
+          referencedColumnName: id_inmobiliaria
+      orphanRemoval: false
+    idColaborador:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_colaborador:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idOficina:
+      targetEntity: Oficina
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null 
+      inversedBy: null
+      joinColumns:
+        id_oficina:
+          referencedColumnName: id_oficina
+      orphanRemoval: false
+    idDireccionComercialAsignado:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_direccion_comercial_asignado:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+    idDireccionExpansionAsignado:
+      targetEntity: Usuario
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_direccion_expansion_asignado:
+          referencedColumnName: id_usuario
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

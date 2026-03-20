@@ -1,0 +1,541 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% form_theme agregarModificarUsuario '@App/Backoffice/bootstrap_4_layout.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/select2/dist/css/select2.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/dropify/dist/css/dropify.min.css') }}" rel="stylesheet">
+	<link href="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/css/dropify.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+{% endblock %}
+{% block customstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/css/custom/select2.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/dropify/dist/js/dropify.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/bootstrap-datepicker/bootstrap-datepicker.min.js') }}"></script>
+	<script src="{{ asset('assets/node_modules/bootstrap-datepicker/locales/bootstrap-datepicker.es.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/select2.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.1/js/i18n/es.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.1/js/dropify.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/datepicker.min.js') }}"></script>
+	{% if app.request.get('_route') is not same as('agregar_modificar_cliente') %}
+		<script src="{{ asset('assets/js/custom/usuario.min.js') }}"></script>
+	{% else %}
+		<script src="{{ asset('assets/js/custom/cliente.min.js') }}"></script>
+		<script>
+			function refrescarUsuariosColaboradores() {
+				return '{{ path('refrescar_usuarios_inmobiliarias_ajax') }}';
+			}
+		</script>
+	{% endif %}
+	{% if (app.request.get('_route') is same as('agregar_modificar_jefe_oficina')) or (app.request.get('_route') is same as('agregar_modificar_cliente')) or (app.request.get('_route') is same as('agregar_modificar_usuario_inmobiliaria')) %}
+		<script>
+			$(document).ready(function() {
+				const inmobiliariaSelect = $('#jefe_oficina_modificar_idInmobiliaria');
+				const inmobiliariaSelect2 = $('#jefe_oficina_idInmobiliaria');
+				const inmobiliariaSelect3 = $('#usuario_inmobiliaria_idInmobiliaria');
+				const inmobiliariaSelect4 = $('#usuario_inmobiliaria_modificar_idInmobiliaria');
+				const inmobiliariaSelect1 = $('#usuario_cliente_modificar_idInmobiliaria');
+				const oficinaContainer = $('#oficina-container');
+				const oficinaSelect = $('#idOficina');
+				const oficinaPreviaId = '{{ agregarModificarUsuario.vars.data.idOficina ? agregarModificarUsuario.vars.data.idOficina.idOficina : '' }}';
+
+				// Mostrar el contenedor de oficina
+				if (inmobiliariaSelect.val()) {
+					oficinaContainer.show();
+					cargarOficinas(inmobiliariaSelect.val(), oficinaPreviaId);
+				}
+				if (inmobiliariaSelect1.val()) {
+					oficinaContainer.show();
+					cargarOficinas(inmobiliariaSelect1.val(), oficinaPreviaId);
+				}
+				if (inmobiliariaSelect2.val()) {
+					oficinaContainer.show();
+					cargarOficinas(inmobiliariaSelect2.val(), oficinaPreviaId);
+				}
+				if (inmobiliariaSelect3.val()) {
+					oficinaContainer.show();
+					cargarOficinas(inmobiliariaSelect3.val(), oficinaPreviaId);
+				}
+				if (inmobiliariaSelect4.val()) {
+					oficinaContainer.show();
+					cargarOficinas(inmobiliariaSelect4.val(), oficinaPreviaId);
+				}
+				//console.log('change11111111111111111', inmobiliariaSelect1);
+				// Cargar oficinas al cambiar inmobiliaria
+				inmobiliariaSelect.on('change', function() { 
+					//console.log('change11111111111111111');
+					const inmobiliariaId = $(this).val();
+					//console.log('inmobiliariaId', inmobiliariaId);
+					if (inmobiliariaId) {
+						oficinaContainer.show();
+						cargarOficinas(inmobiliariaId, null);
+					} else {
+						oficinaContainer.hide();
+						oficinaSelect.html('<option value="">Selecciona una oficina</option>');
+					}
+				});
+				inmobiliariaSelect1.on('change', function() { 
+					//console.log('change22222222222222222222222222');
+					const inmobiliariaId = $(this).val();
+					//console.log('inmobiliariaId', inmobiliariaId);
+					if (inmobiliariaId) {
+						oficinaContainer.show();
+						cargarOficinas(inmobiliariaId, null);
+					} else {
+						oficinaContainer.hide();
+						oficinaSelect.html('<option value="">Selecciona una oficina</option>');
+					}
+				});
+				inmobiliariaSelect2.on('change', function() { 
+					//console.log('change22222222222222222222222222');
+					const inmobiliariaId = $(this).val();
+					//console.log('inmobiliariaId', inmobiliariaId);
+					if (inmobiliariaId) {
+						oficinaContainer.show();
+						cargarOficinas(inmobiliariaId, null);
+					} else {
+						oficinaContainer.hide();
+						oficinaSelect.html('<option value="">Selecciona una oficina</option>');
+					}
+				});
+				inmobiliariaSelect3.on('change', function() { 
+					//console.log('change22222222222222222222222222');
+					const inmobiliariaId = $(this).val();
+					//console.log('inmobiliariaId', inmobiliariaId);
+					if (inmobiliariaId) {
+						oficinaContainer.show();
+						cargarOficinas(inmobiliariaId, null);
+					} else {
+						oficinaContainer.hide();
+						oficinaSelect.html('<option value="">Selecciona una oficina</option>');
+					}
+				});
+				inmobiliariaSelect4.on('change', function() { 
+					//console.log('change22222222222222222222222222');
+					const inmobiliariaId = $(this).val();
+					//console.log('inmobiliariaId', inmobiliariaId);
+					if (inmobiliariaId) {
+						oficinaContainer.show();
+						cargarOficinas(inmobiliariaId, null);
+					} else {
+						oficinaContainer.hide();
+						oficinaSelect.html('<option value="">Selecciona una oficina</option>');
+					}
+				});
+
+				function cargarOficinas(inmobiliariaId, oficinaPreviaId) {
+					$.ajax({
+						url: '{{ path('obtener_oficinas_ajax') }}',
+						type: 'POST',
+						data: { inmobiliariaId: inmobiliariaId },
+						dataType: 'json',
+						success: function(data) {
+							let options = '<option value="">Selecciona una oficina</option>';
+							if (Array.isArray(data)) {
+								data.forEach(function(oficina) {
+									const isSelected = oficinaPreviaId && (oficina.id == oficinaPreviaId) ? 'selected' : '';
+									options += '<option value="' + oficina.id + '" ' + isSelected + '>' + oficina.nombre + '</option>';
+								});
+							}
+							oficinaSelect.html(options);
+							$('#idOficina').select2();
+						},
+						error: function(xhr, status, error) {
+							console.error('Error al cargar oficinas:', error);
+							//console.log('Response:', xhr.responseText);
+						}
+					});
+				}
+			});
+		</script>
+	{% endif %}
+{% endblock %}
+{% block body %}
+	{# {% if titulo != "" %}
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">{{ titulo }}</h4>
+			</div>
+		</div>
+	{% endif %} #}
+	{{ form_start(agregarModificarUsuario) }}
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">Cuenta de usuario</h4>
+			<div class="form-row">
+				<div class="col-md">
+					<div class="form-group">
+						{{ form_label(agregarModificarUsuario.email.first) }}
+						<div class="input-group">
+							<div class="input-group-prepend">
+							<span class="input-group-text">
+								<i class="ti-email"></i>
+							</span>
+							</div>
+							{{ form_widget(agregarModificarUsuario.email.first) }}
+						</div>
+						{{ form_errors(agregarModificarUsuario.email.first) }}
+					</div>
+					<div class="form-group">
+						{{ form_label(agregarModificarUsuario.email.second) }}
+						<div class="input-group">
+							<div class="input-group-prepend">
+							<span class="input-group-text">
+								<i class="ti-email"></i>
+							</span>
+							</div>
+							{{ form_widget(agregarModificarUsuario.email.second) }}
+						</div>
+						{{ form_errors(agregarModificarUsuario.email.second) }}
+					</div>
+				</div>
+				<div class="col-md">
+					<div class="form-group">
+						{{ form_label(agregarModificarUsuario.plainPassword.first) }}
+						<div class="input-group">
+							<div class="input-group-prepend">
+							<span class="input-group-text">
+								<i class="ti-lock"></i>
+							</span>
+							</div>
+							{{ form_widget(agregarModificarUsuario.plainPassword.first) }}
+						</div>
+						{{ form_errors(agregarModificarUsuario.plainPassword.first) }}
+					</div>
+					<div class="form-group">
+						{{ form_label(agregarModificarUsuario.plainPassword.second) }}
+						<div class="input-group">
+							<div class="input-group-prepend">
+							<span class="input-group-text">
+								<i class="ti-lock"></i>
+							</span>
+							</div>
+							{{ form_widget(agregarModificarUsuario.plainPassword.second) }}
+						</div>
+						{{ form_errors(agregarModificarUsuario.plainPassword.second) }}
+					</div>
+				</div>
+				<div class="col-md form-group">
+				{% if app.request.get('_route') is not same as('mi_perfil') and (is_granted('ROLE_ADMIN') or (is_granted('ROLE_COMERCIAL') and (app.request.get('_route') is same as('agregar_modificar_usuario_inmobiliaria') or app.request.get('_route') is same as('agregar_modificar_jefe_inmobiliaria') or app.request.get('_route') is same as('agregar_modificar_jefe_oficina') or app.request.get('_route') is same as('agregar_modificar_responsable_zona')))) %}
+						{{ form_label(agregarModificarUsuario.fechaCaducidad) }}
+						<div class="input-group">
+							<div class="input-group-prepend">
+								<span class="input-group-text">
+									<i class="ti-calendar"></i>
+								</span>
+							</div>
+							{{ form_widget(agregarModificarUsuario.fechaCaducidad) }}
+						</div>
+						{{ form_errors(agregarModificarUsuario.fechaCaducidad) }}
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">Datos del usuario</h4>
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.username) }}
+					<div class="input-group">
+						<div class="input-group-prepend">
+							<span class="input-group-text">
+								<i class="ti-user"></i>
+							</span>
+						</div>
+						{{ form_widget(agregarModificarUsuario.username) }}
+					</div>
+					{{ form_errors(agregarModificarUsuario.username) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.apellidos) }}
+					{{ form_widget(agregarModificarUsuario.apellidos) }}
+					{{ form_errors(agregarModificarUsuario.apellidos) }}
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.nif) }}
+					{{ form_widget(agregarModificarUsuario.nif) }}
+					{# Mostrar un alert específico y claro si el NIF ya está usado. #}
+					{% set nif_used = false %}
+					{% for error in agregarModificarUsuario.nif.vars.errors %}
+						{% if error.message == 'Este valor ya se ha utilizado.' or error.message == 'This value is already used.' %}
+							{% set nif_used = true %}
+						{% endif %}
+					{% endfor %}
+					{% if nif_used %}
+						<div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+							<span class="form-error-icon badge badge-danger text-uppercase">Error</span>
+							<strong> El NIF ya está en uso.</strong>
+							<span class="d-block">Comprueba si pertenece a otro usuario o contacta con soporte si consideras que es un error.</span>
+							<button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+								<span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+					{% endif %}
+					{# Mostrar otros errores distintos al mensaje genérico #}
+					{% for error in agregarModificarUsuario.nif.vars.errors %}
+						{% if error.message != 'Este valor ya se ha utilizado.' and error.message != 'This value is already used.' %}
+							<span class="form-error-message">{{ error.message }}</span>
+						{% endif %}
+					{% endfor %}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.telefonoFijo) }}
+					{{ form_widget(agregarModificarUsuario.telefonoFijo) }}
+					{{ form_errors(agregarModificarUsuario.telefonoFijo) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.telefonoMovil) }}
+					<div class="input-group">
+						<div class="input-group-prepend">
+							<span class="input-group-text">
+								<i class="ti-mobile"></i>
+							</span>
+						</div>
+						{{ form_widget(agregarModificarUsuario.telefonoMovil) }}
+					</div>
+					{{ form_errors(agregarModificarUsuario.telefonoMovil) }}
+				</div>
+			{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+				{% if agregarModificarUsuario.vars.data.roles and 'ROLE_COMERCIAL' in agregarModificarUsuario.vars.data.roles %}
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.idDireccionComercialAsignado) }}
+						{{ form_widget(agregarModificarUsuario.idDireccionComercialAsignado, {attr: {class: 'select2'}}) }}
+						{{ form_errors(agregarModificarUsuario.idDireccionComercialAsignado) }}
+					</div>
+				{% endif %}
+				{% if agregarModificarUsuario.vars.data.roles and 'ROLE_RESPONSABLE_ZONA' in agregarModificarUsuario.vars.data.roles %}
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.idDireccionExpansionAsignado) }}
+						{{ form_widget(agregarModificarUsuario.idDireccionExpansionAsignado, {attr: {class: 'select2'}}) }}
+						{{ form_errors(agregarModificarUsuario.idDireccionExpansionAsignado) }}
+					</div>
+				{% endif %}
+			{% endif %}
+		</div>
+			<div class="form-row">
+				{% if app.request.get('_route') is not same as('agregar_modificar_cliente') %}
+					<div class="form-group col-lg col-sm-6">
+						{{ form_label(agregarModificarUsuario.empresa) }}
+						{{ form_widget(agregarModificarUsuario.empresa) }}
+						{{ form_errors(agregarModificarUsuario.empresa) }}
+					</div>
+				{% endif %}
+				{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+					<div class="form-group col-lg col-sm-3">
+						{{ form_label(agregarModificarUsuario.idInmobiliaria) }}
+						{{ form_widget(agregarModificarUsuario.idInmobiliaria,{attr:{class:'select2','id':'idInmobiliaria'}}) }}
+						{{ form_errors(agregarModificarUsuario.idInmobiliaria) }}
+					</div>
+					{% if (app.request.get('_route') is same as('agregar_modificar_jefe_oficina')) or (app.request.get('_route') is same as('agregar_modificar_cliente')) or (app.request.get('_route') is same as('agregar_modificar_usuario_inmobiliaria')) %}
+						<div class="form-group col-lg col-sm-3" id="oficina-container" style="display: none;">
+							<label for="idOficina">Oficina</label>
+							<select id="idOficina" name="idOficina" class="form-control select2">
+								<option value="">Selecciona una oficina</option>
+							</select>
+						</div>
+					{% endif %}
+				{% endif %}
+				{% if app.request.get('_route') is same as('agregar_modificar_cliente') %}
+					<div class="form-group col-lg col-sm-3">
+						{{ form_label(agregarModificarUsuario.idColaborador) }}
+						{{ form_widget(agregarModificarUsuario.idColaborador,{attr:{class:'select2-colaboradores'}}) }}
+						{{ form_errors(agregarModificarUsuario.idColaborador) }}
+					</div>
+				{% endif %}
+				{% if app.request.get('_route') is same as('agregar_modificar_cliente') or app.request.get('_route') is same as('mi_perfil')  %}
+					{{ form_widget(agregarModificarUsuario.role,{attr:{class:'d-none'}}) }} 
+				{% else %}
+					<div class="form-group col-sm 1111">
+						{{ form_label(agregarModificarUsuario.role) }}
+						{{ form_widget(agregarModificarUsuario.role) }}
+						{{ form_errors(agregarModificarUsuario.role) }}
+					</div>
+					{% if app.request.get('_route') is not same as('mi_perfil') and is_granted('ROLE_ADMIN') %}
+						<div class="form-group col-sm 2222">
+						{{ form_label(agregarModificarUsuario.maxOperacionesVivas) }}
+						{{ form_widget(agregarModificarUsuario.maxOperacionesVivas) }}
+						{{ form_errors(agregarModificarUsuario.maxOperacionesVivas) }}
+					</div>
+					{% endif %}
+				{% endif %}
+				{% if app.request.get('_route') is not same as('mi_perfil')and is_granted('ROLE_ADMIN') %}
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.tag) }}
+						{{ form_widget(agregarModificarUsuario.tag) }}
+						{{ form_errors(agregarModificarUsuario.tag) }}
+					</div>
+				{% else %}
+					{{ form_widget(agregarModificarUsuario.tag,{attr:{class:'d-none'}}) }}
+				{% endif %}
+				{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+					<div class="form-group col-sm-2 d-sm-flex align-items-center">
+						{{ form_label(agregarModificarUsuario.estado) }}
+						{{ form_widget(agregarModificarUsuario.estado) }}
+						{{ form_errors(agregarModificarUsuario.estado) }}
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">Foto de perfil</h4>
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{% if fichero_subido is defined and fichero_subido != '' %}
+						<div class="mb-3">
+							<label>Foto actual:</label>
+							<div class="mb-2" style="text-align: center;">
+								<img src="data:image/jpeg;base64,{{ fichero_subido }}" style="max-width: 200px; max-height: 200px; border-radius: 5px;" />
+							</div>
+						</div>
+					{% endif %}
+					{% if agregarModificarUsuario.fotoPerfil is defined %}
+						{{ form_label(agregarModificarUsuario.fotoPerfil) }}
+						{{ form_widget(agregarModificarUsuario.fotoPerfil,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-height':207,'data-max-file-size':max_file_size}}) }}
+						{{ form_errors(agregarModificarUsuario.fotoPerfil) }}
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">Dirección actual</h4>
+			<div class="form-row">
+				<div class="form-group col-sm-4">
+					{{ form_label(agregarModificarUsuario.cp) }}
+					{{ form_widget(agregarModificarUsuario.cp) }}
+					{{ form_errors(agregarModificarUsuario.cp) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.direccion) }}
+					{{ form_widget(agregarModificarUsuario.direccion) }}
+					{{ form_errors(agregarModificarUsuario.direccion) }}
+				</div>
+				{% if app.request.get('_route') is not same as('agregar_modificar_cliente') %}
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.zona) }}
+						{{ form_widget(agregarModificarUsuario.zona) }}
+						{{ form_errors(agregarModificarUsuario.zona) }}
+					</div>
+				{% endif %}
+			</div>
+			<div class="form-row">
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.municipio) }}
+					{{ form_widget(agregarModificarUsuario.municipio) }}
+					{{ form_errors(agregarModificarUsuario.municipio) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.provincia) }}
+					{{ form_widget(agregarModificarUsuario.provincia) }}
+					{{ form_errors(agregarModificarUsuario.provincia) }}
+				</div>
+				<div class="form-group col-sm">
+					{{ form_label(agregarModificarUsuario.pais) }}
+					{{ form_widget(agregarModificarUsuario.pais) }}
+					{{ form_errors(agregarModificarUsuario.pais) }}
+				</div>
+			</div>
+		</div>
+	</div>
+	{% if (is_granted('ROLE_ADMIN') or is_granted('ROLE_TECNICO') or is_granted('ROLE_COMERCIAL')) and app.request.get('_route') is not same as('agregar_modificar_cliente') and app.request.get('_route') is not same as('agregar_modificar_usuario_inmobiliaria')  %}
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">Configuración de envío de Correo</h4>
+				<div class="form-row">
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.mailerTransport) }}
+						{{ form_widget(agregarModificarUsuario.mailerTransport) }}
+						{{ form_errors(agregarModificarUsuario.mailerTransport) }}
+					</div>
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.mailerHost) }}
+						{{ form_widget(agregarModificarUsuario.mailerHost) }}
+						{{ form_errors(agregarModificarUsuario.mailerHost) }}
+					</div>
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.mailerUser) }}
+						{{ form_widget(agregarModificarUsuario.mailerUser) }}
+						{{ form_errors(agregarModificarUsuario.mailerUser) }}
+					</div>
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.mailerPassword) }}
+						{{ form_widget(agregarModificarUsuario.mailerPassword) }}
+						{{ form_errors(agregarModificarUsuario.mailerPassword) }}
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.mailerPort) }}
+						{{ form_widget(agregarModificarUsuario.mailerPort) }}
+						{{ form_errors(agregarModificarUsuario.mailerPort) }}
+					</div>
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.mailerEncryption) }}
+						{{ form_widget(agregarModificarUsuario.mailerEncryption) }}
+						{{ form_errors(agregarModificarUsuario.mailerEncryption) }}
+					</div>
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.mailerAuthMode) }}
+						{{ form_widget(agregarModificarUsuario.mailerAuthMode) }}
+						{{ form_errors(agregarModificarUsuario.mailerAuthMode) }}
+					</div>
+					<div class="form-group col-sm">
+						{{ form_label(agregarModificarUsuario.firmaCorreo) }}
+						{% if fichero_subido is defined %}
+							{{ form_widget(agregarModificarUsuario.firmaCorreo,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-default-file':fichero_subido,'data-height':207,'data-max-file-size':max_file_size}}) }}
+						{% else %}
+							{{ form_widget(agregarModificarUsuario.firmaCorreo,{attr:{class:'dropify','data-allowed-file-extensions':extensiones_permitidas,'data-height':207,'data-max-file-size':max_file_size}}) }}
+						{% endif %}
+						{{ form_errors(agregarModificarUsuario.firmaCorreo) }}
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endif %}
+	<div class="card">
+		<div class="card-body">
+			<div class="d-flex">
+				{% if app.request.get('_route') is same as('agregar_modificar_usuario') %}
+					<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_usuarios') }}">Volver</a>
+				{% elseif app.request.get('_route') is same as('agregar_modificar_cliente') %}
+					<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_clientes') }}">Volver</a>
+				{% elseif app.request.get('_route') is same as('agregar_modificar_usuario_inmobiliaria') %}
+					<a class="btn btn-success mr-auto waves-effect" href="{{ path('lista_usuarios_inmobiliarias') }}">Volver</a>
+				{% else %}
+					<a class="btn btn-success mr-auto waves-effect" href="{{ path('inicio') }}">Volver</a>
+				{% endif %}
+				{{ form_label(agregarModificarUsuario.reset) }}
+				{{ form_widget(agregarModificarUsuario.reset) }}
+				{{ form_label(agregarModificarUsuario.submit) }}
+				{{ form_widget(agregarModificarUsuario.submit,{attr:{class:'btn-success ml-3'}}) }}
+			</div>
+		</div>
+	</div>
+	{{ form_row(agregarModificarUsuario._token) }}
+	{{ form_end(agregarModificarUsuario, {'render_rest': false}) }}
+{% endblock %}

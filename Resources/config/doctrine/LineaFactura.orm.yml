@@ -1,0 +1,101 @@
+AppBundle\Entity\LineaFactura:
+  type: entity
+  table: linea_factura
+  indexes:
+    fk_linea_factura_factura1_idx:
+      columns:
+        - id_factura
+  id:
+    idLineaFactura:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_linea_factura
+      generator:
+        strategy: IDENTITY
+  fields:
+    lineaFactura:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+        comment: 'cada linea de una factura tendrá un numero distinto, comenzando en 1'
+      column: linea_factura
+    concepto:
+      type: string
+      nullable: false
+      length: 45
+      options:
+        fixed: false
+    unidades:
+      type: smallint
+      nullable: false
+      options:
+        unsigned: false
+        default: '1'
+    importe:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+    tipoIva:
+      type: smallint
+      nullable: false
+      options:
+        unsigned: false
+        comment: 'Exento,4,10,21 Por defecto el 21%'
+        default: '21'
+      column: tipo_iva
+    impuestos:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+    tipoRetencion:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+      column: tipo_retencion
+    retencion:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+    totalBaseImponible:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+      column: total_base_imponible
+    total:
+      type: decimal
+      nullable: false
+      precision: 10
+      scale: 2
+      options:
+        default: '0.00'
+  manyToOne:
+    idFactura:
+      targetEntity: Factura
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_factura:
+          referencedColumnName: id_factura
+      orphanRemoval: false
+  lifecycleCallbacks: {  }

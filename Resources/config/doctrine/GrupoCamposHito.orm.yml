@@ -1,0 +1,46 @@
+AppBundle\Entity\GrupoCamposHito:
+  type: entity
+  table: grupo_campos_hito
+  indexes:
+    fk_campo_hito_hito2_idx:
+      columns:
+        - id_hito
+  id:
+    idGrupoCamposHito:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+      id: true
+      column: id_grupo_campos_hito
+      generator:
+        strategy: IDENTITY
+  fields:
+    nombre:
+      type: text
+      nullable: true
+      options:
+        fixed: false
+    orden:
+      type: integer
+      nullable: false
+      options:
+        unsigned: false
+        comment: 'Orden para dibujar el campo'
+    repetible:
+      type: boolean
+      nullable: false
+      options:
+        default: '0'
+  manyToOne:
+    idHito:
+      targetEntity: Hito
+      cascade: {  }
+      fetch: LAZY
+      mappedBy: null
+      inversedBy: null
+      joinColumns:
+        id_hito:
+          referencedColumnName: id_hito
+      orphanRemoval: false
+  lifecycleCallbacks: {  }
