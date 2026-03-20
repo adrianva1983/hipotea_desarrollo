@@ -840,7 +840,7 @@ calculadora_avanzada_test_ajax:
   methods: [POST]
 
 kommo_webhook:
-  path: /webhook/kommo
+  path: /API/kommo
   controller: AppBundle:API:recibirKommoWebhook
   methods: [POST]
 
