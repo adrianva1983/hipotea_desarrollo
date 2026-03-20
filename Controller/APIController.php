@@ -5901,7 +5901,8 @@ class APIController extends Controller
 	 */
 	public function recibirKommoWebhookAction(Request $request)
 	{
-		if ($request->headers->get('Content-Type') === 'application/json') {
+		return new JsonResponse(['mensaje' => 'Endpoint de Kommo activo'], JSON_UNESCAPED_UNICODE);
+		/*if ($request->headers->get('Content-Type') === 'application/json') {
 			$jsonRecibido = json_decode($request->getContent(), true);
 			$respuesta = array();
 			
@@ -5986,7 +5987,7 @@ class APIController extends Controller
 				return new JsonResponse($respuesta, JSON_UNESCAPED_UNICODE);
 			}
 			throw new HttpException(400);
-		}
+		}*/
 	}
 
 }
