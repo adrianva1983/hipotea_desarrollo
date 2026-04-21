@@ -844,6 +844,23 @@ kommo_webhook:
   controller: AppBundle:API:recibirKommoWebhook
   methods: [POST]
 
+api_webhook_kommo_eventos:
+  path: /webhook/kommo/eventos
+  controller: AppBundle:Kommo:webhookKommoEventos
+  methods: [POST]
+
+api_kommo_get_lead_messages:
+  path: /webhook/kommo/lead/{kommoLeadId}
+  controller: AppBundle:Kommo:getLeadMessages
+  methods: [GET]
+  requirements:
+    kommoLeadId: \d+
+
+api_kommo_estadisticas:
+  path: /webhook/kommo/estadisticas
+  controller: AppBundle:Kommo:estadisticas
+  methods: [GET]
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }
