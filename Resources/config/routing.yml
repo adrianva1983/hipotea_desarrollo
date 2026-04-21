@@ -779,6 +779,25 @@ ia_config_delete:
   requirements:
     id: '\d+'
 
+agente_vistas_index:
+  path: /Admin/AgenteVistas
+  controller: AppBundle:AgenteVistas:index
+
+agente_vistas_crear:
+  path: /Admin/AgenteVistas/Crear
+  controller: AppBundle:AgenteVistas:crear
+  methods: [GET, POST]
+
+agente_vistas_modificar:
+  path: /Admin/AgenteVistas/Modificar
+  controller: AppBundle:AgenteVistas:modificar
+  methods: [GET, POST]
+
+agente_vistas_obtener_codigo:
+  path: /AJAX/AgenteVistas/ObtenerCodigo
+  controller: AppBundle:AgenteVistas:obtenerCodigo
+  methods: [GET]
+
 obtener_cliente:
   path: /admin/obtener-cliente/
   controller: AppBundle:GrupoNegociador:obtenerCliente

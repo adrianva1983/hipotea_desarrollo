@@ -1,0 +1,81 @@
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+    {{ parent() }}
+    <link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+    {{ parent() }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+    {{ parent() }}
+    <script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+    {{ parent() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block body %}
+    <div class="card">
+        <div class="card-body">
+            {% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+            <div class="d-flex align-items-center mb-3">
+                <h4 class="card-title mb-0 mr-auto">Agente de Vistas IA</h4>
+                <a class="btn btn-success waves-effect" href="{{ path('agente_vistas_crear') }}">
+                    <i class="fas fa-plus mr-1"></i> Nueva vista
+                </a>
+            </div>
+            <p class="text-muted">
+                Utiliza Inteligencia Artificial para crear nuevas plantillas Twig o para modificar las existentes
+                mediante instrucciones en lenguaje natural.
+            </p>
+
+            {% if vistas is defined and vistas is not empty %}
+                <table class="table table-striped table-sm full-color-table full-info-table hover-table" id="tabla-vistas">
+                    <thead>
+                    <tr>
+                        <th>Ruta de la vista</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for vista in vistas %}
+                        <tr>
+                            <td>
+                                <code>{{ vista }}</code>
+                            </td>
+                            <td class="text-right">
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="{{ path('agente_vistas_modificar', {'ruta': vista}) }}">
+                                    <i class="far fa-edit mr-1"></i>Modificar con IA
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    No se encontraron plantillas Twig en el directorio de vistas.
+                </div>
+            {% endif %}
+
+            <a class="btn btn-secondary mt-3" href="{{ path('inicio') }}">Volver</a>
+        </div>
+    </div>
+{% endblock %}
+{% block customscripts %}
+    {{ parent() }}
+    <script>
+        $(document).ready(function () {
+            $('#tabla-vistas').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.19/i18n/Spanish.json'
+                },
+                order: [[0, 'asc']],
+                pageLength: 25
+            });
+        });
+    </script>
+{% endblock %}
