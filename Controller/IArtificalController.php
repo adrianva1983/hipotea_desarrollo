@@ -22,6 +22,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  */
 class IArtificalController extends Controller
 {
+    /** Número máximo de iteraciones del bucle agéntico para evitar bucles infinitos */
+    const MAX_AGENT_ITERATIONS = 10;
+
     /**
      * Registra un mensaje en el log diario (heredado desde WhatsappController)
      * Usamos el mismo método que en WhatsappController para consistencia
@@ -2299,10 +2302,8 @@ class IArtificalController extends Controller
             'acciones'     => []
         ];
 
-        // Máximo 10 iteraciones para evitar bucles infinitos
-        $maxIteraciones = 10;
-
-        for ($i = 0; $i < $maxIteraciones; $i++) {
+        // Máximo de iteraciones para evitar bucles infinitos
+        for ($i = 0; $i < self::MAX_AGENT_ITERATIONS; $i++) {
             $this->logear("Agente iteración {$i}");
 
             if ($provider === 'OPENAI') {
