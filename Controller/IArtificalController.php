@@ -2222,6 +2222,734 @@ class IArtificalController extends Controller
         return $mensaje;
     }
 
+    // =========================================================================
+    // AGENTE ESPECIALISTA EN CREACIÓN DE EXPEDIENTES Y CLIENTES
+    // =========================================================================
+
+    /**
+     * Endpoint HTTP del agente de creación de expedientes.
+     *
+     * POST /API/IA/AgenteExpediente
+     * Body JSON: { "mensaje": "...", "id_usuario_solicitante": 5 }
+     *
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @return JsonResponse
+     */
+    public function agenteExpedienteAction(\Symfony\Component\HttpFoundation\Request $request): JsonResponse
+    {
+        try {
+            $datos = json_decode($request->getContent(), true);
+            $mensaje = trim($datos['mensaje'] ?? '');
+            $idUsuarioSolicitante = isset($datos['id_usuario_solicitante']) ? (int)$datos['id_usuario_solicitante'] : null;
+
+            if (empty($mensaje)) {
+                return new JsonResponse(['error' => 'El campo "mensaje" es obligatorio.'], 400);
+            }
+
+            $resultado = $this->ejecutarAgenteExpediente($mensaje, $idUsuarioSolicitante);
+
+            return new JsonResponse($resultado);
+
+        } catch (\Exception $e) {
+            $this->logear('AgenteExpediente ERROR: ' . $e->getMessage());
+            return new JsonResponse(['error' => 'Error interno del agente: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Bucle agéntico principal.
+     * Envía el mensaje al LLM junto con las definiciones de herramientas y ejecuta
+     * las llamadas a funciones hasta que el modelo produce una respuesta final.
+     *
+     * @param string   $mensaje               Petición en lenguaje natural
+     * @param int|null $idUsuarioSolicitante   ID del usuario que lanza la petición (opcional)
+     * @return array   Resultado final con expediente_id, cliente_id y mensaje de respuesta
+     */
+    public function ejecutarAgenteExpediente(string $mensaje, ?int $idUsuarioSolicitante = null): array
+    {
+        $this->logear('=== INICIO ejecutarAgenteExpediente ===');
+        $this->logear('Mensaje: ' . substr($mensaje, 0, 200));
+
+        $config = $this->obtenerConfiguracionIA();
+        if (!$config) {
+            return ['error' => 'No hay configuración de IA disponible.', 'exito' => false];
+        }
+
+        $herramientas = $this->definirHerramientasAgente();
+        $provider = strtoupper($config['provider'] ?? 'GEMINI');
+
+        $systemPrompt = 'Eres un agente especialista en la creación de expedientes hipotecarios. '
+            . 'Tu objetivo es crear un expediente completo para un cliente. '
+            . 'Si el cliente no existe, créalo primero usando la herramienta crear_cliente. '
+            . 'Si el cliente ya existe, búscalo con buscar_cliente y usa su id. '
+            . 'Una vez tengas el id del cliente, crea el expediente con crear_expediente. '
+            . 'Cuando hayas completado todas las acciones, responde con un resumen en español '
+            . 'indicando el id del cliente y el id del expediente creado.';
+
+        // Historial de mensajes del agente
+        $mensajes = [
+            ['role' => 'user', 'content' => $mensaje]
+        ];
+
+        $estadoFinal = [
+            'exito'        => false,
+            'cliente_id'   => null,
+            'expediente_id' => null,
+            'respuesta'    => '',
+            'acciones'     => []
+        ];
+
+        // Máximo 10 iteraciones para evitar bucles infinitos
+        $maxIteraciones = 10;
+
+        for ($i = 0; $i < $maxIteraciones; $i++) {
+            $this->logear("Agente iteración {$i}");
+
+            if ($provider === 'OPENAI') {
+                $respuestaLLM = $this->llamarOpenAIConHerramientas($mensajes, $herramientas, $config, $systemPrompt);
+            } else {
+                $respuestaLLM = $this->llamarGeminiConHerramientas($mensajes, $herramientas, $config, $systemPrompt);
+            }
+
+            if (isset($respuestaLLM['error'])) {
+                $estadoFinal['respuesta'] = 'Error al comunicarse con la IA: ' . $respuestaLLM['error'];
+                break;
+            }
+
+            // ¿El LLM quiere llamar a una herramienta?
+            if (!empty($respuestaLLM['tool_calls'])) {
+                foreach ($respuestaLLM['tool_calls'] as $toolCall) {
+                    $nombreHerramienta = $toolCall['nombre'];
+                    $parametros        = $toolCall['parametros'];
+
+                    $this->logear("Herramienta llamada: {$nombreHerramienta} con " . json_encode($parametros));
+
+                    $resultadoHerramienta = $this->ejecutarHerramientaAgente($nombreHerramienta, $parametros);
+
+                    $this->logear("Resultado herramienta: " . json_encode($resultadoHerramienta));
+
+                    // Actualizar estado según resultado
+                    if ($nombreHerramienta === 'crear_cliente' && !empty($resultadoHerramienta['id_cliente'])) {
+                        $estadoFinal['cliente_id'] = $resultadoHerramienta['id_cliente'];
+                    }
+                    if ($nombreHerramienta === 'buscar_cliente' && !empty($resultadoHerramienta['id_cliente'])) {
+                        $estadoFinal['cliente_id'] = $resultadoHerramienta['id_cliente'];
+                    }
+                    if ($nombreHerramienta === 'crear_expediente' && !empty($resultadoHerramienta['id_expediente'])) {
+                        $estadoFinal['expediente_id'] = $resultadoHerramienta['id_expediente'];
+                        $estadoFinal['exito'] = true;
+                    }
+
+                    $estadoFinal['acciones'][] = [
+                        'herramienta' => $nombreHerramienta,
+                        'parametros'  => $parametros,
+                        'resultado'   => $resultadoHerramienta
+                    ];
+
+                    // Agregar al historial: la llamada del asistente y el resultado de la herramienta
+                    $mensajes[] = [
+                        'role'       => 'assistant',
+                        'tool_calls' => [$toolCall]
+                    ];
+                    $mensajes[] = [
+                        'role'        => 'tool',
+                        'tool_call_id' => $toolCall['id'] ?? 'call_' . $i,
+                        'nombre'      => $nombreHerramienta,
+                        'content'     => json_encode($resultadoHerramienta, JSON_UNESCAPED_UNICODE)
+                    ];
+                }
+                // Continuar el bucle para obtener la respuesta final del LLM
+                continue;
+            }
+
+            // El LLM ha producido una respuesta textual final
+            $estadoFinal['respuesta'] = $respuestaLLM['texto'] ?? '';
+            $this->logear('Agente respuesta final: ' . substr($estadoFinal['respuesta'], 0, 200));
+            break;
+        }
+
+        $this->logear('=== FIN ejecutarAgenteExpediente === exito=' . ($estadoFinal['exito'] ? 'SI' : 'NO'));
+        return $estadoFinal;
+    }
+
+    /**
+     * Devuelve la definición de las herramientas disponibles para el agente.
+     */
+    private function definirHerramientasAgente(): array
+    {
+        return [
+            [
+                'nombre'      => 'buscar_cliente',
+                'descripcion' => 'Busca un cliente existente por email, nombre completo o teléfono. Devuelve id_cliente si se encuentra.',
+                'parametros'  => [
+                    'email'    => ['tipo' => 'string', 'descripcion' => 'Email del cliente', 'requerido' => false],
+                    'nombre'   => ['tipo' => 'string', 'descripcion' => 'Nombre y/o apellidos del cliente', 'requerido' => false],
+                    'telefono' => ['tipo' => 'string', 'descripcion' => 'Teléfono móvil del cliente', 'requerido' => false],
+                ]
+            ],
+            [
+                'nombre'      => 'crear_cliente',
+                'descripcion' => 'Crea un nuevo cliente (usuario con rol ROLE_CLIENTE). Devuelve id_cliente del usuario creado.',
+                'parametros'  => [
+                    'nombre'    => ['tipo' => 'string', 'descripcion' => 'Nombre del cliente', 'requerido' => true],
+                    'apellidos' => ['tipo' => 'string', 'descripcion' => 'Apellidos del cliente', 'requerido' => true],
+                    'email'     => ['tipo' => 'string', 'descripcion' => 'Email del cliente (se usará como nombre de usuario)', 'requerido' => true],
+                    'telefono'  => ['tipo' => 'string', 'descripcion' => 'Teléfono móvil (opcional)', 'requerido' => false],
+                    'nif'       => ['tipo' => 'string', 'descripcion' => 'DNI/NIE/NIF del cliente (opcional)', 'requerido' => false],
+                ]
+            ],
+            [
+                'nombre'      => 'crear_expediente',
+                'descripcion' => 'Crea un expediente con todos sus hitos y campos para un cliente existente. Devuelve id_expediente.',
+                'parametros'  => [
+                    'id_cliente' => ['tipo' => 'integer', 'descripcion' => 'ID del cliente (usuario) al que se asocia el expediente', 'requerido' => true],
+                    'vivienda'   => ['tipo' => 'string', 'descripcion' => 'Descripción de la vivienda (opcional, por defecto "NUEVA VIVIENDA")', 'requerido' => false],
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Despacha la llamada a la herramienta correspondiente.
+     */
+    private function ejecutarHerramientaAgente(string $nombre, array $parametros): array
+    {
+        switch ($nombre) {
+            case 'buscar_cliente':
+                return $this->herramientaBuscarCliente($parametros);
+            case 'crear_cliente':
+                return $this->herramientaCrearCliente($parametros);
+            case 'crear_expediente':
+                return $this->herramientaCrearExpediente($parametros);
+            default:
+                return ['error' => "Herramienta desconocida: {$nombre}"];
+        }
+    }
+
+    /**
+     * Herramienta: buscar_cliente
+     * Busca un cliente existente por email, nombre o teléfono.
+     */
+    private function herramientaBuscarCliente(array $params): array
+    {
+        try {
+            $em = $this->getDoctrine()->getManager();
+            $repo = $em->getRepository('AppBundle:Usuario');
+
+            // Buscar por email (criterio más preciso)
+            if (!empty($params['email'])) {
+                $usuario = $repo->findOneBy(['email' => trim($params['email'])]);
+                if ($usuario) {
+                    return [
+                        'encontrado' => true,
+                        'id_cliente' => $usuario->getIdUsuario(),
+                        'nombre'     => $usuario->getUsername() . ' ' . $usuario->getApellidos(),
+                        'email'      => $usuario->getEmail()
+                    ];
+                }
+            }
+
+            // Buscar por teléfono
+            if (!empty($params['telefono'])) {
+                $usuario = $repo->findOneBy(['telefonoMovil' => trim($params['telefono'])]);
+                if ($usuario) {
+                    return [
+                        'encontrado' => true,
+                        'id_cliente' => $usuario->getIdUsuario(),
+                        'nombre'     => $usuario->getUsername() . ' ' . $usuario->getApellidos(),
+                        'email'      => $usuario->getEmail()
+                    ];
+                }
+            }
+
+            // Búsqueda parcial por nombre usando QueryBuilder
+            if (!empty($params['nombre'])) {
+                $nombreBusqueda = trim($params['nombre']);
+                $qb = $repo->createQueryBuilder('u');
+                $qb->where($qb->expr()->orX(
+                    $qb->expr()->like('u.nombre', ':nombre'),
+                    $qb->expr()->like('u.apellidos', ':nombre')
+                ))
+                ->setParameter('nombre', '%' . $nombreBusqueda . '%')
+                ->setMaxResults(1);
+
+                $usuario = $qb->getQuery()->getOneOrNullResult();
+                if ($usuario) {
+                    return [
+                        'encontrado' => true,
+                        'id_cliente' => $usuario->getIdUsuario(),
+                        'nombre'     => $usuario->getUsername() . ' ' . $usuario->getApellidos(),
+                        'email'      => $usuario->getEmail()
+                    ];
+                }
+            }
+
+            return ['encontrado' => false, 'mensaje' => 'No se encontró ningún cliente con los criterios proporcionados.'];
+
+        } catch (\Exception $e) {
+            $this->logear('herramientaBuscarCliente ERROR: ' . $e->getMessage());
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Herramienta: crear_cliente
+     * Crea un nuevo usuario con rol ROLE_CLIENTE.
+     */
+    private function herramientaCrearCliente(array $params): array
+    {
+        try {
+            $nombre    = trim($params['nombre'] ?? '');
+            $apellidos = trim($params['apellidos'] ?? '');
+            $email     = trim($params['email'] ?? '');
+
+            if (empty($nombre) || empty($apellidos) || empty($email)) {
+                return ['error' => 'Se requieren nombre, apellidos y email para crear un cliente.'];
+            }
+
+            $em   = $this->getDoctrine()->getManager();
+            $repo = $em->getRepository('AppBundle:Usuario');
+
+            // Evitar duplicados por email
+            $existente = $repo->findOneBy(['email' => $email]);
+            if ($existente) {
+                return [
+                    'encontrado'  => true,
+                    'id_cliente'  => $existente->getIdUsuario(),
+                    'mensaje'     => 'Ya existe un cliente con ese email. Se devuelve el existente.',
+                    'nombre'      => $existente->getUsername() . ' ' . $existente->getApellidos(),
+                    'email'       => $existente->getEmail()
+                ];
+            }
+
+            $usuario = new \AppBundle\Entity\Usuario();
+            $usuario->setUsername($nombre)
+                    ->setApellidos($apellidos)
+                    ->setEmail($email)
+                    ->setRole('ROLE_CLIENTE')
+                    ->setEstado(true)
+                    ->setPoliticaPrivacidad(false)
+                    ->setContratoFipre(false)
+                    ->setFechaRegistro(new \DateTime())
+                    ->setFechaConexion(new \DateTime());
+
+            if (!empty($params['telefono'])) {
+                $usuario->setTelefonoMovil(trim($params['telefono']));
+            }
+            if (!empty($params['nif'])) {
+                $usuario->setNif(trim($params['nif']));
+            }
+
+            // Contraseña temporal aleatoria
+            $passwordTemporal = bin2hex(random_bytes(8));
+            $encoder = $this->container->get('security.password_encoder');
+            $usuario->setPassword($encoder->encodePassword($usuario, $passwordTemporal));
+
+            $em->persist($usuario);
+            $em->flush();
+
+            $this->logear("herramientaCrearCliente: cliente creado id=" . $usuario->getIdUsuario());
+
+            return [
+                'creado'     => true,
+                'id_cliente' => $usuario->getIdUsuario(),
+                'nombre'     => $nombre . ' ' . $apellidos,
+                'email'      => $email
+            ];
+
+        } catch (\Exception $e) {
+            $this->logear('herramientaCrearCliente ERROR: ' . $e->getMessage());
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Herramienta: crear_expediente
+     * Crea un expediente completo (con HitoExpediente, GrupoHitoExpediente y CampoHitoExpediente)
+     * para un cliente dado, replicando la lógica de activarCuentaAction.
+     */
+    private function herramientaCrearExpediente(array $params): array
+    {
+        try {
+            $idCliente = isset($params['id_cliente']) ? (int)$params['id_cliente'] : 0;
+            $vivienda  = trim($params['vivienda'] ?? 'NUEVA VIVIENDA') ?: 'NUEVA VIVIENDA';
+
+            if ($idCliente <= 0) {
+                return ['error' => 'Se requiere id_cliente para crear un expediente.'];
+            }
+
+            $em = $this->getDoctrine()->getManager();
+
+            $cliente = $em->getRepository('AppBundle:Usuario')->find($idCliente);
+            if (!$cliente) {
+                return ['error' => "No se encontró el cliente con id={$idCliente}."];
+            }
+
+            // Primera fase disponible
+            $fase = $em->getRepository('AppBundle:Fase')->findOneBy(['tipo' => 0]);
+            if (!$fase) {
+                $fase = $em->getRepository('AppBundle:Fase')->findOneBy([], ['orden' => 'ASC']);
+            }
+
+            $expediente = new \AppBundle\Entity\Expediente();
+            $expediente->setEstado(1)
+                       ->setIdCliente($cliente)
+                       ->setVivienda($vivienda)
+                       ->setFechaCreacion(new \DateTime());
+
+            if ($fase) {
+                $expediente->setIdFaseActual($fase);
+            }
+
+            // Crear hitos y sus campos para todas las fases
+            $fases = $em->getRepository('AppBundle:Fase')->findBy([], ['orden' => 'ASC']);
+
+            foreach ($fases as $faseItem) {
+                $hitos = $em->getRepository('AppBundle:Hito')->findBy(
+                    ['idFase' => $faseItem],
+                    ['orden'  => 'ASC']
+                );
+
+                foreach ($hitos as $hito) {
+                    $hitoExpediente = new \AppBundle\Entity\HitoExpediente();
+                    $hitoExpediente->setIdHito($hito)
+                                   ->setIdExpediente($expediente)
+                                   ->setFechaModificacion(new \DateTime())
+                                   ->setEstado(0);
+
+                    $gruposCamposHito = $em->getRepository('AppBundle:GrupoCamposHito')->findBy(
+                        ['idHito' => $hito],
+                        ['orden'  => 'ASC']
+                    );
+
+                    foreach ($gruposCamposHito as $grupoCamposHito) {
+                        $grupoHitoExpediente = new \AppBundle\Entity\GrupoHitoExpediente();
+                        $grupoHitoExpediente->setIdHitoExpediente($hitoExpediente)
+                                            ->setIdGrupoCamposHito($grupoCamposHito);
+
+                        $camposHito = $em->getRepository('AppBundle:CampoHito')->findBy(
+                            ['idGrupoCamposHito' => $grupoCamposHito],
+                            ['orden'             => 'ASC']
+                        );
+
+                        foreach ($camposHito as $campoHito) {
+                            $campoHitoExpediente = new \AppBundle\Entity\CampoHitoExpediente();
+                            $campoHitoExpediente->setIdCampoHito($campoHito)
+                                               ->setIdHitoExpediente($hitoExpediente)
+                                               ->setIdGrupoHitoExpediente($grupoHitoExpediente)
+                                               ->setIdExpediente($expediente)
+                                               ->setFechaModificacion(new \DateTime());
+
+                            if ($campoHito->getTipo() == 4) {
+                                $campoHitoExpediente->setObligatorio(1)
+                                                    ->setSolicitarAlColaborador(1);
+                            }
+
+                            $em->persist($campoHitoExpediente);
+                        }
+
+                        $em->persist($grupoHitoExpediente);
+                    }
+
+                    $em->persist($hitoExpediente);
+                }
+            }
+
+            $em->persist($expediente);
+            $em->flush();
+
+            $idExpediente = $expediente->getIdExpediente();
+            $this->logear("herramientaCrearExpediente: expediente creado id={$idExpediente} para cliente id={$idCliente}");
+
+            return [
+                'creado'        => true,
+                'id_expediente' => $idExpediente,
+                'id_cliente'    => $idCliente,
+                'vivienda'      => $vivienda
+            ];
+
+        } catch (\Exception $e) {
+            $this->logear('herramientaCrearExpediente ERROR: ' . $e->getMessage());
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Llama a OpenAI con soporte de function calling (tools).
+     * Devuelve array con 'texto' (respuesta final) o 'tool_calls' (llamadas a herramientas).
+     */
+    private function llamarOpenAIConHerramientas(array $mensajes, array $herramientas, array $config, string $systemPrompt): array
+    {
+        try {
+            $apiKey  = $config['api_key'] ?? null;
+            $apiUrl  = rtrim($config['api_url'] ?? 'https://api.openai.com/v1', '/');
+            $model   = $config['model'] ?? 'gpt-3.5-turbo';
+
+            if (!$apiKey) {
+                return ['error' => 'OPENAI_API_KEY no configurada'];
+            }
+
+            // Convertir herramientas al formato OpenAI
+            $toolsOpenAI = [];
+            foreach ($herramientas as $h) {
+                $properties = [];
+                $required   = [];
+                foreach ($h['parametros'] as $paramNombre => $paramInfo) {
+                    $properties[$paramNombre] = [
+                        'type'        => $paramInfo['tipo'] === 'integer' ? 'integer' : 'string',
+                        'description' => $paramInfo['descripcion']
+                    ];
+                    if ($paramInfo['requerido']) {
+                        $required[] = $paramNombre;
+                    }
+                }
+                $toolsOpenAI[] = [
+                    'type'     => 'function',
+                    'function' => [
+                        'name'        => $h['nombre'],
+                        'description' => $h['descripcion'],
+                        'parameters'  => [
+                            'type'       => 'object',
+                            'properties' => $properties,
+                            'required'   => $required
+                        ]
+                    ]
+                ];
+            }
+
+            // Construir mensajes para OpenAI
+            $mensajesOpenAI = [['role' => 'system', 'content' => $systemPrompt]];
+            foreach ($mensajes as $msg) {
+                if ($msg['role'] === 'tool') {
+                    $mensajesOpenAI[] = [
+                        'role'         => 'tool',
+                        'tool_call_id' => $msg['tool_call_id'] ?? 'call_0',
+                        'content'      => $msg['content']
+                    ];
+                } elseif ($msg['role'] === 'assistant' && !empty($msg['tool_calls'])) {
+                    $tcOpenAI = [];
+                    foreach ($msg['tool_calls'] as $tc) {
+                        $tcOpenAI[] = [
+                            'id'       => $tc['id'] ?? 'call_0',
+                            'type'     => 'function',
+                            'function' => [
+                                'name'      => $tc['nombre'],
+                                'arguments' => json_encode($tc['parametros'], JSON_UNESCAPED_UNICODE)
+                            ]
+                        ];
+                    }
+                    $mensajesOpenAI[] = ['role' => 'assistant', 'tool_calls' => $tcOpenAI];
+                } else {
+                    $mensajesOpenAI[] = ['role' => $msg['role'], 'content' => $msg['content'] ?? ''];
+                }
+            }
+
+            $payload = json_encode([
+                'model'       => $model,
+                'messages'    => $mensajesOpenAI,
+                'tools'       => $toolsOpenAI,
+                'tool_choice' => 'auto',
+                'temperature' => (float)($config['temperatura'] ?? 0.3),
+                'max_tokens'  => (int)($config['max_tokens'] ?? 1024)
+            ], JSON_UNESCAPED_UNICODE);
+
+            $ch = curl_init("{$apiUrl}/chat/completions");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey
+            ]);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+            $response  = curl_exec($ch);
+            $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError) {
+                return ['error' => 'cURL: ' . $curlError];
+            }
+            if ($httpCode !== 200) {
+                return ['error' => "OpenAI devolvió HTTP {$httpCode}: " . substr($response, 0, 200)];
+            }
+
+            $data    = json_decode($response, true);
+            $message = $data['choices'][0]['message'] ?? null;
+            if (!$message) {
+                return ['error' => 'Respuesta inesperada de OpenAI'];
+            }
+
+            // ¿Hay tool_calls?
+            if (!empty($message['tool_calls'])) {
+                $toolCalls = [];
+                foreach ($message['tool_calls'] as $tc) {
+                    $toolCalls[] = [
+                        'id'         => $tc['id'],
+                        'nombre'     => $tc['function']['name'],
+                        'parametros' => json_decode($tc['function']['arguments'], true) ?? []
+                    ];
+                }
+                return ['tool_calls' => $toolCalls];
+            }
+
+            return ['texto' => trim($message['content'] ?? '')];
+
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Llama a Google Gemini con soporte de function calling.
+     * Devuelve array con 'texto' (respuesta final) o 'tool_calls' (llamadas a herramientas).
+     */
+    private function llamarGeminiConHerramientas(array $mensajes, array $herramientas, array $config, string $systemPrompt): array
+    {
+        try {
+            $apiKey = $config['api_key'] ?? null;
+            $apiUrl = $config['api_url'] ?? 'https://generativelanguage.googleapis.com/v1beta/models';
+            $model  = $config['model'] ?? 'gemini-pro';
+
+            if (!$apiKey) {
+                return ['error' => 'GEMINI_API_KEY no configurada'];
+            }
+
+            // Convertir herramientas al formato Gemini
+            $functionDeclarations = [];
+            foreach ($herramientas as $h) {
+                $properties = [];
+                $required   = [];
+                foreach ($h['parametros'] as $paramNombre => $paramInfo) {
+                    $properties[$paramNombre] = [
+                        'type'        => strtoupper($paramInfo['tipo'] === 'integer' ? 'INTEGER' : 'STRING'),
+                        'description' => $paramInfo['descripcion']
+                    ];
+                    if ($paramInfo['requerido']) {
+                        $required[] = $paramNombre;
+                    }
+                }
+                $functionDeclarations[] = [
+                    'name'        => $h['nombre'],
+                    'description' => $h['descripcion'],
+                    'parameters'  => [
+                        'type'       => 'OBJECT',
+                        'properties' => $properties,
+                        'required'   => $required
+                    ]
+                ];
+            }
+
+            // Construir contents para Gemini
+            $contents = [];
+            foreach ($mensajes as $msg) {
+                if ($msg['role'] === 'tool') {
+                    $contents[] = [
+                        'role'  => 'function',
+                        'parts' => [[
+                            'functionResponse' => [
+                                'name'     => $msg['nombre'] ?? 'tool',
+                                'response' => ['result' => $msg['content']]
+                            ]
+                        ]]
+                    ];
+                } elseif ($msg['role'] === 'assistant' && !empty($msg['tool_calls'])) {
+                    $parts = [];
+                    foreach ($msg['tool_calls'] as $tc) {
+                        $parts[] = [
+                            'functionCall' => [
+                                'name' => $tc['nombre'],
+                                'args' => $tc['parametros']
+                            ]
+                        ];
+                    }
+                    $contents[] = ['role' => 'model', 'parts' => $parts];
+                } else {
+                    $role = $msg['role'] === 'assistant' ? 'model' : 'user';
+                    $contents[] = ['role' => $role, 'parts' => [['text' => $msg['content'] ?? '']]];
+                }
+            }
+
+            // Insertar system prompt como primer mensaje de usuario si no hay historial previo
+            if (!empty($systemPrompt)) {
+                array_unshift($contents, [
+                    'role'  => 'user',
+                    'parts' => [['text' => 'Instrucciones del sistema: ' . $systemPrompt]]
+                ]);
+                array_splice($contents, 1, 0, [[
+                    'role'  => 'model',
+                    'parts' => [['text' => 'Entendido. Estoy listo para ayudarte.']]
+                ]]);
+            }
+
+            $payload = json_encode([
+                'contents' => $contents,
+                'tools'    => [['functionDeclarations' => $functionDeclarations]],
+                'generationConfig' => [
+                    'temperature'     => (float)($config['temperatura'] ?? 0.3),
+                    'maxOutputTokens' => (int)($config['max_tokens'] ?? 1024)
+                ]
+            ], JSON_UNESCAPED_UNICODE);
+
+            $url = "{$apiUrl}/{$model}:generateContent?key={$apiKey}";
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+            $response  = curl_exec($ch);
+            $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError) {
+                return ['error' => 'cURL: ' . $curlError];
+            }
+            if ($httpCode !== 200) {
+                return ['error' => "Gemini devolvió HTTP {$httpCode}: " . substr($response, 0, 200)];
+            }
+
+            $data  = json_decode($response, true);
+            $parts = $data['candidates'][0]['content']['parts'] ?? [];
+
+            if (empty($parts)) {
+                return ['error' => 'Gemini no devolvió parts en la respuesta'];
+            }
+
+            // ¿Hay function calls?
+            $toolCalls = [];
+            foreach ($parts as $part) {
+                if (isset($part['functionCall'])) {
+                    $toolCalls[] = [
+                        'id'         => 'call_gemini_' . uniqid(),
+                        'nombre'     => $part['functionCall']['name'],
+                        'parametros' => $part['functionCall']['args'] ?? []
+                    ];
+                }
+            }
+            if (!empty($toolCalls)) {
+                return ['tool_calls' => $toolCalls];
+            }
+
+            // Respuesta de texto
+            $texto = '';
+            foreach ($parts as $part) {
+                if (isset($part['text'])) {
+                    $texto .= $part['text'];
+                }
+            }
+
+            return ['texto' => trim($texto)];
+
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
     /**
      * Guarda los datos extraídos de un mensaje en el expediente
      */
