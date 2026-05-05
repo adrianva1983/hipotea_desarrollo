@@ -34,11 +34,6 @@ class FicheroCampo
 
 	private $fichero;
 
-	/**
-	 * @var string
-	 */
-	private $contenidoJson;
-
 
 	/**
 	 * Get idFicheroCampo
@@ -156,29 +151,5 @@ class FicheroCampo
 		$this->fichero = $fichero;
 
 		return $this;
-	}
-
-	/**
-	 * Set contenidoJson
-	 *
-	 * @param string $contenidoJson
-	 *
-	 * @return FicheroCampo
-	 */
-	public function setContenidoJson($contenidoJson)
-	{
-		$this->contenidoJson = $contenidoJson;
-
-		return $this;
-	}
-
-	/**
-	 * Get contenidoJson
-	 *
-	 * @return string
-	 */
-	public function getContenidoJson()
-	{
-		return $this->contenidoJson;
 	}
 }

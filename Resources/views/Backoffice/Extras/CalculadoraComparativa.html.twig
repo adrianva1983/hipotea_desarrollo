@@ -123,21 +123,21 @@
 							{{ form_errors(calculadora_comparativa.revisionVariable) }}
 						</div>
 					</div>
-					<div class="form-row comprar-mixto 888888">
+					<div class="form-row comprar-mixto">
 						<div class="form-groupcol-4 col-sm-12">
 							{{ form_label(calculadora_comparativa.tipoMixta) }}
 							{{ form_widget(calculadora_comparativa.tipoMixta) }}
 							{{ form_errors(calculadora_comparativa.tipoMixta) }}
 						</div>
 					</div>
-					<div class="form-row comprar-mixto 777777">
+					<div class="form-row comprar-mixto">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.revisionMixta) }}
 							{{ form_widget(calculadora_comparativa.revisionMixta) }}
 							{{ form_errors(calculadora_comparativa.revisionMixta) }}
 						</div>
 					</div>
-					<div class="form-row 6666666">
+					<div class="form-row">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.oferta) }}
 							{{ form_widget(calculadora_comparativa.oferta) }}
@@ -145,35 +145,35 @@
 						</div>
 					</div>
 
-					<div class="form-row personalizada 55555">
+					<div class="form-row personalizada">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.persoTipoHipoteca) }}
 							{{ form_widget(calculadora_comparativa.persoTipoHipoteca) }}
 							{{ form_errors(calculadora_comparativa.persoTipoHipoteca) }}
 						</div>
 					</div>
-					<div class="form-row personalizada 44444">
+					<div class="form-row personalizada">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.persoVinculacion) }}
 							{{ form_widget(calculadora_comparativa.persoVinculacion) }}
 							{{ form_errors(calculadora_comparativa.persoVinculacion) }}
 						</div>
 					</div>
-					<div class="form-row personalizada 33333">
+					<div class="form-row personalizada">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.persoTipo) }}
 							{{ form_widget(calculadora_comparativa.persoTipo) }}
 							{{ form_errors(calculadora_comparativa.persoTipo) }}
 						</div>
 					</div>
-					<div class="form-row personalizada personalizada-anios 222222">
+					<div class="form-row personalizada personalizada-anios">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.persoAnios) }}
 							{{ form_widget(calculadora_comparativa.persoAnios) }}
 							{{ form_errors(calculadora_comparativa.persoAnios) }}
 						</div>
 					</div>
-					<div class="form-row personalizada personalizada-anios personalizada-revision 111111">
+					<div class="form-row personalizada personalizada-anios personalizada-revision">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.persoRevision) }}
 							{{ form_widget(calculadora_comparativa.persoRevision) }}
@@ -965,10 +965,10 @@
 									En Hipotea, entendemos que cada cliente es único. Por eso, las condiciones de vinculación se negocian de forma individualizada, adaptándose a tus necesidades y preferencias. Las vinculaciones más comunes incluyen la domiciliación de nómina y la contratación de seguros de hogar y vida, pero estudiaremos juntos las opciones que más te beneficien.
 								</p>
 							{% else %}
-								<h5 style="text-align:left;color: black;">
+								<h5 style="text-align:left;color: black; display: none;">
 									Opción sin vinculaciones: la hipoteca que no te ata
 								</h5>
-								<p style="color:grey;font-size:12px;text-align:justify;">
+								<p style="color:grey;font-size:12px;text-align:justify; display: none;">
 									Al optar por esta opción, no solo disfrutarás de ahorros en la cuota e intereses, sino también de la ventaja de no tener que contratar productos adicionales que otras ofertas podrían requerir. Por ejemplo, si otras ofertas te solicitan 2.000 € anuales en seguros innecesarios o más costosos de lo que encontrarías en el mercado externo, es importante que sumes este ahorro al total que hemos calculado para ti cada año.
 								</p>
 							{% endif %}
@@ -1002,7 +1002,7 @@
 							</p>
 							<ol>
 								<li>Introduce los detalles de tu oferta actual: Solo necesitas especificar el importe del préstamo, el tipo de interés y el plazo.</li>
-								<li>Selecciona la oferta de Hipotea que deseas comparar: Puedes elegir entre nuestras hipotecas mixtas de 3, 5 y 10 años, o nuestra atractiva oferta a tipo fijo. Además, te ofrecemos la opción de comparar las condiciones con o sin vinculación.</li>
+								<li>Selecciona la oferta de Hipotea que deseas comparar: Puedes elegir entre nuestra hipoteca mixta de 10 años, o nuestra atractiva oferta a tipo fijo. Además, te ofrecemos la opción de comparar las condiciones con o sin vinculación.</li>
 								<li>Analiza los resultados: Te mostraremos cuánto podrías ahorrar en la cuota mensual y en el total de intereses a lo largo del plazo de la hipoteca.</li>
 							</ol>
 							<p>

@@ -1,0 +1,27 @@
+AppBundle\Entity\SimuladorUsoEmail:
+  type: entity
+  table: simulador_uso_email
+  repositoryClass: AppBundle\Repository\SimuladorUsoEmailRepository
+  id:
+    id:
+      type: integer
+      generator:
+        strategy: AUTO
+  fields:
+    email:
+      type: string
+      length: 255
+      unique: true
+    usos:
+      type: integer
+      options:
+        default: 1
+    primerUso:
+      type: datetime
+      column: primer_uso
+    ultimoUso:
+      type: datetime
+      column: ultimo_uso
+  indexes:
+    idx_email:
+      columns: [email]

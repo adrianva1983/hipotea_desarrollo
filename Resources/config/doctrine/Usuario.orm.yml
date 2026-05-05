@@ -289,4 +289,5 @@ AppBundle\Entity\Usuario:
         id_direccion_expansion_asignado:
           referencedColumnName: id_usuario
       orphanRemoval: false
+
   lifecycleCallbacks: {  }

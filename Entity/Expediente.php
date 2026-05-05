@@ -13,6 +13,7 @@ class Expediente
 	{
 		$this->setFechaCreacion(new DateTime());
 		$this->setFechaModificacion(new DateTime());
+
 	}
 
 	/**
@@ -65,6 +66,7 @@ class Expediente
 	 */
 	private $fechaModificacion;
 
+
 	/**
 	 * @var integer
 	 */
@@ -79,16 +81,6 @@ class Expediente
 	 * @var Usuario
 	 */
 	private $idResponsableZona;
-
-	/**
-	 * @var boolean
-	 */
-	private $whatsappAutomatico = false;
-
-	/**
-	 * @var boolean
-	 */
-	private $whatsappAutomaticoEnviado = false;
 
 
 	/**
@@ -317,6 +309,7 @@ class Expediente
 		return $this->fechaModificacion;
 	}
 
+
 	/**
 	 * Set motivoCancelacion
 	 *
@@ -390,50 +383,6 @@ class Expediente
 	public function getIdResponsableZona()
 	{
 		return $this->idResponsableZona;
-	}
-
-	/**
-	 * Set whatsappAutomatico
-	 *
-	 * @param boolean $whatsappAutomatico
-	 * @return Expediente
-	 */
-	public function setWhatsappAutomatico($whatsappAutomatico)
-	{
-		$this->whatsappAutomatico = (bool) $whatsappAutomatico;
-		return $this;
-	}
-
-	/**
-	 * Get whatsappAutomatico
-	 *
-	 * @return boolean
-	 */
-	public function getWhatsappAutomatico()
-	{
-		return $this->whatsappAutomatico;
-	}
-
-	/**
-	 * Set whatsappAutomaticoEnviado
-	 *
-	 * @param boolean $whatsappAutomaticoEnviado
-	 * @return Expediente
-	 */
-	public function setWhatsappAutomaticoEnviado($whatsappAutomaticoEnviado)
-	{
-		$this->whatsappAutomaticoEnviado = (bool) $whatsappAutomaticoEnviado;
-		return $this;
-	}
-
-	/**
-	 * Get whatsappAutomaticoEnviado
-	 *
-	 * @return boolean
-	 */
-	public function getWhatsappAutomaticoEnviado()
-	{
-		return $this->whatsappAutomaticoEnviado;
 	}
 
 	/**

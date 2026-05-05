@@ -163,27 +163,9 @@
 									<li>
 										<a href="{{ path('parametros_aplicacion',{'id':'1'}) }}">Parámetros Calculadora</a>
 									</li>
-									<li>
-										<a href="{{ path('ia_config_index') }}">IA: Proveedores</a>
-									</li>
-								{% endif %}
-							</ul>
-						</li>
-					{% endif %}
-					{% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
-						<li>
-							<a class="has-arrow waves-effect waves-dark" href="javascript:void(0)">
-								<i class="fab fa-whatsapp fa-fw"></i>
-								<span class="hide-menu">WhatsApp</span>
-							</a>
-							<ul class="collapse">
-								{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
-									<li>
-										<a href="{{ path('auto_whatsapp') }}">Gestión de Conexiones</a>
-									</li>
 								{% endif %}
 								<li>
-									<a href="{{ path('mi_conexion_whatsapp') }}">Mi Conexión</a>
+									<a href="{{ path('admin_kommo_webhooks') }}">Webhooks de Kommo</a>
 								</li>
 							</ul>
 						</li>
@@ -204,19 +186,19 @@
 							</a>
 						</li>
 					{% endif %}
-					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')  or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}
-						<li>
-							<a class="waves-effect waves-dark" href="{{ path('simulador_inicio') }}">
-								<i class="fas fa-chart-bar fa-fw"></i>
-								<span class="hide-menu">Simulador Viabilidad</span>
-							</a>
-						</li>
-					{% endif %}
 					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')  or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}
 						<li>
 							<a class="waves-effect waves-dark" href="{{ path('calculadora_avanzada') }}">
 								<i class="fas fa-calculator fa-fw"></i>
 								<span class="hide-menu">Calculadora Avanzada</span>
+							</a>
+						</li>
+					{% endif %}
+					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')  or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}
+						<li>
+							<a class="waves-effect waves-dark" href="{{ path('simulador_completo') }}">
+								<i class="fas fa-chart-bar fa-fw"></i>
+								<span class="hide-menu">Simulador Viabilidad</span>
 							</a>
 						</li>
 					{% endif %}

@@ -1,0 +1,119 @@
+{# 
+    Plantilla para email interno de Hipotea con nuevo lead del simulador web
+    Variables disponibles: nombre, email, telefono, informe_html
+#}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f0f8f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #28a745;
+            padding-bottom: 20px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+        }
+        .header h1 {
+            color: #28a745;
+            margin: 0;
+            font-size: 22px;
+        }
+        .lead-info {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #28a745;
+            min-width: 150px;
+        }
+        .info-value {
+            color: #333;
+        }
+        .timestamp {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .action-note {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin-top: 20px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>?? Nuevo Lead del Simulador Web</h1>
+            <p>Contacto desde simulador de viabilidad hipotecaria</p>
+        </div>
+
+        <div class="lead-info">
+            <div class="info-row">
+                <span class="info-label">Nombre:</span>
+                <span class="info-value"><strong>{{ nombre }}</strong></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value"><a href="mailto:{{ email }}">{{ email }}</a></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Teléfono:</span>
+                <span class="info-value"><a href="tel:{{ telefono }}">{{ telefono }}</a></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Fecha de contacto:</span>
+                <span class="info-value">{{ "now"|date("d/m/Y H:i:s") }}</span>
+            </div>
+        </div>
+
+        <div class="action-note">
+            <p><strong>? Próximas acciones:</strong></p>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>? Email con informe PDF enviado al cliente</li>
+                <li>? Revisar el informe PDF adjunto</li>
+                <li>? Contactar al lead para ampliar información</li>
+                <li>? Iniciar proceso de creación de expediente</li>
+            </ul>
+        </div>
+
+        <div class="timestamp">
+            <p>Email automático generado desde el simulador web de Hipotea</p>
+            <p>&copy; {{ "now"|date("Y") }} Hipotea. Sistema de gestión de leads.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -34,12 +34,9 @@ use DateTimeImmutable;
 
 class SheetsController extends Controller
 {
-    public function leerHojasAction()
+    public function leerHojasAction(GoogleSheetsService $sheetsService)
     {
-        // GoogleSheetsService inyección desactivada por incompatibilidad
-        
-        /*
-        $sheetsService = $this->get(GoogleSheetsService::class);
+
         $hojas = $sheetsService->getSheetNames();
         $datos = [];
 
@@ -54,18 +51,12 @@ class SheetsController extends Controller
         }
 
         return new Response('<pre>' . print_r($datos, true) . '</pre>');
-        */
-        
-        return new Response('Google Sheets está desactivado temporalmente.', 503);
     }
 
-    public function sincronizarVariasHojasAction()
+    public function sincronizarVariasHojasAction(GoogleSheetsService $sheetsService)
     {
-        // GoogleSheetsService inyección desactivada por incompatibilidad
-        
-        /*
         $em = $this->getDoctrine()->getManager();
-        $sheetsService = $this->get(GoogleSheetsService::class);
+
         $hojas = $sheetsService->getSheetNames();
 
         $rango = 'A:O';
@@ -82,9 +73,6 @@ class SheetsController extends Controller
         }
 
         return new Response('<pre>OK</pre>');
-        */
-        
-        return new Response('Google Sheets está desactivado temporalmente.', 503);
     }
 
     public function simulacionExpedienteAction($registro = [], $clavePrimerNivel = "")
@@ -112,35 +100,35 @@ class SheetsController extends Controller
         //     ->getOneOrNullResult();
 
         // Esta es la versión rotativa de uno en uno
-        // $repo = $this->getDoctrine()->getRepository(\AppBundle\Entity\VistaRotacionComerciales::class);
+        $repo = $this->getDoctrine()->getRepository(\AppBundle\Entity\VistaRotacionComerciales::class);
 
-        // $comercial = $repo->createQueryBuilder('v')
-        //     ->orderBy('v.ultimaAsignacion', 'ASC')  // Ya incluye comerciales sin expediente al principio
-        //     ->setMaxResults(1)
-        //     ->getQuery()
-        //     ->getOneOrNullResult();
+        $comercial = $repo->createQueryBuilder('v')
+            ->orderBy('v.ultimaAsignacion', 'ASC')  // Ya incluye comerciales sin expediente al principio
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
 
-        // if ($comercial != null) {
-        //     $comercial = $this->getDoctrine()->getRepository(Usuario::class)->findOneBy(
-        //         array(
-        //             'idUsuario' => $comercial->getIdUsuario()
-        //         )
-        //     );
-        // }
+        if ($comercial != null) {
+            $comercial = $this->getDoctrine()->getRepository(Usuario::class)->findOneBy(
+                array(
+                    'idUsuario' => $comercial->getIdUsuario()
+                )
+            );
+        }
 
         // Versión para asignación a Sheila todos los de Sheets como técnico
-        $tecnico = $this->getDoctrine()->getRepository(Usuario::class)->findOneBy(
+        /*$tecnico = $this->getDoctrine()->getRepository(Usuario::class)->findOneBy(
             array(
                 'idUsuario' => 1169
             )
-        );
+        );*/
 
         $expediente = (new Expediente())
             ->setEstado(1)
             ->setIdFaseActual($fase)
             ->setVivienda(' ')
-            // ->setIdComercial($comercial)
-            ->setIdTecnico($tecnico)
+            ->setIdComercial($comercial)
+            //->setIdTecnico($tecnico)
             ->setFechaCreacion(new DateTime());
         $managerEntidad = $doctrine->getManager();
 

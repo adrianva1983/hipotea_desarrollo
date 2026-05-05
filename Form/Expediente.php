@@ -7,7 +7,6 @@ use AppBundle\Entity\Usuario as Usuario;
 use AppBundle\Utils\UsuariosNombreCompleto;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\ResetType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -69,21 +68,11 @@ class Expediente extends AbstractType
 				'required' => false,
 				'placeholder' => '- Seleccionar -',
 				'attr' => array('class' => 'select2')
-			))->add('whatsappAutomatico', ChoiceType::class, array(
-				'choices' => array(
-					'Si' => true,
-					'No' => false
-				),
-				'label' => 'Enviar WhatsApp Automático',
-				'required' => false,
-				'expanded' => false,
-				'attr' => array('class' => 'form-control')
 			));
 		}
 		if (!$options['nuevo']) {
 			$builder->add('idFaseActual', EntityType::class, array(
 				'choices' => $options['fases'],
-				'choices' => $options['fasesTMP'],
 				'class' => 'AppBundle:Fase',
 				'label' => 'Fase'
 			))->add('estado', ChoiceType::class, array(
@@ -107,8 +96,7 @@ class Expediente extends AbstractType
 			'comerciales' => null,
 			'tecnicos' => null,
 			'fases' => null,
-			'responsablesZona' => null,
-			'fasesTMP' => null  // ? AGREGAR ESTA LÍNEA
+			'responsablesZona' => null
 		))->setRequired(array(
 			'clientes',
 			'nuevo'

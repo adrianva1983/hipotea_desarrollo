@@ -2,163 +2,1276 @@
 
 namespace AppBundle\Controller;
 
-use AppBundle\Entity\KommoMensaje;
-use DateTime;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use AppBundle\Entity\KommoWebhook;
+use AppBundle\Entity\Usuario as UsuarioEntidad;
+use AppBundle\Entity\Expediente as ExpedienteEntidad;
+use AppBundle\Entity\Fase as FaseEntidad;
+use AppBundle\Entity\Hito as HitoEntidad;
+use AppBundle\Entity\HitoExpediente as HitoExpedienteEntidad;
+use AppBundle\Entity\GrupoCamposHito as GrupoCamposHitoEntidad;
+use AppBundle\Entity\GrupoHitoExpediente as GrupoHitoExpedienteEntidad;
+use AppBundle\Entity\CampoHito as CampoHitoEntidad;
+use AppBundle\Entity\CampoHitoExpediente as CampoHitoExpedienteEntidad;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Client as GuzzleClient;
 
-/**
- * @Route("/webhook/kommo")
- */
 class KommoController extends Controller
 {
+
     /**
-     * Endpoint para recibir webhooks de Kommo
-     * POST /webhook/kommo/eventos
+     * Recibe webhook de Kommo, obtiene contacto de API, busca/crea cliente,
+     * busca/crea expediente y actualiza hitos con datos de Kommo
+     * Ruta: /API/kommo
+     * Método: POST
      * 
-     * @Route("/eventos", name="api_webhook_kommo_eventos", methods={"POST"})
+     * Soporta 3 tipos de webhooks:
+     * 1. message.add → Mensaje en chat (contact_id en message.add[0].contact_id)
+     * 2. contacts.add → Contact creado (id en contacts.add[0].id)
+     * 3. leads.add → Lead creado (linked_leads_id apunta al contact)
      */
-    public function webhookKommoEventosAction(Request $request, EntityManagerInterface $em)
+    public function kommoWebhookAction(Request $request)
     {
-        error_log("?? Webhook Kommo recibido");
-
-        // Extrae el payload JSON
-        $payload = json_decode($request->getContent(), true);
-
-        if (!$payload) {
-            error_log("? Kommo: Payload JSON inv�lido");
-            return new JsonResponse(['error' => 'Payload inv�lido'], 400);
-        }
+        error_log('ENtro11111111111');
+        $content = null;
 
         try {
-            // Valida estructura m�nima
-            if (!isset($payload['leads']) || !is_array($payload['leads']) || count($payload['leads']) === 0) {
-                error_log("? Kommo: No hay leads en el payload");
-                return new JsonResponse(['error' => 'No leads found'], 400);
+            // Obtener el contenido del request
+            $content = $request->getContent();
+            $data = json_decode($content, true);
+            
+            // Crear cliente HTTP
+            $httpClient = new GuzzleClient();
+
+            // Log de la recepción del webhook
+            error_log('KommoController: Webhook de Kommo recibido: ' . json_encode([
+                'tipos' => array_keys($data),
+                'timestamp' => date('Y-m-d H:i:s')
+            ]));
+
+            // Detectar tipo de webhook y extraer datos
+            $tipoWebhook = $this->detectarTipoWebhook($data);
+            error_log('KommoController: Tipo de webhook detectado: ' . $tipoWebhook);
+
+            $contactId = null;
+            $datosMensaje = [];
+            $iaUsed = false;
+            $iaAvailable = false;
+
+            // Procesar según tipo
+            switch ($tipoWebhook) {
+                case 'message':
+                    $contactId = $this->extraerContactoIdDelMensaje($data);
+                    // 🤖 NUEVO: Usar IA para extraer datos del mensaje
+                    $textoMensaje = $this->extraerTextoDelMensaje($data);
+                    error_log('KommoController: obteniendo texto del mensaje: ' . $textoMensaje . ' ');
+                    if (!empty($textoMensaje)) {
+                        error_log('KommoController: Iniciando extraccion IA del mensaje');
+                        $iaUsed = true;
+                        $datosIA = $this->extraerDatosConIA($textoMensaje);
+                        error_log('KommoController:datos IA: '. ($datosIA['model'] ?? 'sin modelo'));
+                        $iaAvailable = !empty($datosIA['success']);
+                        if ($datosIA['success'] ?? false) {
+                            error_log('KommoController: IA extraccion exitosa - ' . $datosIA['campos_detectados'] . ' campos, confianza: ' . $datosIA['confianza_promedio']);
+                            $datosMensaje = $datosIA;
+                        } else {
+                            error_log('KommoController: IA extraccion falló, usando regex como fallback');
+                            $datosMensaje = $this->extraerDatosDelMensaje($data);
+                        }
+                    } else {
+                        $datosMensaje = $this->extraerDatosDelMensaje($data);
+                    }
+                    break;
+                
+                case 'contact':
+                    $contactId = $this->extraerContactoIdDelContact($data);
+                    break;
+                
+                case 'lead':
+                    // Para leads, buscamos el contact asociado
+                    $leadData = $data['leads']['add'][0] ?? null;
+                    if ($leadData && !empty($leadData['linked_leads_id'])) {
+                        // linked_leads_id contiene los IDs de contacts asociados
+                        $contactId = (int)array_key_first($leadData['linked_leads_id']);
+                    }
+                    if ($contactId) {
+                        error_log('KommoController: Lead vinculado a contact ID: ' . $contactId);
+                    }
+                    break;
+
+                default:
+                    throw new \Exception('Tipo de webhook no soportado: ' . $tipoWebhook);
             }
 
-            $lead = $payload['leads'][0];
-            $kommoLeadId = $lead['id'] ?? null;
-
-            if (!$kommoLeadId) {
-                error_log("? Kommo: Lead ID faltante");
-                return new JsonResponse(['error' => 'Lead ID missing'], 400);
+            if (!$contactId) {
+                throw new \Exception('No se encontró ID de contacto en el webhook');
             }
 
-            error_log("?? Procesando Lead Kommo ID: $kommoLeadId");
+            // Obtener datos del contacto desde Kommo API
+            $contactoKommo = $this->obtenerContactoKommo($httpClient, $contactId);
+            error_log('KommoController: Contacto obtenido de API: ' . ($contactoKommo['name'] ?? 'sin nombre'));
 
-            // Busca si ya existe mensaje para este lead
-            $repository = $em->getRepository(KommoMensaje::class);
-            $existente = $repository->findOneBy(['kommoLeadId' => $kommoLeadId]);
+            // Obtener EntityManager
+            $em = $this->getDoctrine()->getManager();
 
-            if ($existente) {
-                error_log("?? Actualizando mensaje existente para Lead: $kommoLeadId");
-                $mensaje = $existente;
-                $mensaje->setUpdatedAt(new DateTime());
-            } else {
-                error_log("? Creando nuevo mensaje para Lead: $kommoLeadId");
-                $mensaje = new KommoMensaje();
+            // VALIDACIÓN: Extraer teléfono y email
+            $telefono = $this->extraerTelefono($contactoKommo);
+            $email = $this->extraerEmail($contactoKommo);
+
+            // Si no hay teléfono ni email, intentar obtener más detalles llamando a API adicional
+            if (empty($telefono) && empty($email)) {
+                error_log('KommoController: Teléfono y email vacíos en respuesta inicial. Intentando obtener más detalles de API...');
+                
+                // Intentar obtener detalles adicionales del contacto desde API v4 con parámetros extendidos
+                try {
+                    $contactoDetallado = $this->obtenerContactoKommoDetallado($httpClient, $contactId);
+                    if ($contactoDetallado) {
+                        error_log('KommoController: Detalles adicionales obtenidos de API');
+                        // Intentar extraer de la respuesta detallada
+                        $telefonoDetallado = $this->extraerTelefono($contactoDetallado);
+                        $emailDetallado = $this->extraerEmail($contactoDetallado);
+                        
+                        if (!empty($telefonoDetallado) || !empty($emailDetallado)) {
+                            error_log('KommoController: Datos encontrados en respuesta detallada. Tel: ' . ($telefonoDetallado ?: 'vacío') . ', Email: ' . ($emailDetallado ?: 'vacío'));
+                            // Fusionar datos
+                            $contactoKommo = array_merge($contactoKommo, $contactoDetallado);
+                            $telefono = $telefonoDetallado ?: $telefono;
+                            $email = $emailDetallado ?: $email;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    error_log('KommoController: Error obteniendo detalles adicionales: ' . $e->getMessage());
+                }
             }
 
-            // Procesa el webhook con validaci�n
-            if (!$mensaje->procesarWebhook($payload)) {
-                error_log("? Kommo: Error procesando webhook");
-                return new JsonResponse(['error' => 'Error processing webhook'], 500);
+            // Si sigue sin haber teléfono ni email después de intentos, guardar como incompleto
+            if (empty($telefono) && empty($email)) {
+                error_log('KommoController: Webhook incompleto - imposible encontrar teléfono ni email. ContactId: ' . $contactId);
+
+                // Guardar webhook con estado incompleto
+                $kommoWebhook = new KommoWebhook();
+                $kommoWebhook->setWebhookType($tipoWebhook);
+                $kommoWebhook->setKommoId($contactId ?: 'sin-id');
+                $kommoWebhook->setJsonRecibido($data);
+                $kommoWebhook->setEstado('incompleto');
+                $kommoWebhook->setErrorMensaje('Imposible encontrar teléfono ni email en contacto ni en API adicional');
+                $kommoWebhook->setFecha(new \DateTime());
+
+                $em->persist($kommoWebhook);
+                $em->flush();
+
+                error_log('KommoController: Webhook guardado como incompleto para auditoría (ID: ' . $kommoWebhook->getId() . ')');
+
+                return new JsonResponse([
+                    'ok' => false,
+                    'mensaje' => 'Webhook guardado para auditoría - imposible encontrar teléfono y/o email',
+                    'tipo' => $tipoWebhook,
+                    'contactId' => $contactId,
+                    'ia_used' => $iaUsed,
+                    'ia_available' => $iaAvailable,
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
             }
 
-            // Valida que tenga datos m�nimos
-            if (!$mensaje->esValido()) {
-                error_log("? Kommo: Datos de mensaje inv�lidos");
-                return new JsonResponse(['error' => 'Invalid message data'], 400);
-            }
+            // Buscar o crear cliente
+            $cliente = $this->buscarOCrearCliente($em, $contactoKommo);
+            error_log('KommoController: Cliente procesado (ID: ' . $cliente->getIdUsuario() . ')');
 
-            // Guarda en BD
-            $em->persist($mensaje);
+            // Buscar o crear expediente
+            $expediente = $this->buscarOCrearExpediente($em, $cliente);
+            error_log('KommoController: Expediente procesado (ID: ' . $expediente->getIdExpediente() . ')');
+
+            // Actualizar hitos con datos de Kommo + datos del mensaje
+            $desglose = $this->actualizarHitosKommo($em, $expediente, $contactoKommo, $datosMensaje);
+            error_log('KommoController: Hitos actualizados para expediente ID: ' . $expediente->getIdExpediente() . ' - Desglose: ' . json_encode($desglose));
+
+            // Crear registro de webhook (auditoría)
+            $kommoWebhook = new KommoWebhook();
+            $kommoWebhook->setWebhookType($tipoWebhook);
+            $kommoWebhook->setKommoId($contactId ?: 'sin-id');
+            $kommoWebhook->setJsonRecibido($data);
+            $kommoWebhook->setEstado('procesado');
+            $kommoWebhook->setFecha(new \DateTime());
+
+            $em->persist($kommoWebhook);
             $em->flush();
 
-            error_log("? Kommo: Mensaje guardado exitosamente - ID BD: {$mensaje->getId()}");
+            error_log('KommoController: Webhook registrado en BD con ID: ' . $kommoWebhook->getId());
 
+            // Respuesta exitosa
             return new JsonResponse([
-                'success' => true,
-                'id' => $mensaje->getId(),
-                'kommo_lead_id' => $kommoLeadId,
-                'message' => 'Mensaje procesado correctamente'
-            ], 200);
+                'ok' => true,
+                'mensaje' => 'Webhook recibido y procesado correctamente',
+                'tipo' => $tipoWebhook,
+                'idCliente' => $cliente->getIdUsuario(),
+                'idExpediente' => $expediente->getIdExpediente(),
+                'desgloseHitos' => $desglose,
+                'ia_used' => $iaUsed,
+                'ia_available' => $iaAvailable,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
 
         } catch (\Exception $e) {
-            error_log("? Kommo: Excepci�n - " . $e->getMessage());
+            // Log del error
+            error_log('KommoController Error: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
+
+            // Intentar guardar el error en BD
+            try {
+                $em = $this->getDoctrine()->getManager();
+                $kommoWebhook = new KommoWebhook();
+                $kommoWebhook->setWebhookType('error');
+                $kommoWebhook->setKommoId('error-sin-id');
+                $kommoWebhook->setJsonRecibido($content ? json_decode($content, true) : []);
+                $kommoWebhook->setEstado('error');
+                $kommoWebhook->setErrorMensaje($e->getMessage());
+                $kommoWebhook->setFecha(new \DateTime());
+
+                $em->persist($kommoWebhook);
+                $em->flush();
+            } catch (\Exception $dbError) {
+                error_log('KommoController: Error guardando fallo en BD: ' . $dbError->getMessage());
+            }
+
+            // Respuesta de error
             return new JsonResponse([
-                'error' => 'Server error',
-                'message' => $e->getMessage()
-            ], 500);
+                'ok' => false,
+                'error' => $e->getMessage(),
+                'timestamp' => date('Y-m-d H:i:s')
+            ], 400);
         }
     }
 
     /**
-     * Obtiene todos los mensajes de un Lead (para DEBUG/Admin)
-     * GET /webhook/kommo/lead/{kommoLeadId}
-     * 
-     * @Route("/lead/{kommoLeadId}", name="api_kommo_get_lead_messages", methods={"GET"}, requirements={"kommoLeadId"="\d+"})
+     * Detecta el tipo de webhook basándose en la estructura del JSON
      */
-    public function getLeadMessagesAction($kommoLeadId, EntityManagerInterface $em)
+    private function detectarTipoWebhook(array $data): string
     {
-        $repository = $em->getRepository(KommoMensaje::class);
-        $mensajes = $repository->findByKommoLeadId((int)$kommoLeadId);
-
-        if (empty($mensajes)) {
-            return new JsonResponse(['error' => 'No messages found'], 404);
+        if (!empty($data['message']['add'])) {
+            return 'message';
         }
-
-        $data = [];
-        foreach ($mensajes as $msg) {
-            $data[] = [
-                'id' => $msg->getId(),
-                'kommo_lead_id' => $msg->getKommoLeadId(),
-                'message' => $msg->getMessageText(),
-                'type' => $msg->getMessageType(),
-                'status' => $msg->getStatus(),
-                'created_at' => $msg->getCreatedAt()->format('Y-m-d H:i:s'),
-                'updated_at' => $msg->getUpdatedAt() ? $msg->getUpdatedAt()->format('Y-m-d H:i:s') : null,
-            ];
+        if (!empty($data['contacts']['add'])) {
+            return 'contact';
         }
-
-        return new JsonResponse($data, 200);
+        if (!empty($data['leads']['add'])) {
+            return 'lead';
+        }
+        return 'unknown';
     }
 
     /**
-     * Obtiene estad�sticas de mensajes (para DEBUG/Admin)
-     * GET /webhook/kommo/estadisticas
-     * 
-     * @Route("/estadisticas", name="api_kommo_estadisticas", methods={"GET"})
+     * Extrae contactId del webhook de mensaje
      */
-    public function estadisticasAction(EntityManagerInterface $em)
+    private function extraerContactoIdDelMensaje(array $data): ?int
     {
-        $repository = $em->getRepository(KommoMensaje::class);
+        if (!empty($data['message']['add'][0]['contact_id'])) {
+            return (int)$data['message']['add'][0]['contact_id'];
+        }
+        return null;
+    }
 
-        $total = $repository->createQueryBuilder('km')
-            ->select('COUNT(km.id)')
+    /**
+     * Extrae contactId del webhook de contact
+     */
+    private function extraerContactoIdDelContact(array $data): ?int
+    {
+        if (!empty($data['contacts']['add'][0]['id'])) {
+            return (int)$data['contacts']['add'][0]['id'];
+        }
+        return null;
+    }
+
+    /**
+     * Extrae el ID del contacto del webhook (método heredado para compatibilidad)
+     */
+    private function extraerContactoIdDelWebhook(array $data): ?int
+    {
+        // Ubicación 1: data.id (webhook estándar)
+        if (!empty($data['data']['id'])) {
+            return (int)$data['data']['id'];
+        }
+
+        // Ubicación 2: id en raíz
+        if (!empty($data['id'])) {
+            return (int)$data['id'];
+        }
+
+        // Ubicación 3: message.add[0].contact_id
+        if (!empty($data['message']['add'][0]['contact_id'])) {
+            return (int)$data['message']['add'][0]['contact_id'];
+        }
+
+        // Ubicación 4: contacts.add[0].id
+        if (!empty($data['contacts']['add'][0]['id'])) {
+            return (int)$data['contacts']['add'][0]['id'];
+        }
+
+        // Ubicación 5: leads.add[0].linked_leads_id (primer contact asociado)
+        if (!empty($data['leads']['add'][0]['linked_leads_id'])) {
+            $contactIds = $data['leads']['add'][0]['linked_leads_id'];
+            $firstContactId = array_key_first($contactIds);
+            return (int)$firstContactId;
+        }
+
+        return null;
+    }
+
+    /**
+     * 🤖 Extrae el texto del mensaje del webhook
+     * SOLO se llama si $tipoWebhook === 'message'
+     */
+    private function extraerTextoDelMensaje(array $data): string
+    {
+        if (empty($data['message']['add'][0]['text'])) {
+            return '';
+        }
+        return trim((string)$data['message']['add'][0]['text']);
+    }
+
+    /**
+     * 🤖 Llama a InteligenciaArtificialController para extraer datos con IA
+     * Envía el texto a través del endpoint /API/procesar_texto_para_expediente
+     */
+    private function extraerDatosConIA(string $texto): array
+    {
+        try {
+            // Intentar forward (más eficiente)
+            $request = new Request(
+                [],
+                [],
+                [],
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
+                    'texto' => $texto,
+                    'tipo_entrada' => 'kommo'
+                ])
+            );
+
+            $response = $this->forward('AppBundle:InteligenciaArtificial:procesarTextoParaExpediente', [
+                'request' => $request
+            ]);
+
+            $datosExtraidos = json_decode($response->getContent(), true);
+            error_log('KommoController: Respuesta IA: ' . json_encode([
+                'success' => $datosExtraidos['success'] ?? false,
+                'campos' => $datosExtraidos['campos_detectados'] ?? 0,
+                'confianza' => $datosExtraidos['confianza_promedio'] ?? 0
+            ]));
+
+            return $datosExtraidos ?? ['success' => false];
+
+        } catch (\Exception $e) {
+            error_log('KommoController: Error en forward IA: ' . $e->getMessage() . ', intentando fallback cURL');
+            return $this->extraerDatosConIAviaCurl($texto);
+        }
+    }
+
+    /**
+     * 🤖 Fallback: Llamar IA vía cURL si forward falla
+     */
+    private function extraerDatosConIAviaCurl(string $texto): array
+    {
+        try {
+            $client = new GuzzleClient();
+            $response = $client->post(
+                'https://areaprivada.hipotea.com/API/procesar_texto_para_expediente',
+                [
+                    'json' => [
+                        'texto' => $texto,
+                        'tipo_entrada' => 'kommo'
+                    ],
+                    'timeout' => 30
+                ]
+            );
+
+            $datos = json_decode($response->getBody(), true);
+            error_log('KommoController: cURL IA exitoso: ' . $datos['campos_detectados'] . ' campos');
+            return $datos ?? ['success' => false];
+
+        } catch (\Exception $e) {
+            error_log('KommoController: cURL IA falló: ' . $e->getMessage());
+            return ['success' => false];
+        }
+    }
+
+    /**
+     * 🤖 Fusiona datos de Kommo API con datos extraídos por IA
+     * Prioridad: Datos IA > Datos Kommo > Vacío
+     */
+    private function fusionarDatosKommoConIA(array $datosKommo, array $datosIA): array
+    {
+        // Si IA devuelve estructura de valores_texto/valores_opcion, convertir a formato Kommo
+        if (isset($datosIA['valores_texto']) && isset($datosIA['valores_opcion'])) {
+            error_log('KommoController: Fusionando datos IA (estructura valores) con datos Kommo');
+            // Será manejado en construirAutorrellenoHitosKommo
+            return $datosIA;
+        }
+
+        // Si es estructura plana (fallback regex), fusionar con Kommo
+        if (is_array($datosIA)) {
+            error_log('KommoController: Fusionando datos regex con datos Kommo');
+            return array_merge($datosKommo, $datosIA);
+        }
+
+        return $datosKommo;
+    }
+
+    /**
+     * 🤖 FALLBACK: Extrae datos relevantes del mensaje (si existe)
+     * Busca patrones como "salario neto 1600", "nómina 2000", etc.
+     * Se usa cuando IA no está disponible o falla
+     */
+    private function extraerDatosDelMensaje(array $data): array
+    {
+        $datosMensaje = [];
+
+        // Verificar si hay mensajes en el webhook
+        if (empty($data['message']['add'])) {
+            return $datosMensaje;
+        }
+
+        foreach ($data['message']['add'] as $mensaje) {
+            $texto = $mensaje['text'] ?? '';
+            
+            if (empty($texto)) {
+                continue;
+            }
+
+            error_log('KommoController: Parseando mensaje: ' . $texto);
+
+            // Buscar patrones: "palabra valor" o "palabra: valor"
+            // Ejemplos: "salario neto 1600", "nómina: 2000", "empresa ABC"
+            
+            // Patrón: salario, nómina, sueldo (números)
+            if (preg_match('/(?:salario neto|salario|nómina|nomina|sueldo neto|sueldo)\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $valor = str_replace(',', '.', $matches[1]);
+                $datosMensaje['nomina'] = $valor;
+                error_log('KommoController: Nómina extraída (patrón salario): ' . $valor);
+            } elseif (preg_match('/\b(?:gano|cobro|percibo)\s*:??\s*(\d{2,6}(?:[.,]\d{2})?)\b\s*(?:€|euros)?/i', $texto, $matches)) {
+                // Ej: "gano 2000 euros al mes"
+                $valor = str_replace(',', '.', $matches[1]);
+                $datosMensaje['nomina'] = $valor;
+                error_log('KommoController: Nómina extraída (patrón gano): ' . $valor);
+            }
+
+            // Patrón: tipo de contrato (indefinido, temporal, autónomo, por obra)
+            if (preg_match('/\b(indefinid[oa]|temporal|fijo|autonomo|autónomo|por obra|obra y servicio)\b/i', $texto, $m)) {
+                $tipoContrato = strtolower($m[1]);
+                // Normalizar algunas variantes
+                $tipoContrato = str_ireplace(['autonomo','autónomo'], 'autónomo', $tipoContrato);
+                $tipoContrato = str_ireplace('fijo', 'indefinido', $tipoContrato);
+                $datosMensaje['tipo_contrato'] = $tipoContrato;
+                error_log('KommoController: Tipo de contrato extraído: ' . $tipoContrato);
+            }
+
+            // Patrón: empresa (texto)
+            if (preg_match('/empresa\s*:?\s*([A-Za-z0-9\s\&\.\-]+)/i', $texto, $matches)) {
+                $datosMensaje['empresa'] = trim($matches[1]);
+                error_log('KommoController: Empresa extraída: ' . $matches[1]);
+            }
+
+            // Patrón: puesto, cargo (texto)
+            if (preg_match('/(?:puesto|cargo)\s*:?\s*([A-Za-z0-9\s\&\.\-]+)/i', $texto, $matches)) {
+                $datosMensaje['puesto'] = trim($matches[1]);
+                error_log('KommoController: Puesto extraído: ' . $matches[1]);
+            }
+
+            // Patrón: ingresos, ingresos anuales (números)
+            if (preg_match('/ingresos\s*(?:anuales|mensuales)?\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $valor = str_replace(',', '.', $matches[1]);
+                $datosMensaje['ingresos'] = $valor;
+                error_log('KommoController: Ingresos extraídos: ' . $valor);
+            }
+
+            // Patrón: ciudad, provincia, localidad (texto)
+            if (preg_match('/(?:ciudad|provincia|localidad|residencia)\s*:?\s*([A-Za-z0-9\s\&\.\-]+)/i', $texto, $matches)) {
+                $datosMensaje['provincia'] = trim($matches[1]);
+                error_log('KommoController: Provincia extraída: ' . $matches[1]);
+            }
+
+            // Patrón: ahorro (números)
+            if (preg_match('/ahorro\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $valor = str_replace(',', '.', $matches[1]);
+                $datosMensaje['ahorro'] = $valor;
+                error_log('KommoController: Ahorro extraído: ' . $valor);
+            }
+        }
+
+        return $datosMensaje;
+    }
+
+    /**
+     * Obtiene datos del contacto desde la API de Kommo
+     */
+    private function obtenerContactoKommo(ClientInterface $httpClient, int $contactId): array
+    {
+        $kommoSubdomain = $this->getParameter('kommo_subdomain');
+        $kommoApiToken = $this->getParameter('kommo_api_token');
+        $url = "https://{$kommoSubdomain}.kommo.com/api/v4/contacts/{$contactId}";
+
+        try {
+            $response = $httpClient->request('GET', $url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $kommoApiToken,
+                    'Accept' => 'application/json'
+                ],
+                'timeout' => 10
+            ]);
+
+            if ($response->getStatusCode() !== 200) {
+                throw new \Exception('API Kommo retornó status ' . $response->getStatusCode());
+            }
+
+            $data = json_decode($response->getBody(), true);
+            
+            // La API v4 devuelve el contacto directamente (no en _embedded)
+            // Pero mantenemos compatibilidad si viene en _embedded.contacts[0]
+            if (isset($data['_embedded']['contacts'][0])) {
+                return $data['_embedded']['contacts'][0];
+            } elseif (isset($data['id'])) {
+                // Estructura estándar de Kommo v4: el contacto es la raíz
+                return $data;
+            } else {
+                throw new \Exception('Estructura inesperada en respuesta de API Kommo: ' . json_encode(array_keys($data)));
+            }
+        } catch (GuzzleException $e) {
+            throw new \Exception('Error conectando a API Kommo: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtiene detalles adicionales del contacto desde Kommo API con parámetros extendidos
+     * Intenta obtener custom_fields_values adicionales que podrían contener teléfono/email
+     */
+    private function obtenerContactoKommoDetallado(ClientInterface $httpClient, int $contactId): ?array
+    {
+        $kommoSubdomain = $this->getParameter('kommo_subdomain');
+        $kommoApiToken = $this->getParameter('kommo_api_token');
+        
+        // Llamar con parámetros adicionales para obtener más detalles
+        $url = "https://{$kommoSubdomain}.kommo.com/api/v4/contacts/{$contactId}?with=leads,customers";
+
+        try {
+            $response = $httpClient->request('GET', $url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $kommoApiToken,
+                    'Accept' => 'application/json'
+                ],
+                'timeout' => 10
+            ]);
+
+            if ($response->getStatusCode() !== 200) {
+                error_log('KommoController: API Kommo retornó status ' . $response->getStatusCode() . ' en obtenerContactoKommoDetallado');
+                return null;
+            }
+
+            $data = json_decode($response->getBody(), true);
+            
+            // Extraer contacto de la respuesta
+            if (isset($data['_embedded']['contacts'][0])) {
+                error_log('KommoController: Detalles obtenidos de _embedded.contacts[0]');
+                return $data['_embedded']['contacts'][0];
+            } elseif (isset($data['id'])) {
+                error_log('KommoController: Detalles obtenidos desde raíz de respuesta API');
+                return $data;
+            }
+            
+            return null;
+        } catch (GuzzleException $e) {
+            error_log('KommoController: Error en obtenerContactoKommoDetallado: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Busca cliente por teléfono o lo crea nuevo
+     */
+    private function buscarOCrearCliente($em, array $contactoKommo): UsuarioEntidad
+    {
+        $telefono = $this->extraerTelefono($contactoKommo);
+        $email = $this->extraerEmail($contactoKommo);
+        $nombre = $contactoKommo['name'] ?? 'Cliente Kommo';
+
+        // Buscar cliente existente por teléfono
+        if ($telefono) {
+            $clienteExistente = $em->getRepository(UsuarioEntidad::class)->findOneBy(
+                ['telefonoMovil' => $telefono]
+            );
+            if ($clienteExistente) {
+                error_log('KommoController: Cliente existente por teléfono: ' . $telefono);
+                return $clienteExistente;
+            }
+        }
+
+        // Buscar por email si teléfono no encontró nada
+        if ($email) {
+            $clienteExistente = $em->getRepository(UsuarioEntidad::class)->findOneBy(
+                ['email' => $email]
+            );
+            if ($clienteExistente && $clienteExistente->getRole() === 'ROLE_CLIENTE') {
+                error_log('KommoController: Cliente existente por email: ' . $email);
+                return $clienteExistente;
+            }
+        }
+
+        // Crear nuevo cliente
+        error_log('KommoController: Creando nuevo cliente desde Kommo');
+        list($nombreCliente, $apellidosCliente) = $this->separarNombreCompleto($nombre);
+
+        $nuevoCliente = new UsuarioEntidad();
+        $nuevoCliente->setUsername($nombreCliente);
+        $nuevoCliente->setApellidos($apellidosCliente);
+        $nuevoCliente->setEmail($email ?: 'kommo_' . uniqid() . '@example.com');
+        $nuevoCliente->setTelefonoMovil($telefono ?: '');
+        $nuevoCliente->setRole('ROLE_CLIENTE');
+        $nuevoCliente->setEstado(true);
+        $nuevoCliente->setPassword('');
+        $nuevoCliente->setPlainPassword('');
+        $nuevoCliente->setFechaRegistro(new \DateTime());
+
+        $em->persist($nuevoCliente);
+        $em->flush();
+
+        error_log('KommoController: Nuevo cliente creado (ID: ' . $nuevoCliente->getIdUsuario() . ')');
+        return $nuevoCliente;
+    }
+
+    /**
+     * Busca expediente existente o crea uno nuevo con estructura completa
+     */
+    private function buscarOCrearExpediente($em, UsuarioEntidad $cliente): ExpedienteEntidad
+    {
+        // Buscar expediente existente
+        $expedienteExistente = $em->getRepository(ExpedienteEntidad::class)->findOneBy([
+            'idCliente' => $cliente,
+            'estado' => 1
+        ]);
+
+        if ($expedienteExistente) {
+            error_log('KommoController: Expediente existente para cliente: ' . $cliente->getIdUsuario());
+            return $expedienteExistente;
+        }
+
+        // Crear nuevo expediente
+        error_log('KommoController: Creando nuevo expediente para cliente: ' . $cliente->getIdUsuario());
+
+        $primeraFase = $em->getRepository(FaseEntidad::class)->findOneBy(['orden' => 1]);
+        if (!$primeraFase) {
+            throw new \Exception('No hay fases configuradas en el sistema');
+        }
+
+        $expediente = new ExpedienteEntidad();
+        $expediente->setIdCliente($cliente);
+        $expediente->setIdFaseActual($primeraFase);
+        $expediente->setEstado(1);
+        $expediente->setVivienda('NUEVA VIVIENDA');
+        $expediente->setFechaCreacion(new \DateTime());
+
+        $em->persist($expediente);
+        $em->flush();
+
+        // Crear estructura completa: fases → hitos → grupos → campos
+        $fases = $em->getRepository(FaseEntidad::class)->findBy([], ['orden' => 'ASC']);
+
+        foreach ($fases as $fase) {
+            $hitos = $em->getRepository(HitoEntidad::class)->findBy(['idFase' => $fase], ['orden' => 'ASC']);
+
+            foreach ($hitos as $hito) {
+                $hitoExpediente = new HitoExpedienteEntidad();
+                $hitoExpediente->setIdHito($hito);
+                $hitoExpediente->setIdExpediente($expediente);
+                $hitoExpediente->setFechaModificacion(new \DateTime());
+                $hitoExpediente->setEstado(0);
+
+                $gruposCamposHito = $em->getRepository(GrupoCamposHitoEntidad::class)->findBy(
+                    ['idHito' => $hito],
+                    ['orden' => 'ASC']
+                );
+
+                foreach ($gruposCamposHito as $grupoCamposHito) {
+                    $grupoHitoExpediente = new GrupoHitoExpedienteEntidad();
+                    $grupoHitoExpediente->setIdHitoExpediente($hitoExpediente);
+                    $grupoHitoExpediente->setIdGrupoCamposHito($grupoCamposHito);
+
+                    $camposHito = $em->getRepository(CampoHitoEntidad::class)->findBy(
+                        ['idGrupoCamposHito' => $grupoCamposHito],
+                        ['orden' => 'ASC']
+                    );
+
+                    foreach ($camposHito as $campoHito) {
+                        $campoHitoExpediente = new CampoHitoExpedienteEntidad();
+                        $campoHitoExpediente->setIdCampoHito($campoHito);
+                        $campoHitoExpediente->setIdHitoExpediente($hitoExpediente);
+                        $campoHitoExpediente->setIdGrupoHitoExpediente($grupoHitoExpediente);
+                        $campoHitoExpediente->setIdExpediente($expediente);
+                        $campoHitoExpediente->setFechaModificacion(new \DateTime());
+
+                        if ($campoHito->getTipo() == 4) {
+                            $campoHitoExpediente->setObligatorio(1)->setSolicitarAlColaborador(1);
+                        }
+
+                        $em->persist($campoHitoExpediente);
+                    }
+
+                    $em->persist($grupoHitoExpediente);
+                }
+
+                $em->persist($hitoExpediente);
+            }
+        }
+
+        $em->flush();
+        error_log('KommoController: Estructura de expediente creada (ID: ' . $expediente->getIdExpediente() . ')');
+
+        return $expediente;
+    }
+
+    /**
+     * Actualiza hitos del expediente con datos de Kommo + datos del mensaje
+     * Retorna un desglose de hitos y campos actualizados
+     */
+    private function actualizarHitosKommo($em, ExpedienteEntidad $expediente, array $contactoKommo, array $datosMensaje = []): array
+    {
+        $camposAActualizar = $this->construirAutorrellenoHitosKommo($contactoKommo, $datosMensaje);
+        error_log('KommoController: Actualizando ' . count($camposAActualizar) . ' campos');
+
+        $desglose = [];
+        $hitosActualizados = [];
+
+        foreach ($camposAActualizar as $idCampoHito => $configuracion) {
+            $campoHitoExpediente = $em->getRepository(CampoHitoExpedienteEntidad::class)->findOneBy([
+                'idExpediente' => $expediente,
+                'idCampoHito' => $idCampoHito
+            ]);
+
+            if (!$campoHitoExpediente) {
+                error_log('KommoController: No se encontró CampoHitoExpediente para idCampo ' . $idCampoHito . ' en expediente ' . $expediente->getIdExpediente());
+                continue;
+            }
+
+            // Obtener información del hito y campo
+            $hitoExpediente = $campoHitoExpediente->getIdHitoExpediente();
+            $hito = $hitoExpediente->getIdHito();
+            $campoHito = $campoHitoExpediente->getIdCampoHito();
+            
+            $idHito = $hito->getIdHito();
+            $nombreHito = $hito->getNombre() ?? 'Hito #' . $idHito;
+            $nombreCampo = $campoHito->getNombre() ?? 'Campo #' . $idCampoHito;
+
+            // Registrar actualización
+            if (!isset($hitosActualizados[$idHito])) {
+                $hitosActualizados[$idHito] = [
+                    'idHito' => $idHito,
+                    'nombreHito' => $nombreHito,
+                    'campos' => []
+                ];
+            }
+
+            // Actualizar el campo
+            if (isset($configuracion['opcion_id'])) {
+                $opcionId = $configuracion['opcion_id'];
+                $setterUsed = null;
+
+                // Intentar resolver la entidad OpcionesCampo si existe el EntityManager
+                $opcionesEntity = null;
+                try {
+                    $opcionesEntity = $em->getRepository('AppBundle:OpcionesCampo')->find($opcionId);
+                } catch (\Exception $e) {
+                    // No bloquear, seguiremos con fallback
+                    error_log('KommoController: Error al buscar OpcionesCampo id ' . $opcionId . ' - ' . $e->getMessage());
+                }
+
+                if ($opcionesEntity && method_exists($campoHitoExpediente, 'setIdOpcionesCampo')) {
+                    $campoHitoExpediente->setIdOpcionesCampo($opcionesEntity);
+                    $setterUsed = 'setIdOpcionesCampo(entity)';
+                } elseif (method_exists($campoHitoExpediente, 'setOpcion')) {
+                    // métodos menos comunes: intentar pasar la entidad si acepta objeto
+                    if ($opcionesEntity) {
+                        $campoHitoExpediente->setOpcion($opcionesEntity);
+                        $setterUsed = 'setOpcion(entity)';
+                    } else {
+                        $campoHitoExpediente->setValor((string)$opcionId);
+                        $setterUsed = 'setValor(fallback)';
+                    }
+                } elseif (method_exists($campoHitoExpediente, 'setIdOpcion')) {
+                    // intentar pasar entidad o id según firma
+                    try {
+                        $campoHitoExpediente->setIdOpcion($opcionesEntity ?: $opcionId);
+                        $setterUsed = 'setIdOpcion';
+                    } catch (\TypeError $te) {
+                        $campoHitoExpediente->setValor((string)$opcionId);
+                        $setterUsed = 'setValor(fallback)';
+                    }
+                } else {
+                    // Último recurso: almacenar el id de opción en el campo de texto `valor`
+                    $campoHitoExpediente->setValor((string)$opcionId);
+                    $setterUsed = 'setValor(fallback)';
+                }
+
+                error_log('KommoController: Actualizando campo opcion ' . $idCampoHito . ' usando ' . $setterUsed . ' => ' . $opcionId);
+
+                $hitosActualizados[$idHito]['campos'][] = [
+                    'idCampo' => $idCampoHito,
+                    'nombreCampo' => $nombreCampo,
+                    'tipo' => 'opcion',
+                    'valor' => $opcionId
+                ];
+            } elseif (isset($configuracion['valor'])) {
+                $campoHitoExpediente->setValor($configuracion['valor']);
+                $hitosActualizados[$idHito]['campos'][] = [
+                    'idCampo' => $idCampoHito,
+                    'nombreCampo' => $nombreCampo,
+                    'tipo' => 'texto',
+                    'valor' => $configuracion['valor']
+                ];
+            }
+
+            $campoHitoExpediente->setFechaModificacion(new \DateTime());
+            $em->persist($campoHitoExpediente);
+        }
+
+        $em->flush();
+
+        // Convertir a array indexado
+        $desglose = array_values($hitosActualizados);
+        
+        error_log('KommoController: Desglose de actualización: ' . json_encode($desglose));
+
+        return $desglose;
+    }
+
+    /**
+     * 🤖 Construye array de campos a rellenar desde datos de Kommo + datos del mensaje (IA o regex)
+     * Soporta ambas estructuras:
+     * - Estructura IA: ['valores_texto' => {...}, 'valores_opcion' => {...}]
+     * - Estructura Kommo/Regex: ['nomina' => '2000', 'empresa' => '...']
+     */
+    private function construirAutorrellenoHitosKommo(array $lead, array $datosMensaje = []): array
+    {
+        // 🤖 MANEJO DE ESTRUCTURA IA
+        if (isset($datosMensaje['valores_texto']) && isset($datosMensaje['valores_opcion'])) {
+            error_log('KommoController: Usando datos IA (estructura valores)');
+            return $this->construirAutorrellenoDesdeIA($datosMensaje, $lead);
+        }
+
+        // MANEJO DE ESTRUCTURA KOMMO/REGEX (fallback original)
+        $nombreCompleto = trim((string)(!empty($lead['nombre_contacto']) ? $lead['nombre_contacto'] : ($lead['name'] ?? '')));
+        list($nombre, $apellidos) = $this->separarNombreCompleto($nombreCompleto);
+
+        $telefono = $this->extraerTelefono($lead);
+        $email = $this->extraerEmail($lead);
+        $provincia = $this->extraerCampoCustom($lead, ['provincia', 'city', 'ciudad']);
+        $canal = $lead['canal'] ?? $lead['source'] ?? 'Kommo';
+
+        // Extraer campos de custom_fields de Kommo (más flexibles)
+        $trabajo = $this->extraerCampoCustom($lead, ['trabajo', 'ocupación', 'profesión', 'estado laboral', 'empleo']);
+        $empresa = $this->extraerCampoCustom($lead, ['empresa', 'company', 'nombre empresa']);
+        $puesto = $this->extraerCampoCustom($lead, ['puesto', 'cargo', 'position', 'job title']);
+        $nomina = $this->extraerCampoCustom($lead, ['nómina', 'nomina', 'salario neto', 'sueldo neto', 'monthly salary', 'nómina mensual neto']);
+        $ingresos = $this->extraerCampoCustom($lead, ['ingresos', 'ingresos anuales', 'annual income', 'salario anual']);
+        $ahorro = $this->extraerCampoCustom($lead, ['ahorro', 'aportacion', 'savings']);
+
+        // INTEGRAR DATOS DEL MENSAJE (tienen prioridad si existen)
+        if (!empty($datosMensaje['nomina'])) {
+            $nomina = $datosMensaje['nomina'];
+            error_log('KommoController: Usando nómina del mensaje: ' . $nomina);
+        }
+        if (!empty($datosMensaje['empresa'])) {
+            $empresa = $datosMensaje['empresa'];
+            error_log('KommoController: Usando empresa del mensaje: ' . $empresa);
+        }
+        if (!empty($datosMensaje['puesto'])) {
+            $puesto = $datosMensaje['puesto'];
+            error_log('KommoController: Usando puesto del mensaje: ' . $puesto);
+        }
+        if (!empty($datosMensaje['ingresos'])) {
+            $ingresos = $datosMensaje['ingresos'];
+            error_log('KommoController: Usando ingresos del mensaje: ' . $ingresos);
+        }
+        if (!empty($datosMensaje['provincia'])) {
+            $provincia = $datosMensaje['provincia'];
+            error_log('KommoController: Usando provincia del mensaje: ' . $provincia);
+        }
+        if (!empty($datosMensaje['ahorro'])) {
+            $ahorro = $datosMensaje['ahorro'];
+            error_log('KommoController: Usando ahorro del mensaje: ' . $ahorro);
+        }
+
+        // Construir array de campos (basado en tu función original)
+        // Observaciones puede incluir tipo de contrato si viene en el mensaje
+        $observaciones = 'Contacto de Kommo';
+        if (!empty($datosMensaje['tipo_contrato'])) {
+            $observaciones .= ' - Tipo contrato: ' . $datosMensaje['tipo_contrato'];
+            error_log('KommoController: Añadiendo tipo de contrato a observaciones: ' . $datosMensaje['tipo_contrato']);
+        }
+
+        $campos = [
+            688 => ['valor' => ''], // Fecha
+            693 => ['valor' => $nombre],
+            694 => ['valor' => $apellidos],
+            695 => ['valor' => $telefono],
+            696 => ['valor' => $email],
+            689 => ['valor' => $provincia],
+            690 => ['valor' => $trabajo],
+            702 => ['valor' => ''], // Interés
+            692 => ['valor' => ''], // Tiene inmueble
+            691 => ['valor' => ''], // Valor inmueble
+            697 => ['valor' => ''], // Ciudad inmueble
+            699 => ['valor' => $ahorro],
+            700 => ['valor' => $observaciones], // Observaciones
+            701 => ['valor' => $canal], // Origen
+            405 => ['valor' => ''], // Importe hipoteca
+            191 => ['valor' => $observaciones],
+            192 => ['valor' => $nombreCompleto],
+            218 => ['valor' => $observaciones],
+            234 => ['valor' => $observaciones],
+            407 => ['valor' => $email],
+            408 => ['valor' => $telefono],
+            679 => ['valor' => $observaciones],
+            704 => ['valor' => $canal],
+            458 => ['valor' => $provincia],
+            220 => ['valor' => $empresa],
+            222 => ['valor' => $puesto],
+            225 => ['valor' => $nomina],
+            228 => ['valor' => $ingresos],
+        ];
+
+        // Si el fallback (regex/kommo) detectó tipo de contrato, mapearlo al campo de opción 193
+        if (!empty($datosMensaje['tipo_contrato'])) {
+            $opcion = $this->resolverOpcionTipoEmpleo($datosMensaje['tipo_contrato']);
+            if ($opcion) {
+                $campos[193] = ['opcion_id' => $opcion];
+                error_log('KommoController: Mapeado tipo de contrato fallback a opcion_id ' . $opcion);
+            }
+        }
+
+        error_log('KommoController: Campos construidos para autorrelleno: ' . json_encode($campos));
+
+        // Filtrar campos vacíos
+        return array_filter($campos, function ($configuracion) {
+            return (isset($configuracion['opcion_id']) && !empty($configuracion['opcion_id']))
+                || (isset($configuracion['valor']) && trim((string)$configuracion['valor']) !== '');
+        });
+    }
+
+    /**
+     * 🤖 Construye autorrelleno desde datos IA
+     * Convierte estructura IA (valores_texto/valores_opcion) a estructura de expediente
+     */
+    private function construirAutorrellenoDesdeIA(array $datosIA, array $lead): array
+    {
+        $campos = [];
+        $valoresTexto = $datosIA['valores_texto'] ?? [];
+        $valoresOpcion = $datosIA['valores_opcion'] ?? [];
+
+        error_log('KommoController: Construyendo autorrelleno desde IA: ' . count($valoresTexto) . ' valores de texto, ' . count($valoresOpcion) . ' opciones');
+
+        // Mapear valores de texto extraídos por IA
+        foreach ($valoresTexto as $idCampo => $valor) {
+            if (!empty($valor)) {
+                $campos[$idCampo] = ['valor' => $valor];
+            }
+        }
+
+        // Mapear opciones extraídas por IA
+        foreach ($valoresOpcion as $idCampo => $idOpcion) {
+            if (!empty($idOpcion)) {
+                $campos[$idCampo] = ['opcion_id' => $idOpcion];
+            }
+        }
+
+        // Añadir datos por defecto de Kommo que no estén en IA
+        $telefono = $this->extraerTelefono($lead);
+        $email = $this->extraerEmail($lead);
+        $canal = $lead['canal'] ?? $lead['source'] ?? 'Kommo';
+
+        // Si IA nos pasó tipo de contrato como texto, mapear a opción de hito (193)
+        $tipoContratoIA = $datosIA['tipo_contrato'] ?? ($valoresTexto['tipo_contrato'] ?? null);
+        if (!empty($tipoContratoIA)) {
+            $opcionTipo = $this->resolverOpcionTipoEmpleo($tipoContratoIA);
+            if ($opcionTipo) {
+                $campos[193] = ['opcion_id' => $opcionTipo];
+                error_log('KommoController: Mapeado tipo de contrato IA a opcion_id ' . $opcionTipo);
+            }
+        }
+
+        // Campos por defecto (si IA no los extrajo)
+        $camposDefecto = [
+            700 => 'Contacto de Kommo',
+            701 => $canal,
+            704 => $canal,
+            191 => 'Contacto de Kommo',
+            218 => 'Contacto de Kommo',
+            234 => 'Contacto de Kommo',
+            679 => 'Contacto de Kommo'
+        ];
+
+        foreach ($camposDefecto as $idCampo => $valor) {
+            if (!isset($campos[$idCampo]) && !empty($valor)) {
+                $campos[$idCampo] = ['valor' => $valor];
+            }
+        }
+
+        error_log('KommoController: Campos IA totales para actualizar: ' . count($campos));
+        return $campos;
+    }
+
+    /**
+     * Resolver opción del campo 'Tipo de empleo' (hito campo 193) según texto
+     */
+    private function resolverOpcionTipoEmpleo(string $tipo): ?int
+    {
+        $t = strtolower(trim($tipo));
+        if (strpos($t, 'aut') !== false) {
+            return 97; // Autónom@
+        }
+        if (strpos($t, 'pension') !== false) {
+            return 98; // Pensionista
+        }
+        if (strpos($t, 'mercantil') !== false) {
+            return 103; // Mercantil
+        }
+        // Empleado / indefinido / fijo
+        if (strpos($t, 'emple') !== false || strpos($t, 'indef') !== false || strpos($t, 'fijo') !== false) {
+            return 102; // Emplead@
+        }
+
+        return null;
+    }
+
+    /**
+     * Métodos auxiliares
+     */
+    private function separarNombreCompleto(string $nombreCompleto): array
+    {
+        $nombreCompleto = trim($nombreCompleto);
+        if (empty($nombreCompleto)) {
+            return ['', ''];
+        }
+        $partes = explode(' ', $nombreCompleto, 2);
+        return [$partes[0] ?? '', $partes[1] ?? ''];
+    }
+
+    private function extraerTelefono(array $contacto): string
+    {
+        // Kommo API v4: buscar en custom_fields_values por field_code = 'PHONE'
+        if (!empty($contacto['custom_fields_values']) && is_array($contacto['custom_fields_values'])) {
+            foreach ($contacto['custom_fields_values'] as $campo) {
+                if (!empty($campo['field_code']) && $campo['field_code'] === 'PHONE') {
+                    if (!empty($campo['values'][0]['value'])) {
+                        $telefono = (string)$campo['values'][0]['value'];
+                        error_log('KommoController: Teléfono extraído de custom_fields_values: ' . $telefono);
+                        return $telefono;
+                    }
+                }
+            }
+        }
+        
+        // Fallback: campos antiguos
+        if (!empty($contacto['phone'])) {
+            return (string)$contacto['phone'];
+        }
+        if (!empty($contacto['custom_fields']['telefono'])) {
+            return (string)$contacto['custom_fields']['telefono'];
+        }
+        if (isset($contacto['_embedded']['phones'][0]['value'])) {
+            return (string)$contacto['_embedded']['phones'][0]['value'];
+        }
+        
+        error_log('KommoController: No se encontró teléfono en el contacto');
+        return '';
+    }
+
+    private function extraerEmail(array $contacto): string
+    {
+        // Kommo API v4: buscar en custom_fields_values por field_code = 'EMAIL'
+        if (!empty($contacto['custom_fields_values']) && is_array($contacto['custom_fields_values'])) {
+            foreach ($contacto['custom_fields_values'] as $campo) {
+                if (!empty($campo['field_code']) && $campo['field_code'] === 'EMAIL') {
+                    if (!empty($campo['values'][0]['value'])) {
+                        $email = (string)$campo['values'][0]['value'];
+                        error_log('KommoController: Email extraído de custom_fields_values: ' . $email);
+                        return $email;
+                    }
+                }
+            }
+        }
+        
+        // Fallback: campos antiguos
+        if (!empty($contacto['email'])) {
+            return (string)$contacto['email'];
+        }
+        if (!empty($contacto['custom_fields']['email'])) {
+            return (string)$contacto['custom_fields']['email'];
+        }
+        if (isset($contacto['_embedded']['emails'][0]['value'])) {
+            return (string)$contacto['_embedded']['emails'][0]['value'];
+        }
+        
+        error_log('KommoController: No se encontró email en el contacto');
+        return '';
+    }
+
+    /**
+     * Extrae un campo customizado de Kommo buscando por múltiples alias
+     * Ejemplo: extraerCampoCustom($lead, ['nómina', 'salario neto', 'nomina mensual'])
+     * 
+     * @param array $contacto - Datos del contacto de Kommo
+     * @param array $aliases - Posibles nombres del campo a buscar
+     * @return string - Valor encontrado o vacío
+     */
+    private function extraerCampoCustom(array $contacto, array $aliases): string
+    {
+        if (empty($contacto['custom_fields'])) {
+            return '';
+        }
+
+        // Normalizar aliases a minúsculas
+        $aliasesNormalizados = array_map(function($alias) {
+            return strtolower(trim($alias));
+        }, $aliases);
+
+        // Buscar en custom_fields
+        foreach ($contacto['custom_fields'] as $nombreCampo => $valor) {
+            $nombreCampoNormalizado = strtolower(trim((string)$nombreCampo));
+            
+            // Búsqueda exacta
+            if (in_array($nombreCampoNormalizado, $aliasesNormalizados)) {
+                return (string)($valor ?? '');
+            }
+            
+            // Búsqueda parcial (contiene)
+            foreach ($aliasesNormalizados as $alias) {
+                if (strpos($nombreCampoNormalizado, $alias) !== false || strpos($alias, $nombreCampoNormalizado) !== false) {
+                    return (string)($valor ?? '');
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Dashboard admin para ver webhooks
+     * Ruta: /Admin/Kommo/Webhooks
+     * Método: GET
+     */
+    public function adminWebhooksAction(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $kommoRepo = $em->getRepository('AppBundle:KommoWebhook');
+
+        // Obtener filtros del request
+        $tipo = $request->get('tipo', '');
+        $estado = $request->get('estado', '');
+        $fechaInicioStr = $request->get('fechaInicio', '');
+        $fechaFinStr = $request->get('fechaFin', '');
+        $busqueda = $request->get('busqueda', '');
+        $page = $request->get('page', 1);
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        // Construir query con filtros
+        $qb = $em->createQueryBuilder()
+            ->select('w')
+            ->from('AppBundle:KommoWebhook', 'w')
+            ->orderBy('w.fecha', 'DESC');
+
+        if ($tipo) {
+            $qb->andWhere('w.webhookType = :tipo')->setParameter('tipo', $tipo);
+        }
+        if ($estado) {
+            $qb->andWhere('w.estado = :estado')->setParameter('estado', $estado);
+        }
+        if ($fechaInicioStr) {
+            $fechaInicio = new \DateTime($fechaInicioStr . ' 00:00:00');
+            $qb->andWhere('w.fecha >= :fechaInicio')->setParameter('fechaInicio', $fechaInicio);
+        }
+        if ($fechaFinStr) {
+            $fechaFin = new \DateTime($fechaFinStr . ' 23:59:59');
+            $qb->andWhere('w.fecha <= :fechaFin')->setParameter('fechaFin', $fechaFin);
+        }
+        if ($busqueda) {
+            $qb->andWhere('w.kommoId LIKE :busqueda')->setParameter('busqueda', '%' . $busqueda . '%');
+        }
+
+        // Contar total
+        $totalQuery = clone $qb;
+        $total = count($totalQuery->getQuery()->getResult());
+        $totalPages = ceil($total / $limit);
+
+        // Obtener registros
+        $webhooks = $qb->setFirstResult($offset)
+            ->setMaxResults($limit)
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getResult();
 
-        $porEstado = [];
-        $estados = ['received', 'processed', 'error'];
-        foreach ($estados as $estado) {
-            $count = $repository->createQueryBuilder('km')
-                ->select('COUNT(km.id)')
-                ->where('km.status = :status')
-                ->setParameter('status', $estado)
-                ->getQuery()
-                ->getSingleScalarResult();
-            $porEstado[$estado] = $count;
+        // Obtener estadísticas
+        $estadisticas = $kommoRepo->obtenerEstadisticas();
+        $tiposUnicos = $kommoRepo->obtenerTiposUnicos();
+
+        // Preparar datos de paginación
+        $pagination = [
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'previousUrl' => $page > 1 ? $this->generateUrl('admin_kommo_webhooks', array_merge(
+                $request->query->all(),
+                ['page' => $page - 1]
+            )) : null,
+            'nextUrl' => $page < $totalPages ? $this->generateUrl('admin_kommo_webhooks', array_merge(
+                $request->query->all(),
+                ['page' => $page + 1]
+            )) : null
+        ];
+
+        // Preparar datos de filtros (usar strings originales para el template)
+        $filtro = [
+            'tipo' => $tipo,
+            'estado' => $estado,
+            'fechaInicio' => $fechaInicioStr,
+            'fechaFin' => $fechaFinStr,
+            'busqueda' => $busqueda
+        ];
+
+        return $this->render('@App/Backoffice/Lista/Kommo.html.twig', [
+            'webhooks' => $webhooks,
+            'estadisticas' => $estadisticas,
+            'tiposUnicos' => $tiposUnicos,
+            'pagination' => $pagination,
+            'filtro' => $filtro
+        ]);
+    }
+
+    /**
+     * Eliminar webhooks antiguos
+     * Ruta: /Admin/Kommo/Limpiar
+     * Método: POST
+     */
+    public function limpiarWebhooksAction(Request $request)
+    {
+        $dias = $request->get('dias', 90);
+        $em = $this->getDoctrine()->getManager();
+        $kommoRepo = $em->getRepository('AppBundle:KommoWebhook');
+
+        try {
+            $eliminados = $kommoRepo->eliminarPorAntigüedad($dias);
+
+            return new JsonResponse([
+                'ok' => true,
+                'mensaje' => 'Limpieza completada',
+                'eliminados' => $eliminados
+            ]);
+        } catch (\Exception $e) {
+            error_log('Error al limpiar webhooks: ' . $e->getMessage());
+
+            return new JsonResponse([
+                'ok' => false,
+                'mensaje' => 'Error al eliminar registros: ' . $e->getMessage()
+            ], 400);
         }
-
-        return new JsonResponse([
-            'total_mensajes' => $total,
-            'por_estado' => $porEstado,
-            'timestamp' => (new DateTime())->format('Y-m-d H:i:s')
-        ], 200);
     }
 }

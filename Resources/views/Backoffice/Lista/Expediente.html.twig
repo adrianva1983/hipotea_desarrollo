@@ -447,7 +447,6 @@ return '{{ path('cancelar_expediente',{'id':' '}) }}';
 	</script>
 	<script src="{{ asset('assets/js/custom/lista-expedientes.min.js') }}"></script>
 	<script>
-	console.log('11111111111111111111111111111111111111111111');
 		setTimeout(function () {
 location.reload();
 }, 1200000); // 60000 milisegundos = 1 minuto 20 minutos puestos
@@ -479,13 +478,13 @@ td.style.setProperty('left', '0rem', 'important');
 	{% if is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}
 		<script>
 			$(function () {
-				'use strict';{% if is_granted('ROLE_COLABORADOR') %}
-				$('#colaboradores').val('{{ app.user.idUsuario }}').change();
-				{% elseif is_granted('ROLE_COMERCIAL') and not sinAsignar %}
-				$('#comerciales').val('{{ app.user.idUsuario }}').change();
-				{% elseif is_granted('ROLE_TECNICO') and not sinAsignar %}
-				$('#tecnicos').val('{{ app.user.idUsuario }}').change();{% endif %}
-				});
+'use strict';{% if is_granted('ROLE_COLABORADOR') %}
+$('#colaboradores').val('{{ app.user.idUsuario }}').change();
+{% elseif is_granted('ROLE_COMERCIAL') and not sinAsignar %}
+$('#comerciales').val('{{ app.user.idUsuario }}').change();
+{% elseif is_granted('ROLE_TECNICO') and not sinAsignar %}
+$('#tecnicos').val('{{ app.user.idUsuario }}').change();{% endif %}
+});
 		</script>
 	{% endif %}
 	<script src="{{ asset('assets/js/custom/notificacion-expediente.js') }}"></script>

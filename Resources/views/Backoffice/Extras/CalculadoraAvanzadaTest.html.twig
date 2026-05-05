@@ -24,50 +24,6 @@
 				}
 			}, 100); // Retraso de 100ms
 		});
-		console.log('=== VARIABLES TWIG DISPONIBLES ===');
-        console.log({
-            tipo000: {{ tipo000 is defined ? tipo000 : '' }},
-            aportacion000: {{ aportacion000 is defined ? aportacion000 : '' }},
-            //aportacion_tras_venta000: {{ aportacion_tras_venta000 is defined ? aportacion_tras_venta000 : '0' }},
-            comunidad_autonoma000: {{ comunidad_autonoma000 is defined ? comunidad_autonoma000 : '' }},
-        	destino_compra000: {{ destino_compra000 is defined ? destino_compra000 : '' }},
-            edad000: {{ edad000 is defined ? edad000 : '' }},
-            //familia_numerosa000: {{ familia_numerosa000 is defined ? familia_numerosa000 : '' }},
-            //hipoteca_actual000: {{ hipoteca_actual000 is defined ? hipoteca_actual000 : '' }},
-            //importe_pagas000: {{ importe_pagas000 is defined ? importe_pagas000 : '' }},
-            ingresos_mensuales000: {{ ingresos_mensuales000 is defined ? ingresos_mensuales000 : '' }},
-            //minusvalia_familia_numerosa000: {{ minusvalia_familia_numerosa000 is defined ? minusvalia_familia_numerosa000 : '' }},
-            //monoparental000: {{ monoparental000 is defined ? monoparental000 : '' }},
-            num_titulares000: {{ num_titulares000 is defined ? num_titulares000 : '' }},
-            numero_pagas000: {{ numero_pagas000 is defined ? numero_pagas000 : '' }},
-            obra_nueva000: {{ obra_nueva000 is defined ? obra_nueva000 : '' }},
-            plazo000: {{ plazo000 is defined ? plazo000 : '' }},
-            prestamos_mensuales000: {{ prestamos_mensuales000 is defined ? prestamos_mensuales000 : '' }},
-            tipo_calculo000: {{ tipo_calculo000 is defined ? tipo_calculo000 : '' }},
-            //tipo_hipoteca000: {{ tipo_hipoteca000 is defined ? tipo_hipoteca000 : '' }},
-            //valor_inmueble000: {{ valor_inmueble000 is defined ? valor_inmueble000 : '' }},
-            //valor_vivienda_actual000: {{ valor_vivienda_actual000 is defined ? valor_vivienda_actual000 : '' }},
-            //vpo000: {{ vpo000 is defined ? vpo000 : '' }}
-        });
-        console.log('=== FIN VARIABLES ===');
-		console.log({
-            amortizacion: {{ amortizacion is defined ? amortizacion : '' }},
-			cuota: {{ cuota is defined ? cuota : '' }},
-			entrada: {{ entrada is defined ? entrada : '' }},
-			//error: {{ error is defined ? error : '' }},
-			gastos: {{ gastos is defined ? gastos : '' }},
-			gestoria: {{ gestoria is defined ? gestoria : '' }},
-			importe_fijo: {{ importe_fijo is defined ? importe_fijo : '' }},
-			importe_iva: {{ importe_iva is defined ? importe_iva : '' }},
-			//mensaje: {{ mensaje is defined ? mensaje : '' }},
-			notario: {{ notario is defined ? notario : '' }},
-			obraNueva: {{ obraNueva is defined ? obraNueva : '' }},
-			registro: {{ registro is defined ? registro : '' }},
-			tasacion: {{ tasacion is defined ? tasacion : '' }},
-			//tipo_calculo: {{ tipo_calculo is defined ? tipo_calculo : '' }},
-			//tipo_importe_maximo: {{ tipo_importe_maximo is defined ? tipo_importe_maximo : '' }},
-			tipo_interes_ccaa: {{ tipo_interes_ccaa is defined ? tipo_interes_ccaa : '' }},
-        });
 	</script>
 {% endblock %}
 {% block customstyles %}
@@ -630,7 +586,7 @@
 											<div class="row">
 												<div class="column">
 													<img src="/assets/images/iva.jpg" class="icono-imagen">
-													<span class="label">IVA*</span>
+													<span class="label 222">{{ iva_label }}*</span>
 													<span class="value">{{ importe_iva|number_format(2,',','.') }}
 														€</span>
 												</div>
@@ -817,7 +773,7 @@
 											<div class="row">
 												<div class="column">
 													<img src="/assets/images/iva.jpg" class="icono-imagen">
-													<span class="label">IVA*</span>
+													<span class="label 111">{{ iva_label }}*</span>
 													<span class="value">{{ importe_iva|number_format(2,',','.') }}
 														€</span>
 												</div>
@@ -1117,7 +1073,7 @@
 										<p style="color:grey;font-size:14px;">* Los tipos mostrados son una estimación de tipos medios, y no representan necesariamente las ofertas que se puedan conseguir.</p>
 										<p style="color:grey;font-size:14px;">* Los gastos de notaría, registro, gestoría y tasación son orientativos.</p>
 										<p style="color:grey;font-size:14px;">
-											Los gastos han sido estimados según ley (vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos fueran a cargo del comprador, los honorarios de la notaría serían de 950€.
+											Los gastos han sido estimados según ley (vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos fueran a cargo del comprador, los honorarios de la notaría serían de 1.400€.
 										</p>
 									{% else %}
 										{# Caja gastos #}
@@ -1150,7 +1106,7 @@
 												<div class="row">
 													<div class="column">
 														<img src="/assets/images/iva.jpg" class="icono-imagen">
-														<span class="label">IVA</span>
+														<span class="label 111">{{ iva_label }}*</span>
 														<span class="value">{{ importe_iva|number_format(2,',','.') }}
 															€</span>
 													</div>
@@ -1197,7 +1153,7 @@
 											</div>
 										</div>
 
-										<p style="color:grey;font-size:14px;">Hemos calculado los gastos de forma personalizada, considerando tu edad, comunidad autónoma y los impuestos vigentes, según lo establecido por la ley (donde el vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos los gastos fueran a carga del comprador, los honorarios de la notaría serían aproximadamente de 950€.</p>
+										<p style="color:grey;font-size:14px;">Hemos calculado los gastos de forma personalizada, considerando tu edad, comunidad autónoma y los impuestos vigentes, según lo establecido por la ley (donde el vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos los gastos fueran a carga del comprador, los honorarios de la notaría serían aproximadamente de 1.400€.</p>
 
 										{# Caja Desglose #}
 										<div class="costs costs2">
@@ -1346,7 +1302,7 @@
 																				Hemos utilizado valores medios de tipos de interés, plazos hipotecarios y gastos para ello. Recuerda que este cálculo es orientativo y no asegura la viabilidad económica completa.
 																			</p>
 																			<p style="color:grey;font-size:14px;">
-																				Los gastos han sido estimados según ley (vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos fueran a cargo del comprador, los honorarios de la notaría serían de 950€.
+																				Los gastos han sido estimados según ley (vendedor asume la parte notarial de la escritura y el comprador las copias). Si todos fueran a cargo del comprador, los honorarios de la notaría serían de 1.400€.
 																			</p>
 																			<p style="color:grey;font-size:14px;">
 																				Para una valoración más precisa y personalizada, te invitamos a completar nuestro cuestionario.

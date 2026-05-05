@@ -487,11 +487,11 @@ class APIController extends Controller
 										$imagenCorreo = "firma_base.png";
 									}
 									$subBody = '<img src="https://areaprivada.hipotea.com/uploads/'.$imagenCorreo.'"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-									Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 								}else{
 									$from = array($this->getParameter('mailer_user') => 'Hipotea');
 									$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-									Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 								}
 							}elseif($expediente->getIdTecnico() != null){
 								$mailerOk = $this->obtenerMailer($mailer,$expediente->getIdTecnico());
@@ -503,17 +503,17 @@ class APIController extends Controller
 										$imagenCorreo = "firma_base.png";
 									}
 									$subBody = '<img src="https://areaprivada.hipotea.com/uploads/'.$imagenCorreo.'"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-									Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 								}else{
 									$from = array($this->getParameter('mailer_user') => 'Hipotea');
 									$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-									Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 								}
 							}else{
 								$mailerOk = $this->obtenerMailer($mailer,null);
 								$from = array($this->getParameter('mailer_user') => 'Hipotea');
 								$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-								Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 							}
 							$body = $this->getUser()->getUsername() . " " . $this->getUser()->getApellidos() . " ha aportado el documento " .  $campoHitoExpediente->getIdCampoHito()->getNombre() . " que estaba esperando.";
 							$body.=$subBody;
@@ -745,11 +745,11 @@ class APIController extends Controller
 											$imagenCorreo = "firma_base.png";
 										}
 										$subBody = '<img src="https://areaprivada.hipotea.com/uploads/'.$imagenCorreo.'"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-										Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 									}else{
 										$from = array($this->getParameter('mailer_user') => 'Hipotea');
 										$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-										Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 									}
 								}elseif($expediente->getIdTecnico() != null){
 									$mailerOk = $this->obtenerMailer($mailer,$expediente->getIdTecnico());
@@ -761,17 +761,17 @@ class APIController extends Controller
 											$imagenCorreo = "firma_base.png";
 										}
 										$subBody = '<img src="https://areaprivada.hipotea.com/uploads/'.$imagenCorreo.'"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-										Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 									}else{
 										$from = array($this->getParameter('mailer_user') => 'Hipotea');
 										$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-										Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 									}
 								}else{
 									$mailerOk = $this->obtenerMailer($mailer,null);
 									$from = array($this->getParameter('mailer_user') => 'Hipotea');
 									$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-									Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 								}
 
 								$body = $this->getUser()->getUsername() . " " . $this->getUser()->getApellidos() . " ha firmado el documento " .  $campoHitoExpediente->getIdCampoHito()->getNombre() . " que estaba esperando.";
@@ -5821,173 +5821,4 @@ class APIController extends Controller
 		}
 		return $mailer;
 	}
-
-	
-
-	public function actualizarBelenderHitoAction(Request $request)
-    {
-        if ($request->headers->get('Content-Type') === 'application/json') {
-            $jsonRecibido = json_decode($request->getContent(), true);
-            $respuesta = array();
-            
-            if (json_last_error() === 0) {
-                $array_keys = array(
-                    'request_id',
-                    'status_code'
-                );
-                $jsonRecibidoValido = true;
-                
-                foreach ($array_keys as $array_key) {
-                    if (!array_key_exists($array_key, $jsonRecibido)) {
-                        $jsonRecibidoValido = false;
-                        break;
-                    }
-                }
-                
-                if ($jsonRecibidoValido) {
-                    $doctrine = $this->getDoctrine();
-                    $managerEntidad = $doctrine->getManager();
-                    $repositorios = array(
-                        'BelenderHitoExpediente' => $doctrine->getRepository('AppBundle:BelenderHitoExpediente')
-                    );
-                    
-                    $requestId = $jsonRecibido['request_id'];
-                    $statusCode = $jsonRecibido['status_code'];
-                    $fechaStatus = isset($jsonRecibido['fecha_status']) ? $jsonRecibido['fecha_status'] : date('Y-m-d H:i:s');
-                    
-                    try {
-                        // Buscar por requestId_belender (que es el campo request_id en la tabla)
-                        $belenderHito = $repositorios['BelenderHitoExpediente']->findOneBy(array(
-                            'requestId_belender' => $requestId
-                        ));
-                        
-                        if ($belenderHito) {
-                            $belenderHito->setStatus_code($statusCode)
-                                ->setFecha_status(new DateTime($fechaStatus));
-                            
-                            $managerEntidad->persist($belenderHito);
-                            $managerEntidad->flush();
-                            
-                            $respuesta['errorlevel'] = 0;
-                            $respuesta['mensaje'] = 'Belender hito actualizado correctamente';
-                            $respuesta['request_id'] = $requestId;
-                            $respuesta['status_code'] = $statusCode;
-                        } else {
-                            $respuesta['errorlevel'] = 1;
-                            $respuesta['mensaje'] = 'Registro de Belender no encontrado para requestId: ' . $requestId;
-                            $respuesta['request_id'] = $requestId;
-                        }
-                    } catch (Exception $e) {
-                        $respuesta['errorlevel'] = 2;
-                        $respuesta['mensaje'] = 'Error actualizando Belender: ' . $e->getMessage();
-                    }
-                } else {
-                    $respuesta['errorlevel'] = 3;
-                    $respuesta['mensaje'] = 'Faltan campos requeridos (request_id, status_code)';
-                }
-                
-                return new JsonResponse($respuesta, JSON_UNESCAPED_UNICODE);
-            }
-            throw new HttpException(400);
-        }
-    }
-
-	/**
-	 * Recibe webhook de Kommo (vía servidor externo)
-	 * POST /API/kommo/receive
-	 * 
-	 * Flujo:
-	 * Kommo → webhook-kommo.php (servidor externo) → POST a esta acción
-	 */
-	public function recibirKommoWebhookAction(Request $request)
-	{
-		//return new JsonResponse(['mensaje' => 'Endpoint de Kommo activo'], JSON_UNESCAPED_UNICODE);
-		if ($request->headers->get('Content-Type') === 'application/json') {
-			$jsonRecibido = json_decode($request->getContent(), true);
-			$respuesta = array();
-			
-			if (json_last_error() === 0) {
-				$array_keys = array('leads');
-				$jsonRecibidoValido = true;
-				
-				foreach ($array_keys as $array_key) {
-					if (!array_key_exists($array_key, $jsonRecibido)) {
-						$jsonRecibidoValido = false;
-						break;
-					}
-				}
-				
-				if ($jsonRecibidoValido && !empty($jsonRecibido['leads'])) {
-					$doctrine = $this->getDoctrine();
-					$managerEntidad = $doctrine->getManager();
-					$repositorios = array(
-						'KommoMensaje' => $doctrine->getRepository('AppBundle:KommoMensaje')
-					);
-					
-					$lead = $jsonRecibido['leads'][0]; // Primera instancia
-					$kommoLeadId = $lead['id'] ?? null;
-					
-					if (!$kommoLeadId) {
-						$respuesta['errorlevel'] = 4;
-						$respuesta['mensaje'] = 'Lead ID no encontrado';
-						return new JsonResponse($respuesta, JSON_UNESCAPED_UNICODE);
-					}
-					
-					try {
-						// Buscar o crear registro
-						$kommoMensaje = $repositorios['KommoMensaje']->findOneBy(array(
-							'kommoLeadId' => $kommoLeadId
-						));
-						
-						if (!$kommoMensaje) {
-							$kommoMensaje = new \AppBundle\Entity\KommoMensaje();
-						}
-						
-						$kommoMensaje->setKommoLeadId($kommoLeadId);
-						
-						// Extrae mensaje de campos personalizados si existe
-						if (isset($lead['custom_fields_values']) && is_array($lead['custom_fields_values'])) {
-							foreach ($lead['custom_fields_values'] as $field) {
-								if (isset($field['field_code']) && $field['field_code'] === 'MESSAGE') {
-									$kommoMensaje->setMessageText($field['values'][0]['value'] ?? '');
-									break;
-								}
-							}
-						}
-						
-						// Tipo de evento
-						if (isset($jsonRecibido['event']['type'])) {
-							$kommoMensaje->setMessageType($jsonRecibido['event']['type']);
-						}
-						
-						$kommoMensaje->setStatus('received');
-						$kommoMensaje->setUpdatedAt(new DateTime());
-						$kommoMensaje->setRawPayload($jsonRecibido);
-						
-						$managerEntidad->persist($kommoMensaje);
-						$managerEntidad->flush();
-						
-						error_log("✅ Kommo mensaje guardado - Lead ID: {$kommoLeadId}");
-						
-						$respuesta['errorlevel'] = 0;
-						$respuesta['mensaje'] = 'Mensaje de Kommo procesado correctamente';
-						$respuesta['kommo_lead_id'] = $kommoLeadId;
-						$respuesta['db_id'] = $kommoMensaje->getId();
-						
-					} catch (Exception $e) {
-						error_log("❌ Error Kommo: " . $e->getMessage());
-						$respuesta['errorlevel'] = 2;
-						$respuesta['mensaje'] = 'Error guardando mensaje Kommo: ' . $e->getMessage();
-					}
-				} else {
-					$respuesta['errorlevel'] = 3;
-					$respuesta['mensaje'] = 'Faltan campos requeridos (leads)';
-				}
-				
-				return new JsonResponse($respuesta, JSON_UNESCAPED_UNICODE);
-			}
-			throw new HttpException(400);
-		}
-	}
-
 }

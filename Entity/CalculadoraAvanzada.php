@@ -529,14 +529,17 @@ class CalculadoraAvanzada
 		// echo "bonificacion: ".$bonificacion."<br>";
 		// echo "escritura_compra_impuesto_transmisiones: ".$escritura_compra_impuesto_transmisiones."<br>";
 		// die;
-		if($nueva && $habitual && $vpo){
-			$tipo_iva = 0.04;
-		}else{
-			$tipo_iva = 0.1;
-		}
-		if($nueva){
+		if ($nueva) {
+			if (isset($nombreCCAA) && $nombreCCAA === 'Canarias') {
+				// IGIC aplicable en Canarias
+				$tipo_iva = 0.07;
+			} elseif ($habitual && $vpo) {
+				$tipo_iva = 0.04;
+			} else {
+				$tipo_iva = 0.1;
+			}
 			$importe_iva = $valor_inmueble * $tipo_iva;
-		}else{
+		} else {
 			$importe_iva = 0;
 		}
 
@@ -1528,30 +1531,34 @@ class CalculadoraAvanzada
 					$respuesta['mensaje'] = "";
 					if($habitual && $vpo && $importeVivienda <= (200000 + $margen_error)){
 						$respuesta['tipo'] = 0.04;
-						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial y el valor real del bien inmueble no supera los 200.000€.";
-					}else if($habitual && $edad <=35){
+						$respuesta['mensaje'] = "Tiene una bonificación por ser Vivienda de Protección Oficial.";
+					}else if($habitual && $edad <=35 && $importeVivienda <= 200000){
 						$respuesta['tipo'] = 0.04;
 						// $respuesta['bonificacion'] = 0.2;
-						$respuesta['mensaje'] = "Tiene una bonificación del por la compra de la vivienda habitual, ser menor de 36 años.";
-					}else if($habitual && $monoparental){
+						$respuesta['mensaje'] = "Tiene una bonificación del por la compra de la vivienda habitual, ser menor de 36 años y el valor real del bien inmueble no supera los 200.000€.";
+					}else if($habitual && $monoparental && $importeVivienda <= 200000){
 						$respuesta['tipo'] = 0.04;
 						// $respuesta['bonificacion'] = 0.2;
-						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual, ser familia monoparental.";
-					}else if($habitual && $minusvaliaFamiliaNumerosa){
+						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual, ser familia monoparental y el valor real del bien inmueble no supera los 200.000€.";
+					}else if($habitual && $minusvaliaFamiliaNumerosa && $importeVivienda <= 200000){
 						$respuesta['tipo'] = 0.04;
 						// $respuesta['bonificacion'] = 0.2;
-						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual, presentar una discapacidad mayor o igual al 65%.";
-					}else if($habitual && $familiaNumerosa){
+						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual, presentar una discapacidad mayor o igual al 65% y el valor real del bien inmueble no supera los 200.000€.";
+					}else if($habitual && $familiaNumerosa && $importeVivienda <= 200000){
 						$respuesta['tipo'] = 0.04;
 						// $respuesta['bonificacion'] = 0.2;
-						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual, ser familia numerosa.";
+						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual, ser familia numerosa y el valor real del bien inmueble no supera los 200.000€.";
 					}else if($habitual && $importeVivienda <= (200000 + $margen_error)){
 						$respuesta['tipo'] = 0.07;
-						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual y el valor real del bien inmueble no supera los 200.000€.";
+						$respuesta['mensaje'] = "Tiene una bonificación por la compra de la vivienda habitual y el valor real del bien inmueble no supera los 200.000€ y se cumplan determinados niveles de renta.";
 					}else if($importeVivienda <= (360000 + $margen_error)){
 						$respuesta['tipo'] = 0.08;
 					}else if($importeVivienda <= (600000 + $margen_error)){
 						$respuesta['tipo'] = 0.10;
+						$respuesta['mensaje'] = "A partir de 360.000€ el ITP sube por tramos hasta el 10%.";
+					}else if($importeVivienda > (600000 + $margen_error)){
+						$respuesta['tipo'] = 0.10;
+						$respuesta['mensaje'] = "A partir de 360.000€ el ITP sube por tramos hasta el 11%.";
 					}else {
 						$respuesta['tipo'] = 0.11;
 					}

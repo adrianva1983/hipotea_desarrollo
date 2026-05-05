@@ -1800,7 +1800,7 @@ class CalculadoraComparativa
 				return 0.3;
 				break;
 			case '4':
-				return 0.3;
+				return 0.5;
 				break;
 			case '5':
 				return 0.3;

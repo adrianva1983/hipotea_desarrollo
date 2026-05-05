@@ -159,6 +159,7 @@ class CalculadorasController extends Controller
 		$variablesTwig = array(
 			'titulo' => 'Calculadora Avanzada',
 			'calculadora_avanzada' => $formulario->createView(),
+			'iva_label' => 'IVA',
 		);
 		if ($formulario->isSubmitted() && $formulario->isValid()) {
 			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
@@ -223,6 +224,14 @@ class CalculadorasController extends Controller
 			// $variablesTwig['hipoteca_total_con_interes'] = $resultado['capital_less_initial_amount'] + $resultado['interest_discharged_total'];
 			// $variablesTwig['total_con_anticipo'] = $formulario->getData()->getPrecioTotal() + $resultado['interest_discharged_total'];
 			$variablesTwig['resultado'] = null;
+				// Ajustar etiqueta IVA/IGIC según CCAA y obra nueva
+				try {
+					$ccaa = $formulario->getData()->getComunidadAutonoma();
+					$nueva = $formulario->getData()->getObraNueva();
+					$variablesTwig['iva_label'] = ($nueva && $ccaa == '5') ? 'IGIC' : 'IVA';
+				} catch (\Exception $e) {
+					$variablesTwig['iva_label'] = 'IVA';
+				}
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzada.html.twig', $variablesTwig);
 	}
@@ -236,6 +245,7 @@ class CalculadorasController extends Controller
 		$variablesTwig = array(
 			'titulo' => 'Calculadora Avanzada',
 			'calculadora_avanzada' => $formulario->createView(),
+			'iva_label' => 'IVA',
 		);
 		if ($formulario->isSubmitted() && $formulario->isValid()) {
 			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
@@ -304,30 +314,6 @@ class CalculadorasController extends Controller
 				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
 			} else {
 				if ($resultado['importe_fijo'] > 0) {
-					$variablesTwig['tipo000'] = $formulario->getData()->getTipo();
-					$variablesTwig['aportacion000'] = $formulario->getData()->getAportacionInicial();
-					$variablesTwig['aportacion_tras_venta000'] = $formulario->getData()->getAportacionTrasVenta();
-					$variablesTwig['comunidad_autonoma000'] = $formulario->getData()->getComunidadAutonoma();
-					$variablesTwig['destino_compra000'] = $formulario->getData()->getDestinoCompra();
-					$variablesTwig['edad000'] = $formulario->getData()->getEdadTitularUno();
-					$variablesTwig['familia_numerosa000'] = $formulario->getData()->getFamiliaNumerosa();
-					$variablesTwig['hipoteca_actual000'] = $formulario->getData()->getHipotecaActual();
-					$variablesTwig['importe_pagas000'] = $formulario->getData()->getImportePagaExtra();
-					$variablesTwig['ingresos_mensuales000'] = $formulario->getData()->getIngresosMensuales();
-					$variablesTwig['minusvalia_familia_numerosa000'] = $formulario->getData()->getMinusvaliaFamiliaNumerosa();
-					$variablesTwig['monoparental000'] = $formulario->getData()->getMonoparental();
-					$variablesTwig['num_titulares000'] = $formulario->getData()->getNumTitulares();
-					$variablesTwig['numero_pagas000'] = $formulario->getData()->getNumPagasExtra();
-					$variablesTwig['obra_nueva000'] = $formulario->getData()->getObraNueva();
-					$variablesTwig['plazo000'] = $formulario->getData()->getPlazoAmortizacion();
-					$variablesTwig['prestamos_mensuales000'] = $formulario->getData()->getPrestamosMensuales();
-					$variablesTwig['tipo_calculo000'] = $formulario->getData()->getTipo();
-					$variablesTwig['tipo_hipoteca000'] = $formulario->getData()->getProducto();
-					$variablesTwig['valor_inmueble000'] = $formulario->getData()->getValorInmueble();
-					$variablesTwig['valor_vivienda_actual000'] = $formulario->getData()->getValorViviendaActual();
-					$variablesTwig['vpo000'] = $formulario->getData()->getVpo();
-
-
 					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
 					// $variablesTwig['tipo_calculo'] = $formulario->getData()->getTipo();
 					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
@@ -361,6 +347,14 @@ class CalculadorasController extends Controller
 			// $variablesTwig['hipoteca_total_con_interes'] = $resultado['capital_less_initial_amount'] + $resultado['interest_discharged_total'];
 			// $variablesTwig['total_con_anticipo'] = $formulario->getData()->getPrecioTotal() + $resultado['interest_discharged_total'];
 			$variablesTwig['resultado'] = null;
+				// Ajustar etiqueta IVA/IGIC según CCAA y obra nueva
+				try {
+					$ccaa = $formulario->getData()->getComunidadAutonoma();
+					$nueva = $formulario->getData()->getObraNueva();
+					$variablesTwig['iva_label'] = ($nueva && $ccaa == '5') ? 'IGIC' : 'IVA';
+				} catch (\Exception $e) {
+					$variablesTwig['iva_label'] = 'IVA';
+				}
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzadaTest.html.twig', $variablesTwig);
 	}
@@ -374,6 +368,7 @@ class CalculadorasController extends Controller
 		$variablesTwig = array(
 			'titulo' => 'Calculadora Avanzada',
 			'calculadora_avanzada' => $formulario->createView(),
+			'iva_label' => 'IVA',
 		);
 		// if ($formulario->isSubmitted() && $formulario->isValid()) {
 		if ($formulario->isSubmitted()) {
@@ -455,6 +450,14 @@ class CalculadorasController extends Controller
 				}
 			}
 			$variablesTwig['resultado'] = null;
+			// Ajustar etiqueta IVA/IGIC según CCAA y obra nueva (como en calculadoraAvanzadaAction)
+			try {
+				$ccaa = $formulario->getData()->getComunidadAutonoma();
+				$nueva = $formulario->getData()->getObraNueva();
+				$variablesTwig['iva_label'] = ($nueva && $ccaa == '5') ? 'IGIC' : 'IVA';
+			} catch (\Exception $e) {
+				$variablesTwig['iva_label'] = 'IVA';
+			}
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzadaWeb.html.twig', $variablesTwig);
 	}
@@ -1255,11 +1258,13 @@ class CalculadorasController extends Controller
 		$formulario->handleRequest($request);
 		$formularioEnviarCalculadora->handleRequest($request);
 
-        $variablesTwig = array(
+		$variablesTwig = array(
 			'titulo' => 'Calculadora Avanzada',
 			'calculadora_avanzada' => $formulario->createView(),
-            'formularioEnviarCalculadora' => $formularioEnviarCalculadora->createView()
+			'formularioEnviarCalculadora' => $formularioEnviarCalculadora->createView(),
+			'iva_label' => 'IVA',
 		);
+
 		if ($formulario->isSubmitted() && $formulario->isValid()) {
 			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
 			if ($formulario->getData()->getTipo() == 1) {
@@ -1357,6 +1362,15 @@ class CalculadorasController extends Controller
 			}
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
+
+			// Ajustar etiqueta IVA/IGIC según CCAA y obra nueva para el PDF/email
+			try {
+				$ccaa = $formulario->getData()->getComunidadAutonoma();
+				$nueva = $formulario->getData()->getObraNueva();
+				$variablesTwig['iva_label'] = ($nueva && $ccaa == '5') ? 'IGIC' : 'IVA';
+			} catch (\Exception $e) {
+				$variablesTwig['iva_label'] = 'IVA';
+			}
 			
 
             $from = array($this->getParameter('mailer_user') => 'Hipotea');

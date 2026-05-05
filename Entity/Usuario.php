@@ -228,6 +228,13 @@ class Usuario implements UserInterface, Serializable
 	 *
 	 * @return integer
 	 */
+
+
+	/**
+	 * Get idUsuario
+	 *
+	 * @return integer
+	 */
 	public function getIdUsuario()
 	{
 		return $this->idUsuario;
@@ -1257,4 +1264,5 @@ class Usuario implements UserInterface, Serializable
 
 		return $this;
 	}
+
 }

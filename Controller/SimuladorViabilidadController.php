@@ -11,11 +11,13 @@ use AppBundle\Entity\HitoExpediente;
 use AppBundle\Entity\GrupoHitoExpediente;
 use AppBundle\Entity\CampoHitoExpediente;
 use AppBundle\Entity\Usuario;
+use AppBundle\Entity\VistaRotacionComerciales;
 use AppBundle\Form\SimuladorInicioType;
 use AppBundle\Form\SimuladorDatosClienteType;
 use AppBundle\Form\SimuladorPrecioMaximoType;
 use AppBundle\Form\SimuladorCuotaGastosType;
 use AppBundle\Form\SimuladorRiesgoType;
+use AppBundle\Entity\SimuladorUsoEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,6 +25,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use DateTime;
+use Swift_Attachment;
+use Swift_Mailer;
+use Swift_Message;
+use Swift_SmtpTransport;
 
 /**
  * SimuladorViabilidadController
@@ -51,7 +57,16 @@ class SimuladorViabilidadController extends Controller
         }
 
         $simulador = $this->getSimuladorSessionData($request) ?? [];
-        $pasoActual = $request->query->get('paso', 0);
+        // Determinar paso inicial: si se pasa ?paso= en la URL lo respetamos,
+        // si no se pasa, por defecto cargamos Paso 1 cuando el usuario está logueado,
+        // y Paso 0 cuando no lo está (caso de acceso público).
+        $pasoQuery = $request->query->get('paso', null);
+        if ($pasoQuery === null) {
+            $pasoActual = $usuarioActual ? 1 : 0;
+        } else {
+            // mantener el valor proporcionado (puede ser 'resultado' u otro)
+            $pasoActual = is_numeric($pasoQuery) ? intval($pasoQuery) : $pasoQuery;
+        }
         $accion = $request->request->get('_accion');
 
         // Procesar POST según la acción
@@ -95,6 +110,63 @@ class SimuladorViabilidadController extends Controller
             'formulario_precio' => $this->createForm(SimuladorPrecioMaximoType::class)->createView(),
             'formulario_cuota' => $this->createForm(SimuladorCuotaGastosType::class)->createView(),
             'formulario_riesgo' => $this->createForm(SimuladorRiesgoType::class)->createView(),
+        ]);
+    }
+
+    public function simuladorCompletoWebAction(Request $request)
+    {
+        // Acción pública: no requiere autenticación.
+        // Arranca siempre en paso 0 (aviso legal) y permite completar el simulador sin login.
+        $simulador = $this->getSimuladorSessionData($request) ?? [];
+
+        $pasoQuery = $request->query->get('paso', null);
+        if ($pasoQuery === null) {
+            $pasoActual = 0;
+        } else {
+            $pasoActual = is_numeric($pasoQuery) ? intval($pasoQuery) : $pasoQuery;
+        }
+
+        $accion = $request->request->get('_accion');
+
+        if ($request->isMethod('POST')) {
+            try {
+                switch ($accion) {
+                    case 'paso0':
+                        $simulador = $this->procesarPaso0($request, $simulador);
+                        break;
+                    case 'paso1':
+                        $simulador = $this->procesarPaso1($request, $simulador);
+                        break;
+                    case 'paso2':
+                        $simulador = $this->procesarPaso2($request, $simulador);
+                        break;
+                    case 'paso3':
+                        $simulador = $this->procesarPaso3($request, $simulador);
+                        break;
+                    case 'paso4':
+                        $simulador = $this->procesarPaso4($request, $simulador);
+                        break;
+                    case 'calcular_resultado':
+                        $simulador = $this->evaluarResultadoSemaforo($simulador);
+                        $pasoActual = 'resultado';
+                        break;
+                }
+                $this->saveSimuladorSessionData($request, $simulador);
+            } catch (\Exception $e) {
+                error_log('Error (web): ' . $e->getMessage());
+                $this->addFlash('error', 'Error: ' . $e->getMessage());
+            }
+        }
+
+        return $this->render('@App/Backoffice/SimuladorViabilidad/simulador_completo_web.html.twig', [
+            'titulo'             => 'Simulador de Viabilidad Hipotecaria',
+            'simulador'          => $simulador,
+            'paso_actual'        => $pasoActual,
+            'formulario_inicio'  => $this->createForm(SimuladorInicioType::class)->createView(),
+            'formulario_cliente' => $this->createForm(SimuladorDatosClienteType::class)->createView(),
+            'formulario_precio'  => $this->createForm(SimuladorPrecioMaximoType::class)->createView(),
+            'formulario_cuota'   => $this->createForm(SimuladorCuotaGastosType::class)->createView(),
+            'formulario_riesgo'  => $this->createForm(SimuladorRiesgoType::class)->createView(),
         ]);
     }
 
@@ -153,12 +225,10 @@ class SimuladorViabilidadController extends Controller
      * Luego crear el expediente asignado al colaborador actual y al asesor hipotecario
      * (comercial) de su inmobiliaria.
      */
-    public function enviarAHipoteaAction(Request $request, UserPasswordEncoderInterface $passwordEncoder)
+    public function enviarAHipoteaAction(Request $request, UserPasswordEncoderInterface $passwordEncoder, Swift_Mailer $mailer)
     {
         $usuarioActual = $this->getUser();
-        if (!$usuarioActual) {
-            return new JsonResponse(['success' => false, 'mensaje' => 'No autenticado'], 401);
-        }
+        $usuarioEsColaborador = $usuarioActual && $this->isGranted('ROLE_COLABORADOR');
 
         // Leer datos del cuerpo JSON (AJAX) o del formulario
         $isJson = strpos($request->headers->get('Content-Type', ''), 'application/json') !== false;
@@ -179,21 +249,73 @@ class SimuladorViabilidadController extends Controller
             return new JsonResponse(['success' => false, 'mensaje' => 'Faltan los datos del cliente. Por favor, completa el Paso 1.'], 400);
         }
 
+        // ===== CHECK DE LÍMITE DE USOS POR EMAIL (idéntico a calculadoraAvanzadaTestAjaxAction) =====
+        $emailCliente = $datosCliente['email'] ?? null;
+        $maxUsos = $this->getParameter('simulador_max_usos');
+        $whatsappContacto = $this->getParameter('simulador_whatsapp_contacto');
+        $nombreCliente = $datosCliente['nombre'] ?? 'Usuario';
+
+        $body = json_decode($request->getContent(), true) ?? [];
+        $contaruso = isset($body['contaruso']) && ($body['contaruso'] === true || $body['contaruso'] === 'true');
+
+        if (!empty($emailCliente) && $contaruso) {
+            try {
+                $em = $this->getDoctrine()->getManager();
+                
+                // QueryBuilder idéntico a calculadoraAvanzadaTestAjaxAction
+                $qb = $em->createQueryBuilder();
+                $qb->select('u')
+                    ->from('AppBundle:SimuladorUsoEmail', 'u')
+                    ->where('u.email = :email')
+                    ->setParameter('email', $emailCliente);
+                $usoEmail = $qb->getQuery()->getOneOrNullResult();
+                
+                // Refresh explícito para garantizar que leemos el valor actual de la BD
+                if ($usoEmail) {
+                    $em->refresh($usoEmail);
+                    error_log('=== CHECK LÍMITE (enviarAHipotea): Email ' . $emailCliente . ' - Usos actuales: ' . $usoEmail->getUsos());
+                }
+                
+                // Bloquear si se alcanzó el límite
+                if ($usoEmail && $usoEmail->getUsos() >= $maxUsos) {
+                    error_log('=== LÍMITE ALCANZADO EN ENVIAR A HIPOTEA: ' . $emailCliente . ' (usos: ' . $usoEmail->getUsos() . '/' . $maxUsos . ')');
+                    return new JsonResponse([
+                        'success' => false,
+                        'limite' => true,
+                        'nombre' => $nombreCliente,
+                        'email' => $emailCliente,
+                        'whatsappContacto' => $whatsappContacto,
+                        'mensaje' => 'No ha sido posible procesar tu solicitud porque este simulador está limitado a ' . $maxUsos . ' usos. Si deseas realizar más simulaciones, puedes solicitarlo poniéndote en contacto con nosotros desde este enlace'
+                    ], 200);
+                }
+            } catch (\Exception $e) {
+                error_log('Error al verificar límite en enviarAHipotea: ' . $e->getMessage());
+                // Continuar sin bloquear si hay error
+            }
+        }
+
+
         try {
             $doctrine = $this->getDoctrine();
             $em = $doctrine->getManager();
+            
+            // ── PASO 0: NORMALIZAR EL DNI DESDE EL INICIO ────────────────────────
+            $dni = trim(strtoupper($datosCliente['dni'] ?? ''));
+            if (empty($dni)) {
+                return new JsonResponse(['success' => false, 'mensaje' => 'DNI inválido o vacío.'], 400);
+            }
 
-            // ── 1. BUSCAR O CREAR EL CLIENTE ───────────────────────────────────
+            // ── PASO 1: BUSCAR O CREAR EL CLIENTE PRIMERO ───────────────────────
             $repoUsuario    = $doctrine->getRepository(Usuario::class);
             $clienteUsuario = null;
             $clienteCreado  = false;
 
-            // Buscar primero por NIF, luego por email
-            if (!empty($datosCliente['dni'])) {
-                $clienteUsuario = $repoUsuario->findOneBy(['nif' => $datosCliente['dni']]);
+            // Buscar primero por NIF (normalizado), luego por email
+            if (!empty($dni)) {
+                $clienteUsuario = $repoUsuario->findOneBy(['nif' => $dni]);
             }
             if (!$clienteUsuario && !empty($datosCliente['email'])) {
-                $clienteUsuario = $repoUsuario->findOneBy(['email' => $datosCliente['email']]);
+                $clienteUsuario = $repoUsuario->findOneBy(['email' => trim(strtolower($datosCliente['email']))]);
             }
 
             if (!$clienteUsuario) {
@@ -205,15 +327,17 @@ class SimuladorViabilidadController extends Controller
                 $clienteUsuario = (new Usuario())
                     ->setUsername($soloNombre)
                     ->setApellidos($soloApellidos)
-                    ->setEmail($datosCliente['email'] ?? '')
-                    ->setNif($datosCliente['dni'] ?? '')
+                    ->setEmail(trim(strtolower($datosCliente['email'] ?? '')))
+                    ->setNif($dni)  // Usar el DNI normalizado
                     ->setTelefonoMovil($datosCliente['telefono'] ?? '')
                     ->setRole('ROLE_CLIENTE')
                     ->setEstado(true);
 
-                $inmobiliariaColaborador = $usuarioActual->getIdInmobiliaria();
-                if ($inmobiliariaColaborador) {
-                    $clienteUsuario->setIdInmobiliaria($inmobiliariaColaborador);
+                if ($usuarioActual) {
+                    $inmobiliariaColaborador = $usuarioActual->getIdInmobiliaria();
+                    if ($inmobiliariaColaborador) {
+                        $clienteUsuario->setIdInmobiliaria($inmobiliariaColaborador);
+                    }
                 }
 
                 // fechaRegistro ya la asigna el constructor automáticamente
@@ -228,41 +352,114 @@ class SimuladorViabilidadController extends Controller
                 $clienteCreado = true;
             }
 
-            // ── 2. FASE INICIAL ────────────────────────────────────────────────
+            // ── PASO 2: VERIFICAR SI YA EXISTE EXPEDIENTE PARA ESTE CLIENTE HOY ──
+            $expedientePrevio = null;
+            $hoy = new DateTime();
+            $hoy->setTime(0, 0, 0); // Inicio del día
+            $repoExpediente = $doctrine->getRepository(Expediente::class);
+            
+            // Buscar expediente para este CLIENTE (ya confirmados) creado hoy
+            // Usar innerJoin para garantizar que el cliente existe y coincide
+            $expedientesHoy = $repoExpediente->createQueryBuilder('e')
+                ->innerJoin('e.idCliente', 'c')
+                ->where('e.idCliente = :idCliente')
+                ->andWhere('e.fechaCreacion >= :hoy')
+                ->setParameter(':idCliente', $clienteUsuario->getIdUsuario())
+                ->setParameter(':hoy', $hoy)
+                ->orderBy('e.fechaCreacion', 'DESC')
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getResult();
+
+            if (!empty($expedientesHoy)) {
+                // Ya existe expediente para este cliente hoy → lo actualizaremos
+                $expedientePrevio = $expedientesHoy[0];
+            }
+
+            // ── PASO 3: OBTENER FASE INICIAL ──────────────────────────────────────
             $faseInicial = $doctrine->getRepository(Fase::class)->findOneBy(['tipo' => 0]);
             if (!$faseInicial) {
                 throw new \Exception('No se encontró la fase inicial.');
             }
 
-            // ── 3. TEXTO DEL EXPEDIENTE ────────────────────────────────────────
-            $textoExpediente = 'Expediente creado desde el Simulador de Viabilidad.';
-
-            // ── 4. CREAR EXPEDIENTE ────────────────────────────────────────────
-            // El constructor ya asigna fechaCreacion y fechaModificacion automáticamente.
-            // whatsappAutomatico y whatsappAutomaticoEnviado ya tienen default = false en la entidad.
+            // ── PASO 4: PREPARAR DATOS DEL EXPEDIENTE ─────────────────────────────
             $precioInmueble = (float)($datosSimulador['precio_inmueble'] ?? 0);
             $viviendaLabel  = 'Simulador de Viabilidad';
             if ($precioInmueble > 0) {
                 $viviendaLabel .= ' - ' . number_format($precioInmueble, 0, ',', '.') . ' €';
             }
 
-            $expediente = (new Expediente())
-                ->setEstado(1)
-                ->setIdCliente($clienteUsuario)
-                ->setIdColaborador($usuarioActual)
-                ->setIdFaseActual($faseInicial)
-                ->setVivienda($viviendaLabel)
-                ->setTexto($textoExpediente);
+            // ── PASO 5: CREAR O ACTUALIZAR EXPEDIENTE ─────────────────────────────
+            $expedienteActualizado = false;
+            
+            if ($expedientePrevio) {
+                // ACTUALIZAR expediente existente
+                $expediente = $expedientePrevio;
+                $expediente
+                    ->setVivienda($viviendaLabel)
+                    ->setTexto('Expediente actualizado desde el Simulador de Viabilidad.')
+                    ->setFechaModificacion(new DateTime());
+                $expedienteActualizado = true;
+            } else {
+                // CREAR nuevo expediente
+                $expediente = (new Expediente())
+                    ->setEstado(1)
+                    ->setIdCliente($clienteUsuario)
+                    ->setIdFaseActual($faseInicial)
+                    ->setVivienda($viviendaLabel)
+                    ->setTexto('Expediente creado desde el Simulador de Viabilidad.');
 
-            // Asesor hipotecario asignado a la inmobiliaria del colaborador
-            $inmobiliaria = $usuarioActual->getIdInmobiliaria();
-            if ($inmobiliaria && $inmobiliaria->getIdComercial()) {
-                $expediente->setIdComercial($inmobiliaria->getIdComercial());
+                // Asignar colaborador SOLO si el usuario actual es un colaborador
+                if ($usuarioEsColaborador) {
+                    $expediente->setIdColaborador($usuarioActual);
+                }
+
+                // Asignación del asesor hipotecario
+                // - Si el usuario es colaborador: asignar el comercial de su inmobiliaria (si existe).
+                // - Si no es colaborador: usar la rueda rotativa.
+                if ($usuarioEsColaborador) {
+                    $inmobiliaria = $usuarioActual->getIdInmobiliaria();
+                    if ($inmobiliaria && $inmobiliaria->getIdComercial()) {
+                        $expediente->setIdComercial($inmobiliaria->getIdComercial());
+                    } else {
+                        // Si no hay comercial en la inmobiliaria, caer a la rueda rotativa
+                        $repoRotacion = $doctrine->getRepository(VistaRotacionComerciales::class);
+                        $comercialRotativo = $repoRotacion->createQueryBuilder('v')
+                            ->orderBy('v.ultimaAsignacion', 'ASC')
+                            ->setMaxResults(1)
+                            ->getQuery()
+                            ->getOneOrNullResult();
+                        if ($comercialRotativo != null) {
+                            $comercial = $doctrine->getRepository(Usuario::class)->findOneBy([
+                                'idUsuario' => $comercialRotativo->getIdUsuario()
+                            ]);
+                            if ($comercial) {
+                                $expediente->setIdComercial($comercial);
+                            }
+                        }
+                    }
+                } else {
+                    // No es colaborador: usar la rueda rotativa
+                    $repoRotacion = $doctrine->getRepository(VistaRotacionComerciales::class);
+                    $comercialRotativo = $repoRotacion->createQueryBuilder('v')
+                        ->orderBy('v.ultimaAsignacion', 'ASC')
+                        ->setMaxResults(1)
+                        ->getQuery()
+                        ->getOneOrNullResult();
+                    if ($comercialRotativo != null) {
+                        $comercial = $doctrine->getRepository(Usuario::class)->findOneBy([
+                            'idUsuario' => $comercialRotativo->getIdUsuario()
+                        ]);
+                        if ($comercial) {
+                            $expediente->setIdComercial($comercial);
+                        }
+                    }
+                }
             }
 
             $em->persist($expediente);
 
-            // ── 5. CREAR HITOS Y CAMPOS DEL EXPEDIENTE ─────────────────────────
+            // ── PASO 6: CREAR HITOS Y CAMPOS DEL EXPEDIENTE ─────────────────────────
             // Mapa de idCampoHito → valor del cliente (mismo patrón que el JS en Expediente.html.twig)
             $nombreCompleto = trim(($clienteUsuario->getUsername() ?? '') . ' ' . ($clienteUsuario->getApellidos() ?? ''));
             $nif            = $clienteUsuario->getNif() ?? '';
@@ -273,7 +470,8 @@ class SimuladorViabilidadController extends Controller
             $provincia      = $clienteUsuario->getProvincia() ?? '';
             $municipio      = $clienteUsuario->getMunicipio() ?? '';
 
-            // Datos económicos del simulador
+            // Datos económicos del simulador - TITULAR UNO
+            $numTitulares           = (int)($datosSimulador['num_titulares'] ?? 1);
             $ingresosMensuales  = (float)($datosSimulador['ingresos_mensuales'] ?? 0);
             $numeroPagas        = (int)($datosSimulador['numero_pagas'] ?? 0);
             $importePagas       = (float)($datosSimulador['importe_pagas'] ?? 0);
@@ -282,6 +480,7 @@ class SimuladorViabilidadController extends Controller
             $situacionLaboral   = $datosSimulador['situacion_laboral'] ?? '';
             $antiguedadLaboral  = $datosSimulador['antiguedad_laboral'] ?? '';
             $tieneImpagados     = !empty($datosSimulador['tiene_impagados']);
+            $gastosTotales      = (float)($datosSimulador['gastos_totales_aproximados'] ?? 0);
             $ingresosAnuales    = $ingresosMensuales * 12 + $numeroPagas * $importePagas;
             $etiquetasLaboral   = [
                 'autonomo'             => 'Autónomo',
@@ -291,7 +490,30 @@ class SimuladorViabilidadController extends Controller
                 'empresario'           => 'Empresario / Mercantil',
             ];
             $etiquetaLaboral = isset($etiquetasLaboral[$situacionLaboral]) ? $etiquetasLaboral[$situacionLaboral] : $situacionLaboral;
-            $importeHipoteca = ($precioInmueble > 0 && $precioInmueble > $aportacion) ? $precioInmueble - $aportacion : 0;
+            
+            // Campo 223: Antigüedad en la empresa actual (mapear AQUÍ, ANTES de usarla en $valorPorCampo)
+            $antiguedadEmpresamap = '';
+            if ($antiguedadLaboral === 'menos_1_anio')    $antiguedadEmpresamap = 'Menos de 1 año';
+            elseif ($antiguedadLaboral === 'un_anio')     $antiguedadEmpresamap = '1 año';
+            elseif ($antiguedadLaboral === 'mas_2_anios') $antiguedadEmpresamap = 'Más de 2 años';
+            
+            $importeHipoteca = ($precioInmueble > 0 && $precioInmueble > $aportacion) ? ($precioInmueble - $aportacion) + $gastosTotales : 0;
+
+            // Datos económicos del simulador - TITULAR DOS (si existe)
+            $ingresosMensualesDos   = (float)($datosSimulador['ingresos_mensuales_dos'] ?? 0);
+            $numeroPagasDos         = (int)($datosSimulador['numero_pagas_dos'] ?? 0);
+            $importePagasDos        = (float)($datosSimulador['importe_pagas_dos'] ?? 0);
+            $situacionLaboralDos    = $datosSimulador['situacion_laboral_dos'] ?? '';
+            $antiguedadLaboralDos   = $datosSimulador['antiguedad_laboral_dos'] ?? '';
+            $tieneImpagadosDos      = !empty($datosSimulador['tiene_impagados_dos']) || $tieneImpagados; // Si T1 tiene impagos, asumir T2 también
+            $etiquetaLaboralDos     = isset($etiquetasLaboral[$situacionLaboralDos]) ? $etiquetasLaboral[$situacionLaboralDos] : $situacionLaboralDos;
+            $ingresosAnualesDos     = $ingresosMensualesDos * 12 + $numeroPagasDos * $importePagasDos;
+            
+            // Campo 541: Antigüedad en empresa actual - Titular 2
+            $antiguedadEmpresamapDos = '';
+            if ($antiguedadLaboralDos === 'menos_1_anio')    $antiguedadEmpresamapDos = 'Menos de 1 año';
+            elseif ($antiguedadLaboralDos === 'un_anio')     $antiguedadEmpresamapDos = '1 año';
+            elseif ($antiguedadLaboralDos === 'mas_2_anios') $antiguedadEmpresamapDos = 'Más de 2 años';
 
             // Campos de texto (setValor)
             $valorPorCampo = [
@@ -308,7 +530,8 @@ class SimuladorViabilidadController extends Controller
                 225 => $ingresosMensuales > 0 ? number_format($ingresosMensuales, 2, '.', '') : '', // Nómina mensual neta
                 227 => $importePagas > 0      ? number_format($importePagas, 2, '.', '')      : '', // Importe paga extra
                 228 => $ingresosAnuales > 0   ? number_format($ingresosAnuales, 2, '.', '')   : '', // Ingresos netos anuales
-                462 => $aportacion > 0        ? number_format($aportacion, 2, '.', '')        : '', // Ahorro disponible
+                223 => $antiguedadEmpresamap,                                                      // Antigüedad en la empresa actual
+                //462 => $aportacion > 0        ? number_format($aportacion, 2, '.', '')        : '', // Ahorro disponible
                 688 => (new DateTime())->format('d/m/Y'),                                                             // Fecha del Lead (hoy)
                 690 => $etiquetaLaboral,                                                                               // Trabajo o Estado Laboral
                 691 => $precioInmueble > 0  ? number_format($precioInmueble, 0, ',', '.') . ' €' : '',                // Valor del Inmueble
@@ -318,8 +541,13 @@ class SimuladorViabilidadController extends Controller
                 405 => $importeHipoteca > 0 ? number_format($importeHipoteca, 2, '.', '')         : '',                // Importe Hipoteca
                 182 => $aportacion > 0      ? number_format($aportacion, 2, '.', '')              : '',                // Ahorro actual
                 180 => $precioInmueble > 0  ? number_format($precioInmueble, 2, '.', '')          : '',                // Importe compraventa
+                
+                // SEGUNDO TITULAR - Datos Económicos
+                555 => $ingresosMensualesDos > 0 ? number_format($ingresosMensualesDos, 2, '.', '') : '',          // Nómina mensual (neto) - Titular 2
+                553 => $importePagasDos > 0      ? number_format($importePagasDos, 2, '.', '')      : '',          // Importe paga extra - Titular 2
+                552 => $ingresosAnualesDos > 0   ? number_format($ingresosAnualesDos, 2, '.', '')   : '',          // Ingresos netos anuales - Titular 2
+                541 => $antiguedadEmpresamapDos,                                                                      // Antigüedad en la empresa actual - Titular 2
             ];
-
             // Campos de selección (setIdOpcionesCampo) — usamos los IDs de opción del HTML real
             // Campo 226: Número pagas extras (111=0, 112=1, 113=2, 114=3, 115=4)
             $opcionNumeroPagas = $numeroPagas >= 0 && $numeroPagas <= 4 ? (111 + $numeroPagas) : null;
@@ -330,86 +558,415 @@ class SimuladorViabilidadController extends Controller
             elseif (in_array($situacionLaboral, ['contrato_indefinido','contrato_temporal','funcionario'])) $opcionTipoEmpleo = 102;
             elseif ($situacionLaboral === 'empresario')                                           $opcionTipoEmpleo = 103;
 
+            // Campo 221: Tipo de contrato (104=Indefinido tiempo completo, 105=Indefinido tiempo parcial, 
+            // 106=Indefinido discontinuo, 107=Funcionario, 108=Interinidad, 109=Temporal tiempo completo, 
+            // 110=Temporal tiempo parcial, 357=Militar, 555=Personal laboral fijo)
+            $opcionTipoContrato = null;
+            if ($situacionLaboral === 'contrato_indefinido')       $opcionTipoContrato = 104; // Asumimos indefinido tiempo completo
+            elseif ($situacionLaboral === 'contrato_temporal')     $opcionTipoContrato = 109; // Asumimos temporal tiempo completo
+            elseif ($situacionLaboral === 'funcionario')           $opcionTipoContrato = 107;
+            elseif ($situacionLaboral === 'autonomo')              $opcionTipoContrato = 555; // Personal laboral fijo (similar a autónomo)
+
             // Campo 244: ¿Tiene impagados? (123=Sí, 124=No)
             $opcionImpagados = $tieneImpagados ? 123 : 124;
+
+            // SEGUNDO TITULAR - Opciones
+            // Campo 554: Número pagas extras (522=0, 523=1, 524=2, 525=3, 526=4)
+            $opcionNumeroPagasDos = $numeroPagasDos >= 0 && $numeroPagasDos <= 4 ? (522 + $numeroPagasDos) : null;
+
+            // Campo 547: Tipo de empleo - Titular 2 (497=Autónomo, 498=Pensionista, 499=Empleado, 500=Mercantil)
+            $opcionTipoEmpleoDos = null;
+            if ($situacionLaboralDos === 'autonomo')                                              $opcionTipoEmpleoDos = 497;
+            elseif (in_array($situacionLaboralDos, ['contrato_indefinido','contrato_temporal','funcionario'])) $opcionTipoEmpleoDos = 499;
+            elseif ($situacionLaboralDos === 'empresario')                                        $opcionTipoEmpleoDos = 500;
+
+            // Campo 549: Tipo de contrato - Titular 2 (515=Indefinido TC, 516=Indefinido PT, 517=Indefinido discontinuo,
+            // 518=Funcionario, 519=Interinidad, 520=Temporal TC, 521=Temporal PT, 514=Militar, 556=Personal laboral fijo)
+            $opcionTipoContratoDos = null;
+            if ($situacionLaboralDos === 'contrato_indefinido')       $opcionTipoContratoDos = 515; // Asumimos indefinido tiempo completo
+            elseif ($situacionLaboralDos === 'contrato_temporal')     $opcionTipoContratoDos = 520; // Asumimos temporal tiempo completo
+            elseif ($situacionLaboralDos === 'funcionario')           $opcionTipoContratoDos = 518;
+            elseif ($situacionLaboralDos === 'autonomo')              $opcionTipoContratoDos = 556; // Personal laboral fijo (similar a autónomo)
+
+            // Campo 559: ¿Tiene impagados? - Titular 2 (534=Sí, 535=No)
+            $opcionImpagadosDos = $tieneImpagadosDos ? 534 : 535;
+
+            // Campo 456: ¿Cuántos titulares sois? (355=Uno, 356=Dos)
+            $opcionNumTitulares = ($numTitulares === 2) ? 356 : 355;
 
             $opcionPorCampo = [
                 226 => $opcionNumeroPagas,  // Número pagas extras
                 193 => $opcionTipoEmpleo,   // Tipo de empleo
+                221 => $opcionTipoContrato, // Tipo de contrato
                 244 => $opcionImpagados,    // ¿Tiene impagados?
                 673 => 688,                 // Origen → "Calculadora"
                 179 => 71,                  // ¿Para qué necesitas la hipoteca? → "Adquirir una propiedad"
                 640 => 608,                 // ¿Cuántas propiedades hipotecar? → "Una"
+                
+                // SEGUNDO TITULAR - Opciones
+                554 => $opcionNumeroPagasDos,  // Número pagas extras - Titular 2
+                547 => $opcionTipoEmpleoDos,   // Tipo de empleo - Titular 2
+                549 => $opcionTipoContratoDos, // Tipo de contrato - Titular 2
+                559 => $opcionImpagadosDos,    // ¿Tiene impagados? - Titular 2
+                456 => $opcionNumTitulares,    // ¿Cuántos titulares sois?
             ];
 
-            $fases = $doctrine->getRepository(Fase::class)->findBy([], ['orden' => 'ASC']);
+            // ── PASO 7: CREAR O ACTUALIZAR HITOS Y CAMPOS DEL EXPEDIENTE ══════════════
+            if ($expedienteActualizado) {
+                // CASO: ACTUALIZACIÓN del expediente existente
+                // Actualizar los valores de los campos existentes con los nuevos datos
+                $repoCampoExpediente = $doctrine->getRepository(CampoHitoExpediente::class);
+                
+                foreach ($valorPorCampo as $idCampo => $valor) {
+                    if ($valor === '') continue;
+                    
+                    // Buscar campo existente en el expediente
+                    $campoExpediente = $repoCampoExpediente->findOneBy([
+                        'idExpediente' => $expediente,
+                        'idCampoHito' => $idCampo
+                    ]);
+                    
+                    if ($campoExpediente) {
+                        $campoExpediente->setValor($valor)->setFechaModificacion(new DateTime());
+                        $em->persist($campoExpediente);
+                    }
+                }
+                
+                foreach ($opcionPorCampo as $idCampo => $idOpcion) {
+                    if ($idOpcion === null) continue;
+                    
+                    // Buscar campo existente en el expediente
+                    $campoExpediente = $repoCampoExpediente->findOneBy([
+                        'idExpediente' => $expediente,
+                        'idCampoHito' => $idCampo
+                    ]);
+                    
+                    if ($campoExpediente && method_exists($campoExpediente, 'setIdOpcionesCampo')) {
+                        $opcion = $doctrine->getRepository('AppBundle:OpcionesCampo')->find($idOpcion);
+                        if ($opcion) {
+                            $campoExpediente->setIdOpcionesCampo($opcion)->setFechaModificacion(new DateTime());
+                            $em->persist($campoExpediente);
+                        }
+                    }
+                }
+                
+            } else {
+                // CASO: NUEVO expediente
+                // Crear todos los hitos y campos desde cero
+                $fases = $doctrine->getRepository(Fase::class)->findBy([], ['orden' => 'ASC']);
 
-            foreach ($fases as $fase) {
-                $hitos = $doctrine->getRepository(Hito::class)->findBy(
-                    ['idFase' => $fase], ['orden' => 'ASC']
-                );
-                foreach ($hitos as $hito) {
-                    $hitoExpediente = (new HitoExpediente())
-                        ->setIdHito($hito)
-                        ->setIdExpediente($expediente)
-                        ->setFechaModificacion(new DateTime())
-                        ->setEstado(0);
-
-                    $gruposCamposHito = $doctrine->getRepository(GrupoCamposHito::class)->findBy(
-                        ['idHito' => $hito], ['orden' => 'ASC']
+                foreach ($fases as $fase) {
+                    $hitos = $doctrine->getRepository(Hito::class)->findBy(
+                        ['idFase' => $fase], ['orden' => 'ASC']
                     );
+                    foreach ($hitos as $hito) {
+                        $hitoExpediente = (new HitoExpediente())
+                            ->setIdHito($hito)
+                            ->setIdExpediente($expediente)
+                            ->setFechaModificacion(new DateTime())
+                            ->setEstado(0);
 
-                    foreach ($gruposCamposHito as $grupoCamposHito) {
-                        $grupoHitoExpediente = (new GrupoHitoExpediente())
-                            ->setIdHitoExpediente($hitoExpediente)
-                            ->setIdGrupoCamposHito($grupoCamposHito);
-
-                        $camposHito = $doctrine->getRepository(CampoHito::class)->findBy(
-                            ['idGrupoCamposHito' => $grupoCamposHito], ['orden' => 'ASC']
+                        $gruposCamposHito = $doctrine->getRepository(GrupoCamposHito::class)->findBy(
+                            ['idHito' => $hito], ['orden' => 'ASC']
                         );
 
-                        foreach ($camposHito as $campoHito) {
-                            $campoHitoExpediente = (new CampoHitoExpediente())
-                                ->setIdCampoHito($campoHito)
+                        foreach ($gruposCamposHito as $grupoCamposHito) {
+                            $grupoHitoExpediente = (new GrupoHitoExpediente())
                                 ->setIdHitoExpediente($hitoExpediente)
-                                ->setIdGrupoHitoExpediente($grupoHitoExpediente)
-                                ->setIdExpediente($expediente)
-                                ->setFechaModificacion(new DateTime());
+                                ->setIdGrupoCamposHito($grupoCamposHito);
 
-                            if ($campoHito->getTipo() == 4) {
-                                $campoHitoExpediente->setObligatorio(1)->setSolicitarAlColaborador(1);
-                            }
+                            $camposHito = $doctrine->getRepository(CampoHito::class)->findBy(
+                                ['idGrupoCamposHito' => $grupoCamposHito], ['orden' => 'ASC']
+                            );
 
-                            // Pre-rellenar datos del cliente en los campos conocidos
-                            $idCampo = $campoHito->getIdCampoHito();
-                            if (isset($valorPorCampo[$idCampo]) && $valorPorCampo[$idCampo] !== '') {
-                                $campoHitoExpediente->setValor($valorPorCampo[$idCampo]);
-                            }
-                            if (isset($opcionPorCampo[$idCampo]) && $opcionPorCampo[$idCampo] !== null) {
-                                if (method_exists($campoHitoExpediente, 'setIdOpcionesCampo')) {
-                                    $opcion = $doctrine->getRepository('AppBundle:OpcionesCampo')->find($opcionPorCampo[$idCampo]);
-                                    if ($opcion) {
-                                        $campoHitoExpediente->setIdOpcionesCampo($opcion);
+                            foreach ($camposHito as $campoHito) {
+                                $campoHitoExpediente = (new CampoHitoExpediente())
+                                    ->setIdCampoHito($campoHito)
+                                    ->setIdHitoExpediente($hitoExpediente)
+                                    ->setIdGrupoHitoExpediente($grupoHitoExpediente)
+                                    ->setIdExpediente($expediente)
+                                    ->setFechaModificacion(new DateTime());
+
+                                if ($campoHito->getTipo() == 4) {
+                                    $campoHitoExpediente->setObligatorio(1)->setSolicitarAlColaborador(1);
+                                }
+
+                                // Pre-rellenar datos del cliente en los campos conocidos
+                                $idCampo = $campoHito->getIdCampoHito();
+                                if (isset($valorPorCampo[$idCampo]) && $valorPorCampo[$idCampo] !== '') {
+                                    $campoHitoExpediente->setValor($valorPorCampo[$idCampo]);
+                                }
+                                if (isset($opcionPorCampo[$idCampo]) && $opcionPorCampo[$idCampo] !== null) {
+                                    if (method_exists($campoHitoExpediente, 'setIdOpcionesCampo')) {
+                                        $opcion = $doctrine->getRepository('AppBundle:OpcionesCampo')->find($opcionPorCampo[$idCampo]);
+                                        if ($opcion) {
+                                            $campoHitoExpediente->setIdOpcionesCampo($opcion);
+                                        }
                                     }
                                 }
+
+                                $em->persist($campoHitoExpediente);
                             }
 
-                            $em->persist($campoHitoExpediente);
+                            $em->persist($grupoHitoExpediente);
                         }
 
-                        $em->persist($grupoHitoExpediente);
+                        $em->persist($hitoExpediente);
                     }
-
-                    $em->persist($hitoExpediente);
                 }
-            }
+            } // Fin del if/else
 
             $em->flush();
 
-            $msg = $clienteCreado
-                ? 'Cliente registrado y expediente asignado al asesor hipotecario correctamente.'
-                : 'Expediente creado y asignado al asesor hipotecario correctamente.';
-            return new JsonResponse(['success' => true, 'mensaje' => $msg]);
+            if ($expedienteActualizado) {
+                $msg = $clienteCreado
+                    ? 'Cliente registrado y expediente actualizado correctamente.'
+                    : 'Expediente actualizado con los nuevos datos del simulador correctamente.';
+            } else {
+                $msg = $clienteCreado
+                    ? 'Cliente registrado y expediente asignado al asesor hipotecario correctamente.'
+                    : 'Expediente creado y asignado al asesor hipotecario correctamente.';
+            }
+
+            $from = array($this->getParameter('mailer_user') => 'Hipotea');
+
+            // Variables para la plantilla de correo (usar valores disponibles, con fallback)
+            $variablesTwig = [
+                'resultado' => true,
+                'nombre' => $nombre,
+                'telefono' => $telefono,
+                'importe_fijo' => $precioInmueble ?? 0,
+                'gastos' => $gastosTotales ?? 0,
+                'entrada' => $aportacion ?? 0,
+                'importe_total' => $importeHipoteca ?? 0,
+                'notario' => $datosSimulador['notario'] ?? 0,
+                'registro' => $datosSimulador['registro'] ?? 0,
+                'gestoria' => $datosSimulador['gestoria'] ?? 0,
+                'tasacion' => $datosSimulador['tasacion'] ?? 0,
+                'tipo_interes_ccaa' => $datosSimulador['tipo_interes_ccaa'] ?? 0,
+            ];
+
+            $mensaje = (new Swift_Message('Aquí tienes el resultado de tu consulta hipotecaria!'))
+                ->setFrom($from)
+                ->setTo($clienteUsuario->getEmail())
+                //->setTo('adrianva1983@gmail.com')
+                ->setBody($this->renderView('@App/Backoffice/Correo/ResultadoSimuladorWebCliente.html.twig', $variablesTwig), 'text/html');
+            
+            // PROBANDO CON PDF ADJUNTO
+            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+
+            // El HTML del modal llega con rutas relativas (/assets/...).
+            // Para que wkhtmltopdf pueda cargar imágenes/CSS, convertirlas a absolutas.
+            $baseUrl = rtrim($request->getSchemeAndHttpHost(), '/');
+            $informeHtmlParaPdf = (string) $informeHtml;
+
+            // Prioridad 1: usar rutas locales file:/// para assets estáticos del proyecto.
+            // Esto evita fallos de carga por SSL/proxy/ngrok en wkhtmltopdf.
+            $webDir = realpath($this->getParameter('kernel.root_dir') . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'web');
+            if ($webDir) {
+                $webDirUri = 'file:///' . ltrim(str_replace('\\', '/', $webDir), '/');
+
+                $informeHtmlParaPdf = str_replace('src="/assets/', 'src="' . $webDirUri . '/assets/', $informeHtmlParaPdf);
+                $informeHtmlParaPdf = str_replace("src='/assets/", "src='" . $webDirUri . "/assets/", $informeHtmlParaPdf);
+                $informeHtmlParaPdf = str_replace('href="/assets/', 'href="' . $webDirUri . '/assets/', $informeHtmlParaPdf);
+                $informeHtmlParaPdf = str_replace("href='/assets/", "href='" . $webDirUri . "/assets/", $informeHtmlParaPdf);
+                $informeHtmlParaPdf = str_replace('url(/assets/', 'url(' . $webDirUri . '/assets/', $informeHtmlParaPdf);
+                $informeHtmlParaPdf = str_replace('url("/assets/', 'url("' . $webDirUri . '/assets/', $informeHtmlParaPdf);
+                $informeHtmlParaPdf = str_replace("url('/assets/", "url('" . $webDirUri . "/assets/", $informeHtmlParaPdf);
+            }
+
+            $informeHtmlParaPdf = preg_replace(
+                '~(src|href)=(["\'])/(?!/)([^"\']+)\2~i',
+                '$1=$2' . $baseUrl . '/$3$2',
+                $informeHtmlParaPdf
+            );
+            $informeHtmlParaPdf = preg_replace(
+                '~url\((["\']?)/(?!/)([^)"\']+)\1\)~i',
+                'url($1' . $baseUrl . '/$2$1)',
+                $informeHtmlParaPdf
+            );
+
+            // Guardar copia de depuración del HTML que se va a pasar a wkhtmltopdf
+            try {
+                $debugHtmlPath = $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'debug_informe_' . $nombre_pdf . '.html';
+                @file_put_contents($debugHtmlPath, $informeHtmlParaPdf);
+            } catch (\Throwable $e) {
+                // No bloquear el flujo por fallos al guardar el archivo de debug
+            }
+
+            $this->get('knp_snappy.pdf')->generateFromHtml(
+                $this->renderView('@App/Backoffice/Correo/ResultadoSimuladorWebPDF.html.twig', [
+                    'informe_html' => $informeHtmlParaPdf,
+                ]),
+                // $contenido,
+                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+                [
+                    'encoding' => 'UTF-8',
+                    'enable-local-file-access' => true,
+                    'load-error-handling' => 'ignore',
+                    'load-media-error-handling' => 'ignore',
+                    'print-media-type' => true,
+                    // Ajustes para mejorar coincidencia visual con navegador
+                    'disable-smart-shrinking' => false,
+                    'zoom' => 1,
+                    'javascript-delay' => 1500,
+                    'no-stop-slow-scripts' => true,
+                    'page-size' => 'A4',
+                    'margin-top' => '12mm',
+                    'margin-bottom' => '12mm',
+                    'dpi' => 300,
+                ],
+                true
+            );
+            
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            // Pasar variables adicionales a la plantilla y actualizar el body para cliente
+            $variablesTwig['informe_html'] = $informeHtmlParaPdf;
+            $variablesTwig['fecha'] = (new \DateTime())->format('d/m/Y');
+            $variablesTwig['expediente_id'] = $expediente->getIdExpediente();
+
+            // Mapear valores del simulador si están disponibles (seguro para la plantilla)
+            $variablesTwig['numTitulares'] = $datosSimulador['num_titulares'] ?? ($simulador['num_titulares'] ?? null);
+            $variablesTwig['edadTitularUno'] = $datosSimulador['edad_titular_uno'] ?? ($simulador['cliente']['edad'] ?? null);
+            $variablesTwig['edadTitularDos'] = $datosSimulador['edad_titular_dos'] ?? null;
+            $variablesTwig['plazoAmortizacion'] = $datosSimulador['plazo_amortizacion'] ?? ($simulador['cuota']['plazoAmortizacion'] ?? null);
+            $variablesTwig['aportacionInicial'] = $datosSimulador['aportacion_inicial'] ?? ($simulador['precio']['aportacionNecesaria'] ?? $aportacion ?? 0);
+            $variablesTwig['destinoCompra'] = $datosSimulador['destino_compra'] ?? ($simulador['tipoOperacion'] ?? null);
+            $variablesTwig['obraNuevaText'] = !empty($datosSimulador['obra_nueva']) ? 'Sí' : 'No';
+            $variablesTwig['comunidadAutonoma'] = $datosSimulador['comunidad_autonoma'] ?? null;
+            $variablesTwig['discapacidad'] = $datosSimulador['discapacidad'] ?? null;
+            $variablesTwig['familiaNumerosa'] = $datosSimulador['familia_numerosa'] ?? null;
+            $variablesTwig['monoparental'] = $datosSimulador['monoparental'] ?? null;
+            $variablesTwig['vpo'] = $datosSimulador['vpo'] ?? null;
+            $variablesTwig['ingresosMensuales'] = $datosSimulador['ingresos_mensuales'] ?? ($ingresosMensuales ?? 0);
+            $variablesTwig['numPagasExtra'] = $datosSimulador['numero_pagas'] ?? ($numeroPagas ?? 0);
+            $variablesTwig['importePagaExtra'] = $datosSimulador['importe_paga_extra'] ?? ($importePagas ?? 0);
+            $variablesTwig['prestamosMensuales'] = $datosSimulador['prestamos_mensuales'] ?? ($prestamos ?? 0);
+            $variablesTwig['ingresosMensualesDos'] = $datosSimulador['ingresos_mensuales_dos'] ?? ($ingresosMensualesDos ?? 0);
+            $variablesTwig['numPagasExtraDos'] = $datosSimulador['numero_pagas_dos'] ?? ($numeroPagasDos ?? 0);
+            $variablesTwig['importePagaExtraDos'] = $datosSimulador['importe_paga_extra_dos'] ?? ($importePagasDos ?? 0);
+            $variablesTwig['prestamosMensualesDos'] = $datosSimulador['prestamos_mensuales_dos'] ?? ($prestamosMensualesDos ?? 0);
+            $variablesTwig['edad'] = $datosSimulador['edad'] ?? null;
+            $variablesTwig['valorInmueble'] = $datosSimulador['valor_inmueble'] ?? ($precioInmueble ?? 0);
+            $variablesTwig['valor_inmueble'] = $variablesTwig['valorInmueble'];
+            $variablesTwig['valorViviendaActual'] = $datosSimulador['valor_vivienda_actual'] ?? null;
+            $variablesTwig['hipotecaActual'] = $datosSimulador['hipoteca_actual'] ?? null;
+            $variablesTwig['aportacionTrasVenta'] = $datosSimulador['aportacion_tras_venta'] ?? null;
+            $variablesTwig['honorariosInmobiliaria'] = $datosSimulador['honorarios_inmobiliaria'] ?? ($variablesTwig['gastos_inmobiliaria'] ?? 0);
+            $variablesTwig['producto'] = $datosSimulador['producto'] ?? null;
+            $variablesTwig['cuota'] = $variablesTwig['importe_fijo'] ?? ($simulador['cuota']['cuotaHipotecariaEstimada'] ?? 0);
+            $variablesTwig['amortizacion'] = $variablesTwig['amortizacion'] ?? ($variablesTwig['plazoAmortizacion'] ?? ($simulador['cuota']['plazoAmortizacion'] ?? 0));
+
+            $mensaje->setBody($this->renderView('@App/Backoffice/Correo/ResultadoSimuladorWebCliente.html.twig', $variablesTwig), 'text/html');
+            // FIN PROBANDO CON PDF ADJUNTO                
+            
+
+            // Enviar el primer correo solo si la petición proviene de la ruta pública del web (/web/simulador-viabilidad)
+            try {
+                $referer = $request->headers->get('referer', '');
+                $refPath = $referer ? parse_url($referer, PHP_URL_PATH) : '';
+                $shouldSend = $refPath === '/web/simulador-viabilidad';
+            } catch (\Throwable $e) {
+                $shouldSend = false;
+            }
+
+            if ($shouldSend) {
+                $mailer->send($mensaje);
+            } else {
+                error_log('Mailer suppressed (primary): referer path mismatch. Referer=' . ($referer ?? ''));
+            }
+
+            // Ahora enviar un segundo correo específico a Hipotea (copia separada)
+            try {
+                $hipoteaEmail = 'info@hipotea.com';
+                //$hipoteaEmail = 'adrian.verdecia@semillaproyectos.com';
+                $variablesTwig['origen'] = 'hipotea';
+                $variablesTwig['email'] = $email;
+                $variablesTwig['telefono'] = $telefono;
+
+                $mensajeHipotea = (new Swift_Message('Nuevo resultado de simulador - Expediente #' . $expediente->getIdExpediente()))
+                    ->setFrom($from)
+                    ->setTo($hipoteaEmail)
+                    ->setBody($this->renderView('@App/Backoffice/Correo/ResultadoSimuladorWebCliente.html.twig', $variablesTwig), 'text/html');
+
+                // Adjuntar el mismo PDF generado
+                $pdfPath = $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf';
+                if (file_exists($pdfPath)) {
+                    $mensajeHipotea->attach(Swift_Attachment::fromPath($pdfPath)->setFilename('Hipotea_Result_' . $nombre_pdf . '.pdf'));
+                }
+
+                // Enviar el correo específico a Hipotea solo si la petición proviene de la ruta pública del web
+                try {
+                    $referer2 = $request->headers->get('referer', '');
+                    $refPath2 = $referer2 ? parse_url($referer2, PHP_URL_PATH) : '';
+                    $shouldSendHip = $refPath2 === '/web/simulador-viabilidad';
+                } catch (\Throwable $e) {
+                    $shouldSendHip = false;
+                }
+
+                if ($shouldSendHip) {
+                    $mailer->send($mensajeHipotea);
+                } else {
+                    error_log('Mailer suppressed (hipotea): referer path mismatch. Referer=' . ($referer2 ?? ''));
+                }
+            } catch (\Throwable $e) {
+                // Registrar pero no bloquear la respuesta al usuario
+                error_log('Error enviando correo a Hipotea: ' . $e->getMessage());
+            }
+            
+            // ===== INCREMENTAR CONTADOR DE USOS =====
+            // Solo se cuenta cuando se envía exitosamente a Hipotea
+            $emailCliente = $datosCliente['email'] ?? null;
+            if (!empty($emailCliente) && ($contaruso)) {
+                try {
+                    error_log('=== INCREMENTAR CONTADOR: Iniciando para ' . $emailCliente);
+                    
+                    // Obtener EntityManager fresco (importante si hay timeout o error previo)
+                    $emContador = $this->getDoctrine()->getManager();
+                    if (!$emContador->isOpen()) {
+                        error_log('EntityManager cerrado, reabriendo...');
+                        $emContador = $this->getDoctrine()->resetManager();
+                    }
+                    
+                    $qb = $emContador->createQueryBuilder();
+                    $qb->select('u')
+                        ->from('AppBundle:SimuladorUsoEmail', 'u')
+                        ->where('u.email = :email')
+                        ->setParameter('email', $emailCliente);
+                    $usoEmail = $qb->getQuery()->getOneOrNullResult();
+                    error_log('Búsqueda realizada: ' . ($usoEmail ? 'ENCONTRADO' : 'NO ENCONTRADO'));
+                    
+                    if (!$usoEmail) {
+                        // Crear nuevo registro
+                        error_log('Creando nuevo registro...');
+                        $usoEmail = new SimuladorUsoEmail();
+                        $usoEmail->setEmail($emailCliente);
+                        $usoEmail->setUsos(1);
+                        $usoEmail->setPrimerUso(new \DateTime());
+                        $usoEmail->setUltimoUso(new \DateTime());
+                        $emContador->persist($usoEmail);
+                    } else {
+                        // Incrementar existente
+                        error_log('Incrementando registrio existente, usos actual: ' . $usoEmail->getUsos());
+                        $usoEmail->incrementarUsos();
+                        $emContador->persist($usoEmail);
+                    }
+                    error_log('Antes de flush...');
+                    $emContador->flush();
+                    error_log('Contador incrementado exitosamente para: ' . $emailCliente);
+                } catch (\Throwable $eContador) {
+                    // NO bloquear la respuesta, solo registrar
+                    error_log('ERROR al incrementar contador: ' . $eContador->getMessage());
+                    error_log('Trace: ' . $eContador->getTraceAsString());
+                }
+            }
+            
+            return new JsonResponse([
+                'success' => true, 
+                'mensaje' => $msg, 
+                'actualizado' => $expedienteActualizado,
+                'expediente_id' => $expediente->getIdExpediente()
+            ]);
 
         } catch (\Throwable $e) {
             error_log('Error en enviarAHipoteaAction: ' . $e->getMessage());
@@ -1125,12 +1682,12 @@ class SimuladorViabilidadController extends Controller
     /**
 	 * Acción AJAX para calcular el precio máximo usando CalculadoraAvanzada
 	 * 
-	 * IMPORTANTE: Utiliza exactamente la MISMA lógica que calculadoraAvanzadaSubmitAction
-	 * en CalculadorasController.php para garantizar resultados idénticos.
+	 * Lee JSON del request body y retorna JSON serializable (sin objetos Symfony)
 	 * 
 	 * Entrada esperada:
 	 * {
 	 *   "datos": {
+	 *     "tipo_calculo": 2,
 	 *     "edad": 35,
 	 *     "ingresos_mensuales": 2000,
 	 *     "aportacion": 50000,
@@ -1146,199 +1703,296 @@ class SimuladorViabilidadController extends Controller
 	 *   }
 	 * }
 	 */
-	public function calculadoraAvanzadaTestAjaxAction(Request $request)
+
+    public function calculadoraAvanzadaTestAjaxAction(Request $request)
 	{
 		// Obtener datos JSON del request
 		$data = json_decode($request->getContent(), true);
+        
 		
-		if (!isset($data['datos']) || empty($data['datos'])) {
+		// ===== SOPORTAR AMBAS ESTRUCTURAS JSON =====
+		// Paso 3 envía: { "datos": { ... } }
+		// Paso 2 envía: { "tipo_calculo": ..., "email": ..., ... }
+		if (isset($data['datos']) && is_array($data['datos'])) {
+			$datos = $data['datos'];
+		} elseif (isset($data['tipo_calculo'])) {
+			// Paso 2 envía todo en la raíz
+			$datos = $data;
+		} else {
 			return new JsonResponse([
 				'error' => true,
 				'message' => 'No se recibieron datos para procesar',
 				'importe_fijo' => 0
 			], 400);
 		}
+		$contaruso = isset($datos['contaruso']) && ($datos['contaruso'] === true || $datos['contaruso'] === 'true');
+		// ===== CHECK DE LÍMITE DE USOS POR EMAIL =====
+		$email = $datos['email'] ?? null;
+		$nombre = $datos['nombre'] ?? null;
+		$maxUsos = $this->getParameter('simulador_max_usos');
+		$whatsappContacto = $this->getParameter('simulador_whatsapp_contacto');
 		
-		try {
-			$datos = $data['datos'];
+		// DEBUG: Log de email y nombre recibidos
+		error_log('=== SIMULADOR LIMITE CHECK ===');
+        error_log('contaruso3: ' . ($contaruso));
+		error_log('Email recibido1: ' . ($email ? $email : 'VACÍO/NULL'));
+		error_log('Nombre recibido1: ' . ($nombre ? $nombre : 'VACÍO/NULL')); 
+		error_log('Datos completos del payload1: ' . json_encode($datos));
+		error_log('=== FIN DEBUG ===');
+		
+        if ($contaruso) {
+            error_log('Contar uso es verdadero, procediendo a verificacion de limite');
+            if (!empty($email)) {
+                error_log('Email recibido1 no vacío, entrando al bloque de verificación');
+                $em = $this->getDoctrine()->getManager();
+                error_log('EntityManager obtenido');
+                try {
+                    // Usar QueryBuilder en lugar de getRepository para evitar el repositorio personalizado
+                    $qb = $em->createQueryBuilder();
+                    $qb->select('u')
+                        ->from('AppBundle:SimuladorUsoEmail', 'u')
+                        ->where('u.email = :email')
+                        ->setParameter('email', $email);
+                    $usoEmail = $qb->getQuery()->getOneOrNullResult();
+                    error_log('QueryBuilder ejecutado, resultado: ' . ($usoEmail ? 'encontrado' : 'no encontrado'));
+                    
+                    // IMPORTANTE: Hacer refresh explícito para garantizar que leemos el valor actual de la BD
+                    // Esto evita problemas de caché cuando hay múltiples peticiones rápidas
+                    if ($usoEmail) {
+                        $em->refresh($usoEmail);
+                        error_log('Registro refrescado desde BD. Usos actuales: ' . $usoEmail->getUsos());
+                    }
+                } catch (\Exception $e) {
+                    error_log('Error al ejecutar QueryBuilder: ' . $e->getMessage());
+                    error_log('Continuando sin verificación de límite');
+                    $usoEmail = null;
+                }
+                
+                if ($usoEmail && $usoEmail->getUsos() >= $maxUsos) {
+                    error_log('Límite alcanzado para ' . $email);
+                    // Límite alcanzado
+                    return new JsonResponse([
+                        'error' => false,
+                        'limite' => true,
+                        'nombre' => $nombre,
+                        'email' => $email,
+                        'whatsappContacto' => $whatsappContacto,
+                        'mensaje' => 'No ha sido posible enviarte el resultado porque este simulador está limitado a ' . $maxUsos . ' usos.'
+                    ], 200);
+                }
+                error_log('No hay límite alcanzado, continuando');
+            }
+        }
+		
+		// DEBUG: Verificar que llegamos aquí
+		error_log('Iniciando cálculo de forma normal para email: ' . ($email ?: 'sin email'));
+
+            // ===== MISMA BASE DE CÁLCULO QUE CalculadorasController (precio máximo) =====
+            $tipoCalculo = intval($datos['tipo_calculo'] ?? 2);
+            $valorInmueble = floatval($datos['valor_inmueble'] ?? 0);
+
+            $numTitulares = intval($datos['num_titulares'] ?? 1);
+            if ($numTitulares < 1 || $numTitulares > 2) {
+                $numTitulares = 1;
+            }
+
+            $edadTitularUno = intval($datos['edad_titular_uno'] ?? ($datos['edad'] ?? 0));
+            $edadTitularDos = intval($datos['edad_titular_dos'] ?? 0);
+            $edad = max($edadTitularUno, $edadTitularDos);
+            if (!$edad || $edad < 18 || $edad > 75) {
+                return new JsonResponse([
+                    'error' => true,
+                    'message' => 'Edad inválida (18-75 años). Recibido: ' . $edad,
+                    'importe_fijo' => 0
+                ], 400);
+            }
+
+            $ingresosMensuales = floatval($datos['ingresos_mensuales'] ?? 0);
+            if ($ingresosMensuales <= 0) {
+                return new JsonResponse([
+                    'error' => true,
+                    'message' => 'Ingresos mensuales inválidos (> 0). Recibido: ' . $ingresosMensuales,
+                    'importe_fijo' => 0
+                ], 400);
+            }
+
+            $calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
+            if ($tipoCalculo === 1) {
+                $calculadora->setTipo(1);
+                $calculadora->setValorInmueble($valorInmueble);
+            } else {
+                $calculadora->setTipo(2);
+            }
+            
+            // Inicializar $producto para evitar undefined variable
+            $producto = null;
+            $formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest');
+
+            // ===== CONVERTIR PRODUCTO STRING A INT SI ES NECESARIO =====
+            $productoValue = $datos['producto'] ?? 1;
+            if ($productoValue === 'cambio_de_casa') {
+                $productoValue = 4;
+            } elseif ($productoValue === 'hipoteca_80') {
+                $productoValue = 1;
+            } elseif ($productoValue === 'premium') {
+                $productoValue = 2;
+            } elseif ($productoValue === 'sin_compromiso') {
+                $productoValue = 3;
+            }
+            $productoInt = intval($productoValue);
+
+            $formData = [
+                'tipo' => intval($datos['tipo_calculo'] ?? 1),
+                'numTitulares' => $numTitulares,
+                'edad' => $edad,
+                'edadTitularUno' => $edadTitularUno,
+                'edadTitularDos' => $edadTitularDos,
+                'plazoAmortizacion' => intval($datos['plazo'] ?? 25),
+                'aportacionInicial' => floatval($datos['aportacion'] ?? 0),
+                'destinoCompra' => intval($datos['destino_compra'] ?? 1),
+                'obraNueva' => (bool) ($datos['obra_nueva'] ?? false),
+                'comunidadAutonoma' => intval($datos['comunidad_autonoma'] ?? 4),
+                'minusvaliaFamiliaNumerosa' => (bool) ($datos['minusvalia_familia_numerosa'] ?? false),
+                'familiaNumerosa' => (bool) ($datos['familia_numerosa'] ?? false),
+                'monoparental' => (bool) ($datos['monoparental'] ?? false),
+                'vpo' => (bool) ($datos['vpo'] ?? false),
+                'ingresosMensuales' => floatval($datos['ingresos_mensuales'] ?? 0),
+                'numPagasExtra' => intval($datos['numero_pagas'] ?? 0),
+                'importePagaExtra' => floatval($datos['importe_pagas'] ?? 0),
+                'prestamosMensuales' => floatval($datos['prestamos_mensuales'] ?? 0),
+                'ingresosMensualesDos' => floatval($datos['ingresos_mensuales_dos'] ?? 0),
+                'numPagasExtraDos' => intval($datos['numero_pagas_dos'] ?? 0),
+                'importePagaExtraDos' => floatval($datos['importe_pagas_dos'] ?? 0),
+                'prestamosMensualesDos' => floatval($datos['prestamos_mensuales_dos'] ?? 0),
+                'valorInmueble' => floatval($datos['valor_inmueble'] ?? 0),
+                'producto' => $productoInt,
+                'honorariosInmobiliaria' => floatval($datos['gastos_inmobiliaria'] ?? $datos['honorarios'] ?? 0),
+                // ===== CAMPOS ESPECÍFICOS DE "CAMBIO DE CASA" (PRODUCTO 4) =====
+                'valorViviendaActual' => floatval($datos['valor_vivienda_actual'] ?? 0),
+                'hipotecaActual' => floatval($datos['hipoteca_actual'] ?? 0),
+                'aportacionTrasVenta' => floatval($datos['aportacion_tras_venta'] ?? 0),
+            ];
+
+            // ===== WORKAROUND: Capturar valores booleanos ANTES del submit() =====
+            // El FormType está corruptiendo false → 1, así que guardamos antes y restauramos después
+            $obraNuevaOriginal = (bool) ($datos['obra_nueva'] ?? false);
+            $familiaNumerosaOriginal = (bool) ($datos['familia_numerosa'] ?? false);
+            $minusvaliaFamiliaNumerosaOriginal = (bool) ($datos['minusvalia_familia_numerosa'] ?? false);
+            $vpoOriginal = (bool) ($datos['vpo'] ?? false);
+            $monoparentalOriginal = (bool) ($datos['monoparental'] ?? false);
+
+            $formulario->submit($formData, false);
+            $calculadora = $formulario->getData();
+            
+            // ===== RESTAURAR VALORES BOOLEANOS DESPUÉS DEL SUBMIT() =====
+            // El FormType estaba forzando estos valores a 1, restauramos aquí
+            $calculadora->setObraNueva($obraNuevaOriginal);
+            $calculadora->setFamiliaNumerosa($familiaNumerosaOriginal);
+            $calculadora->setMinusvaliaFamiliaNumerosa($minusvaliaFamiliaNumerosaOriginal);
+            $calculadora->setVpo($vpoOriginal);
+            $calculadora->setMonoparental($monoparentalOriginal);
+
+
+
+            // ===== DEBUG: mostrar EXACTAMENTE QUÉ VALORES TIENE LA ENTIDAD DESPUÉS DEL SUBMIT() + RESTAURACIÓN =====
+            error_log('=== POST-SUBMIT STATE (AFTER BOOLEAN RESTORATION) ===');
+            error_log('Input formData: ' . json_encode($formData));
+            error_log('Boolean values before submit: obraNueva=' . ($obraNuevaOriginal ? 'true' : 'false') . ', vpo=' . ($vpoOriginal ? 'true' : 'false'));
+            error_log('Entity values after submit() + restoration:');
+            error_log('  - producto: ' . $calculadora->getProducto());
+            error_log('  - obraNueva: ' . ($calculadora->getObraNueva() ? 'TRUE' : 'FALSE'));
+            error_log('  - vpo: ' . ($calculadora->getVpo() ? 'TRUE' : 'FALSE'));
+            error_log('  - familiaNumerosa: ' . ($calculadora->getFamiliaNumerosa() ? 'TRUE' : 'FALSE'));
+            error_log('  - minusvaliaFamiliaNumerosa: ' . ($calculadora->getMinusvaliaFamiliaNumerosa() ? 'TRUE' : 'FALSE'));
+            error_log('  - monoparental: ' . ($calculadora->getMonoparental() ? 'TRUE' : 'FALSE'));
+            error_log('  - tipo: ' . $calculadora->getTipo());
+            error_log('  - plazoAmortizacion: ' . $calculadora->getPlazoAmortizacion());
+            error_log('  - aportacionInicial: ' . $calculadora->getAportacionInicial());
+            error_log('  - edad: ' . $edad);
+            error_log('CAMBIO DE CASA campos:');
+            error_log('  - valorViviendaActual: ' . ($calculadora->getValorViviendaActual() ?? 'NULL'));
+            error_log('  - hipotecaActual: ' . ($calculadora->getHipotecaActual() ?? 'NULL'));
+            error_log('  - aportacionTrasVenta: ' . ($calculadora->getAportacionTrasVenta() ?? 'NULL'));
+            error_log('OTROS campos:');
+            error_log('  - honorariosInmobiliaria: ' . ($calculadora->getHonorariosInmobiliaria() ?? 'NULL'));
+            error_log('=== END POST-SUBMIT STATE ===');
+
+            $resultado = $calculadora->calcularAvanzada($this->getDoctrine()->getManager());
 			
-			// ===== VALIDACIONES BÁSICAS =====
-			$edad = intval($datos['edad'] ?? 0);
-			if (!$edad || $edad < 18 || $edad > 75) {
-				return new JsonResponse([
-					'error' => true,
-					'message' => 'Edad inválida (18-75 años). Recibido: ' . $edad,
-					'importe_fijo' => 0
-				], 400);
-			}
-			
-			$ingresosMensuales = floatval($datos['ingresos_mensuales'] ?? 0);
-			if ($ingresosMensuales <= 0) {
-				return new JsonResponse([
-					'error' => true,
-					'message' => 'Ingresos mensuales inválidos (> 0). Recibido: ' . $ingresosMensuales,
-					'importe_fijo' => 0
-				], 400);
-			}
-			
-			// ===== USAR LA MISMA FORMA QUE calculadoraPrecioMaximoWebAction =====
-			
-			// PASO 1: Pre-crear entidad - por defecto tipo 2 (precio máximo)
-			$tipoCalculo = intval($datos['tipo_calculo'] ?? 2);
-			$valorInmueble = floatval($datos['valor_inmueble'] ?? 0);
-			$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
-			$calculadora->setTipo(2); // Siempre tipo 2 para obtener parámetros correctos
-			
-			// PASO 2: Crear formulario con la entidad pre-configurada
-			$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
-			
-			// PASO 3: Poblar desde JSON
-			$formulario->submit($datos, false); // false = no valida campos no enviados
-			
-			// PASO 4: Obtener entidad poblada (ahora con tipo 2 conservado y datos JSON)
-			$calculadora = $formulario->getData();
-			
-			// PASO 4b: MAPEO EXPLÍCITO de campos que podrían no mapearse automáticamente (snake_case → camelCase)
-			if (isset($datos['comunidad_autonoma'])) {
-				$calculadora->setComunidadAutonoma(intval($datos['comunidad_autonoma']));
-			}
-			if (isset($datos['destino_compra'])) {
-				$calculadora->setDestinoCompra(intval($datos['destino_compra']));
-			}
-			if (isset($datos['obra_nueva'])) {
-				$calculadora->setObraNueva(intval($datos['obra_nueva']));
-			}
-			if (isset($datos['familia_numerosa'])) {
-				$calculadora->setFamiliaNumerosa(intval($datos['familia_numerosa']));
-			}
-			if (isset($datos['monoparental'])) {
-				$calculadora->setMonoparental(intval($datos['monoparental']));
-			}
-			if (isset($datos['vpo'])) {
-				$calculadora->setVpo(intval($datos['vpo']));
-			}
-			if (isset($datos['minusvalia_familia_numerosa'])) {
-				$calculadora->setMinusvaliaFamiliaNumerosa(intval($datos['minusvalia_familia_numerosa']));
-			}
-			if (isset($datos['valor_inmueble']) && $datos['valor_inmueble'] > 0) {
-				$calculadora->setValorInmueble(floatval($datos['valor_inmueble']));
-			}
-			
-			// MAPEO DE DATOS DEL SEGUNDO TITULAR (si existen)
-			if (isset($datos['edad_titular_dos']) && $datos['edad_titular_dos'] > 0) {
-				$calculadora->setEdadTitularDos(intval($datos['edad_titular_dos']));
-			}
-			if (isset($datos['ingresos_mensuales_dos']) && $datos['ingresos_mensuales_dos'] > 0) {
-				$calculadora->setIngresosMensualesDos(floatval($datos['ingresos_mensuales_dos']));
-			}
-			if (isset($datos['numero_pagas_dos']) && $datos['numero_pagas_dos'] >= 0) {
-				$calculadora->setNumPagasExtraDos(intval($datos['numero_pagas_dos']));
-			}
-			if (isset($datos['importe_pagas_dos']) && $datos['importe_pagas_dos'] > 0) {
-				$calculadora->setImportePagaExtraDos(floatval($datos['importe_pagas_dos']));
-			}
-			if (isset($datos['prestamos_mensuales_dos']) && $datos['prestamos_mensuales_dos'] >= 0) {
-				$calculadora->setPrestamosMensualesDos(floatval($datos['prestamos_mensuales_dos']));
-			}
-			
-			// PASO 5: Asegurar valores por defecto para campos críticos que podrían estar nulos
-			// Esto evita Inf/NaN en cálculos si el formulario no inicializó correctamente
-			if (!$calculadora->getAportacionInicial() || $calculadora->getAportacionInicial() <= 0) {
-				$calculadora->setAportacionInicial(floatval($datos['aportacion'] ?? 20000));
-			}
-			if (!$calculadora->getPlazoAmortizacion() || $calculadora->getPlazoAmortizacion() <= 0) {
-				$calculadora->setPlazoAmortizacion(intval($datos['plazo'] ?? 25));
-			}
-			if (!$calculadora->getEdadTitularUno() || $calculadora->getEdadTitularUno() <= 0) {
-				$calculadora->setEdadTitularUno($edad);
-			}
-			if (!$calculadora->getIngresosMensuales() || $calculadora->getIngresosMensuales() <= 0) {
-				$calculadora->setIngresosMensuales($ingresosMensuales);
-			}
-			if (!$calculadora->getNumTitulares() || $calculadora->getNumTitulares() <= 0) {
-				$calculadora->setNumTitulares(intval($datos['num_titulares'] ?? 1));
-			}
-			
-			// PASO 6: EJECUTAR CÁLCULO
-			$resultado = $calculadora->calcularAvanzada($this->getDoctrine()->getManager());
-			
-			// PASO 7: Si tipo=3 (precio conocido), recalcular gastos y cuota sobre el valor_inmueble real
-			if ($tipoCalculo === 3 && $valorInmueble > 0) {
-				$aportacion    = floatval($datos['aportacion'] ?? 0);
-				$plazo         = intval($datos['plazo'] ?? 25);
-				$obraNueva     = intval($datos['obra_nueva'] ?? 0);
-				$isVpo         = intval($datos['vpo'] ?? 0);
-				$destinoCompra = intval($datos['destino_compra'] ?? 1);
-				$habitual      = ($destinoCompra === 1);
-				
-				// Obtener tipo_interes_ccaa (decimal) del resultado tipo=2
-				// El resultado tipo=2 devuelve tipo_interes_ccaa como decimal (ej: 0.08)
-				$tipo_interes_ccaa = $resultado['tipo_interes_ccaa'] ?? 0;
-				$tipo_importe_maximo_decimal = ($resultado['tipo_importe_maximo'] ?? 0) / 100;
-				
-				// Costes fijos del resultado (vienen de Parametros, mismos para cualquier precio)
-				$tasacion   = $resultado['tasacion'] ?? 0;
-				$notario    = $resultado['notario']  ?? 0;
-				$registro   = $resultado['registro'] ?? 0;
-				$gestoria   = $resultado['gestoria'] ?? 0;
-				$vinculaciones = $resultado['vinculaciones'] ?? 0;
-				
-				// Recalcular ITP/IVA sobre el valor_inmueble real
-				if ($obraNueva) {
-					$tipo_iva   = ($isVpo && $habitual) ? 0.04 : 0.10;
-					$importe_iva = $valorInmueble * $tipo_iva;
-					$escritura_impuesto = 0;
-				} else {
-					$importe_iva = 0;
-					$escritura_impuesto = $valorInmueble * $tipo_interes_ccaa;
+            // ===== CALCULAR IMPORTE_PRESTAMO SI NO VIENE =====
+			// Si tipo 1 (calcular cuota): importe_prestamo = valor_inmueble - aportacion
+			// Si tipo 2 (calcular máximo): importe_prestamo = importe_maximo - aportacion
+			$aportacion = floatval($datos['aportacion'] ?? 0);
+			if (empty($resultado['importe_prestamo'])) {
+                if ($tipoCalculo == 1) {
+                    // Tipo 1: Se conoce el valor de la vivienda, calcular lo que hay que prestar
+                    $gastos = floatval($resultado['gastos'] ?? 0);
+                    $resultado['importe_prestamo'] = ($valorInmueble + $gastos) - $aportacion;
+				} elseif ($tipoCalculo == 2 && !empty($resultado['importe_maximo'])) {
+					// Tipo 2: Se calcula el máximo, ahora calcular lo que hay que prestar
+					$resultado['importe_prestamo'] = floatval($resultado['importe_maximo']) - $aportacion;
 				}
-				
-				$gastos = $tasacion + $notario + $registro + $gestoria + $vinculaciones
-					+ $escritura_impuesto + $importe_iva;
-				
-				// Calcular cuota (replicando fórmula calculoSencillo de la entidad)
-				$loan = $valorInmueble + $gastos - $aportacion;
-				$np   = $plazo * 12;
-				if (!$tipo_importe_maximo_decimal) {
-					$cuota = ($np > 0) ? round($loan / $np, 2) : 0;
-				} else {
-					$rPeriod = pow(1 + $tipo_importe_maximo_decimal / 12, 1) - 1;
-					$rFactor = pow($rPeriod + 1, $np);
-					$cuota   = round($loan * (($rPeriod * $rFactor) / ($rFactor - 1)), 2);
-				}
-				
-				$importePrestamo       = $loan;
-				$porcentajeFinanciacion = ($valorInmueble > 0) ? round(($importePrestamo / $valorInmueble) * 100, 2) : 0;
-				
-				// Sobreescribir resultado con valores recalculados
-				$resultado['importe_fijo']            = $valorInmueble;
-				$resultado['cuota']                   = $cuota;
-				$resultado['gastos']                  = $gastos;
-				$resultado['entrada']                 = $aportacion;
-				$resultado['importe_prestamo']        = $importePrestamo;
-				$resultado['porcentaje_financiacion'] = $porcentajeFinanciacion;
-				$resultado['tasacion']                = $tasacion;
-				$resultado['notario']                 = $notario;
-				$resultado['registro']                = $registro;
-				$resultado['gestoria']                = $gestoria;
-				$resultado['vinculaciones']           = $vinculaciones;
-				$resultado['importe_iva']             = $importe_iva;
-				$resultado['escritura_compra_impuesto_transmisiones'] = $escritura_impuesto;
-				$resultado['amortizacion']            = $plazo;
-				$resultado['tipo_calculo']            = 'cuota-precio-fijo';
-				$resultado['mensaje']                 = '';
 			}
 			
-			// ===== DEBUG: Log de datos y resultado =====
+			// ===== CALCULAR PORCENTAJE_FINANCIACION SI NO VIENE DE CalculadoraAvanzada =====
+            if (empty($resultado['porcentaje_financiacion']) && !empty($resultado['importe_prestamo']) && !empty($valorInmueble)) {
+                // Caso estándar: porcentaje = importe_prestamo / valor_inmueble
+                $porc = ($resultado['importe_prestamo'] / $valorInmueble) * 100;
+
+                // Si es "Cambio de casa" (producto 4) el cálculo debe tener en cuenta
+                // la vivienda que se vende y la hipoteca pendiente sobre ella.
+                // En frontend usamos: base = valor_inmueble + valor_vivienda_actual
+                // importe_financiado = valor_inmueble + gastos - aportacion
+                // porcentaje = importe_financiado / base
+                try {
+                    $producto = $calculadora->getProducto();
+                } catch (\Throwable $e) {
+                    $producto = null;
+                }
+
+                if ($producto == 4) {
+                    $valorViviendaActual = floatval($datos['valor_vivienda_actual'] ?? 0);
+                    $hipotecaActual = floatval($datos['hipoteca_actual'] ?? 0);
+                    $gastos = floatval($resultado['gastos'] ?? 0);
+                    $aport = floatval($datos['aportacion'] ?? $aportacion ?? 0);
+
+                    // Base de financiación: sumar ambas viviendas cuando exista valor de la vivienda actual
+                    $baseFinanciacion = ($valorViviendaActual > 0) ? ($valorInmueble + $valorViviendaActual) : $valorInmueble;
+
+                    // Importe financiado que absorbe la financiación: precio + gastos - aportación
+                    $importeFinanciado = ($valorInmueble + $gastos) - $aport;
+
+                    if ($baseFinanciacion > 0) {
+                        $porc = ($importeFinanciado / $baseFinanciacion) * 100;
+                    } else {
+                        $porc = 0;
+                    }
+                }
+
+                $resultado['porcentaje_financiacion'] = $porc;
+            }
+			
+			// ===== DEBUG: Log de datos y resultado SIN RECÁLCULOS =====
 			error_log('=== SIMULADOR AJAX DEBUG ===');
-			error_log('Entrada: edad=' . $edad . ', ingresos=' . $ingresosMensuales . ', plazo=' . intval($datos['plazo'] ?? 25));
-			error_log('Salida: importe=' . ($resultado['importe_fijo'] ?? 0) . ', gastos=' . ($resultado['gastos'] ?? 0) . ', cuota=' . ($resultado['cuota'] ?? 0));
+			error_log('Entrada: tipo_calculo=' . $tipoCalculo . ', edad=' . $edad . ', ingresos=' . $ingresosMensuales . ', plazo=' . intval($datos['plazo'] ?? 25));
+			error_log('Entrada gastos_inmobiliaria: ' . floatval($datos['gastos_inmobiliaria'] ?? $datos['honorarios'] ?? 0));
+			error_log('Salida directa de calcularAvanzada: ' . json_encode($resultado));
 			error_log('=== FIN DEBUG ===');
 			
-			// ===== RETORNAR RESPUESTA (formato idéntico a calculadoraAvanzadaSubmitAction) =====
-			return new JsonResponse([
+			// ===== RETORNAR RESPUESTA (formato completo para JavaScript) =====
+			// Corregir importe_fijo para reflejar el importe del préstamo (tipo 1) o máximo (tipo 2)
+			$importeFijo = $resultado['importe_fijo'] ?? 0;
+			if ($tipoCalculo == 1 && !empty($resultado['importe_prestamo'])) {
+				// Tipo 1: calcular cuota para esta propiedad → importe_fijo = importe del préstamo solicitado
+				$importeFijo = round($resultado['importe_prestamo'], 2);
+			} elseif ($tipoCalculo == 2 && !empty($resultado['importe_maximo'])) {
+				// Tipo 2: calcular máximo precio → importe_fijo = precio máximo
+				$importeFijo = round($resultado['importe_maximo'], 2);
+			}
+			
+			$responseData = [
 				'error' => false,
-				'importe_fijo' => round($resultado['importe_fijo'] ?? 0, 2),
+				'importe_fijo' => $importeFijo,
 				'entrada' => round($resultado['entrada'] ?? 0, 2),
 				'gastos' => round($resultado['gastos'] ?? 0, 2),
 				'cuota' => round($resultado['cuota'] ?? 0, 2),
@@ -1355,16 +2009,34 @@ class SimuladorViabilidadController extends Controller
 				'tipo_interes_ccaa' => ($resultado['tipo_interes_ccaa'] ?? 0) * 100,
 				'importe_prestamo' => round($resultado['importe_prestamo'] ?? 0, 2),
 				'porcentaje_financiacion' => round($resultado['porcentaje_financiacion'] ?? 0, 2),
-				'vinculaciones' => round($resultado['vinculaciones'] ?? 0, 2)
-			], 200);
+				'vinculaciones' => round($resultado['vinculaciones'] ?? 0, 2),
+				// Campos adicionales para calculadora avanzada (Tipo 1: Cambio de casa)
+				'cuota_fija' => round($resultado['cuota_fija'] ?? 0, 2),
+				'cuota_variable' => round($resultado['cuota_variable'] ?? 0, 2),
+				'cuota_mixta' => round($resultado['cuota_mixta'] ?? 0, 2),
+				'cuota_fija_final' => round($resultado['cuota_fija_final'] ?? 0, 2),
+				'cuota_variable_final' => round($resultado['cuota_variable_final'] ?? 0, 2),
+				'cuota_mixta_final' => round($resultado['cuota_mixta_final'] ?? 0, 2),
+				'tipo_fijo' => round(($resultado['tipo_fijo'] ?? 0), 4),
+				'tipo_variable' => round(($resultado['tipo_variable'] ?? 0), 4),
+				'tipo_mixto' => round(($resultado['tipo_mixto'] ?? 0), 4),
+				'tipo_luego_mixto' => round(($resultado['tipo_luego_mixto'] ?? 0), 4),
+				'intereses' => round($resultado['intereses'] ?? 0, 2),
+				'importe_total' => round($resultado['importe_total'] ?? 0, 2),
+				'importe_variable' => round($resultado['importe_variable'] ?? 0, 2),
+				'con_interes_fijo' => (bool) ($resultado['con_interes_fijo'] ?? false),
+				'con_interes_variable' => (bool) ($resultado['con_interes_variable'] ?? false),
+				'con_entrada_fijo' => round($resultado['con_entrada_fijo'] ?? 0, 2),
+				'con_entrada_variable' => round($resultado['con_entrada_variable'] ?? 0, 2),
+				'valor_inmueble' => round($valorInmueble ?? 0, 2),
+				'valor_vivienda_actual' => round($datos['valor_vivienda_actual'] ?? 0, 2),
+				'hipoteca_actual' => round($datos['hipoteca_actual'] ?? 0, 2),
+				'aportacion_tras_venta' => round($datos['aportacion_tras_venta'] ?? 0, 2),
+				'escritura_compra_impuesto_transmisiones' => round($resultado['escritura_compra_impuesto_transmisiones'] ?? 0, 2),
+				'gastos_inmobiliaria' => round($resultado['gastos_inmobiliaria'] ?? $resultado['honorarios_inmobiliaria'] ?? $datos['gastos_inmobiliaria'] ?? $datos['honorarios'] ?? 0, 2),
+                'producto' => $producto ?? ''
+			];
 			
-		} catch (\Exception $e) {
-			error_log('Error en calculadoraAvanzadaTestAjaxAction: ' . $e->getMessage());
-			return new JsonResponse([
-				'error' => true,
-				'message' => 'Error al calcular: ' . $e->getMessage(),
-				'importe_fijo' => 0
-			], 500);
-		}
+			return new JsonResponse($responseData, 200);
 	}
 }

@@ -234,7 +234,7 @@
 					</div>
 				</div>
 				<div class="col-md form-group">
-				{% if app.request.get('_route') is not same as('mi_perfil') and (is_granted('ROLE_ADMIN') or (is_granted('ROLE_COMERCIAL') and (app.request.get('_route') is same as('agregar_modificar_usuario_inmobiliaria') or app.request.get('_route') is same as('agregar_modificar_jefe_inmobiliaria') or app.request.get('_route') is same as('agregar_modificar_jefe_oficina') or app.request.get('_route') is same as('agregar_modificar_responsable_zona')))) %}
+					{% if app.request.get('_route') is not same as('mi_perfil') and (is_granted('ROLE_ADMIN') or (is_granted('ROLE_COMERCIAL') and (app.request.get('_route') is same as('agregar_modificar_usuario_inmobiliaria') or app.request.get('_route') is same as('agregar_modificar_jefe_inmobiliaria') or app.request.get('_route') is same as('agregar_modificar_jefe_oficina') or app.request.get('_route') is same as('agregar_modificar_responsable_zona')))) %}
 						{{ form_label(agregarModificarUsuario.fechaCaducidad) }}
 						<div class="input-group">
 							<div class="input-group-prepend">
@@ -252,7 +252,7 @@
 	</div>
 	<div class="card">
 		<div class="card-body">
-			<h4 class="card-title">Datos del usuario</h4>
+			<h4 class="card-title 111222">Datos del usuario</h4>
 			<div class="form-row">
 				<div class="form-group col-sm">
 					{{ form_label(agregarModificarUsuario.username) }}
@@ -287,7 +287,7 @@
 						<div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
 							<span class="form-error-icon badge badge-danger text-uppercase">Error</span>
 							<strong> El NIF ya está en uso.</strong>
-							<span class="d-block">Comprueba si pertenece a otro usuario o contacta con soporte si consideras que es un error.</span>
+							<span class="d-block">Ya existe un cliente registrado con estos datos. Contacta con tu agente o con atención al cliente (957 05 04 69) para poder continuar.</span>
 							<button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
 								<span aria-hidden="true">&times;</span>
 							</button>
@@ -317,23 +317,23 @@
 					</div>
 					{{ form_errors(agregarModificarUsuario.telefonoMovil) }}
 				</div>
-			{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
-				{% if agregarModificarUsuario.vars.data.roles and 'ROLE_COMERCIAL' in agregarModificarUsuario.vars.data.roles %}
-					<div class="form-group col-sm">
-						{{ form_label(agregarModificarUsuario.idDireccionComercialAsignado) }}
-						{{ form_widget(agregarModificarUsuario.idDireccionComercialAsignado, {attr: {class: 'select2'}}) }}
-						{{ form_errors(agregarModificarUsuario.idDireccionComercialAsignado) }}
-					</div>
+				{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
+					{% if agregarModificarUsuario.vars.data.roles and 'ROLE_COMERCIAL' in agregarModificarUsuario.vars.data.roles %}
+						<div class="form-group col-sm">
+							{{ form_label(agregarModificarUsuario.idDireccionComercialAsignado) }}
+							{{ form_widget(agregarModificarUsuario.idDireccionComercialAsignado, {attr: {class: 'select2'}}) }}
+							{{ form_errors(agregarModificarUsuario.idDireccionComercialAsignado) }}
+						</div>
+					{% endif %}
+					{% if agregarModificarUsuario.vars.data.roles and 'ROLE_RESPONSABLE_ZONA' in agregarModificarUsuario.vars.data.roles %}
+						<div class="form-group col-sm">
+							{{ form_label(agregarModificarUsuario.idDireccionExpansionAsignado) }}
+							{{ form_widget(agregarModificarUsuario.idDireccionExpansionAsignado, {attr: {class: 'select2'}}) }}
+							{{ form_errors(agregarModificarUsuario.idDireccionExpansionAsignado) }}
+						</div>
+					{% endif %}
 				{% endif %}
-				{% if agregarModificarUsuario.vars.data.roles and 'ROLE_RESPONSABLE_ZONA' in agregarModificarUsuario.vars.data.roles %}
-					<div class="form-group col-sm">
-						{{ form_label(agregarModificarUsuario.idDireccionExpansionAsignado) }}
-						{{ form_widget(agregarModificarUsuario.idDireccionExpansionAsignado, {attr: {class: 'select2'}}) }}
-						{{ form_errors(agregarModificarUsuario.idDireccionExpansionAsignado) }}
-					</div>
-				{% endif %}
-			{% endif %}
-		</div>
+			</div>
 			<div class="form-row">
 				{% if app.request.get('_route') is not same as('agregar_modificar_cliente') %}
 					<div class="form-group col-lg col-sm-6">

@@ -29,10 +29,6 @@ AppBundle\Entity\FicheroCampo:
       options:
         fixed: false
       column: nombre_fichero
-    contenidoJson:
-      type: text
-      nullable: true
-      column: contenido_json
   manyToOne:
     idCampoHito:
       targetEntity: CampoHito

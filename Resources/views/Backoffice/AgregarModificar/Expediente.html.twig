@@ -50,7 +50,6 @@
 	{% endif %}
 	<!-- HTML2Canvas para captura de elementos -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.min.js"></script>
 	<!-- jsPDF para generacion de PDFs sin dependencias servidor -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 {% endblock %}
@@ -2618,11 +2617,11 @@
 			$('#expediente_idCliente').on('change', function(e){
 				if (!inicializado) return;
 				var clienteId = this.value;
-				console.log('Cliente seleccionado:', clienteId);
+				//console.log('Cliente seleccionado:', clienteId);
 				fetch(`{{ path('obtener_cliente') }}?idCliente=${encodeURIComponent(clienteId)}`)
 					.then(response => response.json())
 					.then(data => {
-						console.log('obtener_cliente', data);
+						//console.log('obtener_cliente', data);
 						$('#campo_hito_expediente_0_192_0_valor').val(data.nombre + ' ' + data.apellidos);
 						$('#campo_hito_expediente_0_194_0_valor').val(data.dni.toUpperCase());
 						$('#campo_hito_expediente_0_408_0_valor').val(data.telefono);
@@ -2652,6 +2651,7 @@
 					
 		});
 	</script>
+
 	<script src="{{ asset('assets/js/custom/generear-informe-expediente.js') }}"></script>
 	<script src="{{ asset('assets/js/custom/Element.hasAttribute.min.js') }}"></script>
 	<script src="{{ asset('assets/js/custom/expediente.min.js') }}"></script>
@@ -2787,12 +2787,12 @@
 						</div>
 					{% endif %}
 					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') %}
-						<div class="form-row">
+						{#<div class="form-row">
 							<div class="form-group col-md">
 								{{ form_row(agregarModificarExpediente.whatsappAutomatico) }}
 							</div>
 							
-						</div>
+						</div>#}
 						<button type="button" class="btn btn-info waves-effect shadow-sm mr-1 ml-1" style="" onclick="abrirModalEspecificaciones(event)">
 							<i class="fas fa-file-alt"></i>
 							<span> Generar informe</span>
@@ -2805,6 +2805,7 @@
 						<button type="button" class="btn btn-warning" onclick="document.getElementById('excelFile').click()">
 							<i class="fas fa-file-excel mr-2"></i>📊 Analizar Excel con IA
 						</button>
+
 					{% endif %}
 				{% endif %}
 			</div>
@@ -3045,12 +3046,6 @@
 																											<div class="col-md" style="flex: 1; align-self: center;text-align: center;">
 																											{% if fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] is defined %}
 																													<a class="btn btn-success waves-effect mb-3" data-boton-descargar href="{{ fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] }}" target="_blank">Ver</a>
-
-																													{#{% if (campo_hito.idCampoHito == 739) %}
-																													
-																														<a class="btn btn-success waves-effect mb-3"  onclick="leerYProcesarExcelDesdeRutaConIA('{{ fichero_subido_ruta[campo_hito.idCampoHito][hito_expediente.idHitoExpediente] }}')">EXCEL-PDF</a>
-
-																													{% endif %} #}
 																											{% endif %}
 																											</div>	
 																										</div>

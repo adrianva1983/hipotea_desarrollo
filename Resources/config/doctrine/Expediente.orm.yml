@@ -67,20 +67,6 @@ AppBundle\Entity\Expediente:
       options:
         fixed: false
         comment: 'Explicacion del motivo de cancelacion'
-    whatsappAutomatico:
-      type: boolean
-      nullable: false
-      column: whatsapp_automatico
-      options:
-        default: false
-        comment: 'Indica si el proceso automático de WhatsApp está activado'
-    whatsappAutomaticoEnviado:
-      type: boolean
-      nullable: false
-      column: whatsapp_automatico_enviado
-      options:
-        default: false
-        comment: 'Indica si ya se ha enviado el WhatsApp automático (para evitar duplicados)'
   manyToOne:
     idFaseActual:
       targetEntity: Fase

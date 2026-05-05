@@ -278,6 +278,9 @@ calculadora_precio_maximo_web:
 calculadora_precio_maximo_web_nm:
   path: /web/calculadora-precio-maximo-nm
   controller: AppBundle:Calculadoras:calculadoraPrecioMaximoWebNM
+calculadora_precio_maximo_web_ihs:
+  path: /web/calculadora-precio-maximo-ihs
+  controller: AppBundle:Calculadoras:calculadoraPrecioMaximoWebIHS
 calculadora_cambio_de_casa_web:
   path: /web/calculadora-cambio-de-casa
   controller: AppBundle:Calculadoras:calculadoraCambioDeCasaWeb
@@ -552,30 +555,30 @@ calculadora_cuota_web_preview:
 
 
 
-api_chat_list:
-  path: /Chat/List
-  controller: AppBundle:Chat:list
-  methods: [GET]
+#api_chat_list:
+#  path: /Chat/List
+#  controller: AppBundle:Chat:list
+#  methods: [GET]
 
 
 
-api_chat_delete:
-  path: /Chat/Delete/{id}
-  controller: AppBundle:Chat:delete
-  methods: [POST]
-  defaults: {id:}
+#api_chat_delete:
+#  path: /Chat/Delete/{id}
+#  controller: AppBundle:Chat:delete
+#  methods: [POST]
+#  defaults: {id:}
 
-api_chat_usuario:
-  path: /Chat/Usuario
-  controller: AppBundle:Chat:usuario
-  methods: [GET]
+#api_chat_usuario:
+#  path: /Chat/Usuario
+#  controller: AppBundle:Chat:usuario
+#  methods: [GET]
 
 
 
-api_chat_sender:
-  path: /Chat/Sender
-  controller: AppBundle:Chat:sender
-  methods: [POST]
+#api_chat_sender:
+#  path: /Chat/Sender
+#  controller: AppBundle:Chat:sender
+#  methods: [POST]
 
 solicitar_cirbe:
   path: /AJAX/solicitar-cirbe
@@ -586,97 +589,90 @@ actualizar_belender_hito:
   defaults: { _controller: AppBundle:API:actualizarBelenderHito }
   methods:  [POST]
 
-auto_whatsapp:
-  path: /Admin/Lista/AutoWhatsApp
-  controller: AppBundle:Whatsapp:autoWhatsapp
-
-mi_conexion_whatsapp:
-  path: /Conexion/WhatsApp
-  controller: AppBundle:Whatsapp:miConexionWhatsapp
-
-agregar_modificar_conexion:
-  path: /Admin/nueva-conexion
-  controller: AppBundle:Whatsapp:agregarModificarConexion
-  defaults: {id: null}
-
-editar_conexion:
-  path: /Admin/AutoWhatsApp/editar/{id}
-  controller: AppBundle:Whatsapp:editarConexion
-  requirements:
-    id: '\d+'
-
-eliminar_conexion:
-  path: /Admin/AutoWhatsApp/eliminar/{id}
-  controller: AppBundle:Whatsapp:eliminarConexion
-  methods: [POST, DELETE]
-  requirements:
-    id: '\d+'
-
-api_chat_gestor:
-  path: /API/Gestor
-  controller: AppBundle:Whatsapp:gestor
-  methods: [GET]
-
-ejecutar_consulta_sql:
-  path: /API/EjecutarSQL
-  controller: AppBundle:Whatsapp:ejecutarConsultaSQL
-  methods: [POST]
-
-api_chat_create:
-  path: /API/Create
-  controller: AppBundle:Whatsapp:create
-  methods: [POST]
-
-api_get_whatsapp_messages:
-  path: /admin/WhatsApp/messages/{id}
-  controller: AppBundle:Whatsapp:getMessages
-  methods: [GET]
-  requirements:
-    id: '\d+'
-
-api_get_expedientes_con_mensajes:
-  path: /admin/WhatsApp/expedientes-con-mensajes
-  controller: AppBundle:Whatsapp:getExpedientesConMensajes
-  methods: [GET]
-api_send_whatsapp_message:
-  path: /admin/WhatsApp/send-message
-  controller: AppBundle:Whatsapp:sendMessage
-  methods: [POST]
-api_get_expediente_datos:
-  path: /admin/WhatsApp/expediente-datos
-  controller: AppBundle:Whatsapp:getExpedienteDatos
-  methods: [GET]
-
-mis_expedientes_con_mensajes:
-  path: /admin/WhatsApp/mis-expedientes-con-mensajes
-  controller: AppBundle:Whatsapp:getMisExpedientesConMensajes
-  methods: [GET]
-
-mis_logs:
-  path: /API/logs
-  controller: AppBundle:Whatsapp:misLogs
-  methods: [GET]
-
-api_datos_expediente:
-  path: /API/datos_expediente/{id}
-  controller: AppBundle:Whatsapp:datosExpediente
-  methods: [POST]
-  requirements:
-    id: '\d+'
-
-api_datos_expediente_prueba:
-  path: /API/datos_expediente_prueba/{id}
-  controller: AppBundle:Whatsapp:datosExpedientePrueba
-  methods: [POST]
-  requirements:
-    id: '\d+'
-
-api_datos_expediente_fase1:
-  path: /API/datos_expediente_fase/{id}
-  controller: AppBundle:Whatsapp:obtenerDatosFase1Prueba
-  methods: [POST]
-  requirements:
-    id: '\d+'
+#auto_whatsapp:
+#  path: /Admin/Lista/AutoWhatsApp
+#  controller: AppBundle:Whatsapp:autoWhatsapp
+#
+#mi_conexion_whatsapp:
+#  path: /Conexion/WhatsApp
+#  controller: AppBundle:Whatsapp:miConexionWhatsapp
+#
+#agregar_modificar_conexion:
+#  path: /Admin/nueva-conexion
+#  controller: AppBundle:Whatsapp:agregarModificarConexion
+#  defaults: {id: null}
+#
+#editar_conexion:
+#  path: /Admin/AutoWhatsApp/editar/{id}
+#  controller: AppBundle:Whatsapp:editarConexion
+#  requirements:
+#    id: '\d+'
+#
+#eliminar_conexion:
+#  path: /Admin/AutoWhatsApp/eliminar/{id}
+#  controller: AppBundle:Whatsapp:eliminarConexion
+#  methods: [POST, DELETE]
+#  requirements:
+#    id: '\d+'
+#
+#api_chat_gestor:
+#  path: /API/Gestor
+#  controller: AppBundle:Whatsapp:gestor
+#  methods: [GET]
+#
+#ejecutar_consulta_sql:
+#  path: /API/EjecutarSQL
+#  controller: AppBundle:Whatsapp:ejecutarConsultaSQL
+#  methods: [POST]
+#
+#api_chat_create:
+#  path: /API/Create
+#  controller: AppBundle:Whatsapp:create
+#  methods: [POST]
+#
+#api_get_whatsapp_messages:
+#  path: /admin/WhatsApp/messages/{id}
+#  controller: AppBundle:Whatsapp:getMessages
+#  methods: [GET]
+#  requirements:
+#    id: '\d+'
+#
+#api_get_expedientes_con_mensajes:
+#  path: /admin/WhatsApp/expedientes-con-mensajes
+#  controller: AppBundle:Whatsapp:getExpedientesConMensajes
+#  methods: [GET]
+#api_send_whatsapp_message:
+#  path: /admin/WhatsApp/send-message
+#  controller: AppBundle:Whatsapp:sendMessage
+#  methods: [POST]
+#api_get_expediente_datos:
+#  path: /admin/WhatsApp/expediente-datos
+#  controller: AppBundle:Whatsapp:getExpedienteDatos
+#  methods: [GET]
+#
+#mis_expedientes_con_mensajes:
+#  path: /admin/WhatsApp/mis-expedientes-con-mensajes
+#  controller: AppBundle:Whatsapp:getMisExpedientesConMensajes
+#  methods: [GET]
+#
+#mis_logs:
+#  path: /API/logs
+#  controller: AppBundle:Whatsapp:misLogs
+#  methods: [GET]
+#
+#api_datos_expediente:
+#  path: /API/datos_expediente/{id}
+#  controller: AppBundle:Whatsapp:datosExpediente
+#  methods: [POST]
+#  requirements:
+#    id: '\d+'
+#
+#api_datos_expediente_fase1:
+#  path: /API/datos_expediente_fase/{id}
+#  controller: AppBundle:Whatsapp:obtenerDatosFase1Prueba
+#  methods: [POST]
+#  requirements:
+#    id: '\d+'
 
 api_prueba:
   path: /AJAX/prueba/{id}
@@ -753,70 +749,14 @@ cargar_consolidado:
   requirements:
     idExpediente: '\d+'
 
-procesar_excel_ia:
-  path: /AJAX/procesar-excel-ia
-  controller: AppBundle:LectorDocumentos:procesarExcelIA
-  methods: [POST]
-
-ia_config_index:
-  path: /Admin/Lista/IA-Proveedores
-  controller: AppBundle:IaConfig:index
-
-ia_config_new:
-  path: /Admin/Lista/IA-Proveedores/nuevo
-  controller: AppBundle:IaConfig:new
-
-ia_config_edit:
-  path: /Admin/Lista/IA-Proveedores/editar/{id}
-  controller: AppBundle:IaConfig:edit
-  requirements:
-    id: '\d+'
-
-ia_config_delete:
-  path: /Admin/Lista/IA-Proveedores/eliminar/{id}
-  controller: AppBundle:IaConfig:delete
-  methods: [POST, GET]
-  requirements:
-    id: '\d+'
-
 obtener_cliente:
   path: /admin/obtener-cliente/
   controller: AppBundle:GrupoNegociador:obtenerCliente
 
-simulador_completo:
-  path: /Simulador/Completo
-  defaults: { _controller: 'AppBundle:SimuladorViabilidad:simuladorCompleto' }
-  methods: [GET, POST]
-
-simulador_calcular_precio_maximo_ajax:
-  path: /AJAX/simulador-calcular-precio-maximo
-  defaults: { _controller: 'AppBundle:SimuladorViabilidad:calcularPrecioMaximoAjax' }
+procesar_excel_ia:
+  path: /AJAX/procesar-excel-ia
+  controller: AppBundle:LectorDocumentos:procesarExcelIA
   methods: [POST]
-
-simulador_inicio:
-  path: /Simulador/Inicio
-  defaults: { _controller: 'AppBundle:SimuladorViabilidad:inicio' }
-  methods: [GET, POST]
-
-simulador_paso1:
-  path: /Simulador/Paso1/DatosCliente
-  defaults: { _controller: 'AppBundle:SimuladorViabilidad:paso1DatosCliente' }
-  methods: [GET, POST]
-
-simulador_paso2:
-  path: /Simulador/Paso2/PrecioMaximo
-  defaults: { _controller: 'AppBundle:SimuladorViabilidad:paso2PrecioMaximo' }
-  methods: [GET, POST]
-
-simulador_paso3:
-  path: /Simulador/Paso3/CuotaGastos
-  defaults: { _controller: 'AppBundle:SimuladorViabilidad:paso3CuotaGastos' }
-  methods: [GET, POST]
-
-simulador_paso4:
-  path: /Simulador/Paso4/Riesgo
-  defaults: { _controller: 'AppBundle:SimuladorViabilidad:paso4Riesgo' }
-  methods: [GET, POST]
 
 simulador_resultado:
   path: /Simulador/Resultado
@@ -839,9 +779,45 @@ calculadora_avanzada_test_ajax:
   controller: AppBundle:SimuladorViabilidad:calculadoraAvanzadaTestAjax
   methods: [POST]
 
+simulador_completo:
+  path: /ColaboradorComercialTecnico/SimuladorViabilidad
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:simuladorCompleto' }
+  methods: [GET, POST]
+
+simulador_completo_web:
+  path: /web/simulador-viabilidad
+  controller: AppBundle:SimuladorViabilidad:simuladorCompletoWeb
+  methods: [GET, POST]
+
+simulador_calcular_precio_maximo_ajax:
+  path: /AJAX/simulador-calcular-precio-maximo
+  defaults: { _controller: 'AppBundle:SimuladorViabilidad:calcularPrecioMaximoAjax' }
+  methods: [POST]
+
+calcular_avanzada_ajax:
+  path: /AJAX/CalcularAvanzada
+  controller: AppBundle:API:calcularAvanzada
+  methods: [POST]
+
+# ===== KOMMO WEBHOOK ROUTES =====
 kommo_webhook:
   path: /API/kommo
-  controller: AppBundle:API:recibirKommoWebhook
+  controller: AppBundle:Kommo:kommoWebhook
+  methods: [POST]
+
+admin_kommo_webhooks:
+  path: /Admin/Kommo/Webhooks
+  controller: AppBundle:Kommo:adminWebhooks
+  methods: [GET]
+
+admin_kommo_limpiar:
+  path: /Admin/Kommo/Limpiar
+  controller: AppBundle:Kommo:limpiarWebhooks
+  methods: [POST]
+
+procesar_texto_para_expediente:
+  path: /API/procesar_texto_para_expediente
+  controller: AppBundle:InteligenciaArtificial:procesarTextoParaExpediente
   methods: [POST]
 
 pageNotFound:

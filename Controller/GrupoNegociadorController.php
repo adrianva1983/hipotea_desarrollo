@@ -2448,8 +2448,6 @@ class GrupoNegociadorController extends Controller
 			'expedientesRelacionados' => $expedientesPorId,
 			'camposPersonalizados' => $camposPersonalizados,
 			'sinAsignar' => false,
-			'inmobiliariasFiltradas' => $inmobiliariasFiltradas,
-			'responsablesDelDirector' => $responsablesDelDirectorInfo,
 			'clientes' => $repositorio['usuarios']->findBy(array(
 				'role' => 'ROLE_CLIENTE'
 			)),
@@ -2466,6 +2464,790 @@ class GrupoNegociadorController extends Controller
 			'formularionCancelarExpediente' => $formularionCancelarExpediente->createView()
 		));
 	}
+
+	/*public function listaExpedientes1Action(Request $request)
+	{
+		$doctrine = $this->getDoctrine();
+		$em = $doctrine->getManager();
+		$usuario = $this->getUser();
+		$roles = $usuario->getRoles();
+		$userRole = $roles[0] ?? null;
+
+		$hayParametrosEnUrl = count($request->query->all()) > 0;
+
+		// Aplicar filtro automático para DIRECTORA TÉCNICA (ID 768 = Fátima)
+		// Buscar todos los técnicos (role ROLE_TECNICO)
+		// PERO: si hay CUALQUIER parámetro en la URL, NO aplicar los filtros automáticos
+		if ($usuario->getIdUsuario() === 768000 && !$hayParametrosEnUrl) {
+			$tecnicosDelEquipo = $doctrine->getRepository(UsuarioEntidad::class)->createQueryBuilder('u')
+				->where('u.role = :role')
+				->setParameter('role', 'ROLE_TECNICO')
+				->getQuery()
+				->getResult();
+			
+			// Si hay técnicos, aplicar automáticamente el filtro
+			if (!empty($tecnicosDelEquipo)) {
+				$equipoTecnicoIds = [];
+				foreach ($tecnicosDelEquipo as $miembroTecnico) {
+					$equipoTecnicoIds[] = $miembroTecnico->getIdUsuario();
+				}
+				// Agregar también sus propios expedientes
+				$equipoTecnicoIds[] = $usuario->getIdUsuario();
+				$request->query->set('tecnicos', $equipoTecnicoIds);
+			}
+		}
+		// Aplicar filtros automáticos para DIRECTOR COMERCIAL (ID 769 = Jose Pérez)
+		// Buscar todos los usuarios que tienen asignado este director
+		// PERO: si hay CUALQUIER parámetro en la URL, NO aplicar los filtros automáticos
+
+		if ($usuario->getIdUsuario() === 769000 && !$hayParametrosEnUrl) {
+			$usuariosDelEquipo = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
+				array('idDireccionComercialAsignado' => $usuario)
+			);
+			
+			// Si tiene equipo asignado, aplicar automáticamente
+			if (!empty($usuariosDelEquipo)) {
+				$equipoIds = [];
+				foreach ($usuariosDelEquipo as $miembroEquipo) {
+					$equipoIds[] = $miembroEquipo->getIdUsuario();
+				}
+				// Agregar también sus propios expedientes
+				$equipoIds[] = $usuario->getIdUsuario();
+				$request->query->set('comerciales', $equipoIds);
+			}
+		}
+		// Inicializar variable para pasar inmobiliarias filtradas al template
+		$inmobiliariasFiltradas = [];
+		$responsablesDelDirectorInfo = []; // Array con info de responsables para debugging
+
+		// Aplicar filtros automáticos para DIRECTOR DE EXPANSIÓN (ID 1656)
+		// Buscar todos los Responsables de Zona que tienen asignado este director
+		// Filtrar por las inmobiliarias de esos responsables
+		// PERO: si hay CUALQUIER parámetro en la URL, NO aplicar los filtros automáticos
+		if ($usuario->getIdUsuario() === 1656000 && !$hayParametrosEnUrl) {
+			// Buscar responsables de zona asignados a este director
+			$responsablesDelDirector = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
+				array('idDireccionExpansionAsignado' => $usuario->getIdUsuario())
+			);
+			
+			// Si tiene responsables de zona asignados, obtener sus inmobiliarias
+			if (!empty($responsablesDelDirector)) {
+				$inmobiliariaIds = [];
+				foreach ($responsablesDelDirector as $responsable) {
+					// Guardar info del responsable
+					$responsablesDelDirectorInfo[] = [
+						'idUsuario' => $responsable->getIdUsuario(),
+						'nombre' => $responsable->getUsername(),
+						'apellidos' => $responsable->getApellidos(),
+						'idInmobiliaria' => $responsable->getIdInmobiliaria() ? $responsable->getIdInmobiliaria()->getIdInmobiliaria() : null,
+						'nombreInmobiliaria' => $responsable->getIdInmobiliaria() ? $responsable->getIdInmobiliaria()->getNombre() : 'Sin inmobiliaria'
+					];
+					
+					// Buscar inmobiliarias donde este responsable es el idResponsableZona
+					$inmobiliariasDelResponsable = $doctrine->getRepository(InmobiliariaEntidad::class)->findBy(
+						array('idResponsableZona' => $responsable)
+					);
+					
+					foreach ($inmobiliariasDelResponsable as $inmobiliaria) {
+						$inmobiliariaIds[] = $inmobiliaria->getIdInmobiliaria();
+					}
+				}
+				// Obtener también las inmobiliarias donde el director está asignado como comercial
+				$inmobiliariasComercial = $doctrine->getRepository(InmobiliariaEntidad::class)->findBy(
+					array('idComercial' => $usuario)
+				);
+				
+				foreach ($inmobiliariasComercial as $inmoComercial) {
+					$inmobiliariaIds[] = $inmoComercial->getIdInmobiliaria();
+					error_log('  Inmobiliaria (comercial asignado): ' . $inmoComercial->getNombre());
+				}
+				
+				// Aplicar filtro de inmobiliarias
+				if (!empty($inmobiliariaIds)) {
+					$inmobiliariasFiltradas = array_unique($inmobiliariaIds); // Eliminar duplicados
+					$request->query->set('inmobiliarias', $inmobiliariasFiltradas);
+					error_log('Inmobiliarias filtradas asignadas: ' . implode(', ', $inmobiliariasFiltradas));
+				}
+			}
+		}
+
+		
+		// Inicializar repositorios
+		$repositorio['expedientes'] = $doctrine->getRepository(ExpedienteEntidad::class);
+		$repositorio['usuarios'] = $doctrine->getRepository(UsuarioEntidad::class);
+		$repositorio['inmobiliarias'] = $doctrine->getRepository(InmobiliariaEntidad::class);
+		$repositorio['oficinas'] = $doctrine->getRepository(OficinaEntidad::class);
+		$repositorio['camposHito'] = $doctrine->getRepository(CampoHitoEntidad::class);
+		$repositorio['camposHitoExpediente'] = $doctrine->getRepository(CampoHitoExpedienteEntidad::class);
+		$repositorio['opcionesCampo'] = $doctrine->getRepository(OpcionesCampoEntidad::class);
+		$repositorio['vistaExpedientesRelacionados'] = $doctrine->getRepository(VistaExpedientesRelacionados::class);
+		
+		// Cargar listas para los filtros
+		$clientes = [];
+		$comerciales = [];
+		$tecnicos = [];
+		$colaboradores = [];
+		$inmobiliarias = [];
+		$oficinas = [];
+		$inmobiliariesResponsable = []; // Para RESPONSABLE_ZONA
+		
+		// Solo cargar filtros si no es ROLE_CLIENTE ni ROLE_COLABORADOR
+		if ($userRole !== 'ROLE_CLIENTE' && $userRole !== 'ROLE_COLABORADOR') {
+			
+			// Cargar inmobiliarias según el rol
+			if ($userRole === 'ROLE_JEFE_INMOBILIARIA' || $userRole === 'ROLE_JEFE_OFICINA') {
+				// Solo su inmobiliaria
+				$inmobiliarias = [$usuario->getIdInmobiliaria()];
+			} elseif ($userRole === 'ROLE_RESPONSABLE_ZONA') {
+				// Solo sus inmobiliarias asignadas
+				$inmobiliariesResponsableCollection = $repositorio['inmobiliarias']->matching(
+					Criteria::create()->where(Criteria::expr()->eq('idResponsableZona', $usuario))
+				);
+				$inmobiliariesResponsable = $inmobiliariesResponsableCollection->toArray();
+				$inmobiliarias = $inmobiliariesResponsable;
+			} else {
+				// Todos los demás roles: todas las inmobiliarias
+				$inmobiliarias = $repositorio['inmobiliarias']->findAll();
+			}
+			
+			// Cargar clientes según el rol
+			// Los clientes no tienen idInmobiliaria, así que los obtenemos desde los expedientes
+			if ($userRole === 'ROLE_JEFE_INMOBILIARIA') {
+				// Obtener usuarios de su inmobiliaria para filtrar expedientes
+				$idNuloInmobiliaria = (new InmobiliariaEntidad())->setIdInmobiliaria(0);
+				$usuariosInmobiliaria = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('idInmobiliaria', $usuario->getIdInmobiliaria() ?: $idNuloInmobiliaria))
+					->andWhere(Criteria::expr()->orX(
+						Criteria::expr()->gte('fechaCaducidad', new DateTime()),
+						Criteria::expr()->isNull('fechaCaducidad')
+					))
+					->andWhere(Criteria::expr()->eq('estado', true))
+				)->toArray();
+				
+				// Obtener expedientes de su inmobiliaria
+				$expedientesInmobiliaria = $repositorio['expedientes']->matching(Criteria::create()
+					->where(Criteria::expr()->orX(
+						Criteria::expr()->in('idCliente', $usuariosInmobiliaria),
+						Criteria::expr()->in('idComercial', $usuariosInmobiliaria),
+						Criteria::expr()->in('idTecnico', $usuariosInmobiliaria),
+						Criteria::expr()->in('idColaborador', $usuariosInmobiliaria)
+					))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+				)->toArray();
+				
+				// Extraer clientes únicos de esos expedientes
+				$clientesIds = [];
+				foreach ($expedientesInmobiliaria as $exp) {
+					if ($exp->getIdCliente() && $exp->getIdCliente()->getRole() === 'ROLE_CLIENTE') {
+						$clientesIds[$exp->getIdCliente()->getIdUsuario()] = $exp->getIdCliente();
+					}
+				}
+				$clientes = array_values($clientesIds);
+				usort($clientes, function($a, $b) {
+					return strcmp($a->getApellidos(), $b->getApellidos());
+				});
+			} elseif ($userRole === 'ROLE_JEFE_OFICINA') {
+				// Obtener usuarios de su oficina para filtrar expedientes
+				$usuariosOficina = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('idOficina', $usuario->getIdOficina()))
+					->andWhere(Criteria::expr()->orX(
+						Criteria::expr()->gte('fechaCaducidad', new DateTime()),
+						Criteria::expr()->isNull('fechaCaducidad')
+					))
+					->andWhere(Criteria::expr()->eq('estado', true))
+				)->toArray();
+				
+				// Obtener expedientes de su oficina
+				$expedientesOficina = $repositorio['expedientes']->matching(Criteria::create()
+					->where(Criteria::expr()->orX(
+						Criteria::expr()->in('idCliente', $usuariosOficina),
+						Criteria::expr()->in('idComercial', $usuariosOficina),
+						Criteria::expr()->in('idTecnico', $usuariosOficina),
+						Criteria::expr()->in('idColaborador', $usuariosOficina)
+					))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+				)->toArray();
+				
+				// Extraer clientes únicos de esos expedientes
+				$clientesIds = [];
+				foreach ($expedientesOficina as $exp) {
+					if ($exp->getIdCliente() && $exp->getIdCliente()->getRole() === 'ROLE_CLIENTE' && $exp->getIdCliente()->getEstado() == 1) {
+						$clientesIds[$exp->getIdCliente()->getIdUsuario()] = $exp->getIdCliente();
+					}
+				}
+				
+				// Agregar también clientes directos de su oficina (activos)
+				$clientesDirectosOficina = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('role', 'ROLE_CLIENTE'))
+					->andWhere(Criteria::expr()->eq('idOficina', $usuario->getIdOficina()))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+				)->toArray();
+				foreach ($clientesDirectosOficina as $cliente) {
+					$clientesIds[$cliente->getIdUsuario()] = $cliente;
+				}
+				
+				$clientes = array_values($clientesIds);
+				usort($clientes, function($a, $b) {
+					return strcmp($a->getApellidos(), $b->getApellidos());
+				});
+			} elseif ($userRole === 'ROLE_RESPONSABLE_ZONA' && count($inmobiliariesResponsable) > 0) {
+				// Obtener clientes directos de sus inmobiliarias asignadas (activos)
+				$clientesInmobiliarias = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('role', 'ROLE_CLIENTE'))
+					->andWhere(Criteria::expr()->in('idInmobiliaria', $inmobiliariesResponsable))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+				)->toArray();
+				
+				// Obtener usuarios de sus inmobiliarias asignadas
+				$usuariosInmobiliaria = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->in('idInmobiliaria', $inmobiliariesResponsable))
+					->andWhere(Criteria::expr()->orX(
+						Criteria::expr()->gte('fechaCaducidad', new DateTime()),
+						Criteria::expr()->isNull('fechaCaducidad')
+					))
+					->andWhere(Criteria::expr()->eq('estado', true))
+				)->toArray();
+				
+				// Obtener expedientes de esas inmobiliarias
+				$expedientesInmobiliaria = $repositorio['expedientes']->matching(Criteria::create()
+					->where(Criteria::expr()->orX(
+						Criteria::expr()->in('idCliente', $usuariosInmobiliaria),
+						Criteria::expr()->in('idComercial', $usuariosInmobiliaria),
+						Criteria::expr()->in('idTecnico', $usuariosInmobiliaria),
+						Criteria::expr()->in('idColaborador', $usuariosInmobiliaria)
+					))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+				)->toArray();
+				
+				// Extraer clientes únicos de esos expedientes (solo activos)
+				$clientesIds = [];
+				foreach ($expedientesInmobiliaria as $exp) {
+					if ($exp->getIdCliente() && $exp->getIdCliente()->getRole() === 'ROLE_CLIENTE' && $exp->getIdCliente()->getEstado() == 1) {
+						$clientesIds[$exp->getIdCliente()->getIdUsuario()] = $exp->getIdCliente();
+					}
+				}
+				
+				// Combinar clientes directos + clientes de expedientes
+				$clientesCombinados = [];
+				foreach ($clientesInmobiliarias as $cliente) {
+					$clientesCombinados[$cliente->getIdUsuario()] = $cliente;
+				}
+				foreach ($clientesIds as $cliente) {
+					$clientesCombinados[$cliente->getIdUsuario()] = $cliente;
+				}
+				
+				$clientes = array_values($clientesCombinados);
+				usort($clientes, function($a, $b) {
+					return strcmp($a->getApellidos(), $b->getApellidos());
+				});
+			} else {
+				// Todos los clientes activos
+				$clientes = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('role', 'ROLE_CLIENTE'))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+					->orderBy(['apellidos' => 'ASC'])
+				)->toArray();
+			}
+			
+			// Cargar colaboradores según el rol
+			if ($userRole === 'ROLE_JEFE_INMOBILIARIA') {
+				// Solo colaboradores de su inmobiliaria
+				$colaboradores = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('role', 'ROLE_COLABORADOR'))
+					->andWhere(Criteria::expr()->eq('idInmobiliaria', $usuario->getIdInmobiliaria()))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+					->orderBy(['apellidos' => 'ASC'])
+				)->toArray();
+			} elseif ($userRole === 'ROLE_JEFE_OFICINA') {
+				// Solo colaboradores de su oficina
+				$colaboradores = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('role', 'ROLE_COLABORADOR'))
+					->andWhere(Criteria::expr()->eq('idOficina', $usuario->getIdOficina()))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+					->orderBy(['apellidos' => 'ASC'])
+				)->toArray();
+			} elseif ($userRole === 'ROLE_RESPONSABLE_ZONA' && count($inmobiliariesResponsable) > 0) {
+				// Solo colaboradores de sus inmobiliarias asignadas
+				$colaboradores = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('role', 'ROLE_COLABORADOR'))
+					->andWhere(Criteria::expr()->in('idInmobiliaria', $inmobiliariesResponsable))
+					->andWhere(Criteria::expr()->eq('estado', 1))
+					->orderBy(['apellidos' => 'ASC'])
+				)->toArray();
+			} else {
+				// Todos los colaboradores activos
+				$colaboradores = $repositorio['usuarios']->findBy(
+					array('role' => 'ROLE_COLABORADOR', 'estado' => 1), 
+					array('apellidos' => 'ASC')
+				);
+			}
+			
+			// Cargar comerciales y técnicos solo para roles permitidos
+			if ($userRole === 'ROLE_ADMIN' || $userRole === 'ROLE_RESPONSABLE_ZONA' || $userRole === 'ROLE_COMERCIAL' || $userRole === 'ROLE_TECNICO') {
+				if ($userRole === 'ROLE_RESPONSABLE_ZONA' && count($inmobiliariesResponsable) > 0) {
+					// Solo comerciales de sus inmobiliarias asignadas
+					$comerciales = $repositorio['usuarios']->matching(Criteria::create()
+						->where(Criteria::expr()->eq('role', 'ROLE_COMERCIAL'))
+						->andWhere(Criteria::expr()->in('idInmobiliaria', $inmobiliariesResponsable))
+						->andWhere(Criteria::expr()->eq('estado', 1))
+						->orderBy(['apellidos' => 'ASC'])
+					)->toArray();
+					
+					// Solo técnicos de sus inmobiliarias asignadas
+					$tecnicos = $repositorio['usuarios']->matching(Criteria::create()
+						->where(Criteria::expr()->eq('role', 'ROLE_TECNICO'))
+						->andWhere(Criteria::expr()->in('idInmobiliaria', $inmobiliariesResponsable))
+						->andWhere(Criteria::expr()->eq('estado', 1))
+						->orderBy(['apellidos' => 'ASC'])
+					)->toArray();
+				} else {
+					// Todos los comerciales y técnicos activos
+					$comerciales = $repositorio['usuarios']->findBy(
+						array('role' => 'ROLE_COMERCIAL', 'estado' => 1), 
+						array('apellidos' => 'ASC')
+					);
+					
+					$tecnicos = $repositorio['usuarios']->findBy(
+						array('role' => 'ROLE_TECNICO', 'estado' => 1), 
+						array('apellidos' => 'ASC')
+					);
+				}
+			}
+			
+			// Cargar oficinas según el rol
+			if ($userRole === 'ROLE_JEFE_INMOBILIARIA' && $usuario->getIdInmobiliaria()) {
+				// Solo oficinas de su inmobiliaria
+				$oficinas = $repositorio['oficinas']->findBy(array(
+					'activa' => 1,
+					'idInmobiliaria' => $usuario->getIdInmobiliaria()
+				));
+			} elseif ($userRole === 'ROLE_JEFE_OFICINA' && $usuario->getIdOficina() && $usuario->getIdOficina()->getIdInmobiliaria()) {
+				// Solo oficinas de su inmobiliaria
+				$oficinas = $repositorio['oficinas']->findBy(array(
+					'activa' => 1,
+					'idInmobiliaria' => $usuario->getIdOficina()->getIdInmobiliaria()
+				));
+			} elseif ($userRole === 'ROLE_RESPONSABLE_ZONA' && count($inmobiliariesResponsable) > 0) {
+				// Solo oficinas de sus inmobiliarias asignadas
+				$oficinas = $repositorio['oficinas']->matching(Criteria::create()
+					->where(Criteria::expr()->in('idInmobiliaria', $inmobiliariesResponsable))
+					->andWhere(Criteria::expr()->eq('activa', 1))
+				)->toArray();
+			} else {
+				// Todas las oficinas activas
+				$oficinas = $repositorio['oficinas']->findBy(array('activa' => 1));
+			}
+		}
+		
+		// Para ROLE_JEFE_OFICINA, definir la oficina preseleccionada
+		$oficinaPreseleccionada = null;
+		if ($userRole === 'ROLE_JEFE_OFICINA' && $usuario->getIdOficina()) {
+			$oficinaPorDefecto = $usuario->getIdOficina()->getIdOficina();
+			
+			// Solo aplicar el filtro automático en la primera carga
+			// Si hay otros parámetros de filtro/búsqueda pero no oficinas, el usuario lo limpió intencionalmente
+			$hayOtrosFiltros = $request->query->has('clientes') || 
+							   $request->query->has('colaboradores') || 
+							   $request->query->has('comerciales') || 
+							   $request->query->has('tecnicos') || 
+							   $request->query->has('inmobiliarias') || 
+							   $request->query->has('buscar') ||
+							   $request->query->has('limit') ||
+							   $request->query->has('page');
+			
+			if ($request->query->get('oficinas') === null && !$hayOtrosFiltros) {
+				$request->query->set('oficinas', [$oficinaPorDefecto]);
+				// Solo establecer oficinaPreseleccionada cuando realmente se aplica el filtro automático
+				$oficinaPreseleccionada = $oficinaPorDefecto;
+			}
+		}
+		
+		// Construir la consulta de expedientes según el rol
+		$qb = $repositorio['expedientes']->createQueryBuilder('e');
+		
+		switch ($userRole) {
+			case 'ROLE_JEFE_INMOBILIARIA':
+				// Ver todos los expedientes de su inmobiliaria
+				$idNuloInmobiliaria = (new InmobiliariaEntidad())->setIdInmobiliaria(0);
+				$usuariosInmobiliaria = $repositorio['usuarios']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('idInmobiliaria', $this->getUser()->getIdInmobiliaria() ?: $idNuloInmobiliaria))
+					->andWhere(Criteria::expr()->orX(
+						Criteria::expr()->gte('fechaCaducidad', new DateTime()),
+						Criteria::expr()->isNull('fechaCaducidad')
+					))
+					->andWhere(Criteria::expr()->eq('estado', true))
+				)->toArray();
+				
+				$qb->where($qb->expr()->orX(
+					$qb->expr()->in('e.idCliente', ':usuarios'),
+					$qb->expr()->in('e.idComercial', ':usuarios'),
+					$qb->expr()->in('e.idTecnico', ':usuarios'),
+					$qb->expr()->in('e.idColaborador', ':usuarios')
+				))
+				->setParameter('usuarios', $usuariosInmobiliaria);
+				
+				// Aplicar filtro de estado
+				if ($request->get('estado') !== null && $request->get('estado') !== '') {
+					$qb->andWhere('e.estado = :estadoFiltro')
+						->setParameter('estadoFiltro', (int)$request->get('estado'));
+				} else {
+					// Comportamiento por defecto: mostrar solo estado > 0 (activos y firmados)
+					$qb->andWhere('e.estado > 0');
+				}
+				break;
+
+			case 'ROLE_JEFE_OFICINA':
+				// Ver solo los expedientes de su oficina
+				if ($this->getUser()->getIdOficina()) {
+					$usuariosOficina = $repositorio['usuarios']->matching(Criteria::create()
+						->where(Criteria::expr()->eq('idOficina', $this->getUser()->getIdOficina()))
+						->andWhere(Criteria::expr()->orX(
+							Criteria::expr()->gte('fechaCaducidad', new DateTime()),
+							Criteria::expr()->isNull('fechaCaducidad')
+						))
+						->andWhere(Criteria::expr()->eq('estado', true))
+					)->toArray();
+					
+					$qb->where($qb->expr()->orX(
+						$qb->expr()->in('e.idCliente', ':usuarios'),
+						$qb->expr()->in('e.idComercial', ':usuarios'),
+						$qb->expr()->in('e.idTecnico', ':usuarios'),
+						$qb->expr()->in('e.idColaborador', ':usuarios')
+					))
+					->setParameter('usuarios', $usuariosOficina);
+				} else {
+					// Si no tiene oficina asignada, no mostrar expedientes
+					$qb->where('1 = 0');
+				}
+				
+				// Aplicar filtro de estado
+				if ($request->get('estado') !== null && $request->get('estado') !== '') {
+					$qb->andWhere('e.estado = :estadoFiltro')
+						->setParameter('estadoFiltro', (int)$request->get('estado'));
+				} else {
+					// Comportamiento por defecto: mostrar solo estado > 0 (activos y firmados)
+					$qb->andWhere('e.estado > 0');
+				}
+				break;
+				
+			case 'ROLE_COLABORADOR':
+				$qb->where('e.idColaborador = :usuario')
+					->setParameter('usuario', $this->getUser());
+				
+				// Aplicar filtro de estado
+				if ($request->get('estado') !== null && $request->get('estado') !== '') {
+					$qb->andWhere('e.estado = :estadoFiltro')
+						->setParameter('estadoFiltro', (int)$request->get('estado'));
+				} else {
+					// Comportamiento por defecto: mostrar solo estado > 0 (activos y firmados)
+					$qb->andWhere('e.estado > 0');
+				}
+				break;
+				
+			case 'ROLE_RESPONSABLE_ZONA':
+				// Obtener inmobiliarias del responsable de zona
+				$inmobiliariesResponsableCollection = $repositorio['inmobiliarias']->matching(
+					Criteria::create()->where(Criteria::expr()->eq('idResponsableZona', $this->getUser()))
+				);
+				$inmobiliariesResponsable = $inmobiliariesResponsableCollection->toArray();
+				
+				if (count($inmobiliariesResponsable) > 0) {
+					$usuariosInmobiliaria = $repositorio['usuarios']->matching(Criteria::create()
+						->where(Criteria::expr()->in('idInmobiliaria', $inmobiliariesResponsable))
+						->andWhere(Criteria::expr()->orX(
+							Criteria::expr()->gte('fechaCaducidad', new DateTime()),
+							Criteria::expr()->isNull('fechaCaducidad')
+						))
+						->andWhere(Criteria::expr()->eq('estado', true))
+					)->toArray();
+					
+					if (count($usuariosInmobiliaria) > 0) {
+						$qb->where($qb->expr()->orX(
+							$qb->expr()->in('e.idCliente', ':usuarios'),
+							$qb->expr()->in('e.idComercial', ':usuarios'),
+							$qb->expr()->in('e.idTecnico', ':usuarios'),
+							$qb->expr()->in('e.idColaborador', ':usuarios')
+						))
+						->setParameter('usuarios', $usuariosInmobiliaria);
+						
+						// Aplicar filtro de estado
+						if ($request->get('estado') !== null && $request->get('estado') !== '') {
+							$qb->andWhere('e.estado = :estadoFiltro')
+								->setParameter('estadoFiltro', (int)$request->get('estado'));
+						} else {
+							// Comportamiento por defecto: mostrar solo estado > 0 (activos y firmados)
+							$qb->andWhere('e.estado > 0');
+						}
+					} else {
+						$qb->where('1 = 0'); // No results
+					}
+				} else {
+					$qb->where('1 = 0'); // No results
+				}
+				break;
+				
+			case 'ROLE_CLIENTE':
+				$qb->where('e.idCliente = :usuario')
+					->setParameter('usuario', $this->getUser());
+				// Aplicar filtro de estado si se proporciona
+				if ($request->get('estado') !== null && $request->get('estado') !== '') {
+					$qb->andWhere('e.estado = :estadoFiltro')
+						->setParameter('estadoFiltro', (int)$request->get('estado'));
+				} else {
+					$qb->andWhere('e.estado > 0');
+				}
+				break;
+				
+			default:
+				// Admin u otros roles
+				// Aplicar filtro de estado si se proporciona
+				if ($request->get('estado') !== null && $request->get('estado') !== '') {
+					$qb->where('e.estado = :estadoFiltro')
+						->setParameter('estadoFiltro', (int)$request->get('estado'));
+				} else {
+					// Comportamiento por defecto: mostrar solo estado > 0 (activos y firmados)
+					$qb->where('e.estado > 0');
+				}
+				break;
+		}
+		
+		// Aplicar filtros de búsqueda (SELECT multi-select)
+		if ($request->get('expediente')) {
+			$qb->andWhere('e.idExpediente = :expedienteFiltro')
+				->setParameter('expedienteFiltro', $request->get('expediente'));
+		}
+		
+		if ($request->get('clientes') && is_array($request->get('clientes')) && count($request->get('clientes')) > 0) {
+			$qb->andWhere('e.idCliente IN (:clientesFiltro)')
+				->setParameter('clientesFiltro', $request->get('clientes'));
+		}
+		
+		if ($request->get('comerciales') && is_array($request->get('comerciales')) && count($request->get('comerciales')) > 0) {
+			$qb->andWhere('e.idComercial IN (:comercialesFiltro)')
+				->setParameter('comercialesFiltro', $request->get('comerciales'));
+		}
+		
+		if ($request->get('tecnicos') && is_array($request->get('tecnicos')) && count($request->get('tecnicos')) > 0) {
+			$qb->andWhere('e.idTecnico IN (:tecnicosFiltro)')
+				->setParameter('tecnicosFiltro', $request->get('tecnicos'));
+		}
+		
+		if ($request->get('colaboradores') && is_array($request->get('colaboradores')) && count($request->get('colaboradores')) > 0) {
+			$qb->andWhere('e.idColaborador IN (:colaboradoresFiltro)')
+				->setParameter('colaboradoresFiltro', $request->get('colaboradores'));
+		}
+		
+		if ($request->get('inmobiliarias') && is_array($request->get('inmobiliarias')) && count($request->get('inmobiliarias')) > 0) {
+			// Buscar expedientes donde cualquier usuario asociado pertenezca a alguna de las inmobiliarias seleccionadas
+			$qb->leftJoin('e.idCliente', 'cli')
+				->leftJoin('e.idComercial', 'com')
+				->leftJoin('e.idTecnico', 'tec')
+				->leftJoin('e.idColaborador', 'col')
+				->andWhere($qb->expr()->orX(
+					$qb->expr()->in('cli.idInmobiliaria', ':inmobiliarias'),
+					$qb->expr()->in('com.idInmobiliaria', ':inmobiliarias'),
+					$qb->expr()->in('tec.idInmobiliaria', ':inmobiliarias'),
+					$qb->expr()->in('col.idInmobiliaria', ':inmobiliarias')
+				))
+				->setParameter('inmobiliarias', $request->get('inmobiliarias'));
+		}
+		
+		if ($request->get('oficinas') && is_array($request->get('oficinas')) && count($request->get('oficinas')) > 0) {
+			// Buscar expedientes donde cualquier usuario asociado pertenezca a alguna de las oficinas seleccionadas
+			$qb->leftJoin('e.idCliente', 'cliOf')
+				->leftJoin('e.idComercial', 'comOf')
+				->leftJoin('e.idTecnico', 'tecOf')
+				->leftJoin('e.idColaborador', 'colOf')
+				->andWhere($qb->expr()->orX(
+					$qb->expr()->in('cliOf.idOficina', ':oficinas'),
+					$qb->expr()->in('comOf.idOficina', ':oficinas'),
+					$qb->expr()->in('tecOf.idOficina', ':oficinas'),
+					$qb->expr()->in('colOf.idOficina', ':oficinas')
+				))
+				->setParameter('oficinas', $request->get('oficinas'));
+		}
+		
+		// Filtro de búsqueda global
+		if ($request->get('buscar')) {
+			$buscar = $request->get('buscar');
+			
+			// Verificar si ya existen los joins, si no, agregarlos
+			$aliases = $qb->getAllAliases();
+			if (!in_array('buscarCli', $aliases)) {
+				$qb->leftJoin('e.idCliente', 'buscarCli');
+			}
+			if (!in_array('buscarCom', $aliases)) {
+				$qb->leftJoin('e.idComercial', 'buscarCom');
+			}
+			if (!in_array('buscarTec', $aliases)) {
+				$qb->leftJoin('e.idTecnico', 'buscarTec');
+			}
+			if (!in_array('buscarCol', $aliases)) {
+				$qb->leftJoin('e.idColaborador', 'buscarCol');
+			}
+			
+			// Joins para campos personalizados y relaciones
+			$qb->leftJoin('buscarCli.idInmobiliaria', 'buscarInmoCli')
+				->leftJoin('buscarCli.idOficina', 'buscarOfCli')
+				->leftJoin('buscarCom.idInmobiliaria', 'buscarInmoCom')
+				->leftJoin('buscarCom.idOficina', 'buscarOfCom')
+				->leftJoin('buscarTec.idInmobiliaria', 'buscarInmoTec')
+				->leftJoin('buscarTec.idOficina', 'buscarOfTec')
+				->leftJoin('buscarCol.idInmobiliaria', 'buscarInmoCol')
+				->leftJoin('buscarCol.idOficina', 'buscarOfCol')
+				->leftJoin('e.idFaseActual', 'buscarFase');
+			
+			$qb->andWhere(
+				$qb->expr()->orX(
+					$qb->expr()->like('CONCAT(e.idExpediente, \'\')', ':buscar'),
+					$qb->expr()->like('e.vivienda', ':buscar'),
+					$qb->expr()->like('buscarCli.apellidos', ':buscar'),
+					$qb->expr()->like('buscarCli.nombre', ':buscar'),
+					$qb->expr()->like('buscarCom.apellidos', ':buscar'),
+					$qb->expr()->like('buscarCom.nombre', ':buscar'),
+					$qb->expr()->like('buscarTec.apellidos', ':buscar'),
+					$qb->expr()->like('buscarTec.nombre', ':buscar'),
+					$qb->expr()->like('buscarCol.apellidos', ':buscar'),
+					$qb->expr()->like('buscarCol.nombre', ':buscar'),
+					$qb->expr()->like('buscarInmoCli.nombre', ':buscar'),
+					$qb->expr()->like('buscarInmoCom.nombre', ':buscar'),
+					$qb->expr()->like('buscarInmoTec.nombre', ':buscar'),
+					$qb->expr()->like('buscarInmoCol.nombre', ':buscar'),
+					$qb->expr()->like('buscarOfCli.nombre', ':buscar'),
+					$qb->expr()->like('buscarOfCom.nombre', ':buscar'),
+					$qb->expr()->like('buscarOfTec.nombre', ':buscar'),
+					$qb->expr()->like('buscarOfCol.nombre', ':buscar'),
+					$qb->expr()->like('buscarFase.nombre', ':buscar')
+				)
+			)->setParameter('buscar', '%' . $buscar . '%');
+			
+			// Para buscar en campos personalizados (email, teléfono, origen), necesitamos una subconsulta
+			// ya que están en una tabla relacionada CampoHitoExpediente
+			$subQb = $em->createQueryBuilder();
+			$subQb->select('IDENTITY(che.idExpediente)')
+				->from('AppBundle:CampoHitoExpediente', 'che')
+				->where('che.valor LIKE :buscar')
+				->andWhere($subQb->expr()->in('IDENTITY(che.idCampoHito)', [407, 408, 673])); // email, telefono, origen
+			
+			$qb->orWhere($qb->expr()->in('e.idExpediente', $subQb->getDQL()));
+		}
+		
+		// Ordenar por ID de expediente descendente (más recientes primero)
+		$qb->orderBy('e.idExpediente', 'DESC');
+		
+		// Paginación
+		$page = $request->get('page', 1);
+		$limit = $request->get('limit', 20); // Elementos por página, por defecto 20
+		
+		// Validar que el límite sea un número válido
+		$limit = in_array($limit, [10, 20, 50, 100, 200]) ? $limit : 20;
+		
+		$query = $qb->getQuery();
+		$totalExpedientes = count($qb->getQuery()->getResult());
+		$totalPages = ceil($totalExpedientes / $limit);
+		
+		$query->setFirstResult(($page - 1) * $limit)
+			->setMaxResults($limit);
+		
+		$expedientes = $query->getResult();
+		
+		// Crear formularios necesarios para los modales
+		$formularioNotificacionExpediente = $this->createForm(NotificacionExpediente::class);
+		$formularionCancelarExpediente = $this->createForm(CancelarExpediente::class);
+		
+		// Obtener campos personalizados (email, teléfono, origen) SOLO de los expedientes de esta página
+		$camposPersonalizados = [];
+		
+		if (count($expedientes) > 0) {
+			// Obtener IDs de los expedientes de la página actual
+			$idsExpedientes = array_map(function($exp) { return $exp->getIdExpediente(); }, $expedientes);
+			
+			// Inicializar array para todos los expedientes
+			foreach ($idsExpedientes as $idExp) {
+				$camposPersonalizados[$idExp] = ['email' => '', 'telefono' => '', 'origen' => ''];
+			}
+			
+			// Buscar campos de hito solo para estos expedientes
+			$campoHitoEmail = $repositorio['camposHito']->find(407);
+			$campoHitoTelefono = $repositorio['camposHito']->find(408);
+			$campoHitoOrigen = $repositorio['camposHito']->find(673);
+
+			if ($campoHitoEmail) {
+				$campoExpedienteEmails = $repositorio['camposHitoExpediente']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('idCampoHito', $campoHitoEmail))
+					->andWhere(Criteria::expr()->in('idExpediente', $expedientes))
+				);
+				foreach ($campoExpedienteEmails as $campoExpedienteEmail) {
+					$idExp = $campoExpedienteEmail->getIdExpediente()->getIdExpediente();
+					if (isset($camposPersonalizados[$idExp])) {
+						$camposPersonalizados[$idExp]['email'] = $campoExpedienteEmail->getValor();
+					}
+				}
+			}
+			
+			if ($campoHitoTelefono) {
+				$campoExpedienteTelefonos = $repositorio['camposHitoExpediente']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('idCampoHito', $campoHitoTelefono))
+					->andWhere(Criteria::expr()->in('idExpediente', $expedientes))
+				);
+				foreach ($campoExpedienteTelefonos as $campoExpedienteTelefono) {
+					$idExp = $campoExpedienteTelefono->getIdExpediente()->getIdExpediente();
+					if (isset($camposPersonalizados[$idExp])) {
+						$camposPersonalizados[$idExp]['telefono'] = $campoExpedienteTelefono->getValor();
+					}
+				}
+			}
+			
+			if ($campoHitoOrigen) {
+				$opcionesOrigenes = $repositorio['opcionesCampo']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('idCampoHito', $campoHitoOrigen))
+				);
+				$campoExpedienteOrigenes = $repositorio['camposHitoExpediente']->matching(Criteria::create()
+					->where(Criteria::expr()->eq('idCampoHito', $campoHitoOrigen))
+					->andWhere(Criteria::expr()->in('idExpediente', $expedientes))
+				);
+				foreach ($campoExpedienteOrigenes as $campoExpedienteOrigen) {
+					$idExp = $campoExpedienteOrigen->getIdExpediente()->getIdExpediente();
+					if (isset($camposPersonalizados[$idExp])) {
+						foreach ($opcionesOrigenes as $opcionOrigen) {
+							if ($campoExpedienteOrigen->getIdOpcionesCampo() == $opcionOrigen->getValor()) {
+								$camposPersonalizados[$idExp]['origen'] = $opcionOrigen->getValor();
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// Obtener expedientes relacionados
+		$expedientesRelacionados = $repositorio['vistaExpedientesRelacionados']->findAll();
+		$expedientesPorId = [];
+		foreach ($expedientesRelacionados as $expediente) {
+			$expedientesPorId[$expediente->getIdExpediente()] = $expediente->getIdsExpedientesRelacionados();
+		}
+		
+		return $this->render('@App/Backoffice/Lista/ExpedientePaginacion.html.twig', [
+			'titulo' => 'Lista de expedientes',
+			'expedientes' => $expedientes,
+			'expedientesRelacionados' => $expedientesPorId,
+			'currentPage' => $page,
+			'totalPages' => $totalPages,
+			'totalExpedientes' => $totalExpedientes,
+			'limit' => $limit,
+			'camposPersonalizados' => $camposPersonalizados,
+			'formularioNotificacionExpediente' => $formularioNotificacionExpediente->createView(),
+			'formularionCancelarExpediente' => $formularionCancelarExpediente->createView(),
+			'sinAsignar' => false,
+			'clientes' => $clientes,
+			'comerciales' => $comerciales,
+			'tecnicos' => $tecnicos,
+			'colaboradores' => $colaboradores,
+			'inmobiliarias' => $inmobiliarias,
+			'oficinas' => $oficinas,
+			'oficinaPreseleccionada' => $oficinaPreseleccionada
+		]);
+	}*/
 
 	public function listaExpedientes1Action(Request $request)
 	{
@@ -3447,18 +4229,11 @@ class GrupoNegociadorController extends Controller
 		// dump($camposPersonalizados);
 		// die;
 		
-		// Obtener inmobiliarias filtradas si es director de expansión
-		$inmobiliariasFiltradas = [];
-		if ($usuario->getIdUsuario() === 1656) {
-			$inmobiliariasFiltradas = $request->query->get('inmobiliarias', []);
-		}
-		
 		return $this->render('@App/Backoffice/Lista/Expediente.html.twig', array(
 			'titulo' => 'Lista de expedientes',
 			'expedientes' => $expedientes,
 			'camposPersonalizados' => $camposPersonalizados,
 			'sinAsignar' => false,
-			'inmobiliariasFiltradas' => $inmobiliariasFiltradas,
 			'clientes' => $repositorio['usuarios']->findBy(array(
 				'role' => 'ROLE_CLIENTE'
 			)),
@@ -3606,19 +4381,12 @@ class GrupoNegociadorController extends Controller
 			$expedientesPorId[$expediente->getIdExpediente()] = $expediente->getIdsExpedientesRelacionados();
 		}
 
-		// Obtener inmobiliarias filtradas si es director de expansión
-		$inmobiliariasFiltradas = [];
-		if ($usuario->getIdUsuario() === 1656) {
-			$inmobiliariasFiltradas = $request->query->get('inmobiliarias', []);
-		}
-
 		return $this->render('@App/Backoffice/Lista/Expediente.html.twig', array(
 			'titulo' => 'Lista de expedientes',
 			'expedientes' => $expedientes,
 			'expedientesRelacionados' => $expedientesPorId,
 			'camposPersonalizados' => $camposPersonalizados,
 			'sinAsignar' => true,
-			'inmobiliariasFiltradas' => $inmobiliariasFiltradas,
 			'clientes' => $repositorio['usuarios']->findBy(array(
 				'role' => 'ROLE_CLIENTE'
 			)),
@@ -3722,7 +4490,7 @@ class GrupoNegociadorController extends Controller
 										$formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()][] = $this->get('form.factory')->createNamed('campo_hito_expediente_' . $campoHito->getIdCampoHito() . '_' . $indice, CampoHitoExpedienteFicheroFormulario::class, $campoHitoExpediente);
 										if ($request->isMethod('POST')) {
 											if (!end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->isSubmitted()) {
-												end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->submit($request->request->get(end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->getName()), false);
+												end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->submit($request->request->get(end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->getName()));
 												if (!end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->isValid() && $formulariosValidos) {
 													$formulariosValidos = false;
 												}
@@ -4634,20 +5402,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				'orden' => 'ASC'
 			));
 		}else{
-			/*$fases = $doctrine->getRepository(FaseEntidad::class)->findBy(array(), array(
-				'orden' => 'ASC'
-			));*/
 			$fases = $doctrine->getRepository(FaseEntidad::class)->findBy(array(
 				'tipo' => array(0, 1)
 			), array(
 				'orden' => 'ASC'
 			));
-			/*$fasesTMP = $doctrine->getRepository(FaseEntidad::class)->findBy(array(
-				'tipo' => 0
-			), array(
-				'orden' => 'ASC'
-			));
-			$formularioExpedienteOpciones['fasesTMP'] = $fasesTMP;*/
 		}
 		$formularioExpedienteOpciones['fases'] = $fases;
 		
@@ -5232,7 +5991,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					));
 					if ($request->isMethod('POST')/* && $faseActual === $hitoExpediente->getIdHito()->getIdFase()*/) {
 						if (!end($formulariosHitoExpediente[$hito->getIdHito()])->isSubmitted()) {
-							end($formulariosHitoExpediente[$hito->getIdHito()])->submit($request->request->get(end($formulariosHitoExpediente[$hito->getIdHito()])->getName()), false);
+							end($formulariosHitoExpediente[$hito->getIdHito()])->submit($request->request->get(end($formulariosHitoExpediente[$hito->getIdHito()])->getName()));
 							if (!end($formulariosHitoExpediente[$hito->getIdHito()])->isValid() && $formulariosValidos) {
 								$formulariosValidos = false;
 							}
@@ -5429,7 +6188,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 															));
 															if ($request->isMethod('POST')) {
 																if (!end($formulariosCampoHitoExpedienteColaboradores[$campoHito->getIdCampoHito()])->isSubmitted()) {
-																	end($formulariosCampoHitoExpedienteColaboradores[$campoHito->getIdCampoHito()])->submit($request->request->get(end($formulariosCampoHitoExpedienteColaboradores[$campoHito->getIdCampoHito()])->getName()), false);
+																	end($formulariosCampoHitoExpedienteColaboradores[$campoHito->getIdCampoHito()])->submit($request->request->get(end($formulariosCampoHitoExpedienteColaboradores[$campoHito->getIdCampoHito()])->getName()));
 																	if (!end($formulariosCampoHitoExpedienteColaboradores[$campoHito->getIdCampoHito()])->isValid() && $formulariosValidos) {
 																		$formulariosValidos = false;
 																	}
@@ -5600,7 +6359,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 														if ($request->isMethod('POST')/* && $faseActual === $campoHitoExpediente->getIdCampoHito()->getIdGrupoCamposHito()->getIdHito()->getIdFase()*/) {
 															if (!end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->isSubmitted()) {
 																end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()]);
-																($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()][$numRepeticion-1])->submit($request->request->get(($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()][$numRepeticion-1])->getName()), false);
+																($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()][$numRepeticion-1])->submit($request->request->get(($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()][$numRepeticion-1])->getName()));
 																if (!end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->isValid() && $formulariosValidos) {
 																	$formulariosValidos = false;
 																// }elseif (end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->isValid() && !$formulariosValidos) {
@@ -6323,11 +7082,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 												$imagenCorreo = "firma_base.png";
 											}
 											$subBody = '<img src="https://areaprivada.hipotea.com/uploads/'.$imagenCorreo.'"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-											Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 										}else{
 											$from = array($this->getParameter('mailer_user') => 'Hipotea');
 											$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-											Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 										}
 									}elseif($expediente->getIdTecnico() != null){
 										$mailerOk = $this->obtenerMailer($mailer,$expediente->getIdTecnico());
@@ -6339,17 +7098,17 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 												$imagenCorreo = "firma_base.png";
 											}
 											$subBody = '<img src="https://areaprivada.hipotea.com/uploads/'.$imagenCorreo.'"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-											Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 										}else{
 											$from = array($this->getParameter('mailer_user') => 'Hipotea');
 											$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-											Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 										}
 									}else{
 										$mailerOk = $this->obtenerMailer($mailer,null);
 										$from = array($this->getParameter('mailer_user') => 'Hipotea');
 										$subBody = '<img src="https://areaprivada.hipotea.com/uploads/firma_base.png"><p style="font-size:9px;color:#CCC;">En cumplimiento de la normativa de Protección de Datos, le informamos que sus datos son tratados por esta empresa con la finalidad de prestar el servicio solicitado y establecer contacto. La base legal del tratamiento es la ejecución de un contrato, interés legítimo del responsable o consentimiento del interesado. Asimismo, le indicamos que podrá ejercer sus derechos de derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos a través de nuestro correo electrónico o domicilio fiscal. De igual modo, podría interponer una reclamación ante la Autoridad de Control en www.aepd.es, mediante escrito .” Para más información, puede consultar nuestra política de privacidad en HIPOTEA.COM
-							Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
+Esta comunicación es privada y los documentos adjuntos a la misma son confidenciales y dirigidos exclusivamente a los destinatarios de los mismos, por lo que su divulgación está expresamente prohibida. Por favor, si Ud. no es uno de dichos destinatarios, sírvase notificarnos este hecho y no copie o revele su contenido a terceros por ningún medio.</p>';
 									}
 									// $from = array($this->getParameter('mailer_user') => 'Hipotea');
 									$body = $this->getUser()->getUsername() . " " . $this->getUser()->getApellidos() . " ha aportado el documento " .  $campoHitoExpediente->getIdCampoHito()->getNombre() . " que estaba esperando.";
@@ -6664,6 +7423,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				));//Recarga forzada para poder ver la imagen en el plugin Dropify
 			}
 		}
+
 		// Obtener valor del campo 707 (Activar Belender) para clientes
 		$valores_campo_707 = [];
 		try {
@@ -6700,6 +7460,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 		
 		$variablesTwig['valor_campo_707'] = $valor_campo_707;
 		$variablesTwig['valores_campo_707'] = $valores_campo_707;
+
 		// dump($variablesTwig);
 		// dump($variablesTwig['agregarModificarCampoHitoExpediente']);
 		// dump($variablesTwig['grupos_hito_expediente']);
@@ -6975,7 +7736,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 								)));
 								if ($request->isMethod('POST')) {
 									if (!end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->isSubmitted()) {
-										end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->submit($request->request->get(end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->getName()), false);
+										end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->submit($request->request->get(end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->getName()));
 										if (!end($formulariosCampoHitoExpediente[$campoHito->getIdCampoHito()])->isValid() && $formulariosValidos) {
 											$formulariosValidos = false;
 										}
@@ -8498,7 +9259,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 		));
 		$formularioNoticia->handleRequest($request);
 		if ($formularioNoticia->isSubmitted() && $formularioNoticia->isValid()) {
-			$formularioNoticiaUsuario->submit($request->request->get($formularioNoticiaUsuario->getName()), false);
+			$formularioNoticiaUsuario->submit($request->request->get($formularioNoticiaUsuario->getName()));
 			if ($formularioNoticiaUsuario->isValid()) {
 				$usuariosRecibidos = $request->get('noticia_usuario');
 				$contador = 0;
@@ -9589,6 +10350,70 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			
 			$this->addFlash('success', 'El cliente se ha creado correctamente y está activo.');
 			return $this->redirectToRoute('lista_clientes');
+		}
+		return $this->render('@App/Backoffice/Agregar/ColaboradorCliente.twig', array(
+			'titulo' => 'Crear cliente',
+			'migasPan' => array(
+				array(
+					'vista' => 'Lista de clientes',
+					'url' => $router->generate('lista_clientes')
+				)
+			),
+			'crear_cliente' => $formulario->createView()
+		));
+	}
+
+	public function colaboradorAgregarClienteActionOld(Request $request, RouterInterface $router, Swift_Mailer $mailer)
+	{
+		$doctrine = $this->getDoctrine();
+		$usuario = new UsuarioEntidad();
+		$formulario = $this->createForm(CrearCliente::class, $usuario);
+		$formulario->handleRequest($request);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			try {
+				$usuario->setTokenActivacion(bin2hex(random_bytes(60)));
+			} catch (Exception $e) {
+			}
+			$usuario->setRole('ROLE_CLIENTE')
+				->setIdInmobiliaria($this->getUser()->getIdInmobiliaria())
+				->setEstado(false)
+				->setTokenFecha(new DateTime());
+			$from = array($this->getParameter('mailer_user') => 'Hipotea');
+			$mensaje = (new Swift_Message('Hipotea - Activar cuenta'))
+				->setFrom($from)
+				->setTo($usuario->getEmail())
+				->setBody($this->renderView('@App/Backoffice/Correo/ActivarCuenta.html.twig', array(
+					'urlgenerada' => $this->generateUrl('activar_cliente_creado_colaborador', array(
+						'token' => $usuario->getTokenActivacion()
+					), UrlGeneratorInterface::ABSOLUTE_URL)
+				)), 'text/html');
+			if ($mailer->send($mensaje)) {
+				$managerEntidad = $doctrine->getManager();
+				$managerEntidad->persist($usuario);
+				$managerEntidad->flush();
+
+				//Aviso de que se ha creado una cuenta
+				$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+				$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+						'role' => $roles
+					)
+				);
+				foreach($usuarios_gn as $usuario_gn){
+					$notificacion = (new NotificacionEntidad)
+						->setEstado(1)
+						->setFecha(new DateTime())
+						->setIdUsuario($usuario_gn)
+						->setTitulo('Nueva cuenta creada')
+						->setTexto('El colaborador '.$this->getUser()->getUsername().' '.$this->getUser()->getApellidos().' ha creado el cliente ' . $usuario->getUsername() . ' ' . $usuario->getApellidos() . '.');
+					$managerEntidad->persist($notificacion);
+					$managerEntidad->flush();
+				}
+				
+				$this->addFlash('success', 'El cliente se ha creado correctamente, se le ha enviado un mensaje por E-Mail para que active su cuenta.');
+				return $this->redirectToRoute('lista_clientes');
+			} else {
+				$this->addFlash('danger', 'Error al enviar el E-Mail al cliente.');
+			}
 		}
 		return $this->render('@App/Backoffice/Agregar/ColaboradorCliente.twig', array(
 			'titulo' => 'Crear cliente',
@@ -10914,6 +11739,258 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 		));
 	}
 
+	/*private
+	function formularioUsuario($parametros)
+	{
+		$doctrine = $this->getDoctrine();
+		$old_mail_pass ="";
+		$ficheroSubido = "";
+		$ficheroSubidoRuta = "";
+		$nombreFicheroMostrar = "";
+		$idInmobiliariaPrevia = null;
+		$idOficinaPrevia = null;
+		$rolePrevia = null;
+		$fotoPerfeilPrevia = null;
+
+		if (isset($parametros['id'])) {
+			if (isset($parametros['cliente'])) {
+				$usuario = $doctrine->getRepository($parametros['entidad'])->findOneBy(array(
+					$parametros['idEntidad'] => $parametros['id'],
+					'role' => 'ROLE_CLIENTE'
+				));
+			} else {
+				$usuario = $doctrine->getRepository($parametros['entidad'])->findOneBy(array(
+					$parametros['idEntidad'] => $parametros['id']
+				));
+			}
+			if (!$usuario) {
+				$this->addFlash('warning', $parametros['elementoNoExiste']);
+				return $this->redirectToRoute($parametros['ruta']);
+			}else{
+				// Preservar inmobiliaria, oficina y rol
+				$idInmobiliariaPrevia = $usuario->getIdInmobiliaria();
+				$idOficinaPrevia = $usuario->getIdOficina();
+				$rolePrevia = $usuario->getRole();
+				$fotoPerfeilPrevia = $usuario->getFotoPerfil();
+				
+				$old_mail_pass = $usuario->getMailerPassword();
+				$filesystem = new Filesystem();
+				if (!is_null($usuario->getFirmaCorreo()) && $filesystem->exists($this->getParameter('files_directory') . DIRECTORY_SEPARATOR . $usuario->getFirmaCorreo())) {
+					$router = $parametros['router'];
+					$ficheroSubido = str_replace($this->get('kernel')->getProjectDir() . '/web', '', $this->getParameter('files_directory') . '/' . $usuario->getFirmaCorreo());
+					$ficheroSubidoRuta = $router->generate('descargar_fichero_documento', array(
+						'id' => $usuario->getIdUsuario()
+					));
+					$nombreFicheroMostrar = "Firma Correo";
+				}
+
+				// Cargar foto de perfil si existe
+				if (!is_null($usuario->getFotoPerfil()) && $filesystem->exists($this->getParameter('files_directory') . DIRECTORY_SEPARATOR . $usuario->getFotoPerfil())) 
+				{
+					$rutaFoto = $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . $usuario->getFotoPerfil();
+					$contenidoFoto = file_get_contents($rutaFoto);
+					$ficheroSubido = base64_encode($contenidoFoto);
+					$nombreFicheroMostrar = "Foto de Perfil";
+				}
+			}
+			$formulario = $this->createForm($parametros['formularioModificar'], $usuario, isset($parametros['formularioOpciones']) ? $parametros['formularioOpciones'] : []);
+		} else {
+			$usuario = new UsuarioEntidad();
+			$formulario = $this->createForm($parametros['formularioAgregar'], $usuario, isset($parametros['formularioOpciones']) ? $parametros['formularioOpciones'] : []);
+		}
+		$formulario->handleRequest($parametros['request']);
+		
+		// DEBUG: Logs para verificar formulario
+		$logger = $this->get('logger');
+		$logger->info('FORMULARIO ENVIADO', array(
+			'isSubmitted' => $formulario->isSubmitted(),
+			'isValid' => $formulario->isValid(),
+			'formularioNombre' => get_class($formulario->getConfig()->getType()->getInnerType()),
+			'role' => $usuario->getRole()
+		));
+		
+		if ($formulario->isSubmitted() && !$formulario->isValid()) {
+			$errors = $formulario->getErrors(true);
+			$errorMessages = array();
+			$errorPorCampo = array();
+			
+			// Errores del FORMULARIO en sí (no de campos)
+			$formularioErrors = $formulario->getErrors(false, false);
+			$erroresDelFormulario = array();
+			foreach ($formularioErrors as $error) {
+				$erroresDelFormulario[] = $error->getMessage();
+			}
+			
+			// Recorrer TODOS los campos del formulario
+			foreach ($formulario as $child) {
+				if ($child->isSubmitted() && !$child->isValid()) {
+					$childErrors = $child->getErrors();
+					foreach ($childErrors as $error) {
+						$errorPorCampo[$child->getName()][] = $error->getMessage();
+						$errorMessages[] = $child->getName() . ": " . $error->getMessage();
+					}
+				}
+			}
+			
+			$logger->error('ERRORES DEL FORMULARIO COMPLETO', array(
+				'erroresDelFormulario' => $erroresDelFormulario,
+				'tieneErroresFormulario' => count($erroresDelFormulario) > 0
+			));
+			
+			$logger->error('ERRORES POR CAMPO', array(
+				'errorsPorCampo' => $errorPorCampo,
+				'usuario' => $usuario->getIdUsuario(),
+				'role_value' => $usuario->getRole(),
+				'role_tipo_formulario' => isset($formulario['role']) ? get_class($formulario['role']->getConfig()->getType()->getInnerType()) : 'NO_EXISTE'
+			));
+			
+			$logger->error('ERRORES DE VALIDACION', array(
+				'errors' => $errorMessages,
+				'usuario' => $usuario->getIdUsuario(),
+				'role_value' => $usuario->getRole()
+			));
+		}
+		
+		// Validación: solo proceder a guardar si el formulario es válido
+		if ($formulario->isSubmitted()) {
+			$isFormValid = $formulario->isValid();
+		} else {
+			$isFormValid = false;
+		}
+		
+		if ($formulario->isSubmitted() && $isFormValid) {
+			if (!is_null($usuario->getPlainPassword())) {
+				$usuario->setPassword($parametros['passwordEncoder']->encodePassword($usuario, $usuario->getPlainPassword()));
+			}
+			if(is_null($usuario->getMailerPassword())){
+				$usuario->setMailerPassword($old_mail_pass);
+			}
+			
+			// Restaurar inmobiliaria, oficina y rol si se perdieron
+			if ($idInmobiliariaPrevia && is_null($usuario->getIdInmobiliaria())) {
+				$usuario->setIdInmobiliaria($idInmobiliariaPrevia);
+			}
+			if ($idOficinaPrevia && is_null($usuario->getIdOficina())) {
+				$usuario->setIdOficina($idOficinaPrevia);
+			}
+			if ($rolePrevia && is_null($usuario->getRole())) {
+				$usuario->setRole($rolePrevia);
+			}
+			
+			// Guardar oficina si es jefe de oficina
+			if ($usuario->getRole() === 'ROLE_JEFE_OFICINA' || $usuario->getRole() === 'ROLE_COLABORADOR') 
+			{
+				$idOficina = $parametros['request']->request->get('idOficina');
+				if ($idOficina) {
+					$oficina = $doctrine->getRepository(OficinaEntidad::class)->find($idOficina);
+					if ($oficina) {
+						$usuario->setIdOficina($oficina);
+					}
+				}
+			}
+
+			if (!is_null($usuario->getFirmaCorreo())) {
+				$filesystem = new Filesystem();
+				try {
+					$filesystem->remove($this->getParameter('files_directory') . DIRECTORY_SEPARATOR . $usuario->getFirmaCorreo());
+				} catch (IOExceptionInterface $e) {
+					$this->addFlash('danger', 'Error al borrar el archivo antiguo.');
+					return $this->redirectToRoute($parametros['ruta']);
+				}
+				$nombreFichero = md5(uniqid()) . '.' . $usuario->getFirmaCorreo()->guessExtension();
+				try {
+					$usuario->getFirmaCorreo()->move($this->getParameter('files_directory'), $nombreFichero);
+				} catch (FileException $e) {
+					$this->addFlash('danger', 'Error al guardar el archivo en el servidor.');
+					return $this->redirectToRoute($parametros['ruta']);
+				}
+				$usuario->setFirmaCorreo($nombreFichero);
+			}
+
+			// Manejar foto de perfil
+			if (!is_null($usuario->getFotoPerfil()) && $usuario->getFotoPerfil() instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
+				$filesystem = new Filesystem();
+				// Si existe foto anterior, buscarla en BD para borrarla
+				$usuarioAnterior = $doctrine->getRepository('AppBundle:Usuario')->find($usuario->getIdUsuario());
+				if ($usuarioAnterior && $usuarioAnterior->getFotoPerfil() && is_string($usuarioAnterior->getFotoPerfil())) {
+					try {
+						$filesystem->remove($this->getParameter('files_directory') . DIRECTORY_SEPARATOR . $usuarioAnterior->getFotoPerfil());
+					} catch (IOExceptionInterface $e) {
+						$this->addFlash('danger', 'Error al borrar la foto antigua.');
+						return $this->redirectToRoute($parametros['ruta']);
+					}
+				}
+				$nombreFichero = md5(uniqid()) . '.' . $usuario->getFotoPerfil()->guessExtension();
+				try {
+					$usuario->getFotoPerfil()->move($this->getParameter('files_directory'), $nombreFichero);
+				} catch (FileException $e) {
+					$this->addFlash('danger', 'Error al guardar la foto en el servidor.');
+					return $this->redirectToRoute($parametros['ruta']);
+				}
+				$usuario->setFotoPerfil($nombreFichero);
+			} else {
+				// Si no se subió foto nueva, preservar la anterior
+				if ($fotoPerfeilPrevia) {
+					$usuario->setFotoPerfil($fotoPerfeilPrevia);
+				}
+			}
+
+			$managerEntidad = $doctrine->getManager();
+			$managerEntidad->persist($usuario);
+			try {
+				$managerEntidad->flush();
+			} catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+				// Si ocurre violación UNIQUE (p. ej. nif duplicado), añadir error al campo si existe y re-renderizar
+				if ($formulario->has('nif')) {
+					$formulario->get('nif')->addError(new \Symfony\Component\Form\FormError('Este NIF ya está registrado.'));
+				} else {
+					$this->addFlash('danger', 'Ya existe un usuario con ese NIF.');
+				}
+				$titulo = $usuario->getApellidos().','.$usuario->getUsername();
+				($titulo == ',')?$titulo = "Nuevo Usuario":$titulo;
+				$formatosPermitidos = $this->getParameter('image_formats');
+				if (in_array('jpeg', $formatosPermitidos)) {
+					array_push($formatosPermitidos, 'jpg');
+				}
+				return $this->render($parametros['renderizar'], array(
+					'titulo' => $titulo,
+					'migasPan' => $parametros['migasPan'],
+					'extensiones_permitidas' => implode(' ', $formatosPermitidos),
+					'max_file_size' => $this->redondearBytesAUnidad($this->convertirABytes(ini_get('upload_max_filesize'))),
+					'fichero_subido' => $ficheroSubido,
+					'nombres_fichero_mostrar' => $nombreFicheroMostrar,
+					'fichero_subido_ruta' => $ficheroSubidoRuta,
+					$parametros['formularioNombre'] => $formulario->createView()
+				));
+			}
+
+			// Refrescar la entidad desde BD para asegurar que fotoPerfil se persista
+			$managerEntidad->refresh($usuario);
+			$managerEntidad->persist($usuario);
+			$managerEntidad->flush();
+
+			$this->addFlash('success', $parametros['formularioMensaje']);
+			return $this->redirectToRoute($parametros['ruta']);
+		}
+		$titulo = $usuario->getApellidos().','.$usuario->getUsername();
+		($titulo == ',')?$titulo = "Nuevo Usuario":$titulo;
+		$formatosPermitidos = $this->getParameter('image_formats');
+		if (in_array('jpeg', $formatosPermitidos)) {
+			array_push($formatosPermitidos, 'jpg');
+		}
+		return $this->render($parametros['renderizar'], array(
+			// 'titulo' => $parametros['titulo'],
+			'titulo' => $titulo,
+			'migasPan' => $parametros['migasPan'],
+			'extensiones_permitidas' => implode(' ', $formatosPermitidos),
+			'max_file_size' => $this->redondearBytesAUnidad($this->convertirABytes(ini_get('upload_max_filesize'))),
+			'fichero_subido' => $ficheroSubido,
+			'nombres_fichero_mostrar' => $nombreFicheroMostrar,
+			'fichero_subido_ruta' => $ficheroSubidoRuta,
+			$parametros['formularioNombre'] => $formulario->createView()
+		));
+	}*/
+	// se arregla guardar mi perfil sin perder fecha de caducidad y estado
 	private
 	function formularioUsuario($parametros)
 	{
@@ -11869,46 +12946,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				}
 			}
 
-	}
-
-	
-	public function obtenerClienteAction(Request $request)
-	{
-		$idCliente = $request->query->get('idCliente');
-		if (!$idCliente) {
-			return new JsonResponse([
-				'success' => false,
-				'message' => 'No se ha encontrado el cliente'
-			], 404);
-		}
-		
-		$em = $this->getDoctrine()->getManager();
-		$cliente = $em->getRepository('AppBundle:Usuario')->find($idCliente);
-		
-		if (!$cliente) {
-			return new JsonResponse([
-				'success' => false,
-				'message' => 'No se ha encontrado el cliente'
-			], 404);
-		}
-		
-		return new JsonResponse([
-			'success' => true,
-			'message' => 'Cliente encontrado',
-			'id' => $idCliente,
-			'nombre' => $cliente->getUsername(),
-			'apellidos' => $cliente->getApellidos(),
-			'dni' => $cliente->getNif(),
-			'telefono' => $cliente->getTelefonoMovil(), 
-			'email' => $cliente->getEmail(), 
-			'empresa' => $cliente->getEmpresa(),
-			'direccion' => $cliente->getDireccion(),
-			'cp' => $cliente->getCp(),
-			'provincia' => $cliente->getProvincia(),
-			'municipio' => $cliente->getMunicipio(),
-			'pais' => $cliente->getPais(),
-		], 200);
-		
 	}
 
 	public function pageNotFoundAction(AuthenticationUtils $authenticationUtils)
@@ -14790,4 +15827,44 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			return new JsonResponse(['error' => $e->getMessage()], 500);
 		}
 	}
+
+	public function obtenerClienteAction(Request $request)
+	{
+		$idCliente = $request->query->get('idCliente');
+		if (!$idCliente) {
+			return new JsonResponse([
+				'success' => false,
+				'message' => 'No se ha encontrado el cliente'
+			], 404);
+		}
+		
+		$em = $this->getDoctrine()->getManager();
+		$cliente = $em->getRepository('AppBundle:Usuario')->find($idCliente);
+		
+		if (!$cliente) {
+			return new JsonResponse([
+				'success' => false,
+				'message' => 'No se ha encontrado el cliente'
+			], 404);
+		}
+		
+		return new JsonResponse([
+			'success' => true,
+			'message' => 'Cliente encontrado',
+			'id' => $idCliente,
+			'nombre' => $cliente->getUsername(),
+			'apellidos' => $cliente->getApellidos(),
+			'dni' => $cliente->getNif(),
+			'telefono' => $cliente->getTelefonoMovil(), 
+			'email' => $cliente->getEmail(), 
+			'empresa' => $cliente->getEmpresa(),
+			'direccion' => $cliente->getDireccion(),
+			'cp' => $cliente->getCp(),
+			'provincia' => $cliente->getProvincia(),
+			'municipio' => $cliente->getMunicipio(),
+			'pais' => $cliente->getPais(),
+		], 200);
+		
+	}
+
 }

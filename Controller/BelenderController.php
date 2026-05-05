@@ -1594,33 +1594,6 @@ class BelenderController extends Controller
                 continue;
             }
 
-            // Leer JSON asociado si existe
-            $contenidoJson = null;
-            $jsonPath = pathinfo($origPath, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 
-                        pathinfo($origPath, PATHINFO_FILENAME) . '.json';
-            
-            error_log("🔍 DEBUG JSON - Archivo: $safeName, Buscando JSON en: $jsonPath");
-            
-            if (file_exists($jsonPath) && is_file($jsonPath)) {
-                error_log("✅ JSON encontrado en: $jsonPath");
-                $jsonContent = @file_get_contents($jsonPath);
-                if ($jsonContent !== false) {
-                    error_log("📄 JSON leído, tamaño: " . strlen($jsonContent) . " bytes");
-                    // Validar que sea JSON válido
-                    json_decode($jsonContent);
-                    if (json_last_error() === JSON_ERROR_NONE) {
-                        $contenidoJson = $jsonContent;
-                        error_log("✅ JSON válido guardado en contenidoJson");
-                    } else {
-                        error_log("❌ JSON inválido: " . json_last_error_msg());
-                    }
-                } else {
-                    error_log("❌ No se pudo leer el archivo JSON");
-                }
-            } else {
-                error_log("❌ JSON no encontrado en: $jsonPath");
-            }
-
             // Buscar si ya existe un FicheroCampo con los mismos datos (upsert)
             $existingFichero = $doctrine->getRepository(FicheroCampoEntidad::class)->findOneBy([
                 'idCampoHito' => $campo->getIdCampoHito(),
@@ -1636,18 +1609,11 @@ class BelenderController extends Controller
                     @unlink($oldPath);
                 }
                 $existingFichero->setNombreFichero($newName);
-                if ($contenidoJson !== null) {
-                    error_log("📝 Asignando contenidoJson a FicheroCampo actualizado (tamaño: " . strlen($contenidoJson) . " bytes)");
-                    $existingFichero->setContenidoJson($contenidoJson);
-                } else {
-                    error_log("⚠️ contenidoJson es NULL, no asignando nada");
-                }
                 if (method_exists($existingFichero, 'setFechaActualizacion')) {
                     $existingFichero->setFechaActualizacion(new \DateTime());
                 }
                 $em->persist($existingFichero);
                 $em->flush();
-                error_log("✅ FicheroCampo actualizado en BD");
                 
                 $created[] = [
                     'original' => $safeName,
@@ -1664,19 +1630,12 @@ class BelenderController extends Controller
                 $ficheroCampo->setIdCampoHitoExpediente($campoExp);
                 $ficheroCampo->setIdExpediente($expediente);
                 $ficheroCampo->setNombreFichero($newName);
-                if ($contenidoJson !== null) {
-                    error_log("📝 Asignando contenidoJson a FicheroCampo nuevo (tamaño: " . strlen($contenidoJson) . " bytes)");
-                    $ficheroCampo->setContenidoJson($contenidoJson);
-                } else {
-                    error_log("⚠️ contenidoJson es NULL, no asignando nada");
-                }
                 if (method_exists($ficheroCampo, 'setFechaCreacion')) {
                     $ficheroCampo->setFechaCreacion(new \DateTime());
                 }
 
                 $em->persist($ficheroCampo);
                 $em->flush();
-                error_log("✅ FicheroCampo creado en BD");
 
                 $created[] = [
                     'original' => $safeName,

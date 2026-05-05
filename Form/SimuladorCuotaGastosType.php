@@ -125,34 +125,64 @@ class SimuladorCuotaGastosType extends AbstractType
             ])*/
 
             // CARACTERÍSTICAS ESPECIALES (re-confirmar de paso 2)
-            ->add('obraNueva', CheckboxType::class, [
-                'label' => 'Es obra nueva',
-                'required' => false,
-                'attr' => ['class' => 'form-check-input'],
+            ->add('obraNueva', ChoiceType::class, [
+                'label' => '¿Es una obra nueva?',
+                'required' => true,
+                'choices' => [
+                    'Sí' => true,
+                    'No' => false,
+                ],
+                'expanded' => true,
+                'multiple' => false,
+                'data' => false,
             ])
 
-            ->add('familiaNumerosa', CheckboxType::class, [
-                'label' => 'Familia numerosa',
-                'required' => false,
-                'attr' => ['class' => 'form-check-input'],
+            ->add('familiaNumerosa', ChoiceType::class, [
+                'label' => '¿Eres familia numerosa?',
+                'required' => true,
+                'choices' => [
+                    'Sí' => true,
+                    'No' => false,
+                ],
+                'expanded' => true,
+                'multiple' => false,
+                'data' => false,
             ])
 
-            ->add('monoparental', CheckboxType::class, [
-                'label' => 'Familia monoparental',
-                'required' => false,
-                'attr' => ['class' => 'form-check-input'],
+            ->add('monoparental', ChoiceType::class, [
+                'label' => '¿Eres familia monoparental?',
+                'required' => true,
+                'choices' => [
+                    'Sí' => true,
+                    'No' => false,
+                ],
+                'expanded' => true,
+                'multiple' => false,
+                'data' => false,
             ])
 
-            ->add('minusvaliaFamiliaNumerosa', CheckboxType::class, [
-                'label' => 'Algún miembro tiene discapacidad',
-                'required' => false,
-                'attr' => ['class' => 'form-check-input'],
+            ->add('minusvaliaFamiliaNumerosa', ChoiceType::class, [
+                'label' => '¿Presenta alguna discapacidad?',
+                'required' => true,
+                'choices' => [
+                    'Sí' => true,
+                    'No' => false,
+                ],
+                'expanded' => true,
+                'multiple' => false,
+                'data' => false,
             ])
 
-            ->add('vpo', CheckboxType::class, [
-                'label' => 'Vivienda de Protección Oficial (VPO)',
-                'required' => false,
-                'attr' => ['class' => 'form-check-input'],
+            ->add('vpo', ChoiceType::class, [
+                'label' => '¿Es una Vivienda de Protección Oficial?',
+                'required' => true,
+                'choices' => [
+                    'Sí' => true,
+                    'No' => false,
+                ],
+                'expanded' => true,
+                'multiple' => false,
+                'data' => false,
             ])
 
             // GASTOS ADICIONALES OPCIONALES
@@ -167,6 +197,19 @@ class SimuladorCuotaGastosType extends AbstractType
                     'step' => 0.01,
                     'placeholder' => 'Ej: 0.00',
                 ],
+            ])
+
+            // PRODUCTO (Tipología de Hipoteca)
+            ->add('producto', ChoiceType::class, [
+                'label' => 'Producto (elige la tipología de hipoteca que buscas)',
+                'choices' => [
+                    'Hipoteca + 80%' => 1,
+                    'Premium' => 2,
+                    'Sin Compromiso' => 3,
+                    'Cambio de Casa' => 4,
+                ],
+                'required' => true,
+                'attr' => ['class' => 'form-control'],
             ]);
     }
 
