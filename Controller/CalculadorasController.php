@@ -1394,6 +1394,7 @@ class CalculadorasController extends Controller
             // FIN PROBANDO CON PDF ADJUNTO
 
             $mailer->send($mensaje);
+			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cuota');
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -1554,6 +1555,7 @@ class CalculadorasController extends Controller
             // FIN PROBANDO CON PDF ADJUNTO
 
             $mailer->send($mensaje);
+			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo');
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -1711,6 +1713,7 @@ class CalculadorasController extends Controller
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
             // FIN PROBANDO CON PDF ADJUNTO
             $mailer->send($mensaje);
+			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cambio_casa');
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -1868,6 +1871,7 @@ class CalculadorasController extends Controller
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
             // FIN PROBANDO CON PDF ADJUNTO
             $mailer->send($mensaje);
+			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_nm');
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -2036,6 +2040,7 @@ class CalculadorasController extends Controller
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
             // FIN PROBANDO CON PDF ADJUNTO
             $mailer->send($mensaje);
+			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_ihs');
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -2060,5 +2065,97 @@ class CalculadorasController extends Controller
             $mailer->send($mensaje);
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
+	}
+
+	/**
+	 * Registrar uso de calculadora web (genérico para todas las calculadoras)
+	 * Solo se registra si la ruta es /web/*
+	 * 
+	 * @param Request $request
+	 * @param string $email Email del usuario
+	 * @param string $tipoCalculadora Identificador único
+	 * @return void
+	 */
+	private function registrarUsoCalculadora(Request $request, string $email, string $tipoCalculadora)
+	{
+		// Solo registrar si viene de la ruta /web/*
+		$referer = $request->headers->get('referer', '');
+		$refPath = $referer ? parse_url($referer, PHP_URL_PATH) : '';
+		if (strpos($refPath, '/web/') !== 0) {
+			error_log('registrarUsoCalculadora: Ruta no es /web/*, ignorando. Referer: ' . $referer);
+			return;
+		}
+
+		if (empty($email)) {
+			error_log('registrarUsoCalculadora: Email vacío, no se registra el uso');
+			return;
+		}
+
+		try {
+			error_log('=== CONTADOR CALCULADORA: Iniciando para ' . $email . ' tipo=' . $tipoCalculadora);
+			
+			$emContador = $this->getDoctrine()->getManager();
+			if (!$emContador->isOpen()) {
+				error_log('EntityManager cerrado, reabriendo...');
+				$emContador = $this->getDoctrine()->resetManager();
+			}
+			
+			// Buscar registro existente
+			$qb = $emContador->createQueryBuilder();
+			$qb->select('u')
+				->from('AppBundle:SimuladorUsoEmail', 'u')
+				->where('u.email = :email')
+				->andWhere('u.tipo = :tipo')
+				->setParameter('email', $email)
+				->setParameter('tipo', $tipoCalculadora);
+			$usoEmail = $qb->getQuery()->getOneOrNullResult();
+			
+			error_log('Búsqueda realizada para email=' . $email . ' tipo=' . $tipoCalculadora . ': ' . ($usoEmail ? 'ENCONTRADO (ID: ' . $usoEmail->getId() . ', usos: ' . $usoEmail->getUsos() . ')' : 'NO ENCONTRADO'));
+			
+			if (!$usoEmail) {
+				error_log('Creando nuevo registro para email=' . $email . ' tipo=' . $tipoCalculadora);
+				$usoEmail = new \AppBundle\Entity\SimuladorUsoEmail();
+				$usoEmail->setEmail($email);
+				$usoEmail->setTipo($tipoCalculadora);
+				$usoEmail->setUsos(1);
+				$usoEmail->setPrimerUso(new \DateTime());
+				$usoEmail->setUltimoUso(new \DateTime());
+				$emContador->persist($usoEmail);
+			} else {
+				error_log('Incrementando registro existente: usos actual=' . $usoEmail->getUsos());
+				$usoEmail->incrementarUsos();
+				$emContador->persist($usoEmail);
+			}
+			
+			$emContador->flush();
+			error_log('Contador registrado exitosamente para: ' . $email . ' tipo=' . $tipoCalculadora);
+			
+		} catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $eUnique) {
+			error_log('RACE CONDITION detectada en registrarUsoCalculadora. Reintentando...');
+			try {
+				$emContador->clear();
+				$emContador = $this->getDoctrine()->resetManager();
+				
+				$qb = $emContador->createQueryBuilder();
+				$qb->select('u')
+					->from('AppBundle:SimuladorUsoEmail', 'u')
+					->where('u.email = :email')
+					->andWhere('u.tipo = :tipo')
+					->setParameter('email', $email)
+					->setParameter('tipo', $tipoCalculadora);
+				$usoEmail = $qb->getQuery()->getOneOrNullResult();
+				
+				if ($usoEmail) {
+					error_log('Reintento exitoso: Incrementando usos de ' . $usoEmail->getUsos() . ' a ' . ($usoEmail->getUsos() + 1));
+					$usoEmail->incrementarUsos();
+					$emContador->persist($usoEmail);
+					$emContador->flush();
+				}
+			} catch (\Throwable $eReintento) {
+				error_log('ERROR en reintento de race condition: ' . $eReintento->getMessage());
+			}
+		} catch (\Throwable $e) {
+			error_log('ERROR al registrar contador de calculadora: ' . $e->getMessage());
+		}
 	}
 }
