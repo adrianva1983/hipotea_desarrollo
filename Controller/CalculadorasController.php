@@ -2237,6 +2237,17 @@ class CalculadorasController extends Controller
 			'tipo_mensaje' => ''
 		);
 
+		// Si es una petición GET (sin búsqueda), cargar los últimos registros para mostrar listado por defecto
+		if (!$request->isMethod('POST')) {
+			try {
+				$registrosPorDefecto = $repositorio->findBy(array(), array('ultimoUso' => 'DESC'), 100);
+				$variablesTwig['registros'] = $registrosPorDefecto;
+			} catch (\Exception $e) {
+				// en caso de error, dejamos el listado vacío y registramos log
+				error_log('ERROR cargando registros por defecto en resetearUsosCalculadorasAction: ' . $e->getMessage());
+			}
+		}
+
 		// Si hay búsqueda por email
 		if ($request->request->has('email_buscar')) {
 			$email = trim($request->request->get('email_buscar', ''));
