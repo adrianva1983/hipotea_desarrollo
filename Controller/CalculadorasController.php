@@ -2304,8 +2304,14 @@ class CalculadorasController extends Controller
 					}
 					
 					// Limpiar campos de búsqueda
+					// Recargar listado por defecto tras reseteo (evita tener que recargar la página)
 					$variablesTwig['email_buscado'] = '';
-					$variablesTwig['registros'] = array();
+					try {
+						$variablesTwig['registros'] = $repositorio->findBy(array(), array('ultimoUso' => 'DESC'), 100);
+					} catch (\Exception $e) {
+						$variablesTwig['registros'] = array();
+						error_log('ERROR recargando registros tras reset: ' . $e->getMessage());
+					}
 				} catch (\Exception $e) {
 					$variablesTwig['mensaje'] = 'Error al resetear: ' . $e->getMessage();
 					$variablesTwig['tipo_mensaje'] = 'danger';
