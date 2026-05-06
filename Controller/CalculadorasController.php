@@ -2248,7 +2248,8 @@ class CalculadorasController extends Controller
 				}
 				$mensaje = (new Swift_Message($asuntoHipotea))
 					->setFrom($from)
-					->setTo('info@hipotea.com')
+					//->setTo('info@hipotea.com')
+					->setTo('adrian.verdecia@semillaproyectos.com')
 					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
 				$mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
 				$mailer->send($mensaje);
