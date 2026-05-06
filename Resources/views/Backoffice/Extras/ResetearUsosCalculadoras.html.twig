@@ -135,15 +135,7 @@
                                 </table>
                             </form>
 
-                            <hr>
-                            <div class="alert alert-warning">
-                                <strong>Opción avanzada:</strong> Resetear todos los contadores de este usuario a la vez.
-                            </div>
-                            <form method="POST" class="mb-0" onsubmit="return confirm('⚠️ ADVERTENCIA: Esto reseteará TODOS los contadores para {{ email_buscado }}. ¿Continuar?');">
-                                <input type="hidden" name="email_resetear" value="{{ email_buscado }}">
-                                <input type="hidden" name="tipo_confirmado" value="*">
-                                <button type="submit" class="btn btn-warning btn-lg"><i class="fas fa-ban"></i> Resetear Todos los Contadores</button>
-                            </form>
+                            
                         {% endif %}
                     </div>
                 </div>
