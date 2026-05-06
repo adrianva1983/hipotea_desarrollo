@@ -7,7 +7,10 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * SimuladorUsoEmail
  *
- * @ORM\Table(name="simulador_uso_email", indexes={@ORM\Index(name="idx_email", columns={"email"})})
+ * @ORM\Table(name="simulador_uso_email",
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="uniq_email_tipo", columns={"email","tipo"})},
+ *     indexes={@ORM\Index(name="idx_email", columns={"email"})}
+ * )
  * @ORM\Entity(repositoryClass="AppBundle\Repository\SimuladorUsoEmailRepository")
  */
 class SimuladorUsoEmail
@@ -24,9 +27,16 @@ class SimuladorUsoEmail
     /**
      * @var string
      *
-     * @ORM\Column(name="email", type="string", length=255, unique=true)
+        * @ORM\Column(name="email", type="string", length=255)
      */
     private $email;
+
+        /**
+        * @var string
+        *
+        * @ORM\Column(name="tipo", type="string", length=100, options={"default":"general"})
+        */
+        private $tipo = 'general';
 
     /**
      * @var int
@@ -102,6 +112,28 @@ class SimuladorUsoEmail
     public function setUltimoUso(\DateTime $ultimoUso)
     {
         $this->ultimoUso = $ultimoUso;
+        return $this;
+    }
+
+    /**
+     * Get tipo
+     *
+     * @return string
+     */
+    public function getTipo()
+    {
+        return $this->tipo;
+    }
+
+    /**
+     * Set tipo
+     *
+     * @param string $tipo
+     * @return SimuladorUsoEmail
+     */
+    public function setTipo($tipo)
+    {
+        $this->tipo = $tipo;
         return $this;
     }
 }

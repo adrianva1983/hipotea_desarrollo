@@ -257,6 +257,7 @@ class SimuladorViabilidadController extends Controller
 
         $body = json_decode($request->getContent(), true) ?? [];
         $contaruso = isset($body['contaruso']) && ($body['contaruso'] === true || $body['contaruso'] === 'true');
+        $tipo = 'simulador_viabilidad';
 
         if (!empty($emailCliente) && $contaruso) {
             try {
@@ -267,7 +268,9 @@ class SimuladorViabilidadController extends Controller
                 $qb->select('u')
                     ->from('AppBundle:SimuladorUsoEmail', 'u')
                     ->where('u.email = :email')
-                    ->setParameter('email', $emailCliente);
+                    ->andWhere('u.tipo = :tipo')
+                    ->setParameter('email', $emailCliente)
+                    ->setParameter('tipo', $tipo);
                 $usoEmail = $qb->getQuery()->getOneOrNullResult();
                 
                 // Refresh explícito para garantizar que leemos el valor actual de la BD
@@ -932,7 +935,9 @@ class SimuladorViabilidadController extends Controller
                     $qb->select('u')
                         ->from('AppBundle:SimuladorUsoEmail', 'u')
                         ->where('u.email = :email')
-                        ->setParameter('email', $emailCliente);
+                        ->andWhere('u.tipo = :tipo')
+                        ->setParameter('email', $emailCliente)
+                        ->setParameter('tipo', $tipo);
                     $usoEmail = $qb->getQuery()->getOneOrNullResult();
                     error_log('Búsqueda realizada: ' . ($usoEmail ? 'ENCONTRADO' : 'NO ENCONTRADO'));
                     
@@ -941,6 +946,7 @@ class SimuladorViabilidadController extends Controller
                         error_log('Creando nuevo registro...');
                         $usoEmail = new SimuladorUsoEmail();
                         $usoEmail->setEmail($emailCliente);
+                        $usoEmail->setTipo($tipo);
                         $usoEmail->setUsos(1);
                         $usoEmail->setPrimerUso(new \DateTime());
                         $usoEmail->setUltimoUso(new \DateTime());
@@ -1725,7 +1731,8 @@ class SimuladorViabilidadController extends Controller
 				'importe_fijo' => 0
 			], 400);
 		}
-		$contaruso = isset($datos['contaruso']) && ($datos['contaruso'] === true || $datos['contaruso'] === 'true');
+        $contaruso = isset($datos['contaruso']) && ($datos['contaruso'] === true || $datos['contaruso'] === 'true');
+        $tipo = 'simulador_viabilidad';
 		// ===== CHECK DE LÍMITE DE USOS POR EMAIL =====
 		$email = $datos['email'] ?? null;
 		$nombre = $datos['nombre'] ?? null;
@@ -1752,7 +1759,9 @@ class SimuladorViabilidadController extends Controller
                     $qb->select('u')
                         ->from('AppBundle:SimuladorUsoEmail', 'u')
                         ->where('u.email = :email')
-                        ->setParameter('email', $email);
+                        ->andWhere('u.tipo = :tipo')
+                        ->setParameter('email', $email)
+                        ->setParameter('tipo', $tipo);
                     $usoEmail = $qb->getQuery()->getOneOrNullResult();
                     error_log('QueryBuilder ejecutado, resultado: ' . ($usoEmail ? 'encontrado' : 'no encontrado'));
                     

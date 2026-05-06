@@ -11,7 +11,6 @@ AppBundle\Entity\SimuladorUsoEmail:
     email:
       type: string
       length: 255
-      unique: true
     usos:
       type: integer
       options:
@@ -22,6 +21,14 @@ AppBundle\Entity\SimuladorUsoEmail:
     ultimoUso:
       type: datetime
       column: ultimo_uso
+    tipo:
+      type: string
+      length: 100
+      options:
+        default: 'general'
   indexes:
     idx_email:
       columns: [email]
+  uniqueConstraints:
+    uniq_email_tipo:
+      columns: [email, tipo]
