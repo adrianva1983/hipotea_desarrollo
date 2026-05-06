@@ -2001,19 +2001,17 @@
                             ${esRojoPorTemporal ? '<li><strong>⚠️ Contrato Temporal:</strong> Tu tipo de contrato actual no permite acceder a financiación hipotecaria. Recomendación: <ul style="margin-top: 6px;"><li><strong>Espera a tener un contrato indefinido</strong>, o</li><li><strong>Busca un cotitular</strong> con situación laboral más estable (funcionario, contrato indefinido, autónomo consolidado)</li></ul></li>' : ''}
                             ${tienePrestamosPagados ? '<li><strong>Acción prioritaria:</strong> Cancela o regulariza los préstamos con cuotas impagadas antes de solicitar hipoteca</li>' : ''}
                             ${(function() {
-                                // Para AMARILLO: sugerir aumento si el porcentaje supera el umbral VERDE
+                                // Para AMARILLO: sugerir aumento de aportación para alcanzar viabilidad ALTA (umbral verde)
                                 if (porcentajeFinanciacion > financiacionVerde) {
-                                    // Cálculo de la aportación mínima necesaria para llegar justo al umbral de financiación media
-                                    let aportacionNecesaria = Math.ceil(precioVivienda + gastosTotales - (financiacionMedia / 100) * precioVivienda);
+                                    let aportacionNecesaria = Math.ceil(precioVivienda + gastosTotales - (financiacionVerde / 100) * precioVivienda);
                                     let diferenciaAportacion = aportacionNecesaria - aportacion;
                                     if (diferenciaAportacion > 0) {
-                                        return `<li><strong>Aumenta tu aportación inicial.</strong> Para mejorar tu viabilidad necesitarías aportar ${diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0})} €, o</li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>`;
+                                        return `<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad alta necesitarías aportar ${diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0})} € adicionales, o</li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>`;
                                     } else {
-                                        return '';
+                                        return `<li><strong>Nivel de financiación (${porcentajeFinanciacion.toFixed(1)}%):</strong> Reduce el precio del inmueble o aumenta la aportación inicial para mejorar el porcentaje de financiación.</li>`;
                                     }
-                                } else {
-                                    return '';
                                 }
+                                return '';
                             })()}
                             ${ratioEndeudamiento > 45 ? `<li><strong>⚠️ Ratio de Endeudamiento (${ratioEndeudamiento.toFixed(1)}%):</strong> La cuota mensual es muy alta respecto a tus ingresos. Necesitas realizar algún ajuste:<ul style="margin-top: 6px;"><li>Reduce el precio del inmueble, o</li><li>Aumenta la aportación inicial, o</li><li>Busca mejorar tus ingresos mensuales</li></ul></li>` : ''}
                             ${valorInmueblePaso3 > 0 && precioMaxRec > 0 && valorInmueblePaso3 > precioMaxRec ? '<li><strong>⚠️ Precio del inmueble supera máximo:</strong> El precio (€' + valorInmueblePaso3.toLocaleString() + ') excede al máximo recomendado (€' + precioMaxRec.toLocaleString() + '). <strong>Considera un inmueble de menor precio, más acorde con tus ingresos actuales o aumenta la aportación a la compra</strong></li>' : ''}
@@ -2720,51 +2718,60 @@
                             ${!sd.esVerde && !sd.esRojo ? `
                         <div style="background: #fff3cd; border: 2px solid #e6a817; border-radius: 10px; padding: 20px; margin-top: 80px;">
                             <h4 style="color: #856404; margin: 0 0 12px; font-size: 15px; font-weight: 700;">⚠️ Recomendaciones para mejorar la viabilidad</h4>
-                        <div style="color: #856404; font-size: 13px; line-height: 1.6; margin: 0;">
+                        <ul style="color: #856404; font-size: 13px; line-height: 1.8; margin: 0 0 12px; padding-left: 20px;">
                                 ${sd.esRojoPorTemporal ? '<li><strong>⚠️ Contrato Temporal:</strong> Tu tipo de contrato actual no permite acceder a financiación hipotecaria. Recomendación: <ul style="margin-top: 6px;"><li><strong>Espera a tener un contrato indefinido</strong>, o</li><li><strong>Busca un cotitular</strong> con situación laboral más estable (funcionario, contrato indefinido, autónomo consolidado)</li></ul></li>' : ''}
                                 ${sd.tienePrestamosPagados ? '<li><strong>Acción prioritaria:</strong> Cancela o regulariza los préstamos con cuotas impagadas antes de solicitar hipoteca</li>' : ''}
-                                ${(() => {
-                                    const msgs = [];
-                                    // 1) Sugerencia de aportación si supera el umbral VERDE
+                                ${(function() {
+                                    // Sugerencia de aportación para alcanzar viabilidad ALTA (umbral verde)
                                     if (sd.porcentajeFinanciacion > sd.financiacionVerde) {
-                                        const aportacionNecesaria = Math.ceil(sd.valorInmueblePaso3 + sd.gastosTotales - (sd.financiacionMedia / 100) * sd.valorInmueblePaso3);
+                                        const aportacionNecesaria = Math.ceil(sd.valorInmueblePaso3 + sd.gastosTotales - (sd.financiacionVerde / 100) * sd.valorInmueblePaso3);
                                         const diferenciaAportacion = aportacionNecesaria - sd.aportacion;
                                         if (diferenciaAportacion > 0) {
-                                            msgs.push('<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad media necesitarías aportar ' + diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0}) + ' €, o</li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>');
+                                            return '<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad alta necesitarías aportar ' + diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0}) + ' € adicionales, o</li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>';
+                                        } else {
+                                            return '<li><strong>Nivel de financiación (' + sd.porcentajeFinanciacion.toFixed(1) + '%):</strong> Reduce el precio del inmueble o aumenta la aportación inicial para mejorar el porcentaje de financiación.</li>';
                                         }
                                     }
-                                    // 2) Recomendaciones amarillas genéricas (mostrar si corresponde)
-                                    if (sd.porcentajeFinanciacion > sd.financiacionVerde) msgs.push('<li><strong>Revisa el nivel de financiación:</strong> Reduce el precio del inmueble o aumenta la aportación inicial para bajar el % de financiación.</li>');
-                                    if (sd.ratioEndeudamiento > 35) msgs.push('<li><strong>Reduce tu ratio de endeudamiento:</strong> Cancela préstamos personales, aumenta plazo o mejora ingresos.</li>');
-                                    if (sd.valorInmueblePaso3 > 0 && sd.precioMaxRec > 0 && sd.valorInmueblePaso3 > sd.precioMaxRec) msgs.push('<li><strong>Ajusta el precio del inmueble:</strong> Considera un inmueble de menor precio o aumenta la aportación propia.</li>');
-                                    if (sd.mejorTitular && sd.mejorTitular.ant === 'menos_1_anio' && sd.mejorTitular.sit !== 'funcionario') msgs.push('<li><strong>Espera a aumentar antigüedad laboral</strong> o busca un cotitular con mayor estabilidad.</li>');
-                                    return msgs.join('');
+                                    return '';
                                 })()}
                                 ${sd.ratioEndeudamiento > 45 ? '<li><strong>⚠️ Ratio de Endeudamiento (' + sd.ratioEndeudamiento.toFixed(1) + '%):</strong> La cuota mensual es muy alta respecto a tus ingresos. Necesitas realizar algún ajuste:<ul style="margin-top: 6px;"><li>Reduce el precio del inmueble, o</li><li>Aumenta la aportación inicial, o</li><li>Busca mejorar tus ingresos mensuales</li></ul></li>' : ''}
                                 ${sd.valorInmueblePaso3 > 0 && sd.precioMaxRec > 0 && sd.valorInmueblePaso3 > sd.precioMaxRec ? '<li><strong>⚠️ Precio del inmueble supera máximo:</strong> El precio (€' + sd.valorInmueblePaso3.toLocaleString() + ') excede al máximo recomendado (€' + sd.precioMaxRec.toLocaleString() + '). <strong>Considera un inmueble de menor precio, más acorde con tus ingresos actuales o aumenta la aportación a la compra</strong></li>' : ''}
-                                ${sd.mejorTitular && sd.mejorTitular.ant === 'menos_1_anio' && sd.mejorTitular.sit !== 'contrato_temporal' && sd.mejorTitular.sit !== 'funcionario' ? '<li><strong>Espera a tener mayor antigüedad laboral</strong></li>' : ''}
+                                ${(function() {
+                                    const msgs = [];
+                                    if (sd.mejorTitular && sd.mejorTitular.sit === 'autonomo' && sd.mejorTitular.ant === 'un_anio') {
+                                        msgs.push('<li><strong>Antigüedad como autónomo insuficiente:</strong> Espera a completar <strong>2 años de actividad</strong>. Esto mejorará significativamente tu perfil hipotecario.</li>');
+                                    } else if (sd.mejorTitular && sd.mejorTitular.sit === 'empresario') {
+                                        msgs.push('<li><strong>Perfil como empresario:</strong> Refuerza tu solicitud con documentación contable actualizada (últimas declaraciones de IRPF e IVA). Un mayor historial de ingresos estables mejorará tu viabilidad.</li>');
+                                    } else if (sd.mejorTitular && sd.mejorTitular.sit === 'otros') {
+                                        msgs.push('<li><strong>Situación laboral no estándar:</strong> Tu perfil puede requerir un análisis personalizado. Contacta con nuestros asesores para estudiar las opciones disponibles.</li>');
+                                    }
+                                    return msgs.join('');
+                                })()}
                                 ${(() => {
                                     const msgsPdf = [];
                                     const deudaActivaPdf = (sd.prestamosCuotaT1 + sd.prestamosCuotaT2) > 0;
-                                    const plazoActualPdf = (datosCalculadosPaso3 && datosCalculadosPaso3.plazo) ? parseInt(datosCalculadosPaso3.plazo) : (sd && sd.plazo ? parseInt(sd.plazo) : 0);
+                                    const plazoActualPdf = (datosCalculadosPaso3 && datosCalculadosPaso3.plazo) ? parseInt(datosCalculadosPaso3.plazo) : 0;
                                     const paso3SecPdf = document.getElementById('paso3Section');
                                     const edadInputPdf = paso3SecPdf ? paso3SecPdf.querySelector('input[name="simulador_p3[edadTitularUno]"]')?.value || 0 : 0;
                                     const edadNumPdf = parseInt(edadInputPdf) || 0;
 
-                                    if (deudaActivaPdf && (sd.ratioEndeudamiento > 35)) {
+                                    if (deudaActivaPdf && sd.ratioEndeudamiento > 35) {
                                         msgsPdf.push('<li><strong>Para mejorar, cancela o reduce tus préstamos personales y volver a simular.</strong></li>');
                                     }
-                                    if ((sd.ratioEndeudamiento > 35) && plazoActualPdf === 30 && edadNumPdf > 0 && edadNumPdf < 45) {
+                                    if (sd.ratioEndeudamiento > 35 && plazoActualPdf === 30 && edadNumPdf > 0 && edadNumPdf < 45) {
                                         msgsPdf.push('<li><strong>Si tienes menos de 45 años, amplía el plazo hasta el máximo permitido según tu edad para reducir la cuota y mejorar tu ratio.</strong></li>');
                                     }
-                                    if ((sd.ratioEndeudamiento > 35) && plazoActualPdf > 0 && plazoActualPdf < 30) {
+                                    if (sd.ratioEndeudamiento > 35 && plazoActualPdf > 0 && plazoActualPdf < 30) {
                                         msgsPdf.push('<li><strong>Si amplías el plazo (si tu edad lo permite) o mejoras tu situación financiera, podrías tener más opciones.</strong></li>');
                                     }
-                                    if (deudaActivaPdf && (sd.ratioEndeudamiento > 35) && plazoActualPdf >= 30) {
+                                    if (deudaActivaPdf && sd.ratioEndeudamiento > 35 && plazoActualPdf >= 30) {
                                         msgsPdf.push('<li><strong>Cancela deudas o, si puedes, elige un plazo mayor. Esto mejorará tu ratio y tus opciones.</strong></li>');
                                     }
                                     if (msgsPdf.length === 0 && deudaActivaPdf) {
                                         msgsPdf.push('<li><strong>Reduce deudas activas</strong> para disminuir tu ratio de endeudamiento total</li>');
+                                    }
+                                    if (msgsPdf.length === 0 && sd.ratioEndeudamiento > 35) {
+                                        msgsPdf.push('<li><strong>Ratio de endeudamiento (' + sd.ratioEndeudamiento.toFixed(1) + '%) por encima del óptimo:</strong> Considera reducir el precio del inmueble o mejorar tus ingresos mensuales para obtener mejores condiciones.</li>');
                                     }
                                     return msgsPdf.join('');
                                 })()}
