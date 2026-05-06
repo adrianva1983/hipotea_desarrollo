@@ -1,5 +1,42 @@
 {% extends "@App/Backoffice/base.html.twig" %}
 
+{% block devstyles %}
+    {{ parent() }}
+    <link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+    {{ parent() }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+    {{ parent() }}
+    <script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+    {{ parent() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+    {{ parent() }}
+    <script src="{{ asset('assets/js/custom/RegExp.escape.min.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/lista-clientes-datatable.min.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/lista-clientes.min.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.jQuery && jQuery.fn.dataTable) {
+                jQuery('#tabla-registros-usos').DataTable({
+                    pageLength: 25,
+                    order: [[4, 'desc']],
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.10.19/i18n/Spanish.json'
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}
+
 {% block body %}
 <div class="container mt-4">
     <div class="row">
@@ -18,7 +55,7 @@
                 </div>
             {% endif %}
 
-            <!-- Formulario de búsqueda -->
+            <!-- Formulario de bÃºsqueda -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
@@ -43,102 +80,71 @@
                 </div>
             </div>
 
-            <!-- Resultados de búsqueda -->
-            {% if registros|length > 0 %}
+            <!-- Resultados de bÃºsqueda / listado por defecto -->
+            {% if registros is defined %}
                 <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-list"></i> Registros encontrados para: <strong>{{ email_buscado }}</strong>
-                        </h5>
-                    </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="thead-dark">
-                                    <tr>
-                                        <th>Email</th>
-                                        <th>Tipo de Calculadora</th>
-                                        <th>Usos</th>
-                                        <th>Primer Uso</th>
-                                        <th>Último Uso</th>
-                                        <th>Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for registro in registros %}
-                                    <tr>
-                                        <td>{{ registro.email }}</td>
-                                        <td>
-                                            {% if registro.tipo == 'calculadora_cuota' %}
-                                                <span class="badge badge-primary">
-                                                    <i class="fas fa-calculator"></i> Calculadora Cuota
-                                                </span>
-                                            {% elseif registro.tipo == 'calculadora_precio_maximo' %}
-                                                <span class="badge badge-success">
-                                                    <i class="fas fa-money-bill-alt"></i> Precio Máximo
-                                                </span>
-                                            {% elseif registro.tipo == 'calculadora_cambio_casa' %}
-                                                <span class="badge badge-warning text-dark">
-                                                    <i class="fas fa-home"></i> Cambio de Casa
-                                                </span>
-                                            {% elseif registro.tipo == 'calculadora_precio_maximo_nm' %}
-                                                <span class="badge badge-secondary">
-                                                    <i class="fas fa-building"></i> Precio Máximo NM
-                                                </span>
-                                            {% elseif registro.tipo == 'calculadora_precio_maximo_ihs' %}
-                                                <span class="badge badge-secondary">
-                                                    <i class="fas fa-building"></i> Precio Máximo IHS
-                                                </span>
-                                            {% else %}
-                                                <span class="badge badge-secondary">{{ registro.tipo }}</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge {% if registro.usos >= 3 %}badge-danger{% elseif registro.usos >= 2 %}badge-warning{% else %}badge-success{% endif %}">
-                                                {{ registro.usos }}/3
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {% if registro.primerUso %}
-                                                <small>{{ registro.primerUso|date('d/m/Y H:i') }}</small>
-                                            {% else %}
-                                                <small class="text-muted">-</small>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if registro.ultimoUso %}
-                                                <small>{{ registro.ultimoUso|date('d/m/Y H:i') }}</small>
-                                            {% else %}
-                                                <small class="text-muted">-</small>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <form method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres resetear este contador?');">
-                                                <input type="hidden" name="email_resetear" value="{{ registro.email }}">
-                                                <input type="hidden" name="tipo_confirmado" value="{{ registro.tipo }}">
-                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                    <i class="fas fa-undo"></i> Resetear
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+                        <h5 class="card-title">Registros de uso{% if email_buscado is not empty %} para <strong>{{ email_buscado }}</strong>{% endif %}</h5>
+                        {% if registros is empty %}
+                            <div class="alert alert-info">No hay registros.</div>
+                        {% else %}
+                            <form class="text-truncate mb-3" id="formulario-resetear-usos" method="post">
+                                <table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-registros-usos">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Email</th>
+                                            <th scope="col">Tipo</th>
+                                            <th scope="col">Usos</th>
+                                            <th scope="col">Primer Uso</th>
+                                            <th scope="col">Ãšltimo Uso</th>
+                                            <th scope="col">AcciÃ³n</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for registro in registros %}
+                                            <tr>
+                                                <td>{{ registro.email }}</td>
+                                                <td>
+                                                    {% if registro.tipo == 'calculadora_cuota' %}
+                                                        <span class="badge badge-primary"><i class="fas fa-calculator"></i> Cuota</span>
+                                                    {% elseif registro.tipo == 'calculadora_precio_maximo' %}
+                                                        <span class="badge badge-success"><i class="fas fa-money-bill-alt"></i> Precio MÃ¡ximo</span>
+                                                    {% elseif registro.tipo == 'calculadora_cambio_casa' %}
+                                                        <span class="badge badge-warning text-dark"><i class="fas fa-home"></i> Cambio de Casa</span>
+                                                    {% else %}
+                                                        <span class="badge badge-secondary">{{ registro.tipo }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge {% if registro.usos >= 3 %}badge-danger{% elseif registro.usos >= 2 %}badge-warning{% else %}badge-success{% endif %}">
+                                                        {{ registro.usos }}/3
+                                                    </span>
+                                                </td>
+                                                <td>{% if registro.primerUso %}<small>{{ registro.primerUso|date('d/m/Y H:i') }}</small>{% else %}<small class="text-muted">-</small>{% endif %}</td>
+                                                <td>{% if registro.ultimoUso %}<small>{{ registro.ultimoUso|date('d/m/Y H:i') }}</small>{% else %}<small class="text-muted">-</small>{% endif %}</td>
+                                                <td>
+                                                    <form method="POST" class="d-inline" onsubmit="return confirm('Â¿EstÃ¡s seguro de que quieres resetear este contador?');">
+                                                        <input type="hidden" name="email_resetear" value="{{ registro.email }}">
+                                                        <input type="hidden" name="tipo_confirmado" value="{{ registro.tipo }}">
+                                                        <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-undo"></i> Resetear</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </form>
 
-                        <!-- Botón para resetear todos -->
-                        <hr>
-                        <div class="alert alert-warning">
-                            <strong>Opción avanzada:</strong> Resetear todos los contadores de este usuario a la vez.
-                        </div>
-                        <form method="POST" class="mb-0" onsubmit="return confirm('?? ADVERTENCIA: Esto reseteará TODOS los contadores para {{ email_buscado }}. ¿Continuar?');">
-                            <input type="hidden" name="email_resetear" value="{{ email_buscado }}">
-                            <input type="hidden" name="tipo_confirmado" value="*">
-                            <button type="submit" class="btn btn-warning btn-lg">
-                                <i class="fas fa-ban"></i> Resetear Todos los Contadores
-                            </button>
-                        </form>
+                            <hr>
+                            <div class="alert alert-warning">
+                                <strong>OpciÃ³n avanzada:</strong> Resetear todos los contadores de este usuario a la vez.
+                            </div>
+                            <form method="POST" class="mb-0" onsubmit="return confirm('âš ï¸ ADVERTENCIA: Esto resetearÃ¡ TODOS los contadores para {{ email_buscado }}. Â¿Continuar?');">
+                                <input type="hidden" name="email_resetear" value="{{ email_buscado }}">
+                                <input type="hidden" name="tipo_confirmado" value="*">
+                                <button type="submit" class="btn btn-warning btn-lg"><i class="fas fa-ban"></i> Resetear Todos los Contadores</button>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
             {% endif %}
@@ -160,4 +166,9 @@
         font-size: 0.85rem;
     }
 </style>
+{% endblock %}
+
+{% block modals %}
+    {{ parent() }}
+    {% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
 {% endblock %}
