@@ -964,6 +964,33 @@ class SimuladorViabilidadController extends Controller
                     error_log('Antes de flush...');
                     $emContador->flush();
                     error_log('Contador incrementado exitosamente para: ' . $emailCliente);
+                } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $eUnique) {
+                    // RACE CONDITION: Otro proceso insertó el registro justo ahora
+                    error_log('RACE CONDITION detectada: Registro duplicado. Reintentando búsqueda y actualización...');
+                    try {
+                        $emContador->clear(); // Limpiar Entity Manager corrupto
+                        $emContador = $this->getDoctrine()->resetManager();
+                        
+                        // Reintentar búsqueda del registro que ahora debe existir
+                        $qb = $emContador->createQueryBuilder();
+                        $qb->select('u')
+                            ->from('AppBundle:SimuladorUsoEmail', 'u')
+                            ->where('u.email = :email')
+                            ->andWhere('u.tipo = :tipo')
+                            ->setParameter('email', $emailCliente)
+                            ->setParameter('tipo', $tipo);
+                        $usoEmail = $qb->getQuery()->getOneOrNullResult();
+                        
+                        if ($usoEmail) {
+                            error_log('Reintentos exitoso: Registro encontrado. Incrementando usos de ' . $usoEmail->getUsos() . ' a ' . ($usoEmail->getUsos() + 1));
+                            $usoEmail->incrementarUsos();
+                            $emContador->persist($usoEmail);
+                            $emContador->flush();
+                            error_log('Contador incrementado correctamente (después de race condition)');
+                        }
+                    } catch (\Throwable $eReintento) {
+                        error_log('ERROR en reintento de race condition: ' . $eReintento->getMessage());
+                    }
                 } catch (\Throwable $eContador) {
                     // NO bloquear la respuesta, solo registrar
                     error_log('ERROR al incrementar contador: ' . $eContador->getMessage());
