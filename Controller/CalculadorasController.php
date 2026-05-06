@@ -1394,7 +1394,10 @@ class CalculadorasController extends Controller
             // FIN PROBANDO CON PDF ADJUNTO
 
             $mailer->send($mensaje);
-			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cuota');
+			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cuota');
+			if ($limitAlcanzado) {
+				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+			}
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -1556,7 +1559,10 @@ class CalculadorasController extends Controller
             // FIN PROBANDO CON PDF ADJUNTO
 
             $mailer->send($mensaje);
-			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo');
+			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo');
+			if ($limitAlcanzado) {
+				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+			}
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -1715,7 +1721,10 @@ class CalculadorasController extends Controller
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
             // FIN PROBANDO CON PDF ADJUNTO
             $mailer->send($mensaje);
-			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cambio_casa');
+			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cambio_casa');
+			if ($limitAlcanzado) {
+				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+			}
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -1874,7 +1883,10 @@ class CalculadorasController extends Controller
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
             // FIN PROBANDO CON PDF ADJUNTO
             $mailer->send($mensaje);
-			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_nm');
+			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_nm');
+			if ($limitAlcanzado) {
+				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+			}
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -2044,7 +2056,10 @@ class CalculadorasController extends Controller
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
             // FIN PROBANDO CON PDF ADJUNTO
             $mailer->send($mensaje);
-			$this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_ihs');
+			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_ihs');
+			if ($limitAlcanzado) {
+				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+			}
 
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
@@ -2076,25 +2091,26 @@ class CalculadorasController extends Controller
 	/**
 	 * Registrar uso de calculadora web (genérico para todas las calculadoras)
 	 * Solo se registra si la ruta es /web/*
+	 * Limita a 3 usos por email y tipo de calculadora
 	 * 
 	 * @param Request $request
 	 * @param string $email Email del usuario
 	 * @param string $tipoCalculadora Identificador único
-	 * @return void
+	 * @return bool true si se alcanzó el límite de 3 usos, false si ok
 	 */
-	private function registrarUsoCalculadora(Request $request, string $email, string $tipoCalculadora)
+	private function registrarUsoCalculadora(Request $request, string $email, string $tipoCalculadora): bool
 	{
 		// Solo registrar si viene de la ruta /web/*
 		$referer = $request->headers->get('referer', '');
 		$refPath = $referer ? parse_url($referer, PHP_URL_PATH) : '';
 		if (strpos($refPath, '/web/') !== 0) {
 			error_log('registrarUsoCalculadora: Ruta no es /web/*, ignorando. Referer: ' . $referer);
-			return;
+			return false;
 		}
 
 		if (empty($email)) {
 			error_log('registrarUsoCalculadora: Email vacío, no se registra el uso');
-			return;
+			return false;
 		}
 
 		try {
@@ -2136,6 +2152,14 @@ class CalculadorasController extends Controller
 			$emContador->flush();
 			error_log('Contador registrado exitosamente para: ' . $email . ' tipo=' . $tipoCalculadora);
 			
+			// Verificar si se alcanzó el límite de 3 usos
+			if ($usoEmail->getUsos() >= 3) {
+				error_log('LÍMITE ALCANZADO: ' . $email . ' ha alcanzado 3 usos de ' . $tipoCalculadora);
+				return true; // Límite alcanzado
+			}
+			
+			return false; // Ok, sin límite alcanzado
+			
 		} catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $eUnique) {
 			error_log('RACE CONDITION detectada en registrarUsoCalculadora. Reintentando...');
 			try {
@@ -2156,12 +2180,21 @@ class CalculadorasController extends Controller
 					$usoEmail->incrementarUsos();
 					$emContador->persist($usoEmail);
 					$emContador->flush();
+					
+					// Verificar límite después de reintentos
+					if ($usoEmail->getUsos() >= 3) {
+						error_log('LÍMITE ALCANZADO (reintento): ' . $email . ' ha alcanzado 3 usos de ' . $tipoCalculadora);
+						return true;
+					}
 				}
+				return false;
 			} catch (\Throwable $eReintento) {
 				error_log('ERROR en reintento de race condition: ' . $eReintento->getMessage());
+				return false;
 			}
 		} catch (\Throwable $e) {
 			error_log('ERROR al registrar contador de calculadora: ' . $e->getMessage());
+			return false;
 		}
 	}
 }
