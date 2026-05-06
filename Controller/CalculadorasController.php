@@ -224,7 +224,7 @@ class CalculadorasController extends Controller
 			// $variablesTwig['hipoteca_total_con_interes'] = $resultado['capital_less_initial_amount'] + $resultado['interest_discharged_total'];
 			// $variablesTwig['total_con_anticipo'] = $formulario->getData()->getPrecioTotal() + $resultado['interest_discharged_total'];
 			$variablesTwig['resultado'] = null;
-				// Ajustar etiqueta IVA/IGIC seg˙n CCAA y obra nueva
+				// Ajustar etiqueta IVA/IGIC seg√∫n CCAA y obra nueva
 				try {
 					$ccaa = $formulario->getData()->getComunidadAutonoma();
 					$nueva = $formulario->getData()->getObraNueva();
@@ -347,7 +347,7 @@ class CalculadorasController extends Controller
 			// $variablesTwig['hipoteca_total_con_interes'] = $resultado['capital_less_initial_amount'] + $resultado['interest_discharged_total'];
 			// $variablesTwig['total_con_anticipo'] = $formulario->getData()->getPrecioTotal() + $resultado['interest_discharged_total'];
 			$variablesTwig['resultado'] = null;
-				// Ajustar etiqueta IVA/IGIC seg˙n CCAA y obra nueva
+				// Ajustar etiqueta IVA/IGIC seg√∫n CCAA y obra nueva
 				try {
 					$ccaa = $formulario->getData()->getComunidadAutonoma();
 					$nueva = $formulario->getData()->getObraNueva();
@@ -450,7 +450,7 @@ class CalculadorasController extends Controller
 				}
 			}
 			$variablesTwig['resultado'] = null;
-			// Ajustar etiqueta IVA/IGIC seg˙n CCAA y obra nueva (como en calculadoraAvanzadaAction)
+			// Ajustar etiqueta IVA/IGIC seg√∫n CCAA y obra nueva (como en calculadoraAvanzadaAction)
 			try {
 				$ccaa = $formulario->getData()->getComunidadAutonoma();
 				$nueva = $formulario->getData()->getObraNueva();
@@ -1250,7 +1250,7 @@ class CalculadorasController extends Controller
 		$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
 		$enviarCalculadora = new \AppBundle\Entity\EnvioCalculadora();
 
-        $calculadora->setTipo(1); // <- Aqu√≠ defines el valor por defecto
+        $calculadora->setTipo(1); // <- Aqu√≠¬≠ defines el valor por defecto
 
         $formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
         $formularioEnviarCalculadora = $this->createForm('AppBundle\Form\EnviarCalculadora', $enviarCalculadora);
@@ -1365,7 +1365,7 @@ class CalculadorasController extends Controller
 		$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 		$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
-		// Ajustar etiqueta IVA/IGIC seg˙n CCAA y obra nueva para el PDF/email
+		// Ajustar etiqueta IVA/IGIC seg√∫n CCAA y obra nueva para el PDF/email
 		try {
 			$ccaa = $formulario->getData()->getComunidadAutonoma();
 			$nueva = $formulario->getData()->getObraNueva();
@@ -1374,12 +1374,12 @@ class CalculadorasController extends Controller
 			$variablesTwig['iva_label'] = 'IVA';
 		}
 	
-		// VERIFICAR LÕMITE DE USOS ANTES DE ENVIAR EMAILS
+		// VERIFICAR L√çMITE DE USOS ANTES DE ENVIAR EMAILS
 		$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cuota');
 		if ($limitAlcanzado) {
-			$variablesTwig['error_limit_reached'] = 'Ha alcanzado el lÌmite de 3 usos para esta calculadora.';
+			$variablesTwig['error_limit_reached'] = 'Ha alcanzado el l√≠mite de 3 usos para esta calculadora.';
 		} else {
-			// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÕMITE
+			// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL L√çMITE
 
             $from = array($this->getParameter('mailer_user') => 'Hipotea');
 			$mensaje = (new Swift_Message('¬°Aqu√≠ tienes el resultado de tu consulta hipotecaria!'))
@@ -1541,12 +1541,12 @@ class CalculadorasController extends Controller
 			$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
-			// VERIFICAR LÕMITE DE USOS ANTES DE ENVIAR EMAILS
+			// VERIFICAR L√çMITE DE USOS ANTES DE ENVIAR EMAILS
 			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo');
 			if ($limitAlcanzado) {
-				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el lÌmite de 3 usos para esta calculadora.';
+				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el l√≠mite de 3 usos para esta calculadora.';
 			} else {
-				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÕMITE
+				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL L√çMITE
 
 				$from = array($this->getParameter('mailer_user') => 'Hipotea');
 				$mensaje = (new Swift_Message('¬°Aqu√≠ tienes el resultado de tu consulta hipotecaria!'))
@@ -1710,12 +1710,12 @@ class CalculadorasController extends Controller
 			$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 			
-			// VERIFICAR LÕMITE DE USOS ANTES DE ENVIAR EMAILS
+			// VERIFICAR L√çMITE DE USOS ANTES DE ENVIAR EMAILS
 			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cambio_casa');
 			if ($limitAlcanzado) {
-				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el lÌmite de 3 usos para esta calculadora.';
+				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el l√≠mite de 3 usos para esta calculadora.';
 			} else {
-				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÕMITE
+				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL L√çMITE
 
 				$from = array($this->getParameter('mailer_user') => 'Hipotea');
 				$mensaje = (new Swift_Message('¬°Aqu√≠ tienes el resultado de tu consulta hipotecaria!'))
@@ -1758,7 +1758,7 @@ class CalculadorasController extends Controller
 		$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
 		$enviarCalculadora = new \AppBundle\Entity\EnvioCalculadora();
 
-        $calculadora->setTipo(2); // <- Aqu√≠ defines el valor por defecto
+        $calculadora->setTipo(2); // <- Aqu√≠¬≠ defines el valor por defecto
 
         $formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
         $formularioEnviarCalculadora = $this->createForm('AppBundle\Form\EnviarCalculadora', $enviarCalculadora);
@@ -1873,59 +1873,50 @@ class CalculadorasController extends Controller
 			}
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
-			$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
-			// VERIFICAR LÕMITE DE USOS ANTES DE ENVIAR EMAILS
-			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_nm');
-			if ($limitAlcanzado) {
-				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el lÌmite de 3 usos para esta calculadora.';
-			} else {
-				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÕMITE
+            $from = array($this->getParameter('mailer_user') => 'Hipotea');
+			$mensaje = (new Swift_Message('¬°Aqu√≠ tienes el resultado de tu consulta hipotecaria!'))
+				->setFrom($from)
+				->setTo($formularioEnviarCalculadora->getData()->getEmail())
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            // PROBANDO CON PDF ADJUNTO
+            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+            $this->get('knp_snappy.pdf')->generateFromHtml(
+                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+                // $contenido,
+                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+                [],
+                true
+            );
+            
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            // FIN PROBANDO CON PDF ADJUNTO
+            $mailer->send($mensaje);
 
-				$from = array($this->getParameter('mailer_user') => 'Hipotea');
-				$mensaje = (new Swift_Message('¬°Aqu√≠ tienes el resultado de tu consulta hipotecaria!'))
-					->setFrom($from)
-					->setTo($formularioEnviarCalculadora->getData()->getEmail())
-	                // ->setTo('fernando.lopez@weeduu.es')
-					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-	            // PROBANDO CON PDF ADJUNTO
-	            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
-	            $this->get('knp_snappy.pdf')->generateFromHtml(
-	                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
-	                // $contenido,
-	                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
-	                [],
-	                true
-	            );
-	            
-	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-	            // FIN PROBANDO CON PDF ADJUNTO
-	            $mailer->send($mensaje);
+            // Ahora para Hipotea
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('NUEVO MILENIO: Consulta calculadora precio m√°ximo'))
+				->setFrom($from)
+				->setTo('info@hipotea.com')
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
 
-	            // Ahora para Hipotea
-	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-	            $mensaje = (new Swift_Message('NUEVO MILENIO: Consulta calculadora precio m√°ximo'))
-					->setFrom($from)
-					//->setTo('info@hipotea.com')
-					->setTo('adrian.verdecia@semillaproyectos.com')
-	                // ->setTo('fernando.lopez@weeduu.es')
-					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-	            $mailer->send($mensaje);
-
-	            // Ahora para Nuevo Milenio
-	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-	            $mensaje = (new Swift_Message('Consulta calculadora precio m√°ximo'))
-					->setFrom($from)
-					->setTo('direccion@nuevomilenio-inmo.com')
-	                // ->setTo('fernando.lopez@weeduu.es')
-					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-	            $mailer->send($mensaje);
-			}
+            // Ahora para Nuevo Milenio
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('Consulta calculadora precio m√°ximo'))
+				->setFrom($from)
+				->setTo('direccion@nuevomilenio-inmo.com')
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}
@@ -2050,73 +2041,63 @@ class CalculadorasController extends Controller
 			}
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
-			$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
-			// VERIFICAR LÕMITE DE USOS ANTES DE ENVIAR EMAILS
-			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_ihs');
-			if ($limitAlcanzado) {
-				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el lÌmite de 3 usos para esta calculadora.';
-			} else {
-				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÕMITE
+            $from = array($this->getParameter('mailer_user') => 'Hipotea');
+			$mensaje = (new Swift_Message('¬°Aqu√≠ tienes el resultado de tu consulta hipotecaria!'))
+				->setFrom($from)
+				->setTo($formularioEnviarCalculadora->getData()->getEmail())
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            // PROBANDO CON PDF ADJUNTO
+            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+            $this->get('knp_snappy.pdf')->generateFromHtml(
+                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+                // $contenido,
+                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+                [],
+                true
+            );
+            
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            // FIN PROBANDO CON PDF ADJUNTO
+            $mailer->send($mensaje);
 
-				$from = array($this->getParameter('mailer_user') => 'Hipotea');
-				$mensaje = (new Swift_Message('¬°Aqu√≠ tienes el resultado de tu consulta hipotecaria!'))
-					->setFrom($from)
-					->setTo($formularioEnviarCalculadora->getData()->getEmail())
-	                // ->setTo('fernando.lopez@weeduu.es')
-					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-	            // PROBANDO CON PDF ADJUNTO
-	            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
-	            $this->get('knp_snappy.pdf')->generateFromHtml(
-	                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
-	                // $contenido,
-	                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
-	                [],
-	                true
-	            );
-	            
-	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-	            // FIN PROBANDO CON PDF ADJUNTO
-	            $mailer->send($mensaje);
+            // Ahora para Hipotea
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('IHS Inmobiliaria: Consulta calculadora precio m√°ximo'))
+				->setFrom($from)
+				->setTo('info@hipotea.com')
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
 
-	            // Ahora para Hipotea
-	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-	            $mensaje = (new Swift_Message('IHS Inmobiliaria: Consulta calculadora precio m√°ximo'))
-					->setFrom($from)
-					//->setTo('info@hipotea.com')
-					->setTo('adrian.verdecia@semillaproyectos.com')
-	                // ->setTo('fernando.lopez@weeduu.es')
-					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-	            $mailer->send($mensaje);
-
-	            // Ahora para IHS
-	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-	            $mensaje = (new Swift_Message('Consulta calculadora precio m√°ximo'))
-					->setFrom($from)
-					//->setTo('info@ihs.es')
-					->setTo('adrian.verdecia@semillaproyectos.com')
-	                // ->setTo('fernando.lopez@weeduu.es')
-					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-	            $mailer->send($mensaje);
-			}
+            // Ahora para IHS
+            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+            $mensaje = (new Swift_Message('Consulta calculadora precio m√°ximo'))
+				->setFrom($from)
+				->setTo('info@ihs.es')
+                // ->setTo('fernando.lopez@weeduu.es')
+				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+            $mailer->send($mensaje);
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}
 
 	/**
-	 * Registrar uso de calculadora web (genÈrico para todas las calculadoras)
+	 * Registrar uso de calculadora web (gen√©rico para todas las calculadoras)
 	 * Solo se registra si la ruta es /web/*
 	 * Limita a 3 usos por email y tipo de calculadora
 	 * 
 	 * @param Request $request
 	 * @param string $email Email del usuario
-	 * @param string $tipoCalculadora Identificador ˙nico
-	 * @return bool true si se alcanzÛ el lÌmite de 3 usos, false si ok
+	 * @param string $tipoCalculadora Identificador √∫nico
+	 * @return bool true si se alcanz√≥ el l√≠mite de 3 usos, false si ok
 	 */
 	private function registrarUsoCalculadora(Request $request, string $email, string $tipoCalculadora): bool
 	{
@@ -2129,7 +2110,7 @@ class CalculadorasController extends Controller
 		}
 
 		if (empty($email)) {
-			error_log('registrarUsoCalculadora: Email vacÌo, no se registra el uso');
+			error_log('registrarUsoCalculadora: Email vac√≠o, no se registra el uso');
 			return false;
 		}
 
@@ -2152,7 +2133,7 @@ class CalculadorasController extends Controller
 				->setParameter('tipo', $tipoCalculadora);
 			$usoEmail = $qb->getQuery()->getOneOrNullResult();
 			
-			error_log('B˙squeda realizada para email=' . $email . ' tipo=' . $tipoCalculadora . ': ' . ($usoEmail ? 'ENCONTRADO (ID: ' . $usoEmail->getId() . ', usos: ' . $usoEmail->getUsos() . ')' : 'NO ENCONTRADO'));
+			error_log('B√∫squeda realizada para email=' . $email . ' tipo=' . $tipoCalculadora . ': ' . ($usoEmail ? 'ENCONTRADO (ID: ' . $usoEmail->getId() . ', usos: ' . $usoEmail->getUsos() . ')' : 'NO ENCONTRADO'));
 			
 			if (!$usoEmail) {
 				error_log('Creando nuevo registro para email=' . $email . ' tipo=' . $tipoCalculadora);
@@ -2165,12 +2146,12 @@ class CalculadorasController extends Controller
 				$emContador->persist($usoEmail);
 				$emContador->flush();
 				error_log('Nuevo registro creado para: ' . $email . ' tipo=' . $tipoCalculadora . ' con 1 uso');
-				return false; // Primer uso, sin lÌmite
+				return false; // Primer uso, sin l√≠mite
 			} else {
-				// VERIFICAR LÕMITE ANTES DE INCREMENTAR
+				// VERIFICAR L√çMITE ANTES DE INCREMENTAR
 				if ($usoEmail->getUsos() >= 3) {
-					error_log('LÕMITE YA ALCANZADO: ' . $email . ' ya tiene ' . $usoEmail->getUsos() . ' usos de ' . $tipoCalculadora . '. NO se incrementa.');
-					return true; // Ya alcanzÛ lÌmite, no incrementar
+					error_log('L√çMITE YA ALCANZADO: ' . $email . ' ya tiene ' . $usoEmail->getUsos() . ' usos de ' . $tipoCalculadora . '. NO se incrementa.');
+					return true; // Ya alcanz√≥ l√≠mite, no incrementar
 				}
 				
 				error_log('Incrementando registro existente: usos actual=' . $usoEmail->getUsos());
@@ -2179,13 +2160,13 @@ class CalculadorasController extends Controller
 				$emContador->flush();
 				error_log('Contador actualizado para: ' . $email . ' tipo=' . $tipoCalculadora . ' nuevos usos: ' . $usoEmail->getUsos());
 				
-				// Verificar si despuÈs del incremento se alcanzÛ el lÌmite de 3 usos
+				// Verificar si despu√©s del incremento se alcanz√≥ el l√≠mite de 3 usos
 				if ($usoEmail->getUsos() >= 3) {
-					error_log('LÕMITE ALCANZADO (despuÈs de incrementar): ' . $email . ' ha alcanzado 3 usos de ' . $tipoCalculadora);
-					return true; // LÌmite alcanzado ahora
+					error_log('L√çMITE ALCANZADO (despu√©s de incrementar): ' . $email . ' ha alcanzado 3 usos de ' . $tipoCalculadora);
+					return true; // L√≠mite alcanzado ahora
 				}
 				
-				return false; // Ok, sin lÌmite alcanzado a˙n
+				return false; // Ok, sin l√≠mite alcanzado a√∫n
 			}
 			
 		} catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $eUnique) {
@@ -2204,9 +2185,9 @@ class CalculadorasController extends Controller
 				$usoEmail = $qb->getQuery()->getOneOrNullResult();
 				
 				if ($usoEmail) {
-					// VERIFICAR LÕMITE ANTES DE INCREMENTAR en reintento
+					// VERIFICAR L√çMITE ANTES DE INCREMENTAR en reintento
 					if ($usoEmail->getUsos() >= 3) {
-						error_log('LÕMITE YA ALCANZADO (reintento): ' . $email . ' ya tiene ' . $usoEmail->getUsos() . ' usos. NO se incrementa.');
+						error_log('L√çMITE YA ALCANZADO (reintento): ' . $email . ' ya tiene ' . $usoEmail->getUsos() . ' usos. NO se incrementa.');
 						return true;
 					}
 					
@@ -2215,9 +2196,9 @@ class CalculadorasController extends Controller
 					$emContador->persist($usoEmail);
 					$emContador->flush();
 					
-					// Verificar lÌmite despuÈs de reintentos
+					// Verificar l√≠mite despu√©s de reintentos
 					if ($usoEmail->getUsos() >= 3) {
-						error_log('LÕMITE ALCANZADO (reintento): ' . $email . ' ha alcanzado 3 usos de ' . $tipoCalculadora);
+						error_log('L√çMITE ALCANZADO (reintento): ' . $email . ' ha alcanzado 3 usos de ' . $tipoCalculadora);
 						return true;
 					}
 				}
