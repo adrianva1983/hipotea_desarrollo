@@ -2301,6 +2301,7 @@ class CalculadorasController extends Controller
 				}
 			}
 		}
+		error_log('Renderizando resetearUsosCalculadorasAction con variables: ' . print_r($variablesTwig, true));
 
 		return $this->render('@App/Backoffice/Extras/ResetearUsosCalculadoras.html.twig', $variablesTwig);
 	}
