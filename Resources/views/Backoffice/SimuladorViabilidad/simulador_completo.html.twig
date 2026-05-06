@@ -2017,7 +2017,17 @@
                             })()}
                             ${ratioEndeudamiento > 45 ? `<li><strong>⚠️ Ratio de Endeudamiento (${ratioEndeudamiento.toFixed(1)}%):</strong> La cuota mensual es muy alta respecto a tus ingresos. Necesitas realizar algún ajuste:<ul style="margin-top: 6px;"><li>Reduce el precio del inmueble, o</li><li>Aumenta la aportación inicial, o</li><li>Busca mejorar tus ingresos mensuales</li></ul></li>` : ''}
                             ${valorInmueblePaso3 > 0 && precioMaxRec > 0 && valorInmueblePaso3 > precioMaxRec ? '<li><strong>⚠️ Precio del inmueble supera máximo:</strong> El precio (€' + valorInmueblePaso3.toLocaleString() + ') excede al máximo recomendado (€' + precioMaxRec.toLocaleString() + '). <strong>Considera un inmueble de menor precio, más acorde con tus ingresos actuales o aumenta la aportación a la compra</strong></li>' : ''}
-                            ${mejorTitular.ant === 'menos_1_anio' && mejorTitular.sit !== 'contrato_temporal' && mejorTitular.sit !== 'funcionario' ? '<li><strong>Espera a tener mayor antigüedad laboral</strong></li>' : ''}
+                            ${(() => {
+                                const msgs = [];
+                                if (mejorTitular.sit === 'autonomo' && mejorTitular.ant === 'un_anio') {
+                                    msgs.push('<li><strong>Antigüedad como autónomo insuficiente:</strong> Espera a completar <strong>2 años de actividad</strong>. Esto mejorará significativamente tu perfil hipotecario.</li>');
+                                } else if (mejorTitular.sit === 'empresario') {
+                                    msgs.push('<li><strong>Perfil como empresario:</strong> Refuerza tu solicitud con documentación contable actualizada (últimas declaraciones de IRPF e IVA). Un mayor historial de ingresos estables mejorará tu viabilidad.</li>');
+                                } else if (mejorTitular.sit === 'otros') {
+                                    msgs.push('<li><strong>Situación laboral no estándar:</strong> Tu perfil puede requerir un análisis personalizado. Contacta con nuestros asesores para estudiar las opciones disponibles.</li>');
+                                }
+                                return msgs.join('');
+                            })()}
                             ${(() => {
                                 const deudaActiva = (prestamosCuotaT1 + prestamosCuotaT2) > 0;
                                 const plazoActual = (datosCalculadosPaso3 && datosCalculadosPaso3.plazo) ? parseInt(datosCalculadosPaso3.plazo) : 0;
@@ -2048,6 +2058,11 @@
                                 // Fallback: si no se añadió ningún mensaje y hay deuda activa, mantener consejo genérico
                                 if (msgs.length === 0 && deudaActiva) {
                                     msgs.push('<li><strong>Reduce deudas activas</strong> para disminuir tu ratio de endeudamiento total</li>');
+                                }
+
+                                // Fallback: ratio entre 35-45% sin deuda activa ni ajuste de plazo aplicable
+                                if (msgs.length === 0 && ratioEndeudamiento > 35) {
+                                    msgs.push(`<li><strong>Ratio de endeudamiento (${ratioEndeudamiento.toFixed(1)}%) por encima del óptimo:</strong> Considera reducir el precio del inmueble o mejorar tus ingresos mensuales para obtener mejores condiciones.</li>`);
                                 }
 
                                 return msgs.join('');
