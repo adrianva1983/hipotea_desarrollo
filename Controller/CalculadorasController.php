@@ -2212,4 +2212,96 @@ class CalculadorasController extends Controller
 			return false;
 		}
 	}
+
+	/**
+	 * Resetear usos de calculadoras para un usuario (email)
+	 * Acción para admin, comerciales y técnicos
+	 */
+	public function resetearUsosCalculadorasAction(Request $request)
+	{
+		// Validar que es admin, comercial o técnico
+		$usuario = $this->getUser();
+		if (!$usuario) {
+			throw $this->createAccessDeniedException('Acceso denegado');
+		}
+
+		$doctrine = $this->getDoctrine();
+		$em = $doctrine->getManager();
+		$repositorio = $doctrine->getRepository('AppBundle:SimuladorUsoEmail');
+		
+		$variablesTwig = array(
+			'titulo' => 'Resetear Usos de Calculadoras',
+			'email_buscado' => '',
+			'registros' => array(),
+			'mensaje' => '',
+			'tipo_mensaje' => ''
+		);
+
+		// Si hay búsqueda por email
+		if ($request->request->has('email_buscar')) {
+			$email = trim($request->request->get('email_buscar', ''));
+			
+			if (empty($email)) {
+				$variablesTwig['mensaje'] = 'Por favor, ingresa un email válido.';
+				$variablesTwig['tipo_mensaje'] = 'warning';
+			} else {
+				// Buscar registros de uso para este email
+				$registros = $repositorio->findBy(array('email' => $email));
+				$variablesTwig['email_buscado'] = $email;
+				$variablesTwig['registros'] = $registros;
+				
+				if (empty($registros)) {
+					$variablesTwig['mensaje'] = 'No se encontraron registros de uso para este email.';
+					$variablesTwig['tipo_mensaje'] = 'info';
+				}
+			}
+		}
+
+		// Si hay confirmación de reseteo
+		if ($request->request->has('email_resetear') && $request->request->has('tipo_confirmado')) {
+			$email = trim($request->request->get('email_resetear', ''));
+			$tipoConfirmado = $request->request->get('tipo_confirmado', '');
+			
+			if (!empty($email)) {
+				try {
+					// Si tipo_confirmado es "*", resetear todos
+					if ($tipoConfirmado === '*') {
+						$registros = $repositorio->findBy(array('email' => $email));
+						$cantidad = count($registros);
+						
+						foreach ($registros as $registro) {
+							$em->remove($registro);
+						}
+						$em->flush();
+						
+						$variablesTwig['mensaje'] = sprintf('Se han eliminado %d registros de uso para %s. Los contadores se han reseteado.', $cantidad, $email);
+						$variablesTwig['tipo_mensaje'] = 'success';
+					} else {
+						// Resetear solo el tipo específico
+						$registro = $repositorio->findOneBy(array('email' => $email, 'tipo' => $tipoConfirmado));
+						
+						if ($registro) {
+							$em->remove($registro);
+							$em->flush();
+							
+							$variablesTwig['mensaje'] = sprintf('El contador de "%s" ha sido reseteado para %s.', $tipoConfirmado, $email);
+							$variablesTwig['tipo_mensaje'] = 'success';
+						} else {
+							$variablesTwig['mensaje'] = 'No se encontró registro para resetear.';
+							$variablesTwig['tipo_mensaje'] = 'warning';
+						}
+					}
+					
+					// Limpiar campos de búsqueda
+					$variablesTwig['email_buscado'] = '';
+					$variablesTwig['registros'] = array();
+				} catch (\Exception $e) {
+					$variablesTwig['mensaje'] = 'Error al resetear: ' . $e->getMessage();
+					$variablesTwig['tipo_mensaje'] = 'danger';
+				}
+			}
+		}
+
+		return $this->render('@App/Backoffice/Extras/ResetearUsosCalculadoras.html.twig', $variablesTwig);
+	}
 }

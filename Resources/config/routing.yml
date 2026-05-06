@@ -820,6 +820,11 @@ procesar_texto_para_expediente:
   controller: AppBundle:InteligenciaArtificial:procesarTextoParaExpediente
   methods: [POST]
 
+resetear_usos_calculadoras:
+  path: /Admin/ResetearUsosCalculadoras
+  controller: AppBundle:Calculadoras:resetearUsosCalculadoras
+  methods: [GET, POST]
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }

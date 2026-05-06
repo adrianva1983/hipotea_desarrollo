@@ -1,0 +1,163 @@
+{% extends "@App/Backoffice/base.html.twig" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">
+                <i class="fas fa-sync-alt"></i> Resetear Usos de Calculadoras
+            </h2>
+
+            {% if mensaje %}
+                <div class="alert alert-{{ tipo_mensaje }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{% if tipo_mensaje == 'success' %}check-circle{% elseif tipo_mensaje == 'danger' %}exclamation-circle{% elseif tipo_mensaje == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                    {{ mensaje }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endif %}
+
+            <!-- Formulario de búsqueda -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-search"></i> Buscar usuario por email
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="form-inline w-100">
+                        <div class="form-group mr-3 flex-grow-1">
+                            <label for="email_buscar" class="mr-2">Email:</label>
+                            <input type="email" 
+                                   class="form-control w-100" 
+                                   id="email_buscar" 
+                                   name="email_buscar" 
+                                   placeholder="ej: usuario@example.com" 
+                                   required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Resultados de búsqueda -->
+            {% if registros|length > 0 %}
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list"></i> Registros encontrados para: <strong>{{ email_buscado }}</strong>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Tipo de Calculadora</th>
+                                        <th>Usos</th>
+                                        <th>Primer Uso</th>
+                                        <th>Último Uso</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in registros %}
+                                    <tr>
+                                        <td>{{ registro.email }}</td>
+                                        <td>
+                                            {% if registro.tipo == 'calculadora_cuota' %}
+                                                <span class="badge badge-primary">
+                                                    <i class="fas fa-calculator"></i> Calculadora Cuota
+                                                </span>
+                                            {% elseif registro.tipo == 'calculadora_precio_maximo' %}
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-money-bill-alt"></i> Precio Máximo
+                                                </span>
+                                            {% elseif registro.tipo == 'calculadora_cambio_casa' %}
+                                                <span class="badge badge-warning text-dark">
+                                                    <i class="fas fa-home"></i> Cambio de Casa
+                                                </span>
+                                            {% elseif registro.tipo == 'calculadora_precio_maximo_nm' %}
+                                                <span class="badge badge-secondary">
+                                                    <i class="fas fa-building"></i> Precio Máximo NM
+                                                </span>
+                                            {% elseif registro.tipo == 'calculadora_precio_maximo_ihs' %}
+                                                <span class="badge badge-secondary">
+                                                    <i class="fas fa-building"></i> Precio Máximo IHS
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">{{ registro.tipo }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if registro.usos >= 3 %}badge-danger{% elseif registro.usos >= 2 %}badge-warning{% else %}badge-success{% endif %}">
+                                                {{ registro.usos }}/3
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if registro.primerUso %}
+                                                <small>{{ registro.primerUso|date('d/m/Y H:i') }}</small>
+                                            {% else %}
+                                                <small class="text-muted">-</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if registro.ultimoUso %}
+                                                <small>{{ registro.ultimoUso|date('d/m/Y H:i') }}</small>
+                                            {% else %}
+                                                <small class="text-muted">-</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres resetear este contador?');">
+                                                <input type="hidden" name="email_resetear" value="{{ registro.email }}">
+                                                <input type="hidden" name="tipo_confirmado" value="{{ registro.tipo }}">
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-undo"></i> Resetear
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Botón para resetear todos -->
+                        <hr>
+                        <div class="alert alert-warning">
+                            <strong>Opción avanzada:</strong> Resetear todos los contadores de este usuario a la vez.
+                        </div>
+                        <form method="POST" class="mb-0" onsubmit="return confirm('?? ADVERTENCIA: Esto reseteará TODOS los contadores para {{ email_buscado }}. ¿Continuar?');">
+                            <input type="hidden" name="email_resetear" value="{{ email_buscado }}">
+                            <input type="hidden" name="tipo_confirmado" value="*">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-ban"></i> Resetear Todos los Contadores
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .card-header {
+        border-bottom: 2px solid rgba(0,0,0,.125);
+    }
+    
+    .badge {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}

@@ -162,8 +162,9 @@
 								{% if is_granted('ROLE_ADMIN') %}
 									<li>
 										<a href="{{ path('parametros_aplicacion',{'id':'1'}) }}">Parámetros Calculadora</a>
-									</li>
-								{% endif %}
+									</li>								<li>
+									<a href="{{ path('resetear_usos_calculadoras') }}">Resetear Usos Calculadoras</a>
+								</li>								{% endif %}
 								<li>
 									<a href="{{ path('admin_kommo_webhooks') }}">Webhooks de Kommo</a>
 								</li>
