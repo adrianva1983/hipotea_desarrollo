@@ -1414,6 +1414,7 @@ class CalculadorasController extends Controller
             $mailer->send($mensaje);
 			}
 		}
+		$variablesTwig['whatsappContacto'] = $this->getParameter('simulador_whatsapp_contacto');
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}
 
