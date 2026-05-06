@@ -1362,16 +1362,18 @@ class CalculadorasController extends Controller
 			}
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
+		$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+		$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
-			// Ajustar etiqueta IVA/IGIC según CCAA y obra nueva para el PDF/email
-			try {
-				$ccaa = $formulario->getData()->getComunidadAutonoma();
-				$nueva = $formulario->getData()->getObraNueva();
-				$variablesTwig['iva_label'] = ($nueva && $ccaa == '5') ? 'IGIC' : 'IVA';
-			} catch (\Exception $e) {
-				$variablesTwig['iva_label'] = 'IVA';
-			}
-		
+		// Ajustar etiqueta IVA/IGIC según CCAA y obra nueva para el PDF/email
+		try {
+			$ccaa = $formulario->getData()->getComunidadAutonoma();
+			$nueva = $formulario->getData()->getObraNueva();
+			$variablesTwig['iva_label'] = ($nueva && $ccaa == '5') ? 'IGIC' : 'IVA';
+		} catch (\Exception $e) {
+			$variablesTwig['iva_label'] = 'IVA';
+		}
+	
 		// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
 		$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cuota');
 		if ($limitAlcanzado) {
@@ -1401,8 +1403,6 @@ class CalculadorasController extends Controller
 
             $mailer->send($mensaje);
             // Ahora para Hipotea
-            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
             $mensaje = (new Swift_Message('Consulta calculadora cuota'))
 				->setFrom($from)
 				//->setTo('info@hipotea.com')
@@ -1538,7 +1538,7 @@ class CalculadorasController extends Controller
 			}
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
-			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
 			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
@@ -1707,6 +1707,8 @@ class CalculadorasController extends Controller
 			}
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
+			$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 			
 			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
 			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cambio_casa');
@@ -1871,7 +1873,7 @@ class CalculadorasController extends Controller
 			}
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
-			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
 			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
@@ -2048,7 +2050,7 @@ class CalculadorasController extends Controller
 			}
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
-			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+			$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
 			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
