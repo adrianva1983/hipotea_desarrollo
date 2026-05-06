@@ -2160,22 +2160,30 @@ class CalculadorasController extends Controller
 				$usoEmail->setPrimerUso(new \DateTime());
 				$usoEmail->setUltimoUso(new \DateTime());
 				$emContador->persist($usoEmail);
+				$emContador->flush();
+				error_log('Nuevo registro creado para: ' . $email . ' tipo=' . $tipoCalculadora . ' con 1 uso');
+				return false; // Primer uso, sin límite
 			} else {
+				// VERIFICAR LÍMITE ANTES DE INCREMENTAR
+				if ($usoEmail->getUsos() >= 3) {
+					error_log('LÍMITE YA ALCANZADO: ' . $email . ' ya tiene ' . $usoEmail->getUsos() . ' usos de ' . $tipoCalculadora . '. NO se incrementa.');
+					return true; // Ya alcanzó límite, no incrementar
+				}
+				
 				error_log('Incrementando registro existente: usos actual=' . $usoEmail->getUsos());
 				$usoEmail->incrementarUsos();
 				$emContador->persist($usoEmail);
+				$emContador->flush();
+				error_log('Contador actualizado para: ' . $email . ' tipo=' . $tipoCalculadora . ' nuevos usos: ' . $usoEmail->getUsos());
+				
+				// Verificar si después del incremento se alcanzó el límite de 3 usos
+				if ($usoEmail->getUsos() >= 3) {
+					error_log('LÍMITE ALCANZADO (después de incrementar): ' . $email . ' ha alcanzado 3 usos de ' . $tipoCalculadora);
+					return true; // Límite alcanzado ahora
+				}
+				
+				return false; // Ok, sin límite alcanzado aún
 			}
-			
-			$emContador->flush();
-			error_log('Contador registrado exitosamente para: ' . $email . ' tipo=' . $tipoCalculadora);
-			
-			// Verificar si se alcanzó el límite de 3 usos
-			if ($usoEmail->getUsos() >= 3) {
-				error_log('LÍMITE ALCANZADO: ' . $email . ' ha alcanzado 3 usos de ' . $tipoCalculadora);
-				return true; // Límite alcanzado
-			}
-			
-			return false; // Ok, sin límite alcanzado
 			
 		} catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $eUnique) {
 			error_log('RACE CONDITION detectada en registrarUsoCalculadora. Reintentando...');
@@ -2193,6 +2201,12 @@ class CalculadorasController extends Controller
 				$usoEmail = $qb->getQuery()->getOneOrNullResult();
 				
 				if ($usoEmail) {
+					// VERIFICAR LÍMITE ANTES DE INCREMENTAR en reintento
+					if ($usoEmail->getUsos() >= 3) {
+						error_log('LÍMITE YA ALCANZADO (reintento): ' . $email . ' ya tiene ' . $usoEmail->getUsos() . ' usos. NO se incrementa.');
+						return true;
+					}
+					
 					error_log('Reintento exitoso: Incrementando usos de ' . $usoEmail->getUsos() . ' a ' . ($usoEmail->getUsos() + 1));
 					$usoEmail->incrementarUsos();
 					$emContador->persist($usoEmail);

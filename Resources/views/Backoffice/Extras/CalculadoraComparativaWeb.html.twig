@@ -234,11 +234,18 @@
 				<div class="card-body d-flex flex-column justify-content-center m-auto" style="width:100%;padding: 1.25rem 0;">
 					{# {% if tipo_calculo is defined and tipo_calculo =='cuota' %} #}
 					{% if error_limit_reached is defined %}
-					<div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin: 20px 0;">
-						<strong>Â¡LÃ­mite alcanzado!</strong> {{ error_limit_reached }}
-						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-							<span aria-hidden="true">&times;</span>
-						</button>
+					<div style="background: linear-gradient(135deg, #fff5e6 0%, #fffef9 100%); border: 3px solid #ff7722; border-radius: 15px; padding: 40px; margin-top: 30px; text-align: center;">
+						<div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+						<h2 style="color: #ff7722; margin-bottom: 15px; font-size: 24px;">Límite de Usos Alcanzado</h2>
+						<p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+							{{ error_limit_reached }}
+						</p>
+						<p style="color: #666; font-size: 14px; margin-bottom: 25px;">
+							Puedes contactar con nosotros a través de WhatsApp para solicitar usar de nuevo la calculadora.
+						</p>
+						<a href="https://wa.me/34671234567?text=Hola%2C%20he%20alcanzado%20el%20l%C3%ADmite%20de%20usos%20en%20la%20calculadora%20y%20me%20gustar%C3%ADa%20seguir%20usando.%20Mi%20email%20es%20{{ email|default('') }}" target="_blank" style="display: inline-block; background: #25d366; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; transition: all 0.3s;">
+							📱 Contactar por WhatsApp
+						</a>
 					</div>
 					{% else %}
 					<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado>
