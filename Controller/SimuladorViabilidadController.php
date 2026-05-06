@@ -920,9 +920,11 @@ class SimuladorViabilidadController extends Controller
             // ===== INCREMENTAR CONTADOR DE USOS =====
             // Solo se cuenta cuando se envía exitosamente a Hipotea
             $emailCliente = $datosCliente['email'] ?? null;
+            $tipo = 'simulador_viabilidad'; // Redefinir para garantizar scope
             if (!empty($emailCliente) && ($contaruso)) {
                 try {
                     error_log('=== INCREMENTAR CONTADOR: Iniciando para ' . $emailCliente);
+                    error_log('Tipo a buscar/crear: ' . $tipo);
                     
                     // Obtener EntityManager fresco (importante si hay timeout o error previo)
                     $emContador = $this->getDoctrine()->getManager();
@@ -939,11 +941,11 @@ class SimuladorViabilidadController extends Controller
                         ->setParameter('email', $emailCliente)
                         ->setParameter('tipo', $tipo);
                     $usoEmail = $qb->getQuery()->getOneOrNullResult();
-                    error_log('Búsqueda realizada: ' . ($usoEmail ? 'ENCONTRADO' : 'NO ENCONTRADO'));
+                    error_log('Búsqueda realizada para email=' . $emailCliente . ' tipo=' . $tipo . ': ' . ($usoEmail ? 'ENCONTRADO (ID: ' . $usoEmail->getId() . ', usos: ' . $usoEmail->getUsos() . ')' : 'NO ENCONTRADO'));
                     
                     if (!$usoEmail) {
                         // Crear nuevo registro
-                        error_log('Creando nuevo registro...');
+                        error_log('Creando nuevo registro para email=' . $emailCliente . ' tipo=' . $tipo);
                         $usoEmail = new SimuladorUsoEmail();
                         $usoEmail->setEmail($emailCliente);
                         $usoEmail->setTipo($tipo);
@@ -953,8 +955,10 @@ class SimuladorViabilidadController extends Controller
                         $emContador->persist($usoEmail);
                     } else {
                         // Incrementar existente
-                        error_log('Incrementando registrio existente, usos actual: ' . $usoEmail->getUsos());
+                        error_log('Incrementando registro existente: usos actual=' . $usoEmail->getUsos());
+                        $usosAntes = $usoEmail->getUsos();
                         $usoEmail->incrementarUsos();
+                        error_log('Usos después del incremento: ' . $usoEmail->getUsos());
                         $emContador->persist($usoEmail);
                     }
                     error_log('Antes de flush...');
