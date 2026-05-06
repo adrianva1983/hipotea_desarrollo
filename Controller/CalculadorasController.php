@@ -1371,7 +1371,13 @@ class CalculadorasController extends Controller
 			} catch (\Exception $e) {
 				$variablesTwig['iva_label'] = 'IVA';
 			}
-			
+		
+		// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
+		$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cuota');
+		if ($limitAlcanzado) {
+			$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+		} else {
+			// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÍMITE
 
             $from = array($this->getParameter('mailer_user') => 'Hipotea');
 			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
@@ -1394,11 +1400,6 @@ class CalculadorasController extends Controller
             // FIN PROBANDO CON PDF ADJUNTO
 
             $mailer->send($mensaje);
-			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cuota');
-			if ($limitAlcanzado) {
-				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
-			}
-
             // Ahora para Hipotea
             $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
@@ -1411,6 +1412,7 @@ class CalculadorasController extends Controller
 
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
             $mailer->send($mensaje);
+			}
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}
@@ -1538,43 +1540,47 @@ class CalculadorasController extends Controller
 			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
-            $from = array($this->getParameter('mailer_user') => 'Hipotea');
-			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
-				->setFrom($from)
-				->setTo($formularioEnviarCalculadora->getData()->getEmail())
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            
-            // PROBANDO CON PDF ADJUNTO
-            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
-            $this->get('knp_snappy.pdf')->generateFromHtml(
-                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
-                // $contenido,
-                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
-                [],
-                true
-            );
-            
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            // FIN PROBANDO CON PDF ADJUNTO
-
-            $mailer->send($mensaje);
+			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
 			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo');
 			if ($limitAlcanzado) {
 				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
-			}
+			} else {
+				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÍMITE
 
-            // Ahora para Hipotea
-            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-            $mensaje = (new Swift_Message('Consulta calculadora precio mÃ¡ximo'))
-				->setFrom($from)
-				//->setTo('info@hipotea.com')
-				->setTo('adrian.verdecia@semillaproyectos.com')
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            $mailer->send($mensaje);
+				$from = array($this->getParameter('mailer_user') => 'Hipotea');
+				$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
+					->setFrom($from)
+					->setTo($formularioEnviarCalculadora->getData()->getEmail())
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            
+	            // PROBANDO CON PDF ADJUNTO
+	            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+	            $this->get('knp_snappy.pdf')->generateFromHtml(
+	                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+	                // $contenido,
+	                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+	                [],
+	                true
+	            );
+	            
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            // FIN PROBANDO CON PDF ADJUNTO
+
+	            $mailer->send($mensaje);
+
+	            // Ahora para Hipotea
+	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+	            $mensaje = (new Swift_Message('Consulta calculadora precio mÃ¡ximo'))
+					->setFrom($from)
+					//->setTo('info@hipotea.com')
+					->setTo('adrian.verdecia@semillaproyectos.com')
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            $mailer->send($mensaje);
+			}
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}
@@ -1701,42 +1707,45 @@ class CalculadorasController extends Controller
 			$variablesTwig['resultado'] = true;
 			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
 			
-
-            $from = array($this->getParameter('mailer_user') => 'Hipotea');
-			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
-				->setFrom($from)
-				->setTo($formularioEnviarCalculadora->getData()->getEmail())
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            // PROBANDO CON PDF ADJUNTO
-            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
-            $this->get('knp_snappy.pdf')->generateFromHtml(
-                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
-                // $contenido,
-                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
-                [],
-                true
-            );
-            
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            // FIN PROBANDO CON PDF ADJUNTO
-            $mailer->send($mensaje);
+			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
 			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_cambio_casa');
 			if ($limitAlcanzado) {
 				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
-			}
+			} else {
+				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÍMITE
 
-            // Ahora para Hipotea
-            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-            $mensaje = (new Swift_Message('Consulta calculadora cuota'))
-				->setFrom($from)
-				//->setTo('info@hipotea.com')
-				->setTo('adrian.verdecia@semillaproyectos.com')
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            $mailer->send($mensaje);
+				$from = array($this->getParameter('mailer_user') => 'Hipotea');
+				$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
+					->setFrom($from)
+					->setTo($formularioEnviarCalculadora->getData()->getEmail())
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            // PROBANDO CON PDF ADJUNTO
+	            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+	            $this->get('knp_snappy.pdf')->generateFromHtml(
+	                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+	                // $contenido,
+	                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+	                [],
+	                true
+	            );
+	            
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            // FIN PROBANDO CON PDF ADJUNTO
+	            $mailer->send($mensaje);
+
+	            // Ahora para Hipotea
+	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+	            $mensaje = (new Swift_Message('Consulta calculadora cuota'))
+					->setFrom($from)
+					//->setTo('info@hipotea.com')
+					->setTo('adrian.verdecia@semillaproyectos.com')
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            $mailer->send($mensaje);
+			}
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}
@@ -1864,52 +1873,56 @@ class CalculadorasController extends Controller
 			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
-            $from = array($this->getParameter('mailer_user') => 'Hipotea');
-			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
-				->setFrom($from)
-				->setTo($formularioEnviarCalculadora->getData()->getEmail())
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            // PROBANDO CON PDF ADJUNTO
-            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
-            $this->get('knp_snappy.pdf')->generateFromHtml(
-                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
-                // $contenido,
-                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
-                [],
-                true
-            );
-            
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            // FIN PROBANDO CON PDF ADJUNTO
-            $mailer->send($mensaje);
+			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
 			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_nm');
 			if ($limitAlcanzado) {
 				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+			} else {
+				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÍMITE
+
+				$from = array($this->getParameter('mailer_user') => 'Hipotea');
+				$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
+					->setFrom($from)
+					->setTo($formularioEnviarCalculadora->getData()->getEmail())
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            // PROBANDO CON PDF ADJUNTO
+	            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+	            $this->get('knp_snappy.pdf')->generateFromHtml(
+	                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+	                // $contenido,
+	                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+	                [],
+	                true
+	            );
+	            
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            // FIN PROBANDO CON PDF ADJUNTO
+	            $mailer->send($mensaje);
+
+	            // Ahora para Hipotea
+	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+	            $mensaje = (new Swift_Message('NUEVO MILENIO: Consulta calculadora precio mÃ¡ximo'))
+					->setFrom($from)
+					//->setTo('info@hipotea.com')
+					->setTo('adrian.verdecia@semillaproyectos.com')
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            $mailer->send($mensaje);
+
+	            // Ahora para Nuevo Milenio
+	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+	            $mensaje = (new Swift_Message('Consulta calculadora precio mÃ¡ximo'))
+					->setFrom($from)
+					->setTo('direccion@nuevomilenio-inmo.com')
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            $mailer->send($mensaje);
 			}
-
-            // Ahora para Hipotea
-            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-            $mensaje = (new Swift_Message('NUEVO MILENIO: Consulta calculadora precio mÃ¡ximo'))
-				->setFrom($from)
-				//->setTo('info@hipotea.com')
-				->setTo('adrian.verdecia@semillaproyectos.com')
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            $mailer->send($mensaje);
-
-            // Ahora para Nuevo Milenio
-            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-            $mensaje = (new Swift_Message('Consulta calculadora precio mÃ¡ximo'))
-				->setFrom($from)
-				->setTo('direccion@nuevomilenio-inmo.com')
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            $mailer->send($mensaje);
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}
@@ -2037,53 +2050,57 @@ class CalculadorasController extends Controller
 			// $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
 
-            $from = array($this->getParameter('mailer_user') => 'Hipotea');
-			$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
-				->setFrom($from)
-				->setTo($formularioEnviarCalculadora->getData()->getEmail())
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            // PROBANDO CON PDF ADJUNTO
-            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
-            $this->get('knp_snappy.pdf')->generateFromHtml(
-                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
-                // $contenido,
-                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
-                [],
-                true
-            );
-            
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            // FIN PROBANDO CON PDF ADJUNTO
-            $mailer->send($mensaje);
+			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
 			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo_ihs');
 			if ($limitAlcanzado) {
 				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+			} else {
+				// SOLO ENVIAR EMAILS SI NO HA ALCANZADO EL LÍMITE
+
+				$from = array($this->getParameter('mailer_user') => 'Hipotea');
+				$mensaje = (new Swift_Message('Â¡AquÃ­ tienes el resultado de tu consulta hipotecaria!'))
+					->setFrom($from)
+					->setTo($formularioEnviarCalculadora->getData()->getEmail())
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            // PROBANDO CON PDF ADJUNTO
+	            $nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+	            $this->get('knp_snappy.pdf')->generateFromHtml(
+	                $this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig',$variablesTwig),
+	                // $contenido,
+	                $this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+	                [],
+	                true
+	            );
+	            
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            // FIN PROBANDO CON PDF ADJUNTO
+	            $mailer->send($mensaje);
+
+	            // Ahora para Hipotea
+	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+	            $mensaje = (new Swift_Message('IHS Inmobiliaria: Consulta calculadora precio mÃ¡ximo'))
+					->setFrom($from)
+					//->setTo('info@hipotea.com')
+					->setTo('adrian.verdecia@semillaproyectos.com')
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            $mailer->send($mensaje);
+
+	            // Ahora para IHS
+	            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+	            $mensaje = (new Swift_Message('Consulta calculadora precio mÃ¡ximo'))
+					->setFrom($from)
+					//->setTo('info@ihs.es')
+					->setTo('adrian.verdecia@semillaproyectos.com')
+	                // ->setTo('fernando.lopez@weeduu.es')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+	            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+	            $mailer->send($mensaje);
 			}
-
-            // Ahora para Hipotea
-            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-            $mensaje = (new Swift_Message('IHS Inmobiliaria: Consulta calculadora precio mÃ¡ximo'))
-				->setFrom($from)
-				//->setTo('info@hipotea.com')
-				->setTo('adrian.verdecia@semillaproyectos.com')
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            $mailer->send($mensaje);
-
-            // Ahora para IHS
-            $variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
-			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
-            $mensaje = (new Swift_Message('Consulta calculadora precio mÃ¡ximo'))
-				->setFrom($from)
-				//->setTo('info@ihs.es')
-				->setTo('adrian.verdecia@semillaproyectos.com')
-                // ->setTo('fernando.lopez@weeduu.es')
-				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
-            $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-            $mailer->send($mensaje);
 		}
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}

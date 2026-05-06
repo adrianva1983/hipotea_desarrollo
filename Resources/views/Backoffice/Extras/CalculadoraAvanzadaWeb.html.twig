@@ -878,7 +878,7 @@
 										<span aria-hidden="true">&times;</span>
 									</button>
 								</div>
-								{% endif %}
+								{% else %}
 								<style>
 									#plazoAmortizacion {
 										padding-left: 0 !important;
@@ -1318,6 +1318,7 @@
 									{% endif %}
 								</div>
 							</div>
+							{% endif %}
 							<div class="text-muted{% if resultado is defined %} d-none{% endif %} centrado-caja texto-resultado-vacio" data-contenedor-resultado-vacio>
 								Por favor, completa la información para ver el resultado.
 							</div>

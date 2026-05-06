@@ -346,7 +346,7 @@
 				<span aria-hidden="true">&times;</span>
 			</button>
 		</div>
-		{% endif %}
+		{% else %}
 		<div id="resultado-final" style="padding: 50px;font-size: 17px;border: 4px solid #ef6c00;border-radius: 20px;text-align: center;height: 100%;" data-contenedor-resultado-vacio>
 			<h4><strong>¡Gracias por usar nuestra calculadora!</strong></h4>
 			<p>
@@ -367,6 +367,7 @@
 				</tr>
 			</table>
 		</div>
+		{% endif %}
 	{% endif %}
 
 	{% endblock %}
