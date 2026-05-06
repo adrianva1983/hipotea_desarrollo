@@ -1401,7 +1401,8 @@ class CalculadorasController extends Controller
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
             $mensaje = (new Swift_Message('Consulta calculadora cuota'))
 				->setFrom($from)
-				->setTo('info@hipotea.com')
+				//->setTo('info@hipotea.com')
+				->setTo('adrian.verdecia@semillaproyectos.com')
 				// ->setTo('fernando.lopez@weeduu.es')
 				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
 
@@ -1562,7 +1563,8 @@ class CalculadorasController extends Controller
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
             $mensaje = (new Swift_Message('Consulta calculadora precio máximo'))
 				->setFrom($from)
-				->setTo('info@hipotea.com')
+				//->setTo('info@hipotea.com')
+				->setTo('adrian.verdecia@semillaproyectos.com')
                 // ->setTo('fernando.lopez@weeduu.es')
 				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
@@ -1720,7 +1722,8 @@ class CalculadorasController extends Controller
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
             $mensaje = (new Swift_Message('Consulta calculadora cuota'))
 				->setFrom($from)
-				->setTo('info@hipotea.com')
+				//->setTo('info@hipotea.com')
+				->setTo('adrian.verdecia@semillaproyectos.com')
                 // ->setTo('fernando.lopez@weeduu.es')
 				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
@@ -1878,7 +1881,8 @@ class CalculadorasController extends Controller
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
             $mensaje = (new Swift_Message('NUEVO MILENIO: Consulta calculadora precio máximo'))
 				->setFrom($from)
-				->setTo('info@hipotea.com')
+				//->setTo('info@hipotea.com')
+				->setTo('adrian.verdecia@semillaproyectos.com')
                 // ->setTo('fernando.lopez@weeduu.es')
 				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
@@ -2047,7 +2051,8 @@ class CalculadorasController extends Controller
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
             $mensaje = (new Swift_Message('IHS Inmobiliaria: Consulta calculadora precio máximo'))
 				->setFrom($from)
-				->setTo('info@hipotea.com')
+				//->setTo('info@hipotea.com')
+				->setTo('adrian.verdecia@semillaproyectos.com')
                 // ->setTo('fernando.lopez@weeduu.es')
 				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
@@ -2058,7 +2063,8 @@ class CalculadorasController extends Controller
 			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
             $mensaje = (new Swift_Message('Consulta calculadora precio máximo'))
 				->setFrom($from)
-				->setTo('info@ihs.es')
+				//->setTo('info@ihs.es')
+				->setTo('adrian.verdecia@semillaproyectos.com')
                 // ->setTo('fernando.lopez@weeduu.es')
 				->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
