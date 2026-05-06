@@ -2091,6 +2091,182 @@ class CalculadorasController extends Controller
 		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
 	}
 
+	public function calculadoraPrecioMaximoWebClienteAction(Request $request, Swift_Mailer $mailer)
+	{
+		// Email de la inmobiliaria cliente pasado por query string (?email=info@ejemplo.es)
+		$emailClienteRaw = $request->query->get('email', '');
+		$emailCliente = filter_var(trim($emailClienteRaw), FILTER_VALIDATE_EMAIL) ? trim($emailClienteRaw) : '';
+
+		$calculadora = new \AppBundle\Entity\CalculadoraAvanzada();
+		$enviarCalculadora = new \AppBundle\Entity\EnvioCalculadora();
+
+		$calculadora->setTipo(2);
+
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest', $calculadora);
+		$formularioEnviarCalculadora = $this->createForm('AppBundle\Form\EnviarCalculadora', $enviarCalculadora);
+
+		$formulario->handleRequest($request);
+		$formularioEnviarCalculadora->handleRequest($request);
+
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada',
+			'calculadora_avanzada' => $formulario->createView(),
+			'formularioEnviarCalculadora' => $formularioEnviarCalculadora->createView(),
+			'tipo_calculo' => 'importe_maximo'
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzada($doctrine = $this->getDoctrine()->getManager());
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'];
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'];
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'];
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'];
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'];
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				if (array_key_exists('cuota_fija_final', $resultado)) {
+					$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'];
+				} else {
+					$variablesTwig['cuota_fija_final'] = 0;
+				}
+				if (array_key_exists('cuota_variable_final', $resultado)) {
+					$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'];
+				} else {
+					$variablesTwig['cuota_variable_final'] = 0;
+				}
+				if (array_key_exists('cuota_mixta_final', $resultado)) {
+					$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'];
+				} else {
+					$variablesTwig['cuota_mixta_final'] = 0;
+				}
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'];
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'];
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'];
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'];
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'];
+				$variablesTwig['intereses'] = $resultado['intereses'];
+				$variablesTwig['importe_total'] = $resultado['importe_total'];
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'];
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'];
+				$variablesTwig['notario'] = $resultado['notario'];
+				$variablesTwig['registro'] = $resultado['registro'];
+				$variablesTwig['gestoria'] = $resultado['gestoria'];
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+				$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'];
+					$variablesTwig['cuota'] = $resultado['cuota'];
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'];
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'];
+					$variablesTwig['notario'] = $resultado['notario'];
+					$variablesTwig['registro'] = $resultado['registro'];
+					$variablesTwig['gestoria'] = $resultado['gestoria'];
+					$variablesTwig['tasacion'] = $resultado['tasacion'];
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'];
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'];
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + $resultado['gastos'] - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = $resultado['tipo_interes_ccaa'] * 100;
+					$variablesTwig['numTitulares'] = $formulario->getData()->getNumTitulares();
+					$variablesTwig['edadTitularUno'] = $formulario->getData()->getEdadTitularUno();
+					$variablesTwig['edadTitularDos'] = $formulario->getData()->getEdadTitularDos();
+					$variablesTwig['plazoAmortizacion'] = $formulario->getData()->getPlazoAmortizacion();
+					$variablesTwig['aportacionInicial'] = $formulario->getData()->getAportacionInicial();
+					$variablesTwig['destinoCompra'] = $formulario->getData()->getTextDestinoCompra();
+					$variablesTwig['obraNuevaText'] = $formulario->getData()->getTextObraNueva();
+					$variablesTwig['comunidadAutonoma'] = $formulario->getData()->getTextComunidadAutonoma();
+					$variablesTwig['discapacidad'] = $formulario->getData()->getTextMinusvaliaFamiliaNumerosa();
+					$variablesTwig['familiaNumerosa'] = $formulario->getData()->getTextFamiliaNumerosa();
+					$variablesTwig['monoparental'] = $formulario->getData()->getTextMonoparental();
+					$variablesTwig['vpo'] = $formulario->getData()->getTextVpo();
+					$variablesTwig['ingresosMensuales'] = $formulario->getData()->getIngresosMensuales();
+					$variablesTwig['numPagasExtra'] = $formulario->getData()->getNumPagasExtra();
+					$variablesTwig['importePagaExtra'] = $formulario->getData()->getImportePagaExtra();
+					$variablesTwig['prestamosMensuales'] = $formulario->getData()->getPrestamosMensuales();
+					$variablesTwig['ingresosMensualesDos'] = $formulario->getData()->getIngresosMensualesDos();
+					$variablesTwig['numPagasExtraDos'] = $formulario->getData()->getNumPagasExtraDos();
+					$variablesTwig['importePagaExtraDos'] = $formulario->getData()->getImportePagaExtraDos();
+					$variablesTwig['prestamosMensualesDos'] = $formulario->getData()->getPrestamosMensualesDos();
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			$variablesTwig['resultado'] = true;
+			$variablesTwig['nombre'] = $formularioEnviarCalculadora->getData()->getNombre();
+			$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+
+			// VERIFICAR LÍMITE DE USOS ANTES DE ENVIAR EMAILS
+			$limitAlcanzado = $this->registrarUsoCalculadora($request, $formularioEnviarCalculadora->getData()->getEmail(), 'calculadora_precio_maximo');
+			if ($limitAlcanzado) {
+				$variablesTwig['error_limit_reached'] = 'Ha alcanzado el límite de 3 usos para esta calculadora.';
+			} else {
+				$from = array($this->getParameter('mailer_user') => 'Hipotea');
+
+				// Email al usuario final
+				$mensaje = (new Swift_Message('¡Aquí tienes el resultado de tu consulta hipotecaria!'))
+					->setFrom($from)
+					->setTo($formularioEnviarCalculadora->getData()->getEmail())
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+
+				$nombre_pdf = substr(str_shuffle(MD5(microtime())), 0, 10);
+				$this->get('knp_snappy.pdf')->generateFromHtml(
+					$this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWebPDF.html.twig', $variablesTwig),
+					$this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf',
+					[],
+					true
+				);
+				$mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+				$mailer->send($mensaje);
+
+				// Email a Hipotea (con indicación del cliente si aplica)
+				$variablesTwig['email'] = $formularioEnviarCalculadora->getData()->getEmail();
+				$variablesTwig['telefono'] = $formularioEnviarCalculadora->getData()->getTelefono();
+				$asuntoHipotea = 'Consulta calculadora precio máximo';
+				if ($emailCliente !== '') {
+					$asuntoHipotea .= ' | Cliente: ' . $emailCliente;
+				}
+				$mensaje = (new Swift_Message($asuntoHipotea))
+					->setFrom($from)
+					->setTo('info@hipotea.com')
+					->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+				$mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+				$mailer->send($mensaje);
+
+				// Email a la inmobiliaria cliente (solo si se proporcionó un email válido)
+				if ($emailCliente !== '') {
+					$mensaje = (new Swift_Message('Consulta calculadora precio máximo'))
+						->setFrom($from)
+						->setTo($emailCliente)
+						->setBody($this->renderView('@App/Backoffice/Correo/ResultadoCalculadoraCuotaWeb.html.twig', $variablesTwig), 'text/html');
+					$mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR . 'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+					$mailer->send($mensaje);
+				}
+			}
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraCuotaWeb.html.twig', $variablesTwig);
+	}
+
 	/**
 	 * Registrar uso de calculadora web (genérico para todas las calculadoras)
 	 * Solo se registra si la ruta es /web/*

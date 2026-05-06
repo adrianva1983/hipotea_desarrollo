@@ -281,6 +281,9 @@ calculadora_precio_maximo_web_nm:
 calculadora_precio_maximo_web_ihs:
   path: /web/calculadora-precio-maximo-ihs
   controller: AppBundle:Calculadoras:calculadoraPrecioMaximoWebIHS
+calculadora_precio_maximo_web_cliente:
+  path: /web/calculadora-precio-maximo-cliente
+  controller: AppBundle:Calculadoras:calculadoraPrecioMaximoWebCliente
 calculadora_cambio_de_casa_web:
   path: /web/calculadora-cambio-de-casa
   controller: AppBundle:Calculadoras:calculadoraCambioDeCasaWeb
