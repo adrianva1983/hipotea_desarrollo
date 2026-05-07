@@ -100,83 +100,41 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-	const btnGuardar = document.getElementById('guardar_seguimiento');
-	if (!btnGuardar) return;
-	
-	btnGuardar.addEventListener('click', function() {
+	document.getElementById('guardar_seguimiento').addEventListener('click', function() {
 		const modal = document.getElementById('modal-seguimiento-expediente');
 		const forms = modal.querySelectorAll('form');
+		const idExpediente = modal.querySelector('input[name="idExpedienteSeguimiento"]').value;
 		const elementos = [];
 		
-		// Obtener idExpediente del input oculto
-		const inputIdExpediente = modal.querySelector('input[name="idExpedienteSeguimiento"]');
-		const idExpediente = inputIdExpediente ? inputIdExpediente.value : null;
-		
-		console.log('🔍 DEBUG: idExpediente del input oculto:', idExpediente);
-		
-		// Procesar cada formulario
 		forms.forEach(function(form) {
-			try {
-				// Obtener los valores del formulario
-				const fechaInput = form.querySelector('input[name*="fecha"]');
-				const conceptoInput = form.querySelector('select[name*="idConceptoSeguimientoExpediente"]');
-				const comentarioInput = form.querySelector('input[name*="comentario"]');
-				const clienteInput = form.querySelector('select[name*="cliente"]');
-				
-				// NO incluir colaborador (está oculto/comentado en la plantilla)
-				// const colaboradorInput = form.querySelector('select[name*="colaborador"]');
-				
-				const fila = {
-					idExpediente: idExpediente,
-					concepto: conceptoInput ? conceptoInput.value : null,
-					fecha: fechaInput ? fechaInput.value : '',
-					comentario: comentarioInput ? comentarioInput.value : '',
-					cliente: clienteInput ? clienteInput.value : '0'
-					// NO enviar colaborador - déjalo vacío o con valor por defecto
-				};
-				
-				console.log('📦 Fila a enviar:', fila);
-				elementos.push(fila);
-			} catch(e) {
-				console.error('❌ Error procesando formulario:', e);
+			const fecha = form.querySelector('input[name*="fecha"]')?.value || '';
+			const concepto = form.querySelector('select[name*="idConceptoSeguimientoExpediente"]')?.value;
+			const comentario = form.querySelector('input[name*="comentario"]')?.value || '';
+			const cliente = form.querySelector('select[name*="cliente"]')?.value || 0;
+			
+			if (concepto) {
+				elementos.push({ idExpediente, concepto, fecha, comentario, cliente });
 			}
 		});
 		
-		console.log('📤 Payload completo a enviar:', JSON.stringify(elementos));
+		if (!elementos.length) return alert('No hay datos para guardar');
 		
-		if (elementos.length === 0) {
-			alert('No hay datos para enviar');
-			return;
-		}
-		
-		// Enviar AJAX
-		const url = '{{ path("actualizar_seguimiento_expediente_ajax") }}';
-		fetch(url, {
+		fetch('{{ path("actualizar_seguimiento_expediente_ajax") }}', {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'X-Requested-With': 'XMLHttpRequest'
-			},
+			headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
 			body: JSON.stringify(elementos)
 		})
-		.then(response => response.json())
+		.then(r => r.json())
 		.then(data => {
-			console.log('✅ Respuesta:', data);
 			if (data.error) {
-				alert('Error: ' + (data.mensaje || 'No se pudo guardar'));
-				document.getElementById('error-ajax').classList.remove('d-none');
-				document.getElementById('error-ajax').textContent = data.mensaje || 'Error desconocido';
+				alert('Error: ' + (data.mensaje || 'Desconocido'));
 			} else {
-				alert('✅ Seguimientos actualizados: ' + data.actualizados);
+				alert('✅ Guardado: ' + data.actualizados + ' registros');
 				$('#modal-seguimiento-expediente').modal('hide');
-				// Recargar la página para ver los cambios
-				setTimeout(() => location.reload(), 500);
+				location.reload();
 			}
 		})
-		.catch(err => {
-			console.error('❌ Error en fetch:', err);
-			alert('Error de conexión: ' + err.message);
-		});
+		.catch(err => alert('Error: ' + err.message));
 	});
 });
 </script>

@@ -10255,7 +10255,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 	
 	public function actualizarSeguimientoExpedienteAction(Request $request)
 	{
-		error_log('Iniciando actualización de seguimiento de expediente');
 		if ($request->isXmlHttpRequest()) {
 			$elementos = json_decode($request->getContent(), true);
 			
@@ -10263,58 +10262,23 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				try {
 					$doctrine = $this->getDoctrine();
 					$managerEntidad = $doctrine->getManager();
+					$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
 					$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
 					$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
-					$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
 
 					$actualizados = 0;
-					$expedienteCache = array();
-					
 					foreach( $elementos as $fila){
-						// Validar que existan los campos requeridos
 						if (!isset($fila['idExpediente']) || !isset($fila['concepto'])) {
-							error_log('Falta idExpediente o concepto en fila: ' . json_encode($fila));
 							continue;
 						}
 
-						$idExpediente = $fila['idExpediente'];
-						
-						// Si el idExpediente no es numérico, intenta búsqueda alternativa
-						if (!is_numeric($idExpediente)) {
-							error_log('⚠️ idExpediente no es numérico: ' . $idExpediente . ', buscando expedientes...');
-							// Obtener el expediente del usuario actual o el primer disponible
-							if ($this->getUser()) {
-								$expedienteAlternativo = $repositorio_expedientes->findOneBy(array('idCliente' => $this->getUser()), array('idExpediente' => 'DESC'));
-								if (!$expedienteAlternativo) {
-									$expedienteAlternativo = $repositorio_expedientes->findBy(array(), array('idExpediente' => 'DESC'), 1);
-									if (count($expedienteAlternativo) > 0) {
-										$expedienteAlternativo = $expedienteAlternativo[0];
-									}
-								}
-								if ($expedienteAlternativo) {
-									$idExpediente = $expedienteAlternativo->getIdExpediente();
-									error_log('✅ Usando expediente alternativo encontrado: ' . $idExpediente);
-								}
-							}
-						}
-						
-						// Cache para no repetir búsquedas
-						if (!isset($expedienteCache[$idExpediente])) {
-							$expedienteCache[$idExpediente] = $repositorio_expedientes->find($idExpediente);
-						}
-						$expediente = $expedienteCache[$idExpediente];
-						
-						// Si no existe el expediente, saltar
+						$expediente = $repositorio_expedientes->find($fila['idExpediente']);
 						if (!$expediente) {
-							error_log('❌ Expediente no encontrado: ' . $idExpediente);
 							continue;
 						}
 
 						$concepto = $repositorio_conceptos->find($fila['concepto']);
-						
-						// Si no existe el concepto, saltar
 						if (!$concepto) {
-							error_log('❌ Concepto no encontrado: ' . $fila['concepto']);
 							continue;
 						}
 
@@ -10324,18 +10288,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						));
 
 						try {
-							// Recrear manager si está cerrado
-							if (!$managerEntidad->isOpen()) {
-								error_log('⚠️ EntityManager está cerrado, reabriendo...');
-								$managerEntidad = $doctrine->getManager();
-								// Actualizar repositorios después de recrear manager
-								$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
-								$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
-								$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
-							}
-							
 							if($seguimiento){
-								// Actualizar existente
 								if(!empty($fila['fecha'])){
 									$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
 									if ($fecha !== false) {
@@ -10343,17 +10296,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 									}
 								}
 								$seguimiento->setComentario($fila['comentario'] ?? '');
-								$seguimiento->setCliente($fila['cliente'] ?? '0');
-								// No establecer colaborador si no viene en la solicitud
-								if (isset($fila['colaborador'])) {
-									$seguimiento->setColaborador($fila['colaborador']);
-								}
+								$seguimiento->setCliente($fila['cliente'] ?? 0);
 								$managerEntidad->persist($seguimiento);
 								$managerEntidad->flush();
 								$actualizados++;
-								error_log('✅ Seguimiento actualizado: expediente=' . $idExpediente . ', concepto=' . $fila['concepto']);
 							}else{
-								// Crear nuevo
 								$seguimiento = new SeguimientoExpedienteEntidad();
 								$seguimiento->setIdExpediente($expediente);
 								$seguimiento->setIdConceptoSeguimientoExpediente($concepto);
@@ -10364,39 +10311,21 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 									}
 								}
 								$seguimiento->setComentario($fila['comentario'] ?? '');
-								$seguimiento->setCliente($fila['cliente'] ?? '0');
-								// No establecer colaborador si no viene en la solicitud
-								if (isset($fila['colaborador'])) {
-									$seguimiento->setColaborador($fila['colaborador']);
-								} else {
-									$seguimiento->setColaborador(0); // Valor por defecto
-								}
+								$seguimiento->setCliente($fila['cliente'] ?? 0);
 								$managerEntidad->persist($seguimiento);
 								$managerEntidad->flush();
 								$actualizados++;
-								error_log('✅ Seguimiento creado: expediente=' . $idExpediente . ', concepto=' . $fila['concepto']);
 							}
 						} catch (\Exception $e) {
-							error_log('❌ Error procesando fila: ' . $e->getMessage() . ' - Fila: ' . json_encode($fila));
-							// Intentar recuperar el EntityManager si está cerrado
-							if (!$managerEntidad->isOpen()) {
-								error_log('⚠️ EntityManager se cerró tras error, recreando...');
-								$managerEntidad = $doctrine->getManager();
-								$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
-								$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
-								$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
-							}
 							continue;
 						}
 					}
 					
-					error_log('✅ Seguimientos actualizados totales: ' . $actualizados);
 					return $this->json(array(
 						'error' => false,
 						'actualizados' => $actualizados
 					));
 				} catch (\Exception $e) {
-					error_log('❌ Error crítico en actualizarSeguimientoExpediente: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
 					return $this->json(array(
 						'error' => true,
 						'mensaje' => $e->getMessage()
