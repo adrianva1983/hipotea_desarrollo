@@ -18,6 +18,7 @@ use AppBundle\Form\SimuladorPrecioMaximoType;
 use AppBundle\Form\SimuladorCuotaGastosType;
 use AppBundle\Form\SimuladorRiesgoType;
 use AppBundle\Entity\SimuladorUsoEmail;
+use AppBundle\Entity\FicheroCampo;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -823,6 +824,34 @@ class SimuladorViabilidadController extends Controller
             );
             
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
+
+            // ── ADJUNTAR PDF AL CAMPO HITO 326 (Documentación adicional) DEL EXPEDIENTE ──
+            try {
+                $nombreFicheroPdf = 'calculadora_' . $nombre_pdf . '.pdf';
+                $campoHito326 = $doctrine->getRepository(CampoHito::class)->find(326);
+                if ($campoHito326) {
+                    $campoHitoExp326 = $doctrine->getRepository(CampoHitoExpediente::class)->findOneBy([
+                        'idExpediente' => $expediente,
+                        'idCampoHito'  => $campoHito326,
+                    ]);
+                    if ($campoHitoExp326) {
+                        $campoHitoExp326->setValor('Informe_Simulador_Viabilidad')
+                                        ->setFechaModificacion(new DateTime());
+                        $em->persist($campoHitoExp326);
+
+                        $ficheroCampo = (new FicheroCampo())
+                            ->setNombreFichero($nombreFicheroPdf)
+                            ->setIdCampoHito($campoHito326)
+                            ->setIdCampoHitoExpediente($campoHitoExp326)
+                            ->setIdExpediente($expediente);
+                        $em->persist($ficheroCampo);
+                        $em->flush();
+                    }
+                }
+            } catch (\Throwable $eFichero) {
+                error_log('Error adjuntando PDF al campo hito 326: ' . $eFichero->getMessage());
+            }
+
             // Pasar variables adicionales a la plantilla y actualizar el body para cliente
             $variablesTwig['informe_html'] = $informeHtmlParaPdf;
             $variablesTwig['fecha'] = (new \DateTime())->format('d/m/Y');
