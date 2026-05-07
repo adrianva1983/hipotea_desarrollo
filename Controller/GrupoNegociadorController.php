@@ -10260,52 +10260,84 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			$mensaje = null;
 			
 			if (json_last_error() === 0 && isset($elementos[0])) {
-				$doctrine = $this->getDoctrine();
-				$managerEntidad = $doctrine->getManager();
-				$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
-				$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
-				$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
+				try {
+					$doctrine = $this->getDoctrine();
+					$managerEntidad = $doctrine->getManager();
+					$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
+					$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
+					$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
 
-				foreach( $elementos as $fila){
-					$expediente = $repositorio_expedientes->findOneBy(array(
-						'idExpediente' => $fila['idExpediente']
-					));
-					$concepto = $repositorio_conceptos->findOneBy(array(
-						'idConceptoSeguimientoExpediente' => $fila['concepto']
-					));
-					$seguimiento = $repositorio_seguimientos->findOneBy(array(
-						'idExpediente' => $expediente,
-						'idConceptoSeguimientoExpediente' => $concepto
-					));
+					foreach( $elementos as $fila){
+						// Validar que existan los campos requeridos
+						if (!isset($fila['idExpediente']) || !isset($fila['concepto'])) {
+							continue;
+						}
 
-					if($seguimiento){
-						if($fila['fecha']){
-							$seguimiento->setFecha(\DateTime::createFromFormat("d/m/Y",trim($fila['fecha'])));
+						$expediente = $repositorio_expedientes->findOneBy(array(
+							'idExpediente' => $fila['idExpediente']
+						));
+						
+						// Si no existe el expediente, saltar
+						if (!$expediente) {
+							error_log('Expediente no encontrado: ' . $fila['idExpediente']);
+							continue;
 						}
-						$seguimiento->setComentario($fila['comentario']);
-						$seguimiento->setCliente($fila['cliente']);
-						$seguimiento->setColaborador($fila['colaborador']);
-						$managerEntidad->persist($seguimiento);
-						$managerEntidad->flush();
-					}else{
-						$seguimiento = new SeguimientoExpedienteEntidad();
-						$seguimiento->setIdExpediente($expediente);
-						$seguimiento->setIdConceptoSeguimientoExpediente($concepto);
-						if($fila['fecha']){
-							$seguimiento->setFecha(\DateTime::createFromFormat("d/m/Y",trim($fila['fecha'])));
+
+						$concepto = $repositorio_conceptos->findOneBy(array(
+							'idConceptoSeguimientoExpediente' => $fila['concepto']
+						));
+						
+						// Si no existe el concepto, saltar
+						if (!$concepto) {
+							error_log('Concepto no encontrado: ' . $fila['concepto']);
+							continue;
 						}
-						$seguimiento->setComentario($fila['comentario']);
-						$seguimiento->setCliente($fila['cliente']);
-						$seguimiento->setColaborador($fila['colaborador']);
-						$managerEntidad->persist($seguimiento);
-						$managerEntidad->flush();
+
+						$seguimiento = $repositorio_seguimientos->findOneBy(array(
+							'idExpediente' => $expediente,
+							'idConceptoSeguimientoExpediente' => $concepto
+						));
+
+						if($seguimiento){
+							if(!empty($fila['fecha'])){
+								$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
+								if ($fecha !== false) {
+									$seguimiento->setFecha($fecha);
+								}
+							}
+							$seguimiento->setComentario($fila['comentario'] ?? '');
+							$seguimiento->setCliente($fila['cliente'] ?? '');
+							$seguimiento->setColaborador($fila['colaborador'] ?? '');
+							$managerEntidad->persist($seguimiento);
+						}else{
+							$seguimiento = new SeguimientoExpedienteEntidad();
+							$seguimiento->setIdExpediente($expediente);
+							$seguimiento->setIdConceptoSeguimientoExpediente($concepto);
+							if(!empty($fila['fecha'])){
+								$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
+								if ($fecha !== false) {
+									$seguimiento->setFecha($fecha);
+								}
+							}
+							$seguimiento->setComentario($fila['comentario'] ?? '');
+							$seguimiento->setCliente($fila['cliente'] ?? '');
+							$seguimiento->setColaborador($fila['colaborador'] ?? '');
+							$managerEntidad->persist($seguimiento);
+						}
 					}
+					
+					$managerEntidad->flush();
+					
+					return $this->json(array(
+						'error' => false
+					));
+				} catch (\Exception $e) {
+					error_log('Error actualizando seguimiento expediente: ' . $e->getMessage());
+					return $this->json(array(
+						'error' => true,
+						'mensaje' => $e->getMessage()
+					), 500);
 				}
-
-				
-				return $this->json(array(
-					'error' => false
-				));
 			}else{
 				return $this->json(array(
 					'error' => true
