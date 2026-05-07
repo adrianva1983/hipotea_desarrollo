@@ -835,6 +835,14 @@ class SimuladorViabilidadController extends Controller
                         'idCampoHito'  => $campoHito326,
                     ]);
                     if ($campoHitoExp326) {
+                        // Eliminar fichero anterior si existe
+                        $ficheroPrevio = $doctrine->getRepository(FicheroCampo::class)->findOneBy([
+                            'idCampoHitoExpediente' => $campoHitoExp326,
+                        ]);
+                        if ($ficheroPrevio) {
+                            $em->remove($ficheroPrevio);
+                        }
+
                         $campoHitoExp326->setValor('Informe_Simulador_Viabilidad')
                                         ->setFechaModificacion(new DateTime());
                         $em->persist($campoHitoExp326);
