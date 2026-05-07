@@ -2543,6 +2543,7 @@ PROMPT;
 
             // Guardar consolidado combinado en BD (insert/update)
             try {
+                $configIA = $this->obtenerConfiguracionIA();
                 $this->guardarAnalisisConsolidadoEnBD($idExpediente, $mergedDocs, $configIA);
                 error_log('✅ Consolidado combinado guardado en BD con ' . count($mergedDocs) . ' documentos');
             } catch (\Exception $e) {

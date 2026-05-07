@@ -648,6 +648,9 @@ class BelenderController extends Controller
         
 
         $requestId = $preRequestResponse['data']['request_id'] ?? null;
+        $dniCliente = $request->query->get('dni_cliente');
+        $idHitoExpediente = $request->query->get('id_hito_expediente');
+
         
         // ✅ GUARDAR O ACTUALIZAR EN TABLA belender_hito_expediente
         if ($requestId && $dniCliente && $idHitoExpediente) 
@@ -826,7 +829,7 @@ class BelenderController extends Controller
             ], 500);
         }
     }
-    public function webhookBelenderEventosAction1(Request $request)
+    /*public function webhookBelenderEventosAction1(Request $request)
     {
         // ✅ VALIDAR AUTENTICACIÓN
         
@@ -910,7 +913,7 @@ class BelenderController extends Controller
                 'request_id' => $requestId ?? 'unknown'
             ], 500);
         }
-    }
+    }*/
 
     /**
      * Obtener datos de belender_hito_expediente por id_hito_expediente
