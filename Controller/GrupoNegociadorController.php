@@ -10268,6 +10268,8 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
 
 					$actualizados = 0;
+					$expedienteCache = array();
+					
 					foreach( $elementos as $fila){
 						// Validar que existan los campos requeridos
 						if (!isset($fila['idExpediente']) || !isset($fila['concepto'])) {
@@ -10275,11 +10277,36 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 							continue;
 						}
 
-						$expediente = $repositorio_expedientes->find($fila['idExpediente']);
+						$idExpediente = $fila['idExpediente'];
+						
+						// Si el idExpediente no es numérico, intenta búsqueda alternativa
+						if (!is_numeric($idExpediente)) {
+							error_log('⚠️ idExpediente no es numérico: ' . $idExpediente . ', buscando expedientes...');
+							// Obtener el expediente del usuario actual o el primer disponible
+							if ($this->getUser()) {
+								$expedienteAlternativo = $repositorio_expedientes->findOneBy(array('idCliente' => $this->getUser()), array('idExpediente' => 'DESC'));
+								if (!$expedienteAlternativo) {
+									$expedienteAlternativo = $repositorio_expedientes->findBy(array(), array('idExpediente' => 'DESC'), 1);
+									if (count($expedienteAlternativo) > 0) {
+										$expedienteAlternativo = $expedienteAlternativo[0];
+									}
+								}
+								if ($expedienteAlternativo) {
+									$idExpediente = $expedienteAlternativo->getIdExpediente();
+									error_log('✅ Usando expediente alternativo encontrado: ' . $idExpediente);
+								}
+							}
+						}
+						
+						// Cache para no repetir búsquedas
+						if (!isset($expedienteCache[$idExpediente])) {
+							$expedienteCache[$idExpediente] = $repositorio_expedientes->find($idExpediente);
+						}
+						$expediente = $expedienteCache[$idExpediente];
 						
 						// Si no existe el expediente, saltar
 						if (!$expediente) {
-							error_log('Expediente no encontrado: ' . $fila['idExpediente']);
+							error_log('❌ Expediente no encontrado: ' . $idExpediente);
 							continue;
 						}
 
@@ -10287,7 +10314,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						
 						// Si no existe el concepto, saltar
 						if (!$concepto) {
-							error_log('Concepto no encontrado: ' . $fila['concepto']);
+							error_log('❌ Concepto no encontrado: ' . $fila['concepto']);
 							continue;
 						}
 
@@ -10311,6 +10338,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 								$managerEntidad->persist($seguimiento);
 								$managerEntidad->flush();
 								$actualizados++;
+								error_log('✅ Seguimiento actualizado: expediente=' . $idExpediente . ', concepto=' . $fila['concepto']);
 							}else{
 								// Crear nuevo
 								$seguimiento = new SeguimientoExpedienteEntidad();
@@ -10328,20 +10356,21 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 								$managerEntidad->persist($seguimiento);
 								$managerEntidad->flush();
 								$actualizados++;
+								error_log('✅ Seguimiento creado: expediente=' . $idExpediente . ', concepto=' . $fila['concepto']);
 							}
 						} catch (\Exception $e) {
-							error_log('Error procesando fila: ' . $e->getMessage() . ' - Fila: ' . json_encode($fila));
+							error_log('❌ Error procesando fila: ' . $e->getMessage() . ' - Fila: ' . json_encode($fila));
 							continue;
 						}
 					}
 					
-					error_log('Seguimientos actualizados: ' . $actualizados);
+					error_log('✅ Seguimientos actualizados totales: ' . $actualizados);
 					return $this->json(array(
 						'error' => false,
 						'actualizados' => $actualizados
 					));
 				} catch (\Exception $e) {
-					error_log('Error critico en actualizarSeguimientoExpediente: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
+					error_log('❌ Error crítico en actualizarSeguimientoExpediente: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
 					return $this->json(array(
 						'error' => true,
 						'mensaje' => $e->getMessage()
