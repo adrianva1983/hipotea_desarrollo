@@ -10257,7 +10257,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 	{
 		if ($request->isXmlHttpRequest()) {
 			$elementos = json_decode($request->getContent(), true);
-			$mensaje = null;
 			
 			if (json_last_error() === 0 && isset($elementos[0])) {
 				try {
@@ -10267,15 +10266,15 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
 					$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
 
+					$actualizados = 0;
 					foreach( $elementos as $fila){
 						// Validar que existan los campos requeridos
 						if (!isset($fila['idExpediente']) || !isset($fila['concepto'])) {
+							error_log('Falta idExpediente o concepto en fila: ' . json_encode($fila));
 							continue;
 						}
 
-						$expediente = $repositorio_expedientes->findOneBy(array(
-							'idExpediente' => $fila['idExpediente']
-						));
+						$expediente = $repositorio_expedientes->find($fila['idExpediente']);
 						
 						// Si no existe el expediente, saltar
 						if (!$expediente) {
@@ -10283,9 +10282,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 							continue;
 						}
 
-						$concepto = $repositorio_conceptos->findOneBy(array(
-							'idConceptoSeguimientoExpediente' => $fila['concepto']
-						));
+						$concepto = $repositorio_conceptos->find($fila['concepto']);
 						
 						// Si no existe el concepto, saltar
 						if (!$concepto) {
@@ -10298,41 +10295,52 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 							'idConceptoSeguimientoExpediente' => $concepto
 						));
 
-						if($seguimiento){
-							if(!empty($fila['fecha'])){
-								$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
-								if ($fecha !== false) {
-									$seguimiento->setFecha($fecha);
+						try {
+							if($seguimiento){
+								// Actualizar existente
+								if(!empty($fila['fecha'])){
+									$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
+									if ($fecha !== false) {
+										$seguimiento->setFecha($fecha);
+									}
 								}
-							}
-							$seguimiento->setComentario($fila['comentario'] ?? '');
-							$seguimiento->setCliente($fila['cliente'] ?? '');
-							$seguimiento->setColaborador($fila['colaborador'] ?? '');
-							$managerEntidad->persist($seguimiento);
-						}else{
-							$seguimiento = new SeguimientoExpedienteEntidad();
-							$seguimiento->setIdExpediente($expediente);
-							$seguimiento->setIdConceptoSeguimientoExpediente($concepto);
-							if(!empty($fila['fecha'])){
-								$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
-								if ($fecha !== false) {
-									$seguimiento->setFecha($fecha);
+								$seguimiento->setComentario($fila['comentario'] ?? '');
+								$seguimiento->setCliente($fila['cliente'] ?? '');
+								$seguimiento->setColaborador($fila['colaborador'] ?? '');
+								$managerEntidad->persist($seguimiento);
+								$managerEntidad->flush();
+								$actualizados++;
+							}else{
+								// Crear nuevo
+								$seguimiento = new SeguimientoExpedienteEntidad();
+								$seguimiento->setIdExpediente($expediente);
+								$seguimiento->setIdConceptoSeguimientoExpediente($concepto);
+								if(!empty($fila['fecha'])){
+									$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
+									if ($fecha !== false) {
+										$seguimiento->setFecha($fecha);
+									}
 								}
+								$seguimiento->setComentario($fila['comentario'] ?? '');
+								$seguimiento->setCliente($fila['cliente'] ?? '');
+								$seguimiento->setColaborador($fila['colaborador'] ?? '');
+								$managerEntidad->persist($seguimiento);
+								$managerEntidad->flush();
+								$actualizados++;
 							}
-							$seguimiento->setComentario($fila['comentario'] ?? '');
-							$seguimiento->setCliente($fila['cliente'] ?? '');
-							$seguimiento->setColaborador($fila['colaborador'] ?? '');
-							$managerEntidad->persist($seguimiento);
+						} catch (\Exception $e) {
+							error_log('Error procesando fila: ' . $e->getMessage() . ' - Fila: ' . json_encode($fila));
+							continue;
 						}
 					}
 					
-					$managerEntidad->flush();
-					
+					error_log('Seguimientos actualizados: ' . $actualizados);
 					return $this->json(array(
-						'error' => false
+						'error' => false,
+						'actualizados' => $actualizados
 					));
 				} catch (\Exception $e) {
-					error_log('Error actualizando seguimiento expediente: ' . $e->getMessage());
+					error_log('Error critico en actualizarSeguimientoExpediente: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
 					return $this->json(array(
 						'error' => true,
 						'mensaje' => $e->getMessage()
@@ -10340,7 +10348,8 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				}
 			}else{
 				return $this->json(array(
-					'error' => true
+					'error' => true,
+					'mensaje' => 'JSON inválido'
 				));
 			}
 		} else {
