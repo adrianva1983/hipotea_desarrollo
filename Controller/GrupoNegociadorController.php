@@ -10263,9 +10263,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				try {
 					$doctrine = $this->getDoctrine();
 					$managerEntidad = $doctrine->getManager();
-					$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
 					$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
 					$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
+					$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
 
 					$actualizados = 0;
 					$expedienteCache = array();
@@ -10324,6 +10324,16 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						));
 
 						try {
+							// Recrear manager si está cerrado
+							if (!$managerEntidad->isOpen()) {
+								error_log('⚠️ EntityManager está cerrado, reabriendo...');
+								$managerEntidad = $doctrine->getManager();
+								// Actualizar repositorios después de recrear manager
+								$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
+								$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
+								$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
+							}
+							
 							if($seguimiento){
 								// Actualizar existente
 								if(!empty($fila['fecha'])){
@@ -10333,8 +10343,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 									}
 								}
 								$seguimiento->setComentario($fila['comentario'] ?? '');
-								$seguimiento->setCliente($fila['cliente'] ?? '');
-								$seguimiento->setColaborador($fila['colaborador'] ?? '');
+								$seguimiento->setCliente($fila['cliente'] ?? '0');
+								// No establecer colaborador si no viene en la solicitud
+								if (isset($fila['colaborador'])) {
+									$seguimiento->setColaborador($fila['colaborador']);
+								}
 								$managerEntidad->persist($seguimiento);
 								$managerEntidad->flush();
 								$actualizados++;
@@ -10351,8 +10364,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 									}
 								}
 								$seguimiento->setComentario($fila['comentario'] ?? '');
-								$seguimiento->setCliente($fila['cliente'] ?? '');
-								$seguimiento->setColaborador($fila['colaborador'] ?? '');
+								$seguimiento->setCliente($fila['cliente'] ?? '0');
+								// No establecer colaborador si no viene en la solicitud
+								if (isset($fila['colaborador'])) {
+									$seguimiento->setColaborador($fila['colaborador']);
+								} else {
+									$seguimiento->setColaborador(0); // Valor por defecto
+								}
 								$managerEntidad->persist($seguimiento);
 								$managerEntidad->flush();
 								$actualizados++;
@@ -10360,6 +10378,14 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 							}
 						} catch (\Exception $e) {
 							error_log('❌ Error procesando fila: ' . $e->getMessage() . ' - Fila: ' . json_encode($fila));
+							// Intentar recuperar el EntityManager si está cerrado
+							if (!$managerEntidad->isOpen()) {
+								error_log('⚠️ EntityManager se cerró tras error, recreando...');
+								$managerEntidad = $doctrine->getManager();
+								$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
+								$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
+								$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
+							}
 							continue;
 						}
 					}
