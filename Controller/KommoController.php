@@ -21,6 +21,91 @@ use GuzzleHttp\Client as GuzzleClient;
 
 class KommoController extends Controller
 {
+    /**
+     * 🔑 MAPEO MAESTRO: Claves extraídas → IDs de campos en Hipotea
+     * Permite rellenar CUALQUIER campo dinámicamente
+     * Estructura: 'clave_extraida' => [campos_id_1, campo_id_2, ...]
+     */
+    private function obtenerMapeoClavesACampos(): array
+    {
+        return [
+            // Datos personales
+            'nombre_completo' => [192, 693],
+            'nombre' => [693],
+            'apellidos' => [694],
+            'dni' => [194],
+            'email' => [696, 407],
+            'telefono' => [695, 408],
+            'provincia' => [689, 458],
+            'nacionalidad' => [195, 247, 509, 570],
+            'fecha_nacimiento' => [196, 508],
+            'estado_civil' => [198, 507],
+            
+            // Datos laborales
+            'empresa' => [220, 545],
+            'puesto' => [222, 539],
+            'tipo_contrato' => [221, 549], // Nota: algunos también usan opción_id (193)
+            'antiguedad' => [223, 541],
+            'nomina' => [225, 555], // Nómina mensual
+            'ingresos' => [228, 552], // Ingresos anuales
+            'nomina_mensual' => [225, 555],
+            'ingresos_anuales' => [228, 552],
+            
+            // Datos financieros
+            'ahorro' => [182, 699],
+            'banco' => [215, 518], // ¿Con qué banco trabajas?
+            'aportacion' => [181, 182],
+            
+            // Préstamos
+            'prestamos_mensuales' => [235, 241],
+            'cuota_alquiler' => [212, 520],
+            
+            // Propiedad
+            'precio_inmueble' => [413, 206],
+            'valor_estimado' => [206, 375],
+            'metros' => [289, 644],
+            
+            // Observaciones/Comentarios
+            'observaciones' => [700, 218, 234, 679],
+            'canal' => [701, 704],
+            
+            // Trabajo/estado laboral (genérico)
+            'trabajo_estado' => [690],
+        ];
+    }
+
+    /**
+     * 🔑 MAPEO DE OPCIONES: Texto → IDs de opciones para campos de select
+     * Maneja conversión de texto a opciones de Kommo
+     */
+    private function obtenerMapeoOpcionesGlobales(): array
+    {
+        return [
+            'tipo_contrato' => [
+                'indefinido|fijo|completo|tiempo completo' => 104,
+                'parcial|part-time|medio tiempo' => 105,
+                'temporal|obra|contrata' => 109,
+                'autónomo|autónoma|autonomo|autonoma' => 97,
+                'pensionista|pensión' => 98,
+                'mercantil' => 103,
+                'funcionario' => 107,
+                'militar' => 357,
+                'laboral fijo' => 555,
+            ],
+            'estado_civil' => [
+                'soltero|soltera|solt' => 81,
+                'casado|casada|married' => 82,
+                'divorciado|divorciada|divorciad' => 85,
+                'separado|separada|separ' => 84,
+                'viudo|viuda' => 86,
+            ],
+            'domicilio' => [
+                'propiedad|propia|owner' => 99,
+                'alquiler|renta|rental' => 100,
+                'familiar|family' => 101,
+            ],
+        ];
+    }
 
     /**
      * Recibe webhook de Kommo, obtiene contacto de API, busca/crea cliente,
@@ -424,14 +509,25 @@ class KommoController extends Controller
      * 🤖 FALLBACK: Extrae datos relevantes del mensaje (si existe)
      * Busca patrones como "salario neto 1600", "nómina 2000", etc.
      * Se usa cuando IA no está disponible o falla
+     * 
+     * AHORA DEVUELVE ESTRUCTURA UNIFICADA:
+     * {
+     *   "valores_texto": { "220": "Acme Corp", "225": "2000", ... },
+     *   "valores_opcion": { "193": 102, ... },
+     *   "success": true
+     * }
      */
     private function extraerDatosDelMensaje(array $data): array
     {
-        $datosMensaje = [];
+        $datosExtraidos = [];
+        $valoresTexto = [];
+        $valoresOpcion = [];
+        $mapeoClavesACampos = $this->obtenerMapeoClavesACampos();
+        $mapeoOpciones = $this->obtenerMapeoOpcionesGlobales();
 
         // Verificar si hay mensajes en el webhook
         if (empty($data['message']['add'])) {
-            return $datosMensaje;
+            return ['success' => false];
         }
 
         foreach ($data['message']['add'] as $mensaje) {
@@ -441,67 +537,144 @@ class KommoController extends Controller
                 continue;
             }
 
-            error_log('KommoController: Parseando mensaje: ' . $texto);
+            error_log('KommoController: Parseando mensaje (fallback regex): ' . substr($texto, 0, 100));
 
-            // Buscar patrones: "palabra valor" o "palabra: valor"
-            // Ejemplos: "salario neto 1600", "nómina: 2000", "empresa ABC"
-            
             // Patrón: salario, nómina, sueldo (números)
             if (preg_match('/(?:salario neto|salario|nómina|nomina|sueldo neto|sueldo)\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
                 $valor = str_replace(',', '.', $matches[1]);
-                $datosMensaje['nomina'] = $valor;
-                error_log('KommoController: Nómina extraída (patrón salario): ' . $valor);
+                $datosExtraidos['nomina'] = $valor;
+                error_log('KommoController: Nómina extraída: ' . $valor);
             } elseif (preg_match('/\b(?:gano|cobro|percibo)\s*:??\s*(\d{2,6}(?:[.,]\d{2})?)\b\s*(?:€|euros)?/i', $texto, $matches)) {
-                // Ej: "gano 2000 euros al mes"
                 $valor = str_replace(',', '.', $matches[1]);
-                $datosMensaje['nomina'] = $valor;
+                $datosExtraidos['nomina'] = $valor;
                 error_log('KommoController: Nómina extraída (patrón gano): ' . $valor);
             }
 
             // Patrón: tipo de contrato (indefinido, temporal, autónomo, por obra)
-            if (preg_match('/\b(indefinid[oa]|temporal|fijo|autonomo|autónomo|por obra|obra y servicio)\b/i', $texto, $m)) {
-                $tipoContrato = strtolower($m[1]);
-                // Normalizar algunas variantes
-                $tipoContrato = str_ireplace(['autonomo','autónomo'], 'autónomo', $tipoContrato);
-                $tipoContrato = str_ireplace('fijo', 'indefinido', $tipoContrato);
-                $datosMensaje['tipo_contrato'] = $tipoContrato;
-                error_log('KommoController: Tipo de contrato extraído: ' . $tipoContrato);
+            if (preg_match('/\b(indefinid[oa]|temporal|fijo|autonomo|autónomo|por obra|obra y servicio|pensionista|emplead[oa])\b/i', $texto, $m)) {
+                $datosExtraidos['tipo_contrato'] = strtolower($m[1]);
+                error_log('KommoController: Tipo de contrato extraído: ' . $datosExtraidos['tipo_contrato']);
             }
 
             // Patrón: empresa (texto)
-            if (preg_match('/empresa\s*:?\s*([A-Za-z0-9\s\&\.\-]+)/i', $texto, $matches)) {
-                $datosMensaje['empresa'] = trim($matches[1]);
-                error_log('KommoController: Empresa extraída: ' . $matches[1]);
+            if (preg_match('/empresa\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['empresa'] = trim($matches[1]);
+                error_log('KommoController: Empresa extraída: ' . $datosExtraidos['empresa']);
             }
 
             // Patrón: puesto, cargo (texto)
-            if (preg_match('/(?:puesto|cargo)\s*:?\s*([A-Za-z0-9\s\&\.\-]+)/i', $texto, $matches)) {
-                $datosMensaje['puesto'] = trim($matches[1]);
-                error_log('KommoController: Puesto extraído: ' . $matches[1]);
+            if (preg_match('/(?:puesto|cargo)\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['puesto'] = trim($matches[1]);
+                error_log('KommoController: Puesto extraído: ' . $datosExtraidos['puesto']);
             }
 
             // Patrón: ingresos, ingresos anuales (números)
             if (preg_match('/ingresos\s*(?:anuales|mensuales)?\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
                 $valor = str_replace(',', '.', $matches[1]);
-                $datosMensaje['ingresos'] = $valor;
+                $datosExtraidos['ingresos'] = $valor;
                 error_log('KommoController: Ingresos extraídos: ' . $valor);
             }
 
             // Patrón: ciudad, provincia, localidad (texto)
-            if (preg_match('/(?:ciudad|provincia|localidad|residencia)\s*:?\s*([A-Za-z0-9\s\&\.\-]+)/i', $texto, $matches)) {
-                $datosMensaje['provincia'] = trim($matches[1]);
-                error_log('KommoController: Provincia extraída: ' . $matches[1]);
+            if (preg_match('/(?:ciudad|provincia|localidad|residencia)\s*:?\s*([A-Za-z0-9\s\&\.\-áéíóúñÁÉÍÓÚÑ]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['provincia'] = trim($matches[1]);
+                error_log('KommoController: Provincia extraída: ' . $datosExtraidos['provincia']);
             }
 
             // Patrón: ahorro (números)
             if (preg_match('/ahorro\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
                 $valor = str_replace(',', '.', $matches[1]);
-                $datosMensaje['ahorro'] = $valor;
+                $datosExtraidos['ahorro'] = $valor;
                 error_log('KommoController: Ahorro extraído: ' . $valor);
+            }
+
+            // Patrón: nacionalidad (texto)
+            if (preg_match('/nacionalidad\s*:?\s*([A-Za-záéíóúñÁÉÍÓÚÑ\s\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['nacionalidad'] = trim($matches[1]);
+                error_log('KommoController: Nacionalidad extraída: ' . $datosExtraidos['nacionalidad']);
+            }
+
+            // Patrón: banco (texto)
+            if (preg_match('/(?:banco|trabajo con|entidad|cuenta en)\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['banco'] = trim($matches[1]);
+                error_log('KommoController: Banco extraído: ' . $datosExtraidos['banco']);
             }
         }
 
-        return $datosMensaje;
+        // 🔄 CONVERTIR DATOS EXTRAÍDOS A ESTRUCTURA UNIFICADA
+        foreach ($datosExtraidos as $clave => $valor) {
+            if (empty($valor)) {
+                continue;
+            }
+
+            // Obtener IDs de campos para esta clave
+            $camposIds = $mapeoClavesACampos[$clave] ?? [];
+            
+            if (!$camposIds) {
+                error_log('KommoController: No hay mapeo de campos para clave: ' . $clave);
+                continue;
+            }
+
+            // Algunos campos requieren mapeo de opciones (no valores de texto)
+            if ($clave === 'tipo_contrato') {
+                // Intentar mapear a opción
+                $opcionId = $this->mapearValorAOpcion($clave, $valor, $mapeoOpciones);
+                if ($opcionId) {
+                    // El campo 193 es select, usar opción
+                    $valoresOpcion[193] = $opcionId;
+                    error_log('KommoController: Mapeado tipo_contrato a opción ' . $opcionId);
+                } else {
+                    // Fallback: almacenar como texto en campo 221
+                    foreach ($camposIds as $campoId) {
+                        if ($campoId !== 221) continue; // 221 es texto
+                        $valoresTexto[$campoId] = $valor;
+                    }
+                }
+            } else {
+                // Es un valor de texto: mapear a todos los IDs de campos asociados
+                foreach ($camposIds as $campoId) {
+                    $valoresTexto[$campoId] = $valor;
+                    error_log('KommoController: Mapeada clave ' . $clave . ' a campo ' . $campoId . ' => ' . substr((string)$valor, 0, 50));
+                }
+            }
+        }
+
+        error_log('KommoController: Estructura regex convertida a: ' . count($valoresTexto) . ' valores, ' . count($valoresOpcion) . ' opciones');
+
+        return [
+            'success' => !empty($valoresTexto) || !empty($valoresOpcion),
+            'valores_texto' => $valoresTexto,
+            'valores_opcion' => $valoresOpcion,
+            'campos_detectados' => count($valoresTexto) + count($valoresOpcion),
+            'confianza_promedio' => 0.75, // Confianza más baja para regex que para IA
+            'metodo' => 'regex_fallback'
+        ];
+    }
+
+    /**
+     * 🔄 Mapea un valor de texto a un ID de opción según las reglas de mapeo
+     */
+    private function mapearValorAOpcion(string $clave, string $valor, array $mapeoOpciones): ?int
+    {
+        if (!isset($mapeoOpciones[$clave])) {
+            return null;
+        }
+
+        $valorbajominuscula = strtolower(trim($valor));
+        $mapeosOpcion = $mapeoOpciones[$clave];
+
+        foreach ($mapeosOpcion as $patron => $opcionId) {
+            // Dividir patrón por | y testear cada alternativa
+            $alternativas = explode('|', $patron);
+            foreach ($alternativas as $alt) {
+                if (strpos($valorbajominuscula, trim($alt)) !== false) {
+                    error_log('KommoController: Valor "' . $valor . '" mapeado a opción ' . $opcionId . ' (patrón: ' . $alt . ')');
+                    return $opcionId;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -845,202 +1018,79 @@ class KommoController extends Controller
     }
 
     /**
-     * 🤖 Construye array de campos a rellenar desde datos de Kommo + datos del mensaje (IA o regex)
-     * Soporta ambas estructuras:
-     * - Estructura IA: ['valores_texto' => {...}, 'valores_opcion' => {...}]
-     * - Estructura Kommo/Regex: ['nomina' => '2000', 'empresa' => '...']
+     * 🤖 Construye array de campos a rellenar desde datos de Kommo + datos extraídos (IA o regex)
+     * AHORA COMPLETAMENTE DINÁMICO: Acepta cualquier estructura de valores_texto/valores_opcion
+     * y los mapea directamente a los campos de expediente
      */
     private function construirAutorrellenoHitosKommo(array $lead, array $datosMensaje = []): array
     {
-        // 🤖 MANEJO DE ESTRUCTURA IA
-        if (isset($datosMensaje['valores_texto']) && isset($datosMensaje['valores_opcion'])) {
-            error_log('KommoController: Usando datos IA (estructura valores)');
-            return $this->construirAutorrellenoDesdeIA($datosMensaje, $lead);
-        }
+        // AMBAS fuentes (IA y regex) ahora devuelven la misma estructura:
+        // { valores_texto: {campo_id: valor}, valores_opcion: {campo_id: opcion_id} }
+        
+        $valoresTexto = $datosMensaje['valores_texto'] ?? [];
+        $valoresOpcion = $datosMensaje['valores_opcion'] ?? [];
+        
+        error_log('KommoController: Construyendo autorrelleno dinámico: ' . count($valoresTexto) . ' valores de texto, ' . count($valoresOpcion) . ' opciones');
 
-        // MANEJO DE ESTRUCTURA KOMMO/REGEX (fallback original)
-        $nombreCompleto = trim((string)(!empty($lead['nombre_contacto']) ? $lead['nombre_contacto'] : ($lead['name'] ?? '')));
-        list($nombre, $apellidos) = $this->separarNombreCompleto($nombreCompleto);
+        // Construir array de campos compatible con actualizarHitosExpediente()
+        $campos = [];
 
-        $telefono = $this->extraerTelefono($lead);
-        $email = $this->extraerEmail($lead);
-        $provincia = $this->extraerCampoCustom($lead, ['provincia', 'city', 'ciudad']);
-        $canal = $lead['canal'] ?? $lead['source'] ?? 'Kommo';
-
-        // Extraer campos de custom_fields de Kommo (más flexibles)
-        $trabajo = $this->extraerCampoCustom($lead, ['trabajo', 'ocupación', 'profesión', 'estado laboral', 'empleo']);
-        $empresa = $this->extraerCampoCustom($lead, ['empresa', 'company', 'nombre empresa']);
-        $puesto = $this->extraerCampoCustom($lead, ['puesto', 'cargo', 'position', 'job title']);
-        $nomina = $this->extraerCampoCustom($lead, ['nómina', 'nomina', 'salario neto', 'sueldo neto', 'monthly salary', 'nómina mensual neto']);
-        $ingresos = $this->extraerCampoCustom($lead, ['ingresos', 'ingresos anuales', 'annual income', 'salario anual']);
-        $ahorro = $this->extraerCampoCustom($lead, ['ahorro', 'aportacion', 'savings']);
-
-        // INTEGRAR DATOS DEL MENSAJE (tienen prioridad si existen)
-        if (!empty($datosMensaje['nomina'])) {
-            $nomina = $datosMensaje['nomina'];
-            error_log('KommoController: Usando nómina del mensaje: ' . $nomina);
-        }
-        if (!empty($datosMensaje['empresa'])) {
-            $empresa = $datosMensaje['empresa'];
-            error_log('KommoController: Usando empresa del mensaje: ' . $empresa);
-        }
-        if (!empty($datosMensaje['puesto'])) {
-            $puesto = $datosMensaje['puesto'];
-            error_log('KommoController: Usando puesto del mensaje: ' . $puesto);
-        }
-        if (!empty($datosMensaje['ingresos'])) {
-            $ingresos = $datosMensaje['ingresos'];
-            error_log('KommoController: Usando ingresos del mensaje: ' . $ingresos);
-        }
-        if (!empty($datosMensaje['provincia'])) {
-            $provincia = $datosMensaje['provincia'];
-            error_log('KommoController: Usando provincia del mensaje: ' . $provincia);
-        }
-        if (!empty($datosMensaje['ahorro'])) {
-            $ahorro = $datosMensaje['ahorro'];
-            error_log('KommoController: Usando ahorro del mensaje: ' . $ahorro);
-        }
-
-        // Construir array de campos (basado en tu función original)
-        // Observaciones puede incluir tipo de contrato si viene en el mensaje
-        $observaciones = 'Contacto de Kommo';
-        if (!empty($datosMensaje['tipo_contrato'])) {
-            $observaciones .= ' - Tipo contrato: ' . $datosMensaje['tipo_contrato'];
-            error_log('KommoController: Añadiendo tipo de contrato a observaciones: ' . $datosMensaje['tipo_contrato']);
-        }
-
-        $campos = [
-            688 => ['valor' => ''], // Fecha
-            693 => ['valor' => $nombre],
-            694 => ['valor' => $apellidos],
-            695 => ['valor' => $telefono],
-            696 => ['valor' => $email],
-            689 => ['valor' => $provincia],
-            690 => ['valor' => $trabajo],
-            702 => ['valor' => ''], // Interés
-            692 => ['valor' => ''], // Tiene inmueble
-            691 => ['valor' => ''], // Valor inmueble
-            697 => ['valor' => ''], // Ciudad inmueble
-            699 => ['valor' => $ahorro],
-            700 => ['valor' => $observaciones], // Observaciones
-            701 => ['valor' => $canal], // Origen
-            405 => ['valor' => ''], // Importe hipoteca
-            191 => ['valor' => $observaciones],
-            192 => ['valor' => $nombreCompleto],
-            218 => ['valor' => $observaciones],
-            234 => ['valor' => $observaciones],
-            407 => ['valor' => $email],
-            408 => ['valor' => $telefono],
-            679 => ['valor' => $observaciones],
-            704 => ['valor' => $canal],
-            458 => ['valor' => $provincia],
-            220 => ['valor' => $empresa],
-            222 => ['valor' => $puesto],
-            225 => ['valor' => $nomina],
-            228 => ['valor' => $ingresos],
-        ];
-
-        // Si el fallback (regex/kommo) detectó tipo de contrato, mapearlo al campo de opción 193
-        if (!empty($datosMensaje['tipo_contrato'])) {
-            $opcion = $this->resolverOpcionTipoEmpleo($datosMensaje['tipo_contrato']);
-            if ($opcion) {
-                $campos[193] = ['opcion_id' => $opcion];
-                error_log('KommoController: Mapeado tipo de contrato fallback a opcion_id ' . $opcion);
+        // Mapear valores de texto (campo_id => valor)
+        foreach ($valoresTexto as $idCampo => $valor) {
+            if (!empty($valor) && trim((string)$valor) !== '') {
+                $campos[$idCampo] = ['valor' => (string)$valor];
             }
         }
 
-        error_log('KommoController: Campos construidos para autorrelleno: ' . json_encode($campos));
+        // Mapear opciones (campo_id => opcion_id)
+        foreach ($valoresOpcion as $idCampo => $opcionId) {
+            if (!empty($opcionId)) {
+                $campos[$idCampo] = ['opcion_id' => (int)$opcionId];
+            }
+        }
+
+        // Obtener datos de Kommo para campos que no fueron extraídos
+        $telefonoKommo = $this->extraerTelefono($lead);
+        $emailKommo = $this->extraerEmail($lead);
+        $canalKommo = $lead['canal'] ?? $lead['source'] ?? 'Kommo';
+        $nombreKommo = trim((string)(!empty($lead['nombre_contacto']) ? $lead['nombre_contacto'] : ($lead['name'] ?? '')));
+
+        // Agregar campos por defecto de Kommo si no están ya en valores extraídos
+        if (!isset($campos[695]) && !empty($telefonoKommo)) {
+            $campos[695] = ['valor' => $telefonoKommo];
+        }
+        if (!isset($campos[408]) && !empty($telefonoKommo)) {
+            $campos[408] = ['valor' => $telefonoKommo];
+        }
+        if (!isset($campos[696]) && !empty($emailKommo)) {
+            $campos[696] = ['valor' => $emailKommo];
+        }
+        if (!isset($campos[407]) && !empty($emailKommo)) {
+            $campos[407] = ['valor' => $emailKommo];
+        }
+
+        // Campos de observación/canal por defecto
+        $observacionesDefecto = 'Contacto de Kommo';
+        foreach ([700, 218, 234, 679, 191] as $campoIdObservaciones) {
+            if (!isset($campos[$campoIdObservaciones])) {
+                $campos[$campoIdObservaciones] = ['valor' => $observacionesDefecto];
+            }
+        }
+
+        foreach ([701, 704] as $campoIdCanal) {
+            if (!isset($campos[$campoIdCanal])) {
+                $campos[$campoIdCanal] = ['valor' => $canalKommo];
+            }
+        }
+
+        // Registrar resumen de campos que se van a actualizar
+        error_log('KommoController: Total de campos a actualizar: ' . count($campos) . '. Desglose: ' . json_encode(array_keys($campos)));
 
         // Filtrar campos vacíos
         return array_filter($campos, function ($configuracion) {
             return (isset($configuracion['opcion_id']) && !empty($configuracion['opcion_id']))
                 || (isset($configuracion['valor']) && trim((string)$configuracion['valor']) !== '');
         });
-    }
-
-    /**
-     * 🤖 Construye autorrelleno desde datos IA
-     * Convierte estructura IA (valores_texto/valores_opcion) a estructura de expediente
-     */
-    private function construirAutorrellenoDesdeIA(array $datosIA, array $lead): array
-    {
-        $campos = [];
-        $valoresTexto = $datosIA['valores_texto'] ?? [];
-        $valoresOpcion = $datosIA['valores_opcion'] ?? [];
-
-        error_log('KommoController: Construyendo autorrelleno desde IA: ' . count($valoresTexto) . ' valores de texto, ' . count($valoresOpcion) . ' opciones');
-
-        // Mapear valores de texto extraídos por IA
-        foreach ($valoresTexto as $idCampo => $valor) {
-            if (!empty($valor)) {
-                $campos[$idCampo] = ['valor' => $valor];
-            }
-        }
-
-        // Mapear opciones extraídas por IA
-        foreach ($valoresOpcion as $idCampo => $idOpcion) {
-            if (!empty($idOpcion)) {
-                $campos[$idCampo] = ['opcion_id' => $idOpcion];
-            }
-        }
-
-        // Añadir datos por defecto de Kommo que no estén en IA
-        $telefono = $this->extraerTelefono($lead);
-        $email = $this->extraerEmail($lead);
-        $canal = $lead['canal'] ?? $lead['source'] ?? 'Kommo';
-
-        // Si IA nos pasó tipo de contrato como texto, mapear a opción de hito (193)
-        $tipoContratoIA = $datosIA['tipo_contrato'] ?? ($valoresTexto['tipo_contrato'] ?? null);
-        if (!empty($tipoContratoIA)) {
-            $opcionTipo = $this->resolverOpcionTipoEmpleo($tipoContratoIA);
-            if ($opcionTipo) {
-                $campos[193] = ['opcion_id' => $opcionTipo];
-                error_log('KommoController: Mapeado tipo de contrato IA a opcion_id ' . $opcionTipo);
-            }
-        }
-
-        // Campos por defecto (si IA no los extrajo)
-        $camposDefecto = [
-            700 => 'Contacto de Kommo',
-            701 => $canal,
-            704 => $canal,
-            191 => 'Contacto de Kommo',
-            218 => 'Contacto de Kommo',
-            234 => 'Contacto de Kommo',
-            679 => 'Contacto de Kommo'
-        ];
-
-        foreach ($camposDefecto as $idCampo => $valor) {
-            if (!isset($campos[$idCampo]) && !empty($valor)) {
-                $campos[$idCampo] = ['valor' => $valor];
-            }
-        }
-
-        error_log('KommoController: Campos IA totales para actualizar: ' . count($campos));
-        return $campos;
-    }
-
-    /**
-     * Resolver opción del campo 'Tipo de empleo' (hito campo 193) según texto
-     */
-    private function resolverOpcionTipoEmpleo(string $tipo): ?int
-    {
-        $t = strtolower(trim($tipo));
-        if (strpos($t, 'aut') !== false) {
-            return 97; // Autónom@
-        }
-        if (strpos($t, 'pension') !== false) {
-            return 98; // Pensionista
-        }
-        if (strpos($t, 'mercantil') !== false) {
-            return 103; // Mercantil
-        }
-        // Empleado / indefinido / fijo
-        if (strpos($t, 'emple') !== false || strpos($t, 'indef') !== false || strpos($t, 'fijo') !== false) {
-            return 102; // Emplead@
-        }
-
-        return null;
     }
 
     /**
