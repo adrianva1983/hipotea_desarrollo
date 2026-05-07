@@ -825,39 +825,39 @@ class SimuladorViabilidadController extends Controller
             
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
 
-            // ── ADJUNTAR PDF AL CAMPO HITO 326 (Documentación adicional) DEL EXPEDIENTE ──
+            // ── ADJUNTAR PDF AL CAMPO HITO 754 (Documentación adicional) DEL EXPEDIENTE ──
             try {
                 $nombreFicheroPdf = 'calculadora_' . $nombre_pdf . '.pdf';
-                $campoHito326 = $doctrine->getRepository(CampoHito::class)->find(326);
-                if ($campoHito326) {
-                    $campoHitoExp326 = $doctrine->getRepository(CampoHitoExpediente::class)->findOneBy([
+                $campoHito754 = $doctrine->getRepository(CampoHito::class)->find(754);
+                if ($campoHito754) {
+                    $campoHitoExp754 = $doctrine->getRepository(CampoHitoExpediente::class)->findOneBy([
                         'idExpediente' => $expediente,
-                        'idCampoHito'  => $campoHito326,
+                        'idCampoHito'  => $campoHito754,
                     ]);
-                    if ($campoHitoExp326) {
+                    if ($campoHitoExp754) {
                         // Eliminar fichero anterior si existe
                         $ficheroPrevio = $doctrine->getRepository(FicheroCampo::class)->findOneBy([
-                            'idCampoHitoExpediente' => $campoHitoExp326,
+                            'idCampoHitoExpediente' => $campoHitoExp754,
                         ]);
                         if ($ficheroPrevio) {
                             $em->remove($ficheroPrevio);
                         }
 
-                        $campoHitoExp326->setValor('Informe_Simulador_Viabilidad')
+                        $campoHitoExp754->setValor('Informe_Simulador_Viabilidad')
                                         ->setFechaModificacion(new DateTime());
-                        $em->persist($campoHitoExp326);
+                        $em->persist($campoHitoExp754);
 
                         $ficheroCampo = (new FicheroCampo())
                             ->setNombreFichero($nombreFicheroPdf)
-                            ->setIdCampoHito($campoHito326)
-                            ->setIdCampoHitoExpediente($campoHitoExp326)
+                            ->setIdCampoHito($campoHito754)
+                            ->setIdCampoHitoExpediente($campoHitoExp754)
                             ->setIdExpediente($expediente);
                         $em->persist($ficheroCampo);
                         $em->flush();
                     }
                 }
             } catch (\Throwable $eFichero) {
-                error_log('Error adjuntando PDF al campo hito 326: ' . $eFichero->getMessage());
+                error_log('Error adjuntando PDF al campo hito 754: ' . $eFichero->getMessage());
             }
 
             // Pasar variables adicionales a la plantilla y actualizar el body para cliente
