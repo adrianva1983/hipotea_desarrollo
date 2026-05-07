@@ -129,9 +129,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (data.error) {
 				alert('Error: ' + (data.mensaje || 'Desconocido'));
 			} else {
-				alert('✅ Guardado: ' + data.actualizados + ' registros');
+				//alert('✅ Guardado: ' + data.actualizados + ' registros');
 				$('#modal-seguimiento-expediente').modal('hide');
-				location.reload();
+				//location.reload();
 			}
 		})
 		.catch(err => alert('Error: ' + err.message));
