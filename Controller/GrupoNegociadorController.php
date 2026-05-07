@@ -10255,6 +10255,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 	
 	public function actualizarSeguimientoExpedienteAction(Request $request)
 	{
+		error_log('Iniciando actualización de seguimiento de expediente');
 		if ($request->isXmlHttpRequest()) {
 			$elementos = json_decode($request->getContent(), true);
 			
