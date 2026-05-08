@@ -1092,5 +1092,38 @@ EOT;
             'camposBD' => $camposBD
         ], 200);
     }
+
+    private function obtenerCamposDeGruposMod(array $grupoIds)
+    {
+        if (empty($grupoIds)) {
+            return [];
+        }
+
+        $conn = $this->getDoctrine()->getConnection();
+        $resultado = [];
+
+        // Placeholders para IN (?)
+        $placeholders = implode(',', array_fill(0, count($grupoIds), '?'));
+
+        // Ejecutar la consulta SQL nativa
+        $sql = 'SELECT ch.id_campo_hito, ch.nombre, ch.tipo 
+                FROM campo_hito ch 
+                WHERE ch.id_grupo_campos_hito IN (' . $placeholders . ') 
+                ORDER BY ch.orden';
+
+        $stmt = $conn->executeQuery($sql, array_values($grupoIds));
+        $filas = $stmt->fetchAll();
+
+        foreach ($filas as $fila) {
+            $resultado[] = [
+                'id_campo_hito' => (int)$fila['id_campo_hito'],
+                'nombre'        => $fila['nombre'],
+                'tipo'          => (int)$fila['tipo'],
+            ];
+        }
+
+        error_log('InteligenciaArtificialController: obtenerCamposDeGruposMod - total campos: ' . count($resultado));
+        return $resultado;
+    }
 }
 
