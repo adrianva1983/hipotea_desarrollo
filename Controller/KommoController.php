@@ -449,30 +449,30 @@ class KommoController extends Controller
 
         error_log('KommoController: 📝 IA - Texto a procesar: ' . substr($texto, 0, 100) . '...');
 
-        // INTENTO 1: Llamada directa a InteligenciaArtificialController (sin forward para evitar GET)
-        // INTENTO 1: Via forward() pero asegurando POST
-        error_log('KommoController: 1️⃣ Intentando forward() a InteligenciaArtificialController...');
+        // INTENTO 1: Llamada al nuevo método procesarTextoExpedienteAction (con fuzzy matching Levenshtein)
+        error_log('KommoController: 1️⃣ Intentando forward() a procesarTextoExpedienteAction (nuevo)...');
         try {
-            // Crear request COMO POST correctamente
+            // Crear request JSON POST
             $request = new Request(
                 [],  // query
-                [    // request (POST data)
-                    'texto' => $texto,
-                    'tipo_entrada' => 'kommo',
-                    'grupos' => [4],
-                ],
+                [],  // request (vacío, usaremos JSON body)
                 [],  // attributes
                 [],  // cookies
                 [],  // files
                 [    // server info
                     'REQUEST_METHOD' => 'POST',
-                    'CONTENT_TYPE' => 'application/x-www-form-urlencoded'
-                ]
+                    'CONTENT_TYPE' => 'application/json'
+                ],
+                json_encode([
+                    'texto' => $texto,
+                    'tipo_entrada' => 'kommo',
+                    'grupos' => [4],
+                ])
             );
 
             error_log('KommoController: Forward request method: ' . $request->getMethod());
 
-            $response = $this->forward('AppBundle:InteligenciaArtificial:procesarTextoParaExpediente', [
+            $response = $this->forward('AppBundle:InteligenciaArtificial:procesarTextoExpediente', [
                 'request' => $request
             ]);
 
@@ -489,18 +489,25 @@ class KommoController extends Controller
 
             // Validar estructura
             $success = $datosExtraidos['success'] ?? false;
-            $campos = $datosExtraidos['campos_detectados'] ?? 0;
-            $confianza = $datosExtraidos['confianza_promedio'] ?? 0;
-
-            error_log('KommoController: 1️⃣ Forward - Parseado: success=' . ($success ? 'true' : 'false') . ', campos=' . $campos . ', confianza=' . $confianza);
+            error_log('KommoController: 1️⃣ Forward - Parseado: success=' . ($success ? 'true' : 'false'));
 
             if (!$success) {
                 error_log('KommoController: 1️⃣ ⚠️ Forward retornó success=false, pasando a cURL');
                 throw new \Exception('Forward returned success=false');
             }
 
-            // Si success es true pero no tiene estructura unificada, convertir
-            if (!isset($datosExtraidos['valores_texto']) || !isset($datosExtraidos['valores_opcion'])) {
+            // Normalizar respuesta nueva: extraer datosProcessados si existe
+            if (isset($datosExtraidos['datosProcessados'])) {
+                $datosProcessados = $datosExtraidos['datosProcessados'];
+                $datosExtraidos = [
+                    'success' => true,
+                    'valores_texto' => $datosProcessados['valores_texto'] ?? [],
+                    'valores_opcion' => $datosProcessados['valores_opcion'] ?? [],
+                    'campos_procesados' => $datosProcessados['campos_procesados'] ?? [],
+                    'resultadoIA' => $datosExtraidos['resultadoIA'] ?? null,
+                ];
+                error_log('KommoController: ✅ Estructura nueva detectada (procesarTextoExpediente). Campos: ' . count($datosProcessados['campos_procesados'] ?? []));
+            } elseif (!isset($datosExtraidos['valores_texto']) || !isset($datosExtraidos['valores_opcion'])) {
                 error_log('KommoController: 1️⃣ ⚠️ Estructura incompleta en forward, normalizando...');
                 $datosExtraidos = $this->normalizarRespuestaIA($datosExtraidos);
             }
@@ -700,15 +707,16 @@ class KommoController extends Controller
 
     /**
      * 🤖 Fallback: Llamar IA vía cURL si forward falla
+     * Usa el nuevo endpoint procesarTextoExpediente (con fuzzy matching)
      */
     private function extraerDatosConIAviaCurl(string $texto): array
     {
         try {
-            error_log('KommoController: IA cURL - Iniciando llamada a API externa...');
+            error_log('KommoController: IA cURL - Iniciando llamada a API externa (procesarTextoExpediente)...');
             
             $client = new GuzzleClient();
             $response = $client->post(
-                'https://areaprivada.hipotea.com/API/procesar_texto_para_expediente',
+                'https://areaprivada.hipotea.com/API/procesar_texto_expediente',
                 [
                     'json' => [
                         'texto' => $texto,
@@ -729,9 +737,22 @@ class KommoController extends Controller
             }
 
             $datos = json_decode($response->getBody(), true);
+            
+            // Normalizar respuesta nueva
+            if (isset($datos['datosProcessados'])) {
+                $datosProcessados = $datos['datosProcessados'];
+                $datos = [
+                    'success' => true,
+                    'valores_texto' => $datosProcessados['valores_texto'] ?? [],
+                    'valores_opcion' => $datosProcessados['valores_opcion'] ?? [],
+                    'campos_procesados' => $datosProcessados['campos_procesados'] ?? [],
+                ];
+                error_log('KommoController: IA cURL - Estructura nueva detectada. Campos: ' . count($datosProcessados['campos_procesados'] ?? []));
+            }
+            
             error_log('KommoController: IA cURL - Respuesta: ' . json_encode([
                 'success' => $datos['success'] ?? false,
-                'campos' => $datos['campos_detectados'] ?? 0
+                'campos' => count($datos['valores_texto'] ?? []) + count($datos['valores_opcion'] ?? [])
             ]));
 
             return $datos ?? ['success' => false, 'error' => 'Respuesta vacía'];
