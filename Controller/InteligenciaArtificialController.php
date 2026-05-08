@@ -1201,11 +1201,19 @@ EOT;
 
     public function procesarTextoExpedienteAction(Request $request)
     {
-        $textoRecibido = $request->request->get('texto', '');
+        // Obtener datos del request
+        $isJson = strpos($request->headers->get('Content-Type', ''), 'application/json') !== false;
+
+        if ($isJson) {
+            $body = json_decode($request->getContent(), true) ?? [];
+            $texto = $body['texto'] ?? null;
+        } else {
+            $texto = $request->request->get('texto');
+        }
         return new JsonResponse([
             'success' => true,
             'mensaje' => 'Textos procesados y campos mapeados con éxito',
-            'request'=> $request
+            'texto'=> $texto
         ], 200);
     }
 }
