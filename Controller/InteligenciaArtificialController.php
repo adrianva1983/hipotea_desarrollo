@@ -1086,7 +1086,7 @@ EOT;
     public function crearPromptExpedienteAction(Request $request)
     {
         $grupoIds = [4];
-        $camposBD = $this->obtenerCamposDeGrupos($grupoIds);
+        $camposBD = $this->obtenerCamposDeGruposMod($grupoIds);
         return new JsonResponse([
             'success' => true,
             'camposBD' => $camposBD
