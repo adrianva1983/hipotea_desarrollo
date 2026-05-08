@@ -1085,10 +1085,12 @@ EOT;
 
     public function crearPromptExpedienteAction(Request $request)
     {
+        $grupoIds = [4];
+        $camposBD = $this->obtenerCamposDeGrupos($grupoIds);
         return new JsonResponse([
-            'success' => false,
-            'mensaje' => 'Método no permitido. Use POST.'
-        ], 400);
+            'success' => true,
+            'camposBD' => $camposBD
+        ], 200);
     }
 }
 
