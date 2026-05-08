@@ -253,7 +253,8 @@ ESTRUCTURA JSON ESPERADA:
     "prestamos_mensuales": "número",
     "aportacion": "número",
     "gastos_totales": "número",
-    "precio_inmueble": "número"
+    "precio_inmueble": "número",
+    "Nombre empresa": "string"
   },
   "datos_laborales": {
     "situacion_laboral": "autonomo|contrato_indefinido|contrato_temporal|funcionario|empresario",
