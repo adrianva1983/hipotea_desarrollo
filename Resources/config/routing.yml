@@ -829,6 +829,11 @@ crear_prompt_expediente:
   controller: AppBundle:InteligenciaArtificial:crearPromptExpediente
   methods: [POST]
 
+procesar_texto_expediente:
+  path: /API/procesar_texto_expediente
+  controller: AppBundle:InteligenciaArtificial:procesarTextoExpediente
+  methods: [POST]
+
 resetear_usos_calculadoras:
   path: /Admin/ResetearUsosCalculadoras
   controller: AppBundle:Calculadoras:resetearUsosCalculadoras

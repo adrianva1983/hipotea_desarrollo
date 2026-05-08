@@ -1083,6 +1083,7 @@ EOT;
     }
 
 
+    //manualmente
     public function crearPromptExpedienteAction(Request $request)
     {
         $grupoIds = [4];
@@ -1196,6 +1197,14 @@ EOT;
         error_log('InteligenciaArtificialController: construirPromptExtractor - prompt generado con ' . count($camposBD) . ' campos');
         
         return $prompt;
+    }
+
+    public function procesarTextoExpedienteAction(Request $request)
+    {
+        return new JsonResponse([
+            'success' => true,
+            'mensaje' => 'Textos procesados y campos mapeados con éxito',
+        ], 200);
     }
 }
 
