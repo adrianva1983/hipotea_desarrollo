@@ -509,6 +509,130 @@ class KommoController extends Controller
     }
 
     /**
+     * 📝 Fallback final: Extrae datos usando regex directamente del texto
+     * Retorna estructura unificada compatible con IA
+     */
+    private function extraerDatosConRegex(string $texto): array
+    {
+        try {
+            error_log('KommoController: Iniciando extracción regex del mensaje');
+            
+            $datosExtraidos = [];
+            $mapeoClavesACampos = $this->obtenerMapeoClavesACampos();
+            $mapeoOpciones = $this->obtenerMapeoOpcionesGlobales();
+
+            // Patrón: salario, nómina, sueldo (números)
+            if (preg_match('/(?:salario neto|salario|nómina|nomina|sueldo neto|sueldo)\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $valor = str_replace(',', '.', $matches[1]);
+                $datosExtraidos['nomina'] = $valor;
+                error_log('KommoController: Regex - Nómina extraída: ' . $valor);
+            } elseif (preg_match('/\b(?:gano|cobro|percibo)\s*:??\s*(\d{2,6}(?:[.,]\d{2})?)\b\s*(?:€|euros)?/i', $texto, $matches)) {
+                $valor = str_replace(',', '.', $matches[1]);
+                $datosExtraidos['nomina'] = $valor;
+                error_log('KommoController: Regex - Nómina extraída (patrón gano): ' . $valor);
+            }
+
+            // Patrón: tipo de contrato (indefinido, temporal, autónomo, por obra)
+            if (preg_match('/\b(indefinid[oa]|temporal|fijo|autonomo|autónomo|por obra|obra y servicio|pensionista|emplead[oa])\b/i', $texto, $m)) {
+                $datosExtraidos['tipo_contrato'] = strtolower($m[1]);
+                error_log('KommoController: Regex - Tipo de contrato extraído: ' . $datosExtraidos['tipo_contrato']);
+            }
+
+            // Patrón: empresa (texto)
+            if (preg_match('/empresa\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['empresa'] = trim($matches[1]);
+                error_log('KommoController: Regex - Empresa extraída: ' . $datosExtraidos['empresa']);
+            }
+
+            // Patrón: puesto, cargo (texto)
+            if (preg_match('/(?:puesto|cargo)\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['puesto'] = trim($matches[1]);
+                error_log('KommoController: Regex - Puesto extraído: ' . $datosExtraidos['puesto']);
+            }
+
+            // Patrón: ingresos, ingresos anuales (números)
+            if (preg_match('/ingresos\s*(?:anuales|mensuales)?\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $valor = str_replace(',', '.', $matches[1]);
+                $datosExtraidos['ingresos'] = $valor;
+                error_log('KommoController: Regex - Ingresos extraídos: ' . $valor);
+            }
+
+            // Patrón: ciudad, provincia, localidad (texto)
+            if (preg_match('/(?:ciudad|provincia|localidad|residencia)\s*:?\s*([A-Za-z0-9\s\&\.\-áéíóúñÁÉÍÓÚÑ]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['provincia'] = trim($matches[1]);
+                error_log('KommoController: Regex - Provincia extraída: ' . $datosExtraidos['provincia']);
+            }
+
+            // Patrón: ahorro (números)
+            if (preg_match('/ahorro\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $valor = str_replace(',', '.', $matches[1]);
+                $datosExtraidos['ahorro'] = $valor;
+                error_log('KommoController: Regex - Ahorro extraído: ' . $valor);
+            }
+
+            // Patrón: nacionalidad (texto)
+            if (preg_match('/nacionalidad\s*:?\s*([A-Za-záéíóúñÁÉÍÓÚÑ\s\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['nacionalidad'] = trim($matches[1]);
+                error_log('KommoController: Regex - Nacionalidad extraída: ' . $datosExtraidos['nacionalidad']);
+            }
+
+            // Patrón: banco (texto)
+            if (preg_match('/(?:banco|trabajo con|entidad|cuenta en)\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['banco'] = trim($matches[1]);
+                error_log('KommoController: Regex - Banco extraído: ' . $datosExtraidos['banco']);
+            }
+
+            // 🔄 CONVERTIR DATOS EXTRAÍDOS A ESTRUCTURA UNIFICADA
+            $valoresTexto = [];
+            $valoresOpcion = [];
+
+            foreach ($datosExtraidos as $clave => $valor) {
+                // Mapear clave a IDs de campo
+                $idscamp = $mapeoClavesACampos[$clave] ?? [];
+                
+                if (!empty($idscamp)) {
+                    // Si es valor que puede ser opción (tipo_contrato)
+                    if ($clave === 'tipo_contrato') {
+                        foreach ($idscamp as $idCampo) {
+                            $idOpcion = $this->mapearValorAOpcion($valor, $mapeoOpciones);
+                            if ($idOpcion) {
+                                $valoresOpcion[$idCampo] = $idOpcion;
+                            }
+                        }
+                    } else {
+                        // Valor de texto normal
+                        foreach ($idscamp as $idCampo) {
+                            $valoresTexto[$idCampo] = $valor;
+                        }
+                    }
+                }
+            }
+
+            error_log('KommoController: Estructura regex convertida a: ' . count($valoresTexto) . ' valores, ' . count($valoresOpcion) . ' opciones');
+
+            return [
+                'success' => false, // Regex es fallback, no es 100% confiable
+                'valores_texto' => $valoresTexto,
+                'valores_opcion' => $valoresOpcion,
+                'campos_detectados' => count($valoresTexto) + count($valoresOpcion),
+                'confianza_promedio' => 0.50, // Menor confianza que IA
+                'metodo' => 'regex_fallback'
+            ];
+
+        } catch (\Exception $e) {
+            error_log('KommoController: Error en extraerDatosConRegex: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'valores_texto' => [],
+                'valores_opcion' => [],
+                'campos_detectados' => 0,
+                'confianza_promedio' => 0,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * 🤖 Normaliza respuesta de IA a estructura unificada si es necesario
      */
     private function normalizarRespuestaIA(array $datosIA): array
