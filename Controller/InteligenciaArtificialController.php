@@ -1133,7 +1133,7 @@ EOT;
     /**
      * Construye un prompt dinámico para extracción de datos basado en los campos disponibles
     */
-    private function construirPromptExtractor(array $camposBD)
+    private function construirPromptExtractor(array $camposBD, $texto = '')
     {
         // Construir la lista de campos dinámicamente
         $seccionCampos = '';
@@ -1191,63 +1191,103 @@ EOT;
         }
 
         TEXTO A ANALIZAR:
-        {texto_a_analizar_aqui}
+        $texto
         EOT;
 
-        error_log('InteligenciaArtificialController: construirPromptExtractor - prompt generado con ' . count($camposBD) . ' campos');
+        error_log('InteligenciaArtificialController: construirPromptExtractor - prompt generado con ' . count($camposBD) . ' campos, texto: ' . strlen($texto) . ' chars');
         
         return $prompt;
     }
 
     public function procesarTextoExpedienteAction(Request $request)
     {
-        // Obtener datos del request
-        $isJson = strpos($request->headers->get('Content-Type', ''), 'application/json') !== false;
+        try {
+            // Obtener datos del request
+            $isJson = strpos($request->headers->get('Content-Type', ''), 'application/json') !== false;
 
-        if ($isJson) {
-            $body = json_decode($request->getContent(), true) ?? [];
-            $texto = $body['texto'] ?? null;
-        } else {
-            $texto = $request->request->get('texto');
+            if ($isJson) {
+                $body = json_decode($request->getContent(), true) ?? [];
+                $texto = $body['texto'] ?? null;
+            } else {
+                $texto = $request->request->get('texto');
+            }
+
+            // Validar que el texto no esté vacío
+            if (!$texto || empty(trim($texto))) {
+                error_log('InteligenciaArtificialController: ❌ procesarTextoExpedienteAction - Texto vacío o nulo');
+                return new JsonResponse([
+                    'success' => false,
+                    'mensaje' => 'El texto no puede estar vacío.'
+                ], 400);
+            }
+
+            error_log('InteligenciaArtificialController: procesarTextoExpedienteAction - Texto OK, longitud: ' . strlen($texto));
+
+            $configIA = $this->obtenerConfiguracionIA();
+
+            if (empty($configIA['api_key'])) {
+                error_log('InteligenciaArtificialController: ❌ procesarTextoExpedienteAction - NO HAY API_KEY CONFIGURADA');
+                return new JsonResponse([
+                    'success' => false,
+                    'mensaje' => 'No hay configuración de IA activa.'
+                ], 500);
+            }
+
+            $grupoIds = [4];
+            $camposBD = $this->obtenerCamposDeGruposMod($grupoIds);
+            $prompt = $this->construirPromptExtractor($camposBD, $texto);
+
+            $resultadoIA = null;
+                
+            if ($configIA['provider'] === 'GEMINI') 
+            {
+                error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAGeminiTexto()...');
+                $resultadoIA = $this->enviarAGeminiTexto($texto, $prompt, $configIA);
+            } 
+            elseif ($configIA['provider'] === 'OPENAI') 
+            {
+                error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOpenAITexto()...');
+                $resultadoIA = $this->enviarAOpenAITexto($texto, $prompt, $configIA);
+            } 
+            elseif ($configIA['provider'] === 'OLLAMA') 
+            {
+                error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOllamaTexto()...');
+                $resultadoIA = $this->enviarAOllamaTexto($texto, $prompt, $configIA);
+            } 
+            else 
+            {
+                error_log('InteligenciaArtificialController: ❌ Provider desconocido: ' . $configIA['provider']);
+                return new JsonResponse([
+                    'success' => false,
+                    'mensaje' => 'Proveedor IA desconocido: ' . $configIA['provider']
+                ], 500);
+            }
+
+            if (!$resultadoIA) {
+                error_log('InteligenciaArtificialController: ❌ El proveedor devolvió NULL');
+                return new JsonResponse([
+                    'success' => false,
+                    'mensaje' => 'No se obtuvo respuesta del proveedor IA'
+                ], 500);
+            }
+
+            error_log('InteligenciaArtificialController: ✅ procesarTextoExpedienteAction exitoso');
+            return new JsonResponse([
+                'success' => true,
+                'mensaje' => 'Textos procesados y campos mapeados con éxito',
+                'texto'=> substr($texto, 0, 100) . '...', 
+                'configIA'=> ['provider' => $configIA['provider']],
+                'resultadoIA'=> $resultadoIA,
+            ], 200);
+
+        } catch (\Exception $e) {
+            error_log('InteligenciaArtificialController: ❌ Error en procesarTextoExpedienteAction: ' . $e->getMessage());
+            $this->logger->error('Error en procesarTextoExpedienteAction: ' . $e->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'mensaje' => 'Error al procesar: ' . $e->getMessage()
+            ], 500);
         }
-
-        $configIA = $this->obtenerConfiguracionIA();
-
-        $grupoIds = [4];
-        $camposBD = $this->obtenerCamposDeGruposMod($grupoIds);
-        $prompt = $this->construirPromptExtractor($camposBD);
-
-        $resultadoIA = null;
-            
-        if ($configIA['provider'] === 'GEMINI') 
-        {
-            error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAGeminiTexto()...');
-            $resultadoIA = $this->enviarAGeminiTexto($texto, $prompt, $configIA);
-        } 
-        elseif ($configIA['provider'] === 'OPENAI') 
-        {
-            error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOpenAITexto()...');
-            $resultadoIA = $this->enviarAOpenAITexto($texto, $prompt, $configIA);
-        } 
-        elseif ($configIA['provider'] === 'OLLAMA') 
-        {
-            error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOllamaTexto()...');
-            $resultadoIA = $this->enviarAOllamaTexto($texto, $prompt, $configIA);
-        } 
-        else 
-        {
-            error_log('InteligenciaArtificialController: ❌ Provider desconocido: ' . $configIA['provider']);
-        }
-
-
-
-        return new JsonResponse([
-            'success' => true,
-            'mensaje' => 'Textos procesados y campos mapeados con éxito',
-            'texto'=> $texto, 
-            'configIA'=> $configIA,
-            'resultadoIA'=> $resultadoIA,
-        ], 200);
     }
 }
 
