@@ -1142,7 +1142,7 @@ EOT;
                         }
                     }
 
-                    // Búsqueda parcial
+                    // Búsqueda parcial (substring)
                     if ($opcionEncontrada === null) {
                         foreach ($opciones as $opcion) {
                             $opcionNorm = strtolower(trim($opcion['valor']));
@@ -1151,6 +1151,32 @@ EOT;
                                 error_log('InteligenciaArtificialController: ✅ Campo ' . $idCampo . ' - Coincidencia PARCIAL: "' . $opcion['valor'] . '" → ID ' . $opcionEncontrada);
                                 break;
                             }
+                        }
+                    }
+
+                    // Búsqueda fuzzy (Levenshtein) - para palabras similares (ej: fijo/fija)
+                    if ($opcionEncontrada === null) {
+                        $mejorOpcion = null;
+                        $mejorSimilitud = 0;
+                        $umbralSimilitud = 0.80; // 80% de similitud
+
+                        foreach ($opciones as $opcion) {
+                            $opcionNorm = strtolower(trim($opcion['valor']));
+                            
+                            // Calcular distancia Levenshtein
+                            $distancia = levenshtein($valorNorm, $opcionNorm);
+                            $maxLen = max(strlen($valorNorm), strlen($opcionNorm));
+                            $similitud = 1 - ($distancia / $maxLen);
+
+                            if ($similitud > $mejorSimilitud && $similitud >= $umbralSimilitud) {
+                                $mejorSimilitud = $similitud;
+                                $mejorOpcion = $opcion;
+                            }
+                        }
+
+                        if ($mejorOpcion !== null) {
+                            $opcionEncontrada = $mejorOpcion['id'];
+                            error_log('InteligenciaArtificialController: ✅ Campo ' . $idCampo . ' - Coincidencia FUZZY (' . round($mejorSimilitud * 100) . '%): "' . $mejorOpcion['valor'] . '" → ID ' . $opcionEncontrada);
                         }
                     }
 
