@@ -1144,7 +1144,7 @@ EOT;
             
             // Indicar si es un campo de selección (tipo 2=dropdown, tipo 3=radio)
             $tipoIndicador = in_array($tipo, [2, 3]) ? ' [SELECCIÓN]' : '';
-            $seccionCampos .= "- {$nombre} [ID: {$id}]{$tipoIndicador}\n";
+            $seccionCampos .= "- ID {$id}: {$nombre}{$tipoIndicador}\n";
         }
 
         $prompt = <<<EOT
@@ -1179,14 +1179,14 @@ EOT;
            - Devuelve ÚNICAMENTE el objeto JSON plano
            - PROHIBIDO incluir bloques de código Markdown (```json ... ```)
            - PROHIBIDO incluir explicaciones o texto adicional fuera del JSON
-           - Estructura exacta:
+           - Estructura exacta (INCLUYE el nombre del campo):
 
         {
         "campos": [
-            {"id": "693", "valor": "Juan"},
-            {"id": "695", "valor": "612345678"},
-            {"id": "696", "valor": "juan@example.com"},
-            {"id": "191", "valor": "Mencionó que trabaja en 'TecnoSL' como ingeniero. Prefiere contacto por la tarde."}
+            {"id": "693", "nombre": "Nombre", "valor": "Juan"},
+            {"id": "695", "nombre": "Teléfono", "valor": "612345678"},
+            {"id": "696", "nombre": "Email", "valor": "juan@example.com"},
+            {"id": "191", "nombre": "Comentarios", "valor": "Mencionó que trabaja en 'TecnoSL' como ingeniero. Prefiere contacto por la tarde."}
         ]
         }
 
