@@ -1205,7 +1205,7 @@ EOT;
         return new JsonResponse([
             'success' => true,
             'mensaje' => 'Textos procesados y campos mapeados con éxito',
-            'textoRecibido'=> $textoRecibido
+            'request'=> $request
         ], 200);
     }
 }
