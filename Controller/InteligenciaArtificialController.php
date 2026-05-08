@@ -1092,7 +1092,8 @@ EOT;
         return new JsonResponse([
             'success' => true,
             'camposBD' => $camposBD,
-            'prompt' => $prompt
+            'prompt' => $prompt, 
+            'mensaje' => 'Prompt generado con éxito',
         ], 200);
     }
 
