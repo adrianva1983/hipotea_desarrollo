@@ -603,15 +603,20 @@ class KommoController extends Controller
                 $datosExtraidos['nacionalidad'] = trim($matches[1]);
                 error_log('KommoController: Regex - Nacionalidad extraída: ' . $datosExtraidos['nacionalidad']);
             }
-
             // Patrón: estado civil (soltero/a, casado/a, divorciado/a, separado/a, viudo/a, pareja de hecho)
             // Captura también régimen matrimonial si se especifica (gananciales, separación de bienes)
-            if (preg_match('/\b(?:soy\s+)?(?:estado\s*civil\s*[:\s])?\s*(solter[oa]|casad[oa](?:\s+en\s+(?:gananciales|separación\s+de\s+bienes))?|divorciado[a]?|separad[oa]|viud[oa]|pareja\s+de\s+hecho|unión\s+de\s+hecho)\b/i', $texto, $matches)) {
+            if (preg_match('/\b(?:soy\s+)?(?:estado\s*civil\s*[:\s])?\s*(solter[oa]|casad[oa](?:\s+en\s+(?:gananciales|separaci[oó]n\s+de\s+bienes))?|divorciad[oa]?|separad[oa]|viud[oa]|pareja\s+de\s+hecho|uni[oó]n\s+de\s+hecho)\b/i', $texto, $matches)) {
                 $valor = trim($matches[1]);
                 if (!empty($valor)) {
                     $datosExtraidos['estado_civil'] = $valor;
                     error_log('KommoController: Regex - Estado civil extraído: ' . $datosExtraidos['estado_civil']);
                 }
+            }
+
+            // Patrón: "Trabajo en X" / "Trabajo como X" / "Trabajo para X" — capturar nombre de empresa
+            if (preg_match('/\b(?:trabajo en|trabajo como|trabaja en|trabajo para|empleado en|trabajo:|trabajo\s-\s)\s*:?\s*([A-Za-z0-9\s\&\.\-\,\(\)]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['empresa'] = trim($matches[1]);
+                error_log('KommoController: Regex - Empresa extraída (trabajo en): ' . $datosExtraidos['empresa']);
             }
 
             // Patrón: banco (texto)
