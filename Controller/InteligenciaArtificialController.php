@@ -1210,10 +1210,14 @@ EOT;
         } else {
             $texto = $request->request->get('texto');
         }
+
+        $configIA = $this->obtenerConfiguracionIA();
+
         return new JsonResponse([
             'success' => true,
             'mensaje' => 'Textos procesados y campos mapeados con éxito',
-            'texto'=> $texto
+            'texto'=> $texto, 
+            'configIA'=> $configIA
         ], 200);
     }
 }
