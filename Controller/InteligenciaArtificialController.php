@@ -42,66 +42,94 @@ class InteligenciaArtificialController extends Controller
     public function procesarTextoParaExpedienteAction(Request $request)
     {
         try {
+            error_log('InteligenciaArtificialController: 1️⃣ Iniciando procesarTextoParaExpediente...');
+            
             // Validar que sea POST
             if (!$request->isMethod('POST')) {
+                error_log('InteligenciaArtificialController: ❌ No es POST, es: ' . $request->getMethod());
                 return new JsonResponse([
                     'success' => false,
                     'mensaje' => 'Método no permitido. Use POST.'
                 ], 400);
             }
 
+            error_log('InteligenciaArtificialController: 2️⃣ Request es POST, extrayendo datos...');
+
             // Obtener datos del request
             $isJson = strpos($request->headers->get('Content-Type', ''), 'application/json') !== false;
             
             if ($isJson) {
+                error_log('InteligenciaArtificialController: Content-Type es JSON');
                 $body = json_decode($request->getContent(), true) ?? [];
                 $texto = $body['texto'] ?? null;
                 $tipoEntrada = $body['tipo_entrada'] ?? 'kommo';
             } else {
+                error_log('InteligenciaArtificialController: Content-Type no es JSON, usando request->request');
                 $texto = $request->request->get('texto');
                 $tipoEntrada = $request->request->get('tipo_entrada', 'kommo');
             }
 
+            error_log('InteligenciaArtificialController: Texto extraído: ' . (empty($texto) ? 'VACÍO' : substr($texto, 0, 50)) . '...');
+
             // Validar que el texto no esté vacío
             if (!$texto || empty(trim($texto))) {
+                error_log('InteligenciaArtificialController: ❌ Texto vacío o nulo');
                 return new JsonResponse([
                     'success' => false,
                     'mensaje' => 'El texto no puede estar vacío.'
                 ], 400);
             }
 
-            $this->logger->info('📝 Procesando texto para expediente. Tipo: ' . $tipoEntrada . '. Longitud: ' . strlen($texto));
+            error_log('InteligenciaArtificialController: 3️⃣ Texto validado OK. Tipo entrada: ' . $tipoEntrada);
 
             // Obtener configuración IA
+            error_log('InteligenciaArtificialController: 4️⃣ Obteniendo configuración IA de BD...');
             $configIA = $this->obtenerConfiguracionIA();
 
-            error_log('InteligenciaArtificialController: Configuracion IA obtenida: ');
-
-            error_log('InteligenciaArtificialController: Configuracion IA obtenida: ' . json_encode($configIA));
+            error_log('InteligenciaArtificialController: Configuración IA obtenida: ' . json_encode([
+                'provider' => $configIA['provider'] ?? 'DESCONOCIDO',
+                'tiene_api_key' => !empty($configIA['api_key']),
+                'model' => $configIA['model'] ?? 'desconocido'
+            ]));
             
             if (empty($configIA['api_key'])) {
-                $this->logger->error('❌ No se encontró configuración IA activa');
+                error_log('InteligenciaArtificialController: ❌ NO HAY API_KEY CONFIGURADA. Config actual: ' . json_encode($configIA));
                 return new JsonResponse([
                     'success' => false,
                     'mensaje' => 'No hay configuración de IA activa.'
                 ], 500);
             }
 
+            error_log('InteligenciaArtificialController: 5️⃣ Configuración IA OK. Llamando extraerDatosConIA()...');
+
             // Enviar a IA para extraer datos
             $resultadoIA = $this->extraerDatosConIA($texto, $tipoEntrada, $configIA);
             
+            error_log('InteligenciaArtificialController: Resultado IA: ' . json_encode([
+                'datos_count' => isset($resultadoIA['datos']) ? count($resultadoIA['datos']) : 0,
+                'confianza' => $resultadoIA['confianza'] ?? 'N/A',
+                'error' => $resultadoIA['error'] ?? 'ninguno'
+            ]));
+            
             if (!$resultadoIA || !isset($resultadoIA['datos'])) {
+                error_log('InteligenciaArtificialController: ❌ extraerDatosConIA() falló. Resultado: ' . json_encode($resultadoIA));
                 return new JsonResponse([
                     'success' => false,
-                    'mensaje' => 'Error al procesar el texto con IA.'
+                    'mensaje' => 'Error al procesar el texto con IA. ' . ($resultadoIA['error'] ?? '')
                 ], 500);
             }
 
+            error_log('InteligenciaArtificialController: 6️⃣ IA devolvió datos OK. Obteniendo mapeo...');
+
             // Obtener mapeo de campos a hitos
             $mapeoHitos = $this->obtenerMapeoHitos();
+            error_log('InteligenciaArtificialController: Mapeo hitos obtenido: ' . count($mapeoHitos) . ' campos mapeados');
             
             // Mapear datos extraídos a estructura de expediente
+            error_log('InteligenciaArtificialController: 7️⃣ Mapeando campos extraídos...');
             $datosMapeos = $this->mapearCamposExtraidos($resultadoIA['datos'], $mapeoHitos);
+
+            error_log('InteligenciaArtificialController: Mapeo completado: ' . count($datosMapeos['valores_texto']) . ' textos + ' . count($datosMapeos['valores_opcion']) . ' opciones');
 
             // Extraer hitos únicos
             $hitosAsociados = [];
@@ -117,7 +145,7 @@ class InteligenciaArtificialController extends Controller
             }
             $hitosAsociados = array_unique($hitosAsociados);
 
-            $this->logger->info('✅ Datos extraídos exitosamente. Campos detectados: ' . count($datosMapeos['valores_texto']) . '+' . count($datosMapeos['valores_opcion']));
+            error_log('InteligenciaArtificialController: ✅ Procesamiento exitoso. Hitos únicos: ' . count($hitosAsociados));
 
             return new JsonResponse([
                 'success' => true,
@@ -145,25 +173,43 @@ class InteligenciaArtificialController extends Controller
     private function extraerDatosConIA($texto, $tipoEntrada, $configIA)
     {
         try {
+            error_log('InteligenciaArtificialController: 8️⃣ extraerDatosConIA() - Proveedor: ' . $configIA['provider']);
+            
             $prompt = $this->construirPromptExtracion($texto, $tipoEntrada);
+            error_log('InteligenciaArtificialController: Prompt construído, longitud: ' . strlen($prompt));
 
             $resultadoIA = null;
             
             if ($configIA['provider'] === 'GEMINI') {
+                error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAGeminiTexto()...');
                 $resultadoIA = $this->enviarAGeminiTexto($texto, $prompt, $configIA);
             } elseif ($configIA['provider'] === 'OPENAI') {
+                error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOpenAITexto()...');
                 $resultadoIA = $this->enviarAOpenAITexto($texto, $prompt, $configIA);
             } elseif ($configIA['provider'] === 'OLLAMA') {
+                error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOllamaTexto()...');
                 $resultadoIA = $this->enviarAOllamaTexto($texto, $prompt, $configIA);
+            } else {
+                error_log('InteligenciaArtificialController: ❌ Provider desconocido: ' . $configIA['provider']);
             }
 
+            error_log('InteligenciaArtificialController: Resultado de proveedor: ' . json_encode([
+                'tiene_datos' => isset($resultadoIA),
+                'datos_estructurados' => isset($resultadoIA['datos']),
+                'confianza' => $resultadoIA['confianza'] ?? 'N/A',
+                'error' => $resultadoIA['error'] ?? 'ninguno'
+            ]));
+
             if (!$resultadoIA) {
+                error_log('InteligenciaArtificialController: ❌ El proveedor devolvió NULL');
                 throw new \Exception('No se obtuvo respuesta del proveedor IA');
             }
 
+            error_log('InteligenciaArtificialController: ✅ extraerDatosConIA() completado exitosamente');
             return $resultadoIA;
 
         } catch (\Exception $e) {
+            error_log('InteligenciaArtificialController: ❌ Error en extraerDatosConIA: ' . $e->getMessage() . ' (Line: ' . $e->getLine() . ')');
             $this->logger->error('Error en extraerDatosConIA: ' . $e->getMessage());
             throw $e;
         }
@@ -526,62 +572,107 @@ EOT;
      */
     private function enviarAGeminiTexto($texto, $prompt, $configIA)
     {
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$configIA['model']}:generateContent?key={$configIA['api_key']}";
+        try {
+            error_log('InteligenciaArtificialController: 🚀 enviarAGeminiTexto() - Iniciando...');
+            
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$configIA['model']}:generateContent?key={$configIA['api_key']}";
+            error_log('InteligenciaArtificialController: URL Gemini: ' . $url);
 
-        $payload = [
-            "contents" => [
-                [
-                    "parts" => [
-                        [
-                            "text" => $prompt
+            $payload = [
+                "contents" => [
+                    [
+                        "parts" => [
+                            [
+                                "text" => $prompt
+                            ]
                         ]
                     ]
+                ],
+                "generationConfig" => [
+                    "temperature" => $configIA['temperature'],
+                    "maxOutputTokens" => $configIA['max_tokens']
                 ]
-            ],
-            "generationConfig" => [
-                "temperature" => $configIA['temperature'],
-                "maxOutputTokens" => $configIA['max_tokens']
-            ]
-        ];
+            ];
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+            error_log('InteligenciaArtificialController: Payload size: ' . strlen(json_encode($payload)) . ' bytes');
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+            curl_setopt($ch, CURLOPT_VERBOSE, true);
+            
+            error_log('InteligenciaArtificialController: ⏳ Enviando request a Gemini...');
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
 
-        if ($httpCode !== 200) {
-            throw new \Exception('Error HTTP Gemini (' . $httpCode . '): ' . substr($response, 0, 200));
+            error_log('InteligenciaArtificialController: HTTP Code: ' . $httpCode);
+            if (!empty($curlError)) {
+                error_log('InteligenciaArtificialController: cURL Error: ' . $curlError);
+            }
+
+            if ($response === false) {
+                error_log('InteligenciaArtificialController: ❌ cURL exec() retornó FALSE. Error: ' . $curlError);
+                throw new \Exception('cURL error: ' . $curlError);
+            }
+
+            error_log('InteligenciaArtificialController: Response (primeros 500 chars): ' . substr($response, 0, 500));
+
+            if ($httpCode !== 200) {
+                error_log('InteligenciaArtificialController: ❌ HTTP Error ' . $httpCode . '. Response: ' . $response);
+                throw new \Exception('Error HTTP Gemini (' . $httpCode . '): ' . substr($response, 0, 200));
+            }
+
+            error_log('InteligenciaArtificialController: 📦 Parseando respuesta JSON...');
+            $data = json_decode($response, true);
+
+            if ($data === null) {
+                error_log('InteligenciaArtificialController: ❌ JSON inválido en respuesta');
+                throw new \Exception('Respuesta inválida de Gemini (JSON parsing failed)');
+            }
+
+            // Verificar errores en respuesta
+            if (isset($data['error'])) {
+                error_log('InteligenciaArtificialController: ❌ Gemini retornó error: ' . json_encode($data['error']));
+                throw new \Exception('Gemini error: ' . ($data['error']['message'] ?? 'Unknown'));
+            }
+
+            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                error_log('InteligenciaArtificialController: ❌ Estructura inválida en respuesta Gemini: ' . json_encode($data));
+                throw new \Exception('Respuesta inválida de Gemini (estructura inesperada)');
+            }
+
+            $textoRespuesta = $data['candidates'][0]['content']['parts'][0]['text'];
+            error_log('InteligenciaArtificialController: Respuesta de IA (primeros 300 chars): ' . substr($textoRespuesta, 0, 300));
+            
+            // Limpiar markdown JSON si es necesario
+            $textoRespuesta = preg_replace('/```json\s*|\s*```/', '', $textoRespuesta);
+            
+            error_log('InteligenciaArtificialController: 🔄 Parseando JSON de respuesta IA...');
+            $datosExtraidos = json_decode($textoRespuesta, true);
+
+            if (!is_array($datosExtraidos)) {
+                error_log('InteligenciaArtificialController: ❌ Respuesta IA parseada no es array: ' . gettype($datosExtraidos) . '. Valor: ' . substr($textoRespuesta, 0, 200));
+                throw new \Exception('Respuesta de IA no es JSON válido. Recibido: ' . substr($textoRespuesta, 0, 100));
+            }
+
+            error_log('InteligenciaArtificialController: ✅ enviarAGeminiTexto() exitoso. Datos: ' . count($datosExtraidos) . ' keys');
+
+            return [
+                'datos' => $datosExtraidos,
+                'confianza' => 0.90,
+                'proveedor' => 'GEMINI'
+            ];
+            
+        } catch (\Exception $e) {
+            error_log('InteligenciaArtificialController: ❌ Error en enviarAGeminiTexto(): ' . $e->getMessage());
+            throw $e;
         }
-
-        $data = json_decode($response, true);
-
-        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-            throw new \Exception('Respuesta inválida de Gemini');
-        }
-
-        $textoRespuesta = $data['candidates'][0]['content']['parts'][0]['text'];
-        
-        // Limpiar markdown JSON si es necesario
-        $textoRespuesta = preg_replace('/```json\s*|\s*```/', '', $textoRespuesta);
-        
-        $datosExtraidos = json_decode($textoRespuesta, true);
-
-        if (!is_array($datosExtraidos)) {
-            throw new \Exception('Respuesta de IA no es JSON válido');
-        }
-
-        return [
-            'datos' => $datosExtraidos,
-            'confianza' => 0.90,
-            'proveedor' => 'GEMINI'
-        ];
     }
 
     /**
@@ -703,16 +794,21 @@ EOT;
     private function obtenerConfiguracionIA()
     {
         try {
+            error_log('InteligenciaArtificialController: obtenerConfiguracionIA() - Buscando en BD...');
+            
             $em = $this->getDoctrine()->getManager();
 
             // Intentar obtener de BD
             $sql = "SELECT * FROM ia_config WHERE activo = 1 AND es_proveedor_por_defecto = 1 LIMIT 1";
+            error_log('InteligenciaArtificialController: SQL: ' . $sql);
+            
             $connection = $em->getConnection();
             $statement = $connection->prepare($sql);
             $statement->execute();
             $configDB = $statement->fetch();
 
             if ($configDB && !empty($configDB['api_key'])) {
+                error_log('InteligenciaArtificialController: ✅ Config IA encontrada en BD. Provider: ' . $configDB['provider']);
                 $this->logger->info('✅ Config IA desde BD: ' . $configDB['provider']);
                 return [
                     'provider' => $configDB['provider'] ?? 'GEMINI',
@@ -723,23 +819,35 @@ EOT;
                 ];
             }
 
+            error_log('InteligenciaArtificialController: ⚠️ No encontrada en BD, intentando variables de entorno...');
+
             // Fallback a variables de entorno
-            $apiKey = getenv('GEMINI_API_KEY') ?: getenv('OPENAI_API_KEY') ?: getenv('OLLAMA_API_URL');
+            $geminiKey = getenv('GEMINI_API_KEY');
+            $openaiKey = getenv('OPENAI_API_KEY');
+            $ollamaUrl = getenv('OLLAMA_API_URL');
+            
+            error_log('InteligenciaArtificialController: Variables de entorno - GEMINI: ' . (empty($geminiKey) ? 'NO' : 'SÍ') . 
+                     ', OPENAI: ' . (empty($openaiKey) ? 'NO' : 'SÍ') . ', OLLAMA: ' . (empty($ollamaUrl) ? 'NO' : 'SÍ'));
+
+            $apiKey = $geminiKey ?: $openaiKey ?: $ollamaUrl;
 
             if (!$apiKey) {
+                error_log('InteligenciaArtificialController: ❌ NO HAY CONFIGURACIÓN IA EN BD NI EN VARIABLES DE ENTORNO');
                 $this->logger->warning('⚠️ No se encontró configuración IA');
                 return ['api_key' => '', 'provider' => 'GEMINI'];
             }
 
+            error_log('InteligenciaArtificialController: ✅ Config IA desde variables de entorno. API Key presente.');
             return [
-                'provider' => 'GEMINI',
-                'api_key' => getenv('GEMINI_API_KEY'),
+                'provider' => $geminiKey ? 'GEMINI' : ($openaiKey ? 'OPENAI' : 'OLLAMA'),
+                'api_key' => $apiKey,
                 'model' => 'gemini-1.5-flash',
                 'temperature' => 0.7,
                 'max_tokens' => 8192
             ];
 
         } catch (\Exception $e) {
+            error_log('InteligenciaArtificialController: ❌ Error en obtenerConfiguracionIA: ' . $e->getMessage());
             $this->logger->error('Error en obtenerConfiguracionIA: ' . $e->getMessage());
             return ['api_key' => '', 'provider' => 'GEMINI'];
         }

@@ -157,13 +157,16 @@ class KommoController extends Controller
                         error_log('KommoController: Iniciando extraccion IA del mensaje');
                         $iaUsed = true;
                         $datosIA = $this->extraerDatosConIA($textoMensaje);
-                        error_log('KommoController:datos IA: '. ($datosIA['model'] ?? 'sin modelo'));
+                        
+                        // Log detallado de respuesta IA
+                        error_log('KommoController: 🤖 Respuesta IA completa: ' . json_encode($datosIA));
+                        
                         $iaAvailable = !empty($datosIA['success']);
                         if ($datosIA['success'] ?? false) {
-                            error_log('KommoController: IA extraccion exitosa - ' . $datosIA['campos_detectados'] . ' campos, confianza: ' . $datosIA['confianza_promedio']);
+                            error_log('KommoController: ✅ IA extraccion exitosa - ' . $datosIA['campos_detectados'] . ' campos, confianza: ' . $datosIA['confianza_promedio']);
                             $datosMensaje = $datosIA;
                         } else {
-                            error_log('KommoController: IA extraccion falló, usando regex como fallback');
+                            error_log('KommoController: ❌ IA extraccion falló. Razón: ' . ($datosIA['mensaje'] ?? 'sin mensaje de error') . '. Usando regex como fallback');
                             $datosMensaje = $this->extraerDatosDelMensaje($data);
                         }
                     } else {
@@ -418,11 +421,21 @@ class KommoController extends Controller
     /**
      * 🤖 Llama a InteligenciaArtificialController para extraer datos con IA
      * Envía el texto a través del endpoint /API/procesar_texto_para_expediente
+     * Retorna estructura unificada: { success, valores_texto, valores_opcion, ... }
      */
     private function extraerDatosConIA(string $texto): array
     {
+        // Validar texto no vacío
+        if (empty(trim($texto))) {
+            error_log('KommoController: ⚠️ Texto vacío para IA');
+            return ['success' => false];
+        }
+
+        error_log('KommoController: 📝 IA - Texto a procesar: ' . substr($texto, 0, 100) . '...');
+
+        // INTENTO 1: Via forward() (más eficiente)
+        error_log('KommoController: 1️⃣ Intentando forward() a InteligenciaArtificialController...');
         try {
-            // Intentar forward (más eficiente)
             $request = new Request(
                 [],
                 [],
@@ -440,19 +453,81 @@ class KommoController extends Controller
                 'request' => $request
             ]);
 
-            $datosExtraidos = json_decode($response->getContent(), true);
-            error_log('KommoController: Respuesta IA: ' . json_encode([
-                'success' => $datosExtraidos['success'] ?? false,
-                'campos' => $datosExtraidos['campos_detectados'] ?? 0,
-                'confianza' => $datosExtraidos['confianza_promedio'] ?? 0
-            ]));
+            $responseContent = $response->getContent();
+            error_log('KommoController: 1️⃣ Forward - Respuesta cruda (primeros 300 chars): ' . substr($responseContent, 0, 300));
 
-            return $datosExtraidos ?? ['success' => false];
+            $datosExtraidos = json_decode($responseContent, true);
+            
+            // Validar que sea JSON válido
+            if ($datosExtraidos === null) {
+                error_log('KommoController: 1️⃣ ⚠️ JSON inválido en respuesta forward: ' . $responseContent);
+                throw new \Exception('Respuesta forward no es JSON válido');
+            }
 
-        } catch (\Exception $e) {
-            error_log('KommoController: Error en forward IA: ' . $e->getMessage() . ', intentando fallback cURL');
-            return $this->extraerDatosConIAviaCurl($texto);
+            // Validar estructura
+            $success = $datosExtraidos['success'] ?? false;
+            $campos = $datosExtraidos['campos_detectados'] ?? 0;
+            $confianza = $datosExtraidos['confianza_promedio'] ?? 0;
+
+            error_log('KommoController: 1️⃣ Forward - Parseado: success=' . ($success ? 'true' : 'false') . ', campos=' . $campos . ', confianza=' . $confianza);
+
+            if (!$success) {
+                error_log('KommoController: 1️⃣ ⚠️ Forward retornó success=false, pasando a cURL');
+                throw new \Exception('Forward returned success=false');
+            }
+
+            // Si success es true pero no tiene estructura unificada, convertir
+            if (!isset($datosExtraidos['valores_texto']) || !isset($datosExtraidos['valores_opcion'])) {
+                error_log('KommoController: 1️⃣ ⚠️ Estructura incompleta en forward, normalizando...');
+                $datosExtraidos = $this->normalizarRespuestaIA($datosExtraidos);
+            }
+
+            error_log('KommoController: ✅ IA via forward() EXITOSA');
+            return $datosExtraidos;
+
+        } catch (\Exception $forwardError) {
+            error_log('KommoController: 1️⃣ ❌ Forward falló: ' . $forwardError->getMessage() . ' (Line: ' . $forwardError->getLine() . ')');
         }
+
+        // INTENTO 2: Via cURL (fallback)
+        error_log('KommoController: 2️⃣ Intentando fallback cURL...');
+        $curlData = $this->extraerDatosConIAviaCurl($texto);
+        
+        if (isset($curlData['success']) && $curlData['success']) {
+            error_log('KommoController: ✅ IA via cURL EXITOSA');
+            return $curlData;
+        }
+
+        error_log('KommoController: 2️⃣ ❌ cURL también falló');
+
+        // INTENTO 3: Fallback regex
+        error_log('KommoController: 3️⃣ Usando fallback regex como último recurso...');
+        $regexData = $this->extraerDatosConRegex($texto);
+        error_log('KommoController: 3️⃣ Regex extrajo ' . count($regexData['valores_texto'] ?? []) . ' valores de texto');
+        
+        return $regexData;
+    }
+
+    /**
+     * 🤖 Normaliza respuesta de IA a estructura unificada si es necesario
+     */
+    private function normalizarRespuestaIA(array $datosIA): array
+    {
+        if (isset($datosIA['valores_texto']) && isset($datosIA['valores_opcion'])) {
+            return $datosIA; // Ya está en formato correcto
+        }
+
+        // Si no, asumir que es estructura antigua y retornar como está
+        error_log('KommoController: IA - Respuesta no tiene estructura de valores_texto/valores_opcion');
+        
+        return [
+            'success' => $datosIA['success'] ?? false,
+            'valores_texto' => [],
+            'valores_opcion' => [],
+            'campos_detectados' => $datosIA['campos_detectados'] ?? 0,
+            'confianza_promedio' => $datosIA['confianza_promedio'] ?? 0,
+            'datos_crudos' => $datosIA // Guardar original para debugging
+        ];
     }
 
     /**
@@ -461,6 +536,8 @@ class KommoController extends Controller
     private function extraerDatosConIAviaCurl(string $texto): array
     {
         try {
+            error_log('KommoController: IA cURL - Iniciando llamada a API externa...');
+            
             $client = new GuzzleClient();
             $response = $client->post(
                 'https://areaprivada.hipotea.com/API/procesar_texto_para_expediente',
@@ -469,17 +546,36 @@ class KommoController extends Controller
                         'texto' => $texto,
                         'tipo_entrada' => 'kommo'
                     ],
-                    'timeout' => 30
+                    'timeout' => 30,
+                    'connect_timeout' => 10
                 ]
             );
 
-            $datos = json_decode($response->getBody(), true);
-            error_log('KommoController: cURL IA exitoso: ' . $datos['campos_detectados'] . ' campos');
-            return $datos ?? ['success' => false];
+            $statusCode = $response->getStatusCode();
+            error_log('KommoController: IA cURL - Status: ' . $statusCode);
 
+            if ($statusCode !== 200) {
+                error_log('KommoController: IA cURL - Status no es 200: ' . $statusCode);
+                return ['success' => false, 'error' => 'HTTP ' . $statusCode];
+            }
+
+            $datos = json_decode($response->getBody(), true);
+            error_log('KommoController: IA cURL - Respuesta: ' . json_encode([
+                'success' => $datos['success'] ?? false,
+                'campos' => $datos['campos_detectados'] ?? 0
+            ]));
+
+            return $datos ?? ['success' => false, 'error' => 'Respuesta vacía'];
+
+        } catch (\GuzzleHttp\Exception\ConnectException $e) {
+            error_log('KommoController: IA cURL - Error de conexión: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Conexión fallida: ' . $e->getMessage()];
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            error_log('KommoController: IA cURL - Error de request: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Request fallido: ' . $e->getMessage()];
         } catch (\Exception $e) {
-            error_log('KommoController: cURL IA falló: ' . $e->getMessage());
-            return ['success' => false];
+            error_log('KommoController: IA cURL - Error genérico: ' . $e->getMessage() . ' (Line: ' . $e->getLine() . ')');
+            return ['success' => false, 'error' => 'Error: ' . $e->getMessage()];
         }
     }
 
