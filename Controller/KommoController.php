@@ -434,40 +434,40 @@ class KommoController extends Controller
         error_log('KommoController: 📝 IA - Texto a procesar: ' . substr($texto, 0, 100) . '...');
 
         // INTENTO 1: Llamada directa a InteligenciaArtificialController (sin forward para evitar GET)
-        error_log('KommoController: 1️⃣ Intentando llamada directa a InteligenciaArtificialController::procesarTextoParaExpediente()...');
+        // INTENTO 1: Via forward() pero asegurando POST
+        error_log('KommoController: 1️⃣ Intentando forward() a InteligenciaArtificialController...');
         try {
+            // Crear request COMO POST correctamente
             $request = new Request(
-                [],
-                [],
-                [],
-                [],
-                [],
-                ['CONTENT_TYPE' => 'application/json'],
-                json_encode([
+                [],  // query
+                [    // request (POST data)
                     'texto' => $texto,
                     'tipo_entrada' => 'kommo'
-                ])
+                ],
+                [],  // attributes
+                [],  // cookies
+                [],  // files
+                [    // server info
+                    'REQUEST_METHOD' => 'POST',
+                    'CONTENT_TYPE' => 'application/x-www-form-urlencoded'
+                ]
             );
-            
-            // Forzar método POST en la request
-            $request->setMethod('POST');
-            
-            error_log('KommoController: Creando instancia de InteligenciaArtificialController...');
-            $iaController = new InteligenciaArtificialController();
-            $iaController->setContainer($this->container);
-            
-            error_log('KommoController: Llamando método procesarTextoParaExpedienteAction()...');
-            $response = $iaController->procesarTextoParaExpedienteAction($request);
+
+            error_log('KommoController: Forward request method: ' . $request->getMethod());
+
+            $response = $this->forward('AppBundle:InteligenciaArtificial:procesarTextoParaExpediente', [
+                'request' => $request
+            ]);
 
             $responseContent = $response->getContent();
-            error_log('KommoController: 1️⃣ Respuesta directa cruda (primeros 300 chars): ' . substr($responseContent, 0, 300));
+            error_log('KommoController: 1️⃣ Forward - Respuesta cruda (primeros 300 chars): ' . substr($responseContent, 0, 300));
 
             $datosExtraidos = json_decode($responseContent, true);
             
             // Validar que sea JSON válido
             if ($datosExtraidos === null) {
-                error_log('KommoController: 1️⃣ ⚠️ JSON inválido en respuesta: ' . $responseContent);
-                throw new \Exception('Respuesta no es JSON válido');
+                error_log('KommoController: 1️⃣ ⚠️ JSON inválido en respuesta forward: ' . $responseContent);
+                throw new \Exception('Respuesta forward no es JSON válido');
             }
 
             // Validar estructura
@@ -475,11 +475,11 @@ class KommoController extends Controller
             $campos = $datosExtraidos['campos_detectados'] ?? 0;
             $confianza = $datosExtraidos['confianza_promedio'] ?? 0;
 
-            error_log('KommoController: 1️⃣ Respuesta parseada: success=' . ($success ? 'true' : 'false') . ', campos=' . $campos . ', confianza=' . $confianza);
+            error_log('KommoController: 1️⃣ Forward - Parseado: success=' . ($success ? 'true' : 'false') . ', campos=' . $campos . ', confianza=' . $confianza);
 
             if (!$success) {
-                error_log('KommoController: 1️⃣ ⚠️ Respuesta retornó success=false, pasando a cURL');
-                throw new \Exception('IA returned success=false');
+                error_log('KommoController: 1️⃣ ⚠️ Forward retornó success=false, pasando a cURL');
+                throw new \Exception('Forward returned success=false');
             }
 
             // Si success es true pero no tiene estructura unificada, convertir
