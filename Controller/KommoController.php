@@ -61,7 +61,7 @@ class KommoController extends Controller
             'cuota_alquiler' => [212, 520],
             
             // Propiedad
-            'precio_inmueble' => [413, 206],
+            'precio_inmueble' => [413, 206, 691],
             'valor_estimado' => [206, 375],
             'metros' => [289, 644],
             
