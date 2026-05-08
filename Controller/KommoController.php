@@ -1343,40 +1343,6 @@ class KommoController extends Controller
             }
         }
 
-        // Obtener datos de Kommo para campos que no fueron extraídos
-        $telefonoKommo = $this->extraerTelefono($lead);
-        $emailKommo = $this->extraerEmail($lead);
-        $canalKommo = $lead['canal'] ?? $lead['source'] ?? 'Kommo';
-        $nombreKommo = trim((string)(!empty($lead['nombre_contacto']) ? $lead['nombre_contacto'] : ($lead['name'] ?? '')));
-
-        // Agregar campos por defecto de Kommo si no están ya en valores extraídos
-        if (!isset($campos[695]) && !empty($telefonoKommo)) {
-            $campos[695] = ['valor' => $telefonoKommo];
-        }
-        if (!isset($campos[408]) && !empty($telefonoKommo)) {
-            $campos[408] = ['valor' => $telefonoKommo];
-        }
-        if (!isset($campos[696]) && !empty($emailKommo)) {
-            $campos[696] = ['valor' => $emailKommo];
-        }
-        if (!isset($campos[407]) && !empty($emailKommo)) {
-            $campos[407] = ['valor' => $emailKommo];
-        }
-
-        // Campos de observación/canal por defecto
-        $observacionesDefecto = 'Contacto de Kommo';
-        foreach ([700, 218, 234, 679, 191] as $campoIdObservaciones) {
-            if (!isset($campos[$campoIdObservaciones])) {
-                $campos[$campoIdObservaciones] = ['valor' => $observacionesDefecto];
-            }
-        }
-
-        foreach ([701, 704] as $campoIdCanal) {
-            if (!isset($campos[$campoIdCanal])) {
-                $campos[$campoIdCanal] = ['valor' => $canalKommo];
-            }
-        }
-
         // Registrar resumen de campos que se van a actualizar
         error_log('KommoController: Total de campos a actualizar: ' . count($campos) . '. Desglose: ' . json_encode(array_keys($campos)));
 
