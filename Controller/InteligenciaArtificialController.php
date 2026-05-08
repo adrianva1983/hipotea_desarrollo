@@ -1087,9 +1087,12 @@ EOT;
     {
         $grupoIds = [4];
         $camposBD = $this->obtenerCamposDeGruposMod($grupoIds);
+        // Construir prompt dinámico
+        $prompt = $this->construirPromptExtractor($camposBD);
         return new JsonResponse([
             'success' => true,
-            'camposBD' => $camposBD
+            'camposBD' => $camposBD,
+            'prompt' => $prompt
         ], 200);
     }
 
@@ -1124,6 +1127,52 @@ EOT;
 
         error_log('InteligenciaArtificialController: obtenerCamposDeGruposMod - total campos: ' . count($resultado));
         return $resultado;
+    }
+    /**
+     * Construye un prompt dinámico para extracción de datos basado en los campos disponibles
+    */
+    private function construirPromptExtractor(array $camposBD)
+    {
+        // Construir la lista de campos dinámicamente
+        $seccionCampos = '';
+        foreach ($camposBD as $campo) {
+            $nombre = $campo['nombre'];
+            $id = $campo['id_campo_hito'];
+            $seccionCampos .= "- {$nombre} [ID: {$id}]\n";
+        }
+
+        $prompt = <<<EOT
+        Actúa como un extractor de datos para un CRM. Tu misión es mapear la información del texto a los IDs de mi formulario.
+
+        ### REGLA DE ORO PARA DATOS NO DEFINIDOS:
+        Si el usuario menciona información que NO tiene un ID asignado abajo (por ejemplo: Nombre de la empresa, CIF, Horario de contacto, Redes sociales, Profesión, Notas adicionales), DEBES incluirla obligatoriamente en un campo de COMENTARIOS o NOTAS.
+
+        ### ESTRUCTURA DE EXTRACCIÓN:
+        {$seccionCampos}
+
+        IMPORTANTE:
+        - Si algún dato relevante mencionado NO encaja exactamente con los campos anteriores, inclúyelo en el último campo disponible o especifica qué información falta.
+        - Extrae SOLO información que el usuario mencione explícitamente en el texto.
+        - Si un campo no tiene información, OMÍTELO del JSON de respuesta.
+        - Normaliza valores: nombres en Title Case, emails en minúsculas, teléfonos sin caracteres especiales.
+
+        ### FORMATO DE SALIDA:
+        Devuelve un JSON estrictamente así (sin explicaciones, sin markdown):
+        {
+        "campos": [
+            {"id": "693", "valor": "Juan"},
+            {"id": "695", "valor": "612345678"},
+            {"id": "376", "valor": "Mencionó que trabaja en 'TecnoSL' como ingeniero y prefiere llamadas por la tarde"}
+        ]
+        }
+
+        TEXTO A ANALIZAR:
+        {texto_a_analizar_aqui}
+        EOT;
+
+        error_log('InteligenciaArtificialController: construirPromptExtractor - prompt generado con ' . count($camposBD) . ' campos');
+        
+        return $prompt;
     }
 }
 
