@@ -1083,7 +1083,170 @@ EOT;
     }
 
 
-    //manualmente
+    /**
+     * Procesa respuesta de IA en formato {"campos": [{id, nombre, valor}]}
+     * y la convierte en {"valores_texto": {...}, "valores_opcion": {...}}
+     */
+    private function procesarRespuestaIA($datosIA, $grupoIds = [4])
+    {
+        $valoresTexto = [];
+        $valoresOpcion = [];
+        $camposProcesados = [];
+
+        // Obtener campos desde BD para conocer sus tipos
+        $camposBD = $this->obtenerCamposDeGruposConOpciones($grupoIds);
+
+        // Si viene en formato {"campos": [...]}
+        if (isset($datosIA['campos']) && is_array($datosIA['campos'])) {
+            $campos = $datosIA['campos'];
+            
+            foreach ($campos as $campo) {
+                if (!isset($campo['id']) || !isset($campo['valor'])) {
+                    continue;
+                }
+
+                $idCampo = (int)$campo['id'];
+                $valor = $campo['valor'];
+                $nombre = $campo['nombre'] ?? '';
+
+                // Si no tenemos info del campo en BD, asumimos texto
+                if (!isset($camposBD[$idCampo])) {
+                    $valoresTexto[$idCampo] = (string)$valor;
+                    $camposProcesados[] = [
+                        'id' => $idCampo,
+                        'nombre' => $nombre,
+                        'valor' => $valor,
+                        'tipo' => 'texto'
+                    ];
+                    continue;
+                }
+
+                $tipoCampo = $camposBD[$idCampo]['tipo'];
+                $opciones = $camposBD[$idCampo]['opciones'] ?? [];
+
+                // Campo de opción (dropdown, radio)
+                if (in_array($tipoCampo, [2, 3]) && !empty($opciones)) {
+                    $valorNorm = strtolower(trim((string)$valor));
+                    $opcionEncontrada = null;
+
+                    // Búsqueda exacta
+                    foreach ($opciones as $opcion) {
+                        if (strtolower(trim($opcion['valor'])) === $valorNorm) {
+                            $opcionEncontrada = $opcion['id'];
+                            break;
+                        }
+                    }
+
+                    // Búsqueda parcial
+                    if ($opcionEncontrada === null) {
+                        foreach ($opciones as $opcion) {
+                            $opcionNorm = strtolower(trim($opcion['valor']));
+                            if (strpos($opcionNorm, $valorNorm) !== false || strpos($valorNorm, $opcionNorm) !== false) {
+                                $opcionEncontrada = $opcion['id'];
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($opcionEncontrada !== null) {
+                        $valoresOpcion[$idCampo] = $opcionEncontrada;
+                        $camposProcesados[] = [
+                            'id' => $idCampo,
+                            'nombre' => $nombre,
+                            'valor' => $valor,
+                            'tipo' => 'opcion',
+                            'opcionId' => $opcionEncontrada
+                        ];
+                    } else {
+                        error_log('InteligenciaArtificialController: procesarRespuestaIA - sin opción para campo ' . $idCampo . ' valor \'' . $valor . '\'');
+                        $camposProcesados[] = [
+                            'id' => $idCampo,
+                            'nombre' => $nombre,
+                            'valor' => $valor,
+                            'tipo' => 'opcion_no_encontrada'
+                        ];
+                    }
+                } else {
+                    // Campo de texto
+                    $valoresTexto[$idCampo] = (string)$valor;
+                    $camposProcesados[] = [
+                        'id' => $idCampo,
+                        'nombre' => $nombre,
+                        'valor' => $valor,
+                        'tipo' => 'texto'
+                    ];
+                }
+            }
+        }
+
+        error_log('InteligenciaArtificialController: procesarRespuestaIA - texto: ' . count($valoresTexto) . ', opcion: ' . count($valoresOpcion) . ', total: ' . count($camposProcesados));
+
+        return [
+            'valores_texto' => $valoresTexto,
+            'valores_opcion' => $valoresOpcion,
+            'campos_procesados' => $camposProcesados
+        ];
+    }
+
+    /**
+     * Obtiene campos con sus opciones desde BD para procesamiento dinámico
+     */
+    private function obtenerCamposDeGruposConOpciones(array $grupoIds)
+    {
+        if (empty($grupoIds)) {
+            return [];
+        }
+
+        $conn = $this->getDoctrine()->getConnection();
+        $resultado = [];
+
+        // Placeholders para IN (?)
+        $placeholders = implode(',', array_fill(0, count($grupoIds), '?'));
+
+        // Obtener campos
+        $sql = 'SELECT ch.id_campo_hito, ch.nombre, ch.tipo 
+                FROM campo_hito ch 
+                WHERE ch.id_grupo_campos_hito IN (' . $placeholders . ') 
+                ORDER BY ch.orden';
+
+        $stmt = $conn->executeQuery($sql, array_values($grupoIds));
+        $filas = $stmt->fetchAll();
+
+        foreach ($filas as $fila) {
+            $idCampo = (int)$fila['id_campo_hito'];
+            $tipo = (int)$fila['tipo'];
+            $opciones = [];
+
+            // Si es un campo de opción, obtener sus valores
+            if (in_array($tipo, [2, 3])) {
+                $sqlOpciones = 'SELECT oc.id_opciones_campo, oc.valor 
+                               FROM opciones_campo oc 
+                               WHERE oc.id_campo_hito = ? 
+                               ORDER BY oc.orden';
+                
+                $stmtOpciones = $conn->prepare($sqlOpciones);
+                $stmtOpciones->execute([$idCampo]);
+                $filasOpciones = $stmtOpciones->fetchAll();
+
+                foreach ($filasOpciones as $opcion) {
+                    $opciones[] = [
+                        'id' => (int)$opcion['id_opciones_campo'],
+                        'valor' => $opcion['valor']
+                    ];
+                }
+            }
+
+            $resultado[$idCampo] = [
+                'nombre' => $fila['nombre'],
+                'tipo' => $tipo,
+                'opciones' => $opciones
+            ];
+        }
+
+        error_log('InteligenciaArtificialController: obtenerCamposDeGruposConOpciones - total campos: ' . count($resultado));
+        return $resultado;
+    }
+
     public function crearPromptExpedienteAction(Request $request)
     {
         $grupoIds = [4];
@@ -1271,6 +1434,9 @@ EOT;
                 ], 500);
             }
 
+            // Procesar la respuesta: extraer "campos" del array
+            $datosProcessados = $this->procesarRespuestaIA($resultadoIA['datos'], $grupoIds);
+
             error_log('InteligenciaArtificialController: ✅ procesarTextoExpedienteAction exitoso');
             return new JsonResponse([
                 'success' => true,
@@ -1278,6 +1444,7 @@ EOT;
                 'texto'=> substr($texto, 0, 100) . '...', 
                 'configIA'=> ['provider' => $configIA['provider']],
                 'resultadoIA'=> $resultadoIA,
+                'datosProcessados' => $datosProcessados
             ], 200);
 
         } catch (\Exception $e) {
