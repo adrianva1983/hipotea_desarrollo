@@ -396,41 +396,6 @@ class KommoController extends Controller
     }
 
     /**
-     * Extrae el ID del contacto del webhook (método heredado para compatibilidad)
-     */
-    private function extraerContactoIdDelWebhook(array $data): ?int
-    {
-        // Ubicación 1: data.id (webhook estándar)
-        if (!empty($data['data']['id'])) {
-            return (int)$data['data']['id'];
-        }
-
-        // Ubicación 2: id en raíz
-        if (!empty($data['id'])) {
-            return (int)$data['id'];
-        }
-
-        // Ubicación 3: message.add[0].contact_id
-        if (!empty($data['message']['add'][0]['contact_id'])) {
-            return (int)$data['message']['add'][0]['contact_id'];
-        }
-
-        // Ubicación 4: contacts.add[0].id
-        if (!empty($data['contacts']['add'][0]['id'])) {
-            return (int)$data['contacts']['add'][0]['id'];
-        }
-
-        // Ubicación 5: leads.add[0].linked_leads_id (primer contact asociado)
-        if (!empty($data['leads']['add'][0]['linked_leads_id'])) {
-            $contactIds = $data['leads']['add'][0]['linked_leads_id'];
-            $firstContactId = array_key_first($contactIds);
-            return (int)$firstContactId;
-        }
-
-        return null;
-    }
-
-    /**
      * 🤖 Extrae el texto del mensaje del webhook
      * SOLO se llama si $tipoWebhook === 'message'
      */
@@ -775,28 +740,6 @@ class KommoController extends Controller
             error_log('KommoController: IA cURL - Error genérico: ' . $e->getMessage() . ' (Line: ' . $e->getLine() . ')');
             return ['success' => false, 'error' => 'Error: ' . $e->getMessage()];
         }
-    }
-
-    /**
-     * 🤖 Fusiona datos de Kommo API con datos extraídos por IA
-     * Prioridad: Datos IA > Datos Kommo > Vacío
-     */
-    private function fusionarDatosKommoConIA(array $datosKommo, array $datosIA): array
-    {
-        // Si IA devuelve estructura de valores_texto/valores_opcion, convertir a formato Kommo
-        if (isset($datosIA['valores_texto']) && isset($datosIA['valores_opcion'])) {
-            error_log('KommoController: Fusionando datos IA (estructura valores) con datos Kommo');
-            // Será manejado en construirAutorrellenoHitosKommo
-            return $datosIA;
-        }
-
-        // Si es estructura plana (fallback regex), fusionar con Kommo
-        if (is_array($datosIA)) {
-            error_log('KommoController: Fusionando datos regex con datos Kommo');
-            return array_merge($datosKommo, $datosIA);
-        }
-
-        return $datosKommo;
     }
 
     /**
@@ -1429,41 +1372,6 @@ class KommoController extends Controller
     /**
      * Extrae un campo customizado de Kommo buscando por múltiples alias
      * Ejemplo: extraerCampoCustom($lead, ['nómina', 'salario neto', 'nomina mensual'])
-     * 
-     * @param array $contacto - Datos del contacto de Kommo
-     * @param array $aliases - Posibles nombres del campo a buscar
-     * @return string - Valor encontrado o vacío
-     */
-    private function extraerCampoCustom(array $contacto, array $aliases): string
-    {
-        if (empty($contacto['custom_fields'])) {
-            return '';
-        }
-
-        // Normalizar aliases a minúsculas
-        $aliasesNormalizados = array_map(function($alias) {
-            return strtolower(trim($alias));
-        }, $aliases);
-
-        // Buscar en custom_fields
-        foreach ($contacto['custom_fields'] as $nombreCampo => $valor) {
-            $nombreCampoNormalizado = strtolower(trim((string)$nombreCampo));
-            
-            // Búsqueda exacta
-            if (in_array($nombreCampoNormalizado, $aliasesNormalizados)) {
-                return (string)($valor ?? '');
-            }
-            
-            // Búsqueda parcial (contiene)
-            foreach ($aliasesNormalizados as $alias) {
-                if (strpos($nombreCampoNormalizado, $alias) !== false || strpos($alias, $nombreCampoNormalizado) !== false) {
-                    return (string)($valor ?? '');
-                }
-            }
-        }
-
-        return '';
-    }
 
     /**
      * Dashboard admin para ver webhooks
