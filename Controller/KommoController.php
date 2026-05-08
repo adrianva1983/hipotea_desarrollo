@@ -93,11 +93,27 @@ class KommoController extends Controller
                 'laboral fijo' => 555,
             ],
             'estado_civil' => [
-                'soltero|soltera|solt' => 81,
-                'casado|casada|married' => 82,
-                'divorciado|divorciada|divorciad' => 85,
-                'separado|separada|separ' => 84,
-                'viudo|viuda' => 86,
+                // Soltero
+                'soltero|soltera|solt@' => 81,
+                
+                // Casado - IMPORTANTE: distinguir régimen matrimonial
+                // Si especifica "gananciales" → 189 (más común por defecto)
+                'casad@.*gananciales|gananciales.*casad@' => 189,
+                'casad@.*separación|separación.*casad@' => 82,
+                // Si solo dice "casado" sin especificar → gananciales es más común
+                'casado|casada|casad@|married' => 189,
+                
+                // Divorciado
+                'divorciado|divorciada|divorciad@' => 85,
+                
+                // Separado
+                'separado|separada|separ@' => 84,
+                
+                // Viudo
+                'viudo|viuda|viud@' => 86,
+                
+                // Pareja de hecho / Unión
+                'pareja de hecho|unión de hecho|pareja|unión|unmarried couple' => 83,
             ],
             'domicilio' => [
                 'propiedad|propia|owner' => 99,
@@ -586,6 +602,16 @@ class KommoController extends Controller
             if (preg_match('/nacionalidad\s*:?\s*([A-Za-záéíóúñÁÉÍÓÚÑ\s\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
                 $datosExtraidos['nacionalidad'] = trim($matches[1]);
                 error_log('KommoController: Regex - Nacionalidad extraída: ' . $datosExtraidos['nacionalidad']);
+            }
+
+            // Patrón: estado civil (soltero/a, casado/a, divorciado/a, separado/a, viudo/a, pareja de hecho)
+            // Captura también régimen matrimonial si se especifica (gananciales, separación de bienes)
+            if (preg_match('/\b(?:soy\s+)?(?:estado\s*civil\s*[:\s])?\s*(solter[oa]|casad[oa](?:\s+en\s+(?:gananciales|separación\s+de\s+bienes))?|divorciado[a]?|separad[oa]|viud[oa]|pareja\s+de\s+hecho|unión\s+de\s+hecho)\b/i', $texto, $matches)) {
+                $valor = trim($matches[1]);
+                if (!empty($valor)) {
+                    $datosExtraidos['estado_civil'] = $valor;
+                    error_log('KommoController: Regex - Estado civil extraído: ' . $datosExtraidos['estado_civil']);
+                }
             }
 
             // Patrón: banco (texto)

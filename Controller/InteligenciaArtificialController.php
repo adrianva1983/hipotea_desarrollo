@@ -229,6 +229,9 @@ INSTRUCCIONES CRÍTICAS:
 3. Formatea números sin separadores de miles: 2000 NO 2.000
 4. Fechas en formato dd/mm/yyyy
 5. Los campos opcionales pueden omitirse si no aparecen en el texto
+6. DETECCIÓN DE ESTADO CIVIL: Si dice "casado/a", "soltero/a", "divorciado/a", "separado/a", "viudo/a", "pareja de hecho", incluye en estado_civil
+   - Si especifica régimen matrimonial (gananciales, separación de bienes), inclúyelo
+   - Ejemplos: "soy casado" → "casado", "casada en gananciales" → "casado en gananciales", "pareja de hecho" → "pareja de hecho"
 
 ESTRUCTURA JSON ESPERADA:
 {
@@ -239,7 +242,9 @@ ESTRUCTURA JSON ESPERADA:
     "telefono": "string (sin espacios ni caracteres especiales)",
     "apellidos": "string",
     "provincia": "string",
-    "municipio": "string"
+    "municipio": "string",
+    "estado_civil": "soltero|casado|divorciado|separado|viudo|pareja de hecho (INCLUIR RÉGIMEN SI SE MENCIONA: casado en gananciales, casado en separación de bienes)",
+    "nacionalidad": "string"
   },
   "datos_economicos": {
     "ingresos_mensuales": "número",
@@ -252,10 +257,16 @@ ESTRUCTURA JSON ESPERADA:
   },
   "datos_laborales": {
     "situacion_laboral": "autonomo|contrato_indefinido|contrato_temporal|funcionario|empresario",
-    "antiguedad_laboral": "menos_1_anio|un_anio|mas_2_anios"
+    "antiguedad_laboral": "menos_1_anio|un_anio|mas_2_anios",
+    "empresa": "string",
+    "puesto": "string",
+    "tipo_contrato": "indefinido|temporal|autonomo|funcionario"
   },
   "datos_riesgo": {
     "tiene_impagados": "boolean"
+  },
+  "datos_bancarios": {
+    "banco": "nombre del banco (ej: BBVA, Caixa, Santander)"
   },
   "segundo_titular": {
     "ingresos_mensuales_dos": "número",
@@ -319,6 +330,63 @@ EOT;
             }
             if (!empty($dp['municipio'])) {
                 $valoresTexto[458] = $dp['municipio'];
+            }
+            
+            // Nacionalidad
+            if (!empty($dp['nacionalidad'])) {
+                $nacionalidad = $dp['nacionalidad'];
+                // Mapear a campos 195, 247, 509, 570
+                $valoresTexto[195] = $nacionalidad;
+                $valoresTexto[247] = $nacionalidad;
+                $valoresTexto[509] = $nacionalidad;
+                $valoresTexto[570] = $nacionalidad;
+            }
+            
+            // Estado civil
+            if (!empty($dp['estado_civil'])) {
+                $estadoCivil = strtolower($dp['estado_civil']);
+                
+                // Mapear a opción correcta
+                $opcionEstadoCivil = null;
+                
+                // Gananciales (89 es la opción 189 en el mapeo)
+                if (strpos($estadoCivil, 'gananciales') !== false) {
+                    $opcionEstadoCivil = 189;
+                }
+                // Separación de bienes
+                elseif (strpos($estadoCivil, 'separación') !== false) {
+                    $opcionEstadoCivil = 82;
+                }
+                // Si dice "casado" sin especificar → gananciales por defecto
+                elseif (strpos($estadoCivil, 'casado') !== false) {
+                    $opcionEstadoCivil = 189;
+                }
+                // Soltero
+                elseif (strpos($estadoCivil, 'solt') !== false) {
+                    $opcionEstadoCivil = 81;
+                }
+                // Divorciado
+                elseif (strpos($estadoCivil, 'divorc') !== false) {
+                    $opcionEstadoCivil = 85;
+                }
+                // Separado
+                elseif (strpos($estadoCivil, 'separ') !== false) {
+                    $opcionEstadoCivil = 84;
+                }
+                // Viudo
+                elseif (strpos($estadoCivil, 'viud') !== false) {
+                    $opcionEstadoCivil = 86;
+                }
+                // Pareja de hecho
+                elseif (strpos($estadoCivil, 'pareja') !== false || strpos($estadoCivil, 'unión') !== false) {
+                    $opcionEstadoCivil = 83;
+                }
+                
+                if ($opcionEstadoCivil) {
+                    // Campos 198 y 507 usan opciones
+                    $valoresOpcion[198] = $opcionEstadoCivil;
+                    $valoresOpcion[507] = $opcionEstadoCivil;
+                }
             }
         }
 
