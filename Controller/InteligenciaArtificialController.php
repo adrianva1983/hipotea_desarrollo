@@ -1081,4 +1081,14 @@ EOT;
             return ['api_key' => '', 'provider' => 'GEMINI'];
         }
     }
+
+
+    public function crearPromptExpedienteAction(Request $request)
+    {
+        return new JsonResponse([
+            'success' => false,
+            'mensaje' => 'Método no permitido. Use POST.'
+        ], 400);
+    }
 }
+

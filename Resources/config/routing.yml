@@ -823,6 +823,12 @@ procesar_texto_para_expediente:
   controller: AppBundle:InteligenciaArtificial:procesarTextoParaExpediente
   methods: [POST]
 
+# rutas para la IA
+crear_prompt_expediente:
+  path: /API/crear_prompt_expediente
+  controller: AppBundle:InteligenciaArtificial:crearPromptExpediente
+  methods: [POST]
+
 resetear_usos_calculadoras:
   path: /Admin/ResetearUsosCalculadoras
   controller: AppBundle:Calculadoras:resetearUsosCalculadoras
