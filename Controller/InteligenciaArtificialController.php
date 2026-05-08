@@ -1201,9 +1201,11 @@ EOT;
 
     public function procesarTextoExpedienteAction(Request $request)
     {
+        $textoRecibido = $request->request->get('texto', '');
         return new JsonResponse([
             'success' => true,
             'mensaje' => 'Textos procesados y campos mapeados con éxito',
+            'textoRecibido'=> $textoRecibido
         ], 200);
     }
 }
