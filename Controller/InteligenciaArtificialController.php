@@ -1129,10 +1129,15 @@ EOT;
                     $valorNorm = strtolower(trim((string)$valor));
                     $opcionEncontrada = null;
 
+                    // Registrar opciones disponibles
+                    $opcionesDisponibles = array_column($opciones, 'valor');
+                    error_log('InteligenciaArtificialController: procesarRespuestaIA - Campo ' . $idCampo . ' (' . $nombre . ') buscando: "' . $valor . '" entre: ' . json_encode($opcionesDisponibles));
+
                     // Búsqueda exacta
                     foreach ($opciones as $opcion) {
                         if (strtolower(trim($opcion['valor'])) === $valorNorm) {
                             $opcionEncontrada = $opcion['id'];
+                            error_log('InteligenciaArtificialController: ✅ Campo ' . $idCampo . ' - Coincidencia EXACTA: "' . $opcion['valor'] . '" → ID ' . $opcionEncontrada);
                             break;
                         }
                     }
@@ -1143,6 +1148,7 @@ EOT;
                             $opcionNorm = strtolower(trim($opcion['valor']));
                             if (strpos($opcionNorm, $valorNorm) !== false || strpos($valorNorm, $opcionNorm) !== false) {
                                 $opcionEncontrada = $opcion['id'];
+                                error_log('InteligenciaArtificialController: ✅ Campo ' . $idCampo . ' - Coincidencia PARCIAL: "' . $opcion['valor'] . '" → ID ' . $opcionEncontrada);
                                 break;
                             }
                         }
@@ -1158,12 +1164,13 @@ EOT;
                             'opcionId' => $opcionEncontrada
                         ];
                     } else {
-                        error_log('InteligenciaArtificialController: procesarRespuestaIA - sin opción para campo ' . $idCampo . ' valor \'' . $valor . '\'');
+                        error_log('InteligenciaArtificialController: ⚠️ Campo ' . $idCampo . ' - SIN OPCIÓN para valor "' . $valor . '". Opciones disponibles: ' . json_encode($opcionesDisponibles));
                         $camposProcesados[] = [
                             'id' => $idCampo,
                             'nombre' => $nombre,
                             'valor' => $valor,
-                            'tipo' => 'opcion_no_encontrada'
+                            'tipo' => 'opcion_no_encontrada',
+                            'opcionesDisponibles' => $opcionesDisponibles
                         ];
                     }
                 } else {
@@ -1180,6 +1187,15 @@ EOT;
         }
 
         error_log('InteligenciaArtificialController: procesarRespuestaIA - texto: ' . count($valoresTexto) . ', opcion: ' . count($valoresOpcion) . ', total: ' . count($camposProcesados));
+        
+        // Resumir estado de campos
+        $resumen = [
+            'texto' => count($valoresTexto),
+            'opcion' => count($valoresOpcion),
+            'opcion_no_encontrada' => count(array_filter($camposProcesados, fn($c) => $c['tipo'] === 'opcion_no_encontrada')),
+            'total' => count($camposProcesados)
+        ];
+        error_log('InteligenciaArtificialController: procesarRespuestaIA RESUMEN: ' . json_encode($resumen));
 
         return [
             'valores_texto' => $valoresTexto,
