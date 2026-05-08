@@ -458,7 +458,8 @@ class KommoController extends Controller
                 [],  // query
                 [    // request (POST data)
                     'texto' => $texto,
-                    'tipo_entrada' => 'kommo'
+                    'tipo_entrada' => 'kommo',
+                    'grupos' => [4],
                 ],
                 [],  // attributes
                 [],  // cookies
@@ -711,7 +712,8 @@ class KommoController extends Controller
                 [
                     'json' => [
                         'texto' => $texto,
-                        'tipo_entrada' => 'kommo'
+                        'tipo_entrada' => 'kommo',
+                        'grupos' => [4],
                     ],
                     'timeout' => 30,
                     'connect_timeout' => 10

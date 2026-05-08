@@ -57,19 +57,23 @@ class InteligenciaArtificialController extends Controller
 
             // Obtener datos del request
             $isJson = strpos($request->headers->get('Content-Type', ''), 'application/json') !== false;
-            
+
             if ($isJson) {
                 error_log('InteligenciaArtificialController: Content-Type es JSON');
                 $body = json_decode($request->getContent(), true) ?? [];
                 $texto = $body['texto'] ?? null;
                 $tipoEntrada = $body['tipo_entrada'] ?? 'kommo';
+                $grupos = isset($body['grupos']) ? $body['grupos'] : null;
             } else {
                 error_log('InteligenciaArtificialController: Content-Type no es JSON, usando request->request');
                 $texto = $request->request->get('texto');
                 $tipoEntrada = $request->request->get('tipo_entrada', 'kommo');
+                $gruposRaw = $request->request->get('grupos');
+                $grupos = $gruposRaw ? (is_array($gruposRaw) ? $gruposRaw : explode(',', $gruposRaw)) : null;
             }
 
             error_log('InteligenciaArtificialController: Texto extraído: ' . (empty($texto) ? 'VACÍO' : substr($texto, 0, 50)) . '...');
+            error_log('InteligenciaArtificialController: Grupos: ' . ($grupos ? json_encode($grupos) : 'no (modo legado)'));
 
             // Validar que el texto no esté vacío
             if (!$texto || empty(trim($texto))) {
@@ -91,7 +95,7 @@ class InteligenciaArtificialController extends Controller
                 'tiene_api_key' => !empty($configIA['api_key']),
                 'model' => $configIA['model'] ?? 'desconocido'
             ]));
-            
+
             if (empty($configIA['api_key'])) {
                 error_log('InteligenciaArtificialController: ❌ NO HAY API_KEY CONFIGURADA. Config actual: ' . json_encode($configIA));
                 return new JsonResponse([
@@ -100,62 +104,68 @@ class InteligenciaArtificialController extends Controller
                 ], 500);
             }
 
-            error_log('InteligenciaArtificialController: 5️⃣ Configuración IA OK. Llamando extraerDatosConIA()...');
+            error_log('InteligenciaArtificialController: 5️⃣ Configuración IA OK.');
 
-            // Enviar a IA para extraer datos
-            $resultadoIA = $this->extraerDatosConIA($texto, $tipoEntrada, $configIA);
-            
-            error_log('InteligenciaArtificialController: Resultado IA: ' . json_encode([
-                'datos_count' => isset($resultadoIA['datos']) ? count($resultadoIA['datos']) : 0,
-                'confianza' => $resultadoIA['confianza'] ?? 'N/A',
-                'error' => $resultadoIA['error'] ?? 'ninguno'
-            ]));
-            
-            if (!$resultadoIA || !isset($resultadoIA['datos'])) {
-                error_log('InteligenciaArtificialController: ❌ extraerDatosConIA() falló. Resultado: ' . json_encode($resultadoIA));
-                return new JsonResponse([
-                    'success' => false,
-                    'mensaje' => 'Error al procesar el texto con IA. ' . ($resultadoIA['error'] ?? '')
-                ], 500);
+            // ── MODO DINÁMICO (grupos especificados) ─────────────────────────
+            if ($grupos && count($grupos) > 0) {
+                $gruposInt = array_map('intval', $grupos);
+                error_log('InteligenciaArtificialController: MODO DINÁMICO - grupos: ' . json_encode($gruposInt));
+
+                $promptDinamico = $this->construirPromptDinamico($texto, $gruposInt);
+                $resultadoIA = $this->extraerDatosConIA($texto, $tipoEntrada, $configIA, $promptDinamico);
+
+                if (!$resultadoIA || !isset($resultadoIA['datos'])) {
+                    return new JsonResponse([
+                        'success' => false,
+                        'mensaje' => 'Error al procesar el texto con IA. ' . ($resultadoIA['error'] ?? '')
+                    ], 500);
+                }
+
+                $datosMapeos = $this->mapearCamposExtraidosDinamico($resultadoIA['datos'], $gruposInt);
+                $modo = 'dinamico';
+            } else {
+                // ── MODO LEGADO (sin grupos, prompt hardcodeado) ──────────────
+                error_log('InteligenciaArtificialController: MODO LEGADO - sin grupos');
+
+                $resultadoIA = $this->extraerDatosConIA($texto, $tipoEntrada, $configIA);
+
+                if (!$resultadoIA || !isset($resultadoIA['datos'])) {
+                    error_log('InteligenciaArtificialController: ❌ extraerDatosConIA() falló. Resultado: ' . json_encode($resultadoIA));
+                    return new JsonResponse([
+                        'success' => false,
+                        'mensaje' => 'Error al procesar el texto con IA. ' . ($resultadoIA['error'] ?? '')
+                    ], 500);
+                }
+
+                $mapeoHitos = $this->obtenerMapeoHitos();
+                $datosMapeos = $this->mapearCamposExtraidos($resultadoIA['datos'], $mapeoHitos);
+                $modo = 'legado';
             }
-
-            error_log('InteligenciaArtificialController: 6️⃣ IA devolvió datos OK. Obteniendo mapeo...');
-
-            // Obtener mapeo de campos a hitos
-            $mapeoHitos = $this->obtenerMapeoHitos();
-            error_log('InteligenciaArtificialController: Mapeo hitos obtenido: ' . count($mapeoHitos) . ' campos mapeados');
-            
-            // Mapear datos extraídos a estructura de expediente
-            error_log('InteligenciaArtificialController: 7️⃣ Mapeando campos extraídos...');
-            $datosMapeos = $this->mapearCamposExtraidos($resultadoIA['datos'], $mapeoHitos);
 
             error_log('InteligenciaArtificialController: Mapeo completado: ' . count($datosMapeos['valores_texto']) . ' textos + ' . count($datosMapeos['valores_opcion']) . ' opciones');
 
             // Extraer hitos únicos
+            $mapeoHitosAll = $this->obtenerMapeoHitos();
             $hitosAsociados = [];
-            foreach ($datosMapeos['valores_texto'] as $idCampo => $valor) {
-                if (isset($mapeoHitos[$idCampo])) {
-                    $hitosAsociados[] = $mapeoHitos[$idCampo];
+            foreach (array_merge(array_keys($datosMapeos['valores_texto']), array_keys($datosMapeos['valores_opcion'])) as $idCampo) {
+                if (isset($mapeoHitosAll[$idCampo])) {
+                    $hitosAsociados[] = $mapeoHitosAll[$idCampo];
                 }
             }
-            foreach ($datosMapeos['valores_opcion'] as $idCampo => $idOpcion) {
-                if (isset($mapeoHitos[$idCampo])) {
-                    $hitosAsociados[] = $mapeoHitos[$idCampo];
-                }
-            }
-            $hitosAsociados = array_unique($hitosAsociados);
+            $hitosAsociados = array_values(array_unique($hitosAsociados));
 
             error_log('InteligenciaArtificialController: ✅ Procesamiento exitoso. Hitos únicos: ' . count($hitosAsociados));
 
             return new JsonResponse([
-                'success' => true,
-                'valores_texto' => $datosMapeos['valores_texto'],
-                'valores_opcion' => $datosMapeos['valores_opcion'],
-                'hitos_asociados' => array_values($hitosAsociados),
-                'campos_detectados' => count($datosMapeos['valores_texto']) + count($datosMapeos['valores_opcion']),
-                'confianza_promedio' => $resultadoIA['confianza'] ?? 0.80,
+                'success'               => true,
+                'valores_texto'         => $datosMapeos['valores_texto'],
+                'valores_opcion'        => $datosMapeos['valores_opcion'],
+                'hitos_asociados'       => $hitosAsociados,
+                'campos_detectados'     => count($datosMapeos['valores_texto']) + count($datosMapeos['valores_opcion']),
+                'confianza_promedio'    => $resultadoIA['confianza'] ?? 0.80,
                 'campos_no_encontrados' => $datosMapeos['campos_no_encontrados'] ?? [],
-                'proveedor' => $configIA['provider']
+                'proveedor'             => $configIA['provider'],
+                'modo'                  => $modo,
             ], 200);
 
         } catch (\Exception $e) {
@@ -170,12 +180,12 @@ class InteligenciaArtificialController extends Controller
     /**
      * Extrae datos del texto usando IA
      */
-    private function extraerDatosConIA($texto, $tipoEntrada, $configIA)
+    private function extraerDatosConIA($texto, $tipoEntrada, $configIA, $promptExterno = null)
     {
         try {
             error_log('InteligenciaArtificialController: 8️⃣ extraerDatosConIA() - Proveedor: ' . $configIA['provider']);
             
-            $prompt = $this->construirPromptExtracion($texto, $tipoEntrada);
+            $prompt = $promptExterno !== null ? $promptExterno : $this->construirPromptExtracion($texto, $tipoEntrada);
             error_log('InteligenciaArtificialController: Prompt construído, longitud: ' . strlen($prompt));
 
             $resultadoIA = null;
@@ -506,6 +516,156 @@ EOT;
             'valores_texto' => array_filter($valoresTexto, function($v) { return $v !== null && $v !== ''; }),
             'valores_opcion' => array_filter($valoresOpcion, function($v) { return $v !== null; }),
             'campos_no_encontrados' => $camposNoEncontrados
+        ];
+    }
+
+    // =========================================================================
+    // MÉTODOS DINÁMICOS (prompt y mapeo construidos desde BD en tiempo real)
+    // =========================================================================
+
+    /**
+     * Obtiene los CampoHito de los grupos indicados junto con sus OpcionesCampo.
+     * Retorna: [ id_campo_hito => ['campo' => CampoHito, 'opciones' => [OpcionesCampo, ...]] ]
+     */
+    private function obtenerCamposDeGrupos(array $grupoIds)
+    {
+        $doctrine = $this->getDoctrine();
+        $resultado = [];
+
+        foreach ($grupoIds as $grupoId) {
+            $grupo = $doctrine->getRepository('AppBundle:GrupoCamposHito')->find((int)$grupoId);
+            if (!$grupo) {
+                error_log('InteligenciaArtificialController: obtenerCamposDeGrupos - grupo no encontrado: ' . $grupoId);
+                continue;
+            }
+
+            $campos = $doctrine->getRepository('AppBundle:CampoHito')->findBy(
+                ['idGrupoCamposHito' => $grupo],
+                ['orden' => 'ASC']
+            );
+
+            foreach ($campos as $campo) {
+                $opciones = [];
+                if (in_array($campo->getTipo(), [2, 3])) {
+                    $opciones = $doctrine->getRepository('AppBundle:OpcionesCampo')->findBy(
+                        ['idCampoHito' => $campo],
+                        ['orden' => 'ASC']
+                    );
+                }
+                $resultado[$campo->getIdCampoHito()] = [
+                    'campo'   => $campo,
+                    'opciones' => $opciones,
+                ];
+            }
+        }
+
+        error_log('InteligenciaArtificialController: obtenerCamposDeGrupos - total campos: ' . count($resultado));
+        return $resultado;
+    }
+
+    /**
+     * Construye un prompt dinámico basado en los campos de la BD.
+     * La IA debe devolver JSON plano: { "id_campo_hito": "valor_extraído" }
+     */
+    private function construirPromptDinamico($texto, array $grupoIds)
+    {
+        $camposBD = $this->obtenerCamposDeGrupos($grupoIds);
+        $descripcionCampos = '';
+
+        foreach ($camposBD as $idCampo => $info) {
+            $campo = $info['campo'];
+            if ($campo->getTipo() == 4) continue; // Ficheros: no extraíbles de texto
+
+            if (in_array($campo->getTipo(), [2, 3]) && !empty($info['opciones'])) {
+                $valoresOpciones = array_map(function ($op) { return $op->getValor(); }, $info['opciones']);
+                $descripcionCampos .= '  "' . $idCampo . '": /* ' . $campo->getNombre() . ' — SOLO uno de estos valores: ' . implode(' | ', $valoresOpciones) . " */\n";
+            } elseif ($campo->getTipo() == 6) {
+                $descripcionCampos .= '  "' . $idCampo . '": /* ' . $campo->getNombre() . " — fecha dd/mm/yyyy */\n";
+            } elseif ($campo->getTipo() == 5) {
+                $descripcionCampos .= '  "' . $idCampo . '": /* ' . $campo->getNombre() . " — email */\n";
+            } else {
+                $descripcionCampos .= '  "' . $idCampo . '": /* ' . $campo->getNombre() . " — texto */\n";
+            }
+        }
+
+        $prompt = 'Analiza el siguiente texto y extrae los datos solicitados en formato JSON plano.' . "\n\n";
+        $prompt .= 'INSTRUCCIONES CRÍTICAS:' . "\n";
+        $prompt .= '1. Devuelve SOLO un objeto JSON válido, sin texto adicional ni bloques markdown.' . "\n";
+        $prompt .= '2. Las claves del JSON son exactamente los IDs numéricos indicados (como strings).' . "\n";
+        $prompt .= '3. Si un dato NO aparece en el texto, omite esa clave completamente.' . "\n";
+        $prompt .= '4. Para campos con opciones predefinidas, devuelve EXACTAMENTE uno de los valores listados.' . "\n";
+        $prompt .= '5. Números sin separadores de miles: 2000 NO 2.000. Sin símbolo de moneda.' . "\n\n";
+        $prompt .= 'CAMPOS A EXTRAER:' . "\n";
+        $prompt .= '{' . "\n";
+        $prompt .= $descripcionCampos;
+        $prompt .= '}' . "\n\n";
+        $prompt .= 'TEXTO A ANALIZAR:' . "\n";
+        $prompt .= $texto;
+
+        error_log('InteligenciaArtificialController: construirPromptDinamico - campos en prompt: ' . count($camposBD) . ', longitud: ' . strlen($prompt));
+        return $prompt;
+    }
+
+    /**
+     * Mapea la respuesta plana de la IA { "id_campo": valor } a { valores_texto, valores_opcion }.
+     */
+    private function mapearCamposExtraidosDinamico(array $datosIA, array $grupoIds)
+    {
+        $camposBD = $this->obtenerCamposDeGrupos($grupoIds);
+        $valoresTexto        = [];
+        $valoresOpcion       = [];
+        $camposNoEncontrados = [];
+
+        foreach ($datosIA as $idCampoStr => $valor) {
+            $idCampo = (int)$idCampoStr;
+            if (!isset($camposBD[$idCampo]) || $valor === null || $valor === '') {
+                continue;
+            }
+
+            $campo = $camposBD[$idCampo]['campo'];
+            $tipo  = $campo->getTipo();
+
+            if (in_array($tipo, [2, 3])) {
+                // Campo de opción: buscar coincidencia exacta primero
+                $valorNorm      = strtolower(trim((string)$valor));
+                $opcionEncontrada = null;
+
+                foreach ($camposBD[$idCampo]['opciones'] as $opcion) {
+                    if (strtolower(trim($opcion->getValor())) === $valorNorm) {
+                        $opcionEncontrada = $opcion->getIdOpcionesCampo();
+                        break;
+                    }
+                }
+
+                // Fallback: búsqueda parcial
+                if ($opcionEncontrada === null) {
+                    foreach ($camposBD[$idCampo]['opciones'] as $opcion) {
+                        $opcionNorm = strtolower(trim($opcion->getValor()));
+                        if (strpos($opcionNorm, $valorNorm) !== false || strpos($valorNorm, $opcionNorm) !== false) {
+                            $opcionEncontrada = $opcion->getIdOpcionesCampo();
+                            break;
+                        }
+                    }
+                }
+
+                if ($opcionEncontrada !== null) {
+                    $valoresOpcion[$idCampo] = $opcionEncontrada;
+                } else {
+                    $camposNoEncontrados[] = $idCampo;
+                    error_log('InteligenciaArtificialController: mapearDinamico - sin opción para campo ' . $idCampo . ' valor \'' . $valor . '\'');
+                }
+            } else {
+                // Campo de texto / email / fecha / número
+                $valoresTexto[$idCampo] = (string)$valor;
+            }
+        }
+
+        error_log('InteligenciaArtificialController: mapearDinamico - ' . count($valoresTexto) . ' textos, ' . count($valoresOpcion) . ' opciones, ' . count($camposNoEncontrados) . ' no encontrados');
+
+        return [
+            'valores_texto'         => $valoresTexto,
+            'valores_opcion'        => $valoresOpcion,
+            'campos_no_encontrados' => $camposNoEncontrados,
         ];
     }
 
