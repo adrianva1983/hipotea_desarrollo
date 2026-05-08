@@ -1138,31 +1138,53 @@ EOT;
         foreach ($camposBD as $campo) {
             $nombre = $campo['nombre'];
             $id = $campo['id_campo_hito'];
-            $seccionCampos .= "- {$nombre} [ID: {$id}]\n";
+            $tipo = $campo['tipo'];
+            
+            // Indicar si es un campo de selección (tipo 2=dropdown, tipo 3=radio)
+            $tipoIndicador = in_array($tipo, [2, 3]) ? ' [SELECCIÓN]' : '';
+            $seccionCampos .= "- {$nombre} [ID: {$id}]{$tipoIndicador}\n";
         }
 
         $prompt = <<<EOT
         Actúa como un extractor de datos para un CRM. Tu misión es mapear la información del texto a los IDs de mi formulario.
 
         ### REGLA DE ORO PARA DATOS NO DEFINIDOS:
-        Si el usuario menciona información que NO tiene un ID asignado abajo (por ejemplo: Nombre de la empresa, CIF, Horario de contacto, Redes sociales, Profesión, Notas adicionales), DEBES incluirla obligatoriamente en un campo de COMENTARIOS o NOTAS.
+        Si el usuario menciona información que NO tiene un ID asignado abajo (por ejemplo: Nombre de la empresa, CIF, Horario de contacto, Redes sociales, Profesión, Notas adicionales), DEBES incluirla obligatoriamente en el campo ID: 191 (Comentarios).
 
         ### ESTRUCTURA DE EXTRACCIÓN:
         {$seccionCampos}
 
-        IMPORTANTE:
-        - Si algún dato relevante mencionado NO encaja exactamente con los campos anteriores, inclúyelo en el último campo disponible o especifica qué información falta.
-        - Extrae SOLO información que el usuario mencione explícitamente en el texto.
-        - Si un campo no tiene información, OMÍTELO del JSON de respuesta.
-        - Normaliza valores: nombres en Title Case, emails en minúsculas, teléfonos sin caracteres especiales.
+        ### INSTRUCCIONES CRÍTICAS:
 
-        ### FORMATO DE SALIDA:
-        Devuelve un JSON estrictamente así (sin explicaciones, sin markdown):
+        1. NORMALIZACIÓN:
+           - Nombres en Title Case (Juan, María, González)
+           - Emails en minúsculas (juan@example.com)
+           - Teléfonos SOLO números sin espacios ni caracteres especiales (612345678)
+           - Cantidades monetarias como números enteros sin € ni puntos (ej: 250000 no 250.000€)
+           - Fechas en formato dd/mm/yyyy
+
+        2. CAMPOS DE SELECCIÓN [SELECCIÓN]:
+           - Si es un campo de opción/desplegable, intenta deducir el ID de la opción si lo conoces
+           - Si no estás seguro, devuelve la descripción del valor de forma clara
+           - Ejemplo: Si dice "origen Kommo" → {"id": "673", "valor": "Kommo"} o {"id": "673", "valor": "688"} si sabes el ID
+
+        3. EXTRACCIÓN DE DATOS:
+           - Extrae SOLO información que el usuario mencione explícitamente en el texto
+           - Si un campo no tiene información, NO lo incluyas en el JSON
+           - Si datos relevantes no encajan con los campos anteriores, inclúyelos en ID: 191 (Comentarios)
+
+        4. FORMATO DE SALIDA - CRÍTICO:
+           - Devuelve ÚNICAMENTE el objeto JSON plano
+           - PROHIBIDO incluir bloques de código Markdown (```json ... ```)
+           - PROHIBIDO incluir explicaciones o texto adicional fuera del JSON
+           - Estructura exacta:
+
         {
         "campos": [
             {"id": "693", "valor": "Juan"},
             {"id": "695", "valor": "612345678"},
-            {"id": "376", "valor": "Mencionó que trabaja en 'TecnoSL' como ingeniero y prefiere llamadas por la tarde"}
+            {"id": "696", "valor": "juan@example.com"},
+            {"id": "191", "valor": "Mencionó que trabaja en 'TecnoSL' como ingeniero. Prefiere contacto por la tarde."}
         ]
         }
 
