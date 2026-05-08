@@ -134,7 +134,7 @@ class KommoController extends Controller
      * 2. contacts.add → Contact creado (id en contacts.add[0].id)
      * 3. leads.add → Lead creado (linked_leads_id apunta al contact)
      */
-    public function kommoWebhookAction1(Request $request)
+    public function kommoWebhookAction(Request $request)
     {
         error_log('ENtro11111111111');
         $content = null;
@@ -348,13 +348,13 @@ class KommoController extends Controller
         }
     }
 
-    public function kommoWebhookAction(Request $request)
+    /*public function kommoWebhookAction(Request $request)
     {
         return new JsonResponse([
             'ok' => true,
             'error' => 'Método no implementado',
         ], 200);
-    }
+    }*/
 
     /**
      * Detecta el tipo de webhook basándose en la estructura del JSON
