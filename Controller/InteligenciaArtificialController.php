@@ -1213,11 +1213,40 @@ EOT;
 
         $configIA = $this->obtenerConfiguracionIA();
 
+        $grupoIds = [4];
+        $camposBD = $this->obtenerCamposDeGruposMod($grupoIds);
+        $prompt = $this->construirPromptExtractor($camposBD);
+
+        $resultadoIA = null;
+            
+        if ($configIA['provider'] === 'GEMINI') 
+        {
+            error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAGeminiTexto()...');
+            $resultadoIA = $this->enviarAGeminiTexto($texto, $prompt, $configIA);
+        } 
+        elseif ($configIA['provider'] === 'OPENAI') 
+        {
+            error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOpenAITexto()...');
+            $resultadoIA = $this->enviarAOpenAITexto($texto, $prompt, $configIA);
+        } 
+        elseif ($configIA['provider'] === 'OLLAMA') 
+        {
+            error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOllamaTexto()...');
+            $resultadoIA = $this->enviarAOllamaTexto($texto, $prompt, $configIA);
+        } 
+        else 
+        {
+            error_log('InteligenciaArtificialController: ❌ Provider desconocido: ' . $configIA['provider']);
+        }
+
+
+
         return new JsonResponse([
             'success' => true,
             'mensaje' => 'Textos procesados y campos mapeados con éxito',
             'texto'=> $texto, 
-            'configIA'=> $configIA
+            'configIA'=> $configIA,
+            'resultadoIA'=> $resultadoIA,
         ], 200);
     }
 }
