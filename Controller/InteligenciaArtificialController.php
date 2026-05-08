@@ -1158,7 +1158,7 @@ EOT;
                     if ($opcionEncontrada === null) {
                         $mejorOpcion = null;
                         $mejorSimilitud = 0;
-                        $umbralSimilitud = 0.80; // 80% de similitud
+                        $umbralSimilitud = 0.75; // 75% de similitud (captura variaciones de género: fijo/fija)
 
                         foreach ($opciones as $opcion) {
                             $opcionNorm = strtolower(trim($opcion['valor']));
@@ -1177,6 +1177,8 @@ EOT;
                         if ($mejorOpcion !== null) {
                             $opcionEncontrada = $mejorOpcion['id'];
                             error_log('InteligenciaArtificialController: ✅ Campo ' . $idCampo . ' - Coincidencia FUZZY (' . round($mejorSimilitud * 100) . '%): "' . $mejorOpcion['valor'] . '" → ID ' . $opcionEncontrada);
+                        } else {
+                            error_log('InteligenciaArtificialController: ℹ️ Campo ' . $idCampo . ' - Fuzzy search no encontró coincidencia >= 75% para "' . $valor . '". Mejor similitud: ' . round($mejorSimilitud * 100) . '%');
                         }
                     }
 
