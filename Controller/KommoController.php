@@ -472,45 +472,22 @@ class KommoController extends Controller
             $iaAvailableSeguro = isset($iaAvailable) ? $iaAvailable : false;
             
             error_log('KommoController: Preparando respuesta final - Cliente: ' . $idClienteSeguro . ', Expediente: ' . $idExpedienteSeguro);
-
-            // Respuesta exitosa
-            error_log('KommoController: ✅ Creando JsonResponse para respuesta exitosa (200 OK)...');
-            $respuesta = new JsonResponse([
-                'ok' => true,
-                'mensaje' => 'Webhook recibido y procesado correctamente',
-                'tipo' => $tipoWebhook,
-                'idCliente' => $idClienteSeguro,
-                'idExpediente' => $idExpedienteSeguro,
-                'desgloseHitos' => $desgloseSeguro,
-                'ia_used' => $iaUsedSeguro,
-                'ia_available' => $iaAvailableSeguro,
-                'timestamp' => date('Y-m-d H:i:s')
-            ]);
+            error_log('KommoController: ✅ Preparando envío de respuesta (200 OK)...');
+            error_log('KommoController: Limpiando buffers...');
             
-            // Establecer headers explícitamente
-            $respuesta->headers->set('Content-Type', 'application/json; charset=UTF-8');
-            $respuesta->setStatusCode(200);
-            
-            // Limpiar cualquier output buffer existente ANTES de retornar
+            // Limpiar completamente todos los buffers ANTES de hacer nada
             while (ob_get_level() > 0) {
                 ob_end_clean();
             }
             
-            error_log('KommoController: ✅ JsonResponse lista. Status: 200');
+            error_log('KommoController: Buffers limpios. Enviando response headers...');
             
-            // Enviar respuesta de forma explícita
-            error_log('KommoController: Preparando headers HTTP...');
-            
-            // Limpiar completamente
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-            ob_start();
-            
+            // Establecer headers HTTP
             header('Content-Type: application/json; charset=UTF-8', true);
             header('Status: 200 OK', true);
             http_response_code(200);
             
+            // Preparar JSON
             $responseData = array(
                 'ok' => true,
                 'mensaje' => 'Webhook recibido y procesado correctamente',
@@ -523,10 +500,10 @@ class KommoController extends Controller
                 'timestamp' => date('Y-m-d H:i:s')
             );
             
-            ob_clean();
-            echo json_encode($responseData, JSON_UNESCAPED_UNICODE);
             error_log('KommoController: ✅ RESPUESTA ENVIADA AL CLIENTE (200 OK)');
-            ob_end_flush();
+            
+            // Enviar JSON y terminar
+            echo json_encode($responseData, JSON_UNESCAPED_UNICODE);
             exit;
 
         } catch (\Throwable $e) {
