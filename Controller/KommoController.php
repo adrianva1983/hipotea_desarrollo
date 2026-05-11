@@ -436,8 +436,25 @@ class KommoController extends Controller
                 'timestamp' => date('Y-m-d H:i:s')
             ]);
             
-            error_log('KommoController: ✅ JsonResponse creada. Retornando 200 OK...');
-            return $respuesta;
+            // Establecer headers explícitamente
+            $respuesta->headers->set('Content-Type', 'application/json; charset=UTF-8');
+            $respuesta->setStatusCode(200);
+            
+            // Limpiar cualquier output buffer existente
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            
+            error_log('KommoController: ✅ JsonResponse lista. Headers: ' . json_encode($respuesta->headers->all()));
+            error_log('KommoController: ✅ JsonResponse creada. Status: ' . $respuesta->getStatusCode() . ' - Enviando...');
+            
+            // Enviar la respuesta explícitamente
+            $respuesta->send();
+            
+            error_log('KommoController: ✅ RESPUESTA ENVIADA AL CLIENTE (200 OK)');
+            
+            // Terminar ejecución limpiamente
+            exit(0);
 
         } catch (\Throwable $e) {
             // Log detallado del error (captura Exception Y Error/Fatal)
@@ -479,22 +496,46 @@ class KommoController extends Controller
             }
 
             // Respuesta de error garantizada (SIEMPRE retorna JSON válido)
-            error_log('KommoController: Retornando respuesta de error 400');
-            return new JsonResponse([
+            error_log('KommoController: Preparando respuesta de error 400');
+            
+            $respuestaError = new JsonResponse([
                 'ok' => false,
                 'error' => $e->getMessage(),
                 'tipo_error' => get_class($e),
                 'timestamp' => date('Y-m-d H:i:s')
             ], 400);
+            
+            $respuestaError->headers->set('Content-Type', 'application/json; charset=UTF-8');
+            
+            // Limpiar output buffers
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            
+            error_log('KommoController: Enviando respuesta de error 400');
+            $respuestaError->send();
+            error_log('KommoController: ⚠️ RESPUESTA DE ERROR ENVIADA (400)');
+            exit(0);
         }
         
         // FALLBACK: Si por alguna razón no hay return antes, retornar error
-        error_log('KommoController: ⚠️ FALLBACK - Alcanzado final sin return');
-        return new JsonResponse([
+        error_log('KommoController: ⚠️ FALLBACK - Alcanzado final sin return (esto nunca debería pasar)');
+        
+        $respuestaFallback = new JsonResponse([
             'ok' => false,
             'error' => 'Error desconocido en el flujo de procesamiento',
             'timestamp' => date('Y-m-d H:i:s')
         ], 500);
+        
+        $respuestaFallback->headers->set('Content-Type', 'application/json; charset=UTF-8');
+        
+        // Limpiar output buffers
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
+        $respuestaFallback->send();
+        exit(0);
     }
 
     /*public function kommoWebhookAction(Request $request)
