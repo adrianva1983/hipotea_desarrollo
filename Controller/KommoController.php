@@ -376,32 +376,10 @@ class KommoController extends Controller
                 error_log('KommoController: Webhook incompleto registrado en BD (sin procesar)');
 
                 // Retornar 200 OK igual (para que Kommo no reintente)
-                error_log('KommoController: ✅ Creando JsonResponse para webhook incompleto (200 OK)...');
-                $respuesta = new JsonResponse([
-                    'ok' => true,
-                    'mensaje' => 'Webhook recibido pero no procesado (falta teléfono/email)',
-                    'tipo' => $tipoWebhook,
-                    'estado' => 'incompleto',
-                    'timestamp' => date('Y-m-d H:i:s')
-                ]);
-                
-                $respuesta->headers->set('Content-Type', 'application/json; charset=UTF-8');
-                $respuesta->setStatusCode(200);
-                
-                while (ob_get_level() > 0) {
-                    ob_end_clean();
-                }
-                
-                error_log('KommoController: ✅ JsonResponse lista. Status: 200');
-                
-                // Enviar respuesta de forma explícita
-                error_log('KommoController: Preparando headers HTTP...');
-                
                 // Limpiar completamente
                 while (ob_get_level() > 0) {
                     ob_end_clean();
                 }
-                ob_start();
                 
                 header('Content-Type: application/json; charset=UTF-8', true);
                 header('Status: 200 OK', true);
@@ -415,10 +393,7 @@ class KommoController extends Controller
                     'timestamp' => date('Y-m-d H:i:s')
                 );
                 
-                ob_clean();
                 echo json_encode($data, JSON_UNESCAPED_UNICODE);
-                error_log('KommoController: ✅ RESPUESTA ENVIADA AL CLIENTE (200 OK)');
-                ob_end_flush();
                 exit;
 
             }
@@ -472,17 +447,14 @@ class KommoController extends Controller
             $iaAvailableSeguro = isset($iaAvailable) ? $iaAvailable : false;
             
             error_log('KommoController: Preparando respuesta final - Cliente: ' . $idClienteSeguro . ', Expediente: ' . $idExpedienteSeguro);
-            error_log('KommoController: ✅ Preparando envío de respuesta (200 OK)...');
-            error_log('KommoController: Limpiando buffers...');
-            
+
+            // Respuesta exitosa - Enviar de forma directa
             // Limpiar completamente todos los buffers ANTES de hacer nada
             while (ob_get_level() > 0) {
                 ob_end_clean();
             }
             
-            error_log('KommoController: Buffers limpios. Enviando response headers...');
-            
-            // Establecer headers HTTP
+            // Establecer headers HTTP ANTES de cualquier output
             header('Content-Type: application/json; charset=UTF-8', true);
             header('Status: 200 OK', true);
             http_response_code(200);
@@ -500,9 +472,7 @@ class KommoController extends Controller
                 'timestamp' => date('Y-m-d H:i:s')
             );
             
-            error_log('KommoController: ✅ RESPUESTA ENVIADA AL CLIENTE (200 OK)');
-            
-            // Enviar JSON y terminar
+            // Enviar JSON y terminar SIN más logs
             echo json_encode($responseData, JSON_UNESCAPED_UNICODE);
             exit;
 
@@ -546,13 +516,12 @@ class KommoController extends Controller
             }
 
             // Respuesta de error garantizada (SIEMPRE retorna JSON válido)
-            error_log('KommoController: Preparando respuesta de error 400');
+            error_log('KommoController: Error capturado, preparando respuesta 400');
             
             // Limpiar completamente
             while (ob_get_level() > 0) {
                 ob_end_clean();
             }
-            ob_start();
             
             header('Content-Type: application/json; charset=UTF-8', true);
             header('Status: 400 Bad Request', true);
@@ -565,22 +534,17 @@ class KommoController extends Controller
                 'timestamp' => date('Y-m-d H:i:s')
             );
             
-            error_log('KommoController: Enviando respuesta de error 400...');
-            ob_clean();
             echo json_encode($errorData, JSON_UNESCAPED_UNICODE);
-            error_log('KommoController: ✅ RESPUESTA DE ERROR ENVIADA AL CLIENTE (400)');
-            ob_end_flush();
             exit;
         }
         
         // FALLBACK: Si por alguna razón no hay return antes, retornar error
-        error_log('KommoController: ⚠️ FALLBACK - Alcanzado final sin return (esto nunca debería pasar)');
+        error_log('KommoController: ⚠️ FALLBACK - Alcanzado final sin return');
         
         // Limpiar completamente
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
-        ob_start();
         
         header('Content-Type: application/json; charset=UTF-8', true);
         header('Status: 500 Internal Server Error', true);
@@ -592,9 +556,7 @@ class KommoController extends Controller
             'timestamp' => date('Y-m-d H:i:s')
         );
         
-        ob_clean();
         echo json_encode($fallbackData, JSON_UNESCAPED_UNICODE);
-        ob_end_flush();
         exit;
     }
 
