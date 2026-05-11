@@ -1244,6 +1244,10 @@ class KommoController extends Controller
             $em->persist($campoHitoExpediente);
         }
 
+        // Actualizar fecha de modificación del expediente
+        $expediente->setFechaModificacion(new \DateTime());
+        $em->persist($expediente);
+
         $em->flush();
 
         // Convertir a array indexado
