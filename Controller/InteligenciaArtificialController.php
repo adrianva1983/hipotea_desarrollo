@@ -619,9 +619,14 @@ class InteligenciaArtificialController extends Controller
            - "Extinción de condominio" (extinción de condominio, compra de parte)
 
            MOMENTO DE LA COMPRA (ID 183):
+           SOLO rellenar si ID 179 = "Adquirir una propiedad". Si quiere mejorar hipoteca o agrupar deudas, NO incluir ID 183.
            - "Sigo buscando" (aún no ha encontrado piso)
            - "Ya encontré una propiedad" (ya tiene piso elegido)
            - "Tengo reserva entregada" (ya ha dado señal/reserva)
+
+           TIPO DE HIPOTECA ACTUAL (ID 435):
+           SOLO rellenar si ID 179 = "Mejorar mi hipoteca actual". Indica qué tipo de hipoteca tiene ahora.
+           - "Variable" | "Fija" | "Mixta"
 
            COMPRA CON INMOBILIARIA O PARTICULAR (ID 184):
            - "Inmobiliaria" | "Particular"
