@@ -585,10 +585,14 @@ class InteligenciaArtificialController extends Controller
            - Cantidades monetarias como números enteros sin € ni puntos (ej: 250000 no 250.000€)
            - Fechas en formato dd/mm/yyyy
 
-        2. CAMPOS DE SELECCIÓN [SELECCIÓN]:
+        2. CAMPOS DE SELECCIÓN [SELECCIÓN] - BUSCAR ACTIVAMENTE:
+           - Estado Civil: Busca "soy", "estoy", "casado", "soltero", "divorciado", "viudo", "pareja de hecho"
+           - Tipo de Contrato: Busca "trabajo", "empleado", "indefinido", "temporal", "autónomo", "funcionario"
+           - Domicilio: Busca "vivo", "alquiler", "propiedad", "casa propia"
+           - IMPORTANTE: Incluir INCLUSO si no viene precedido de "estado civil:" o similar
+           - Ejemplo: Si dice "soy casado" → {"id": "198", "nombre": "Estado Civil", "valor": "casado"}
            - Si es un campo de opción/desplegable, intenta deducir el ID de la opción si lo conoces
            - Si no estás seguro, devuelve la descripción del valor de forma clara
-           - Ejemplo: Si dice "origen Kommo" → {"id": "673", "valor": "Kommo"} o {"id": "673", "valor": "688"} si sabes el ID
 
         3. EXTRACCIÓN DE DATOS:
            - Extrae SOLO información que el usuario mencione explícitamente en el texto
