@@ -393,7 +393,15 @@ class KommoController extends Controller
                     'timestamp' => date('Y-m-d H:i:s')
                 );
                 
-                echo json_encode($data, JSON_UNESCAPED_UNICODE);
+                $jsonResponse = json_encode($data, JSON_UNESCAPED_UNICODE);
+                header('Content-Length: ' . strlen($jsonResponse), true);
+                echo $jsonResponse;
+                
+                // Asegurar que FastCGI envíe la respuesta completa
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
+                }
+                
                 exit;
 
             }
@@ -472,8 +480,20 @@ class KommoController extends Controller
                 'timestamp' => date('Y-m-d H:i:s')
             );
             
-            // Enviar JSON y terminar SIN más logs
-            echo json_encode($responseData, JSON_UNESCAPED_UNICODE);
+            // Convertir a JSON
+            $jsonResponse = json_encode($responseData, JSON_UNESCAPED_UNICODE);
+            
+            // Enviar Content-Length header para asegurar cierre correcto de conexión
+            header('Content-Length: ' . strlen($jsonResponse), true);
+            
+            // Enviar JSON
+            echo $jsonResponse;
+            
+            // Asegurar que FastCGI envíe la respuesta completa
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+            
             exit;
 
         } catch (\Throwable $e) {
@@ -534,7 +554,15 @@ class KommoController extends Controller
                 'timestamp' => date('Y-m-d H:i:s')
             );
             
-            echo json_encode($errorData, JSON_UNESCAPED_UNICODE);
+            $jsonError = json_encode($errorData, JSON_UNESCAPED_UNICODE);
+            header('Content-Length: ' . strlen($jsonError), true);
+            echo $jsonError;
+            
+            // Asegurar que FastCGI envíe la respuesta completa
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+            
             exit;
         }
         
@@ -556,7 +584,15 @@ class KommoController extends Controller
             'timestamp' => date('Y-m-d H:i:s')
         );
         
-        echo json_encode($fallbackData, JSON_UNESCAPED_UNICODE);
+        $jsonFallback = json_encode($fallbackData, JSON_UNESCAPED_UNICODE);
+        header('Content-Length: ' . strlen($jsonFallback), true);
+        echo $jsonFallback;
+        
+        // Asegurar que FastCGI envíe la respuesta completa
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+        
         exit;
     }
 
