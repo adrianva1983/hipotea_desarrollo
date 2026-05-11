@@ -643,6 +643,21 @@ class InteligenciaArtificialController extends Controller
 
             error_log('InteligenciaArtificialController: procesarTextoExpedienteAction - Texto OK, longitud: ' . strlen($texto));
 
+            // Extraer grupos del request (dinámico) - fallback a [4] si no viene
+            if ($isJson) {
+                $grupoIds = $body['grupos'] ?? [4];
+            } else {
+                $gruposParam = $request->request->get('grupos');
+                $grupoIds = is_array($gruposParam) ? $gruposParam : ($gruposParam ? json_decode($gruposParam, true) : [4]);
+            }
+            
+            // Validar que grupos sea un array válido
+            if (!is_array($grupoIds) || empty($grupoIds)) {
+                $grupoIds = [4];
+            }
+            
+            error_log('InteligenciaArtificialController: procesarTextoExpedienteAction - Grupos a procesar: ' . json_encode($grupoIds));
+
             $configIA = $this->obtenerConfiguracionIA();
 
             if (empty($configIA['api_key'])) {
@@ -652,8 +667,6 @@ class InteligenciaArtificialController extends Controller
                     'mensaje' => 'No hay configuración de IA activa.'
                 ], 500);
             }
-
-            $grupoIds = [4];
             $camposBD = $this->obtenerCamposDeGruposMod($grupoIds);
             $prompt = $this->construirPromptExtractor($camposBD, $texto);
 
