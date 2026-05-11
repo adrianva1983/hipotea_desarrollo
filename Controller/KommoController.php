@@ -352,33 +352,29 @@ class KommoController extends Controller
                 }
             }
 
-            // Si sigue sin haber teléfono ni email después de intentos, guardar como incompleto
+            // Si sigue sin haber teléfono ni email después de intentos, USAR IDENTIFICADORES TEMPORALES
             if (empty($telefono) && empty($email)) {
-                error_log('KommoController: Webhook incompleto - imposible encontrar teléfono ni email. ContactId: ' . $contactId);
+                error_log('KommoController: ⚠️ Sin teléfono ni email. Usando identificadores temporales basados en contactId: ' . $contactId);
+                
+                // Generar identificadores temporales usando contactId + nombre
+                $nombreContacto = $contactoKommo['name'] ?? 'Contacto Kommo';
+                $telefonoTemporal = 'kommo-' . $contactId;
+                $emailTemporal = 'kommo+' . $contactId . '@kommo-temp.local';
+                
+                error_log('KommoController: Tel temporal: ' . $telefonoTemporal . ', Email temporal: ' . $emailTemporal);
+                
+                // Usar los temporales pero loguear que son temporales
+                $telefono = $telefonoTemporal;
+                $email = $emailTemporal;
+                $contactoKommo['_telefono_temporal'] = true;
+                $contactoKommo['_email_temporal'] = true;
+                
+                error_log('KommoController: ⚠️ Usando identificadores TEMPORALES para este contacto');
+            }
 
-                // Guardar webhook con estado incompleto
-                $kommoWebhook = new KommoWebhook();
-                $kommoWebhook->setWebhookType($tipoWebhook);
-                $kommoWebhook->setKommoId($contactId ?: 'sin-id');
-                $kommoWebhook->setJsonRecibido($data);
-                $kommoWebhook->setEstado('incompleto');
-                $kommoWebhook->setErrorMensaje('Imposible encontrar teléfono ni email en contacto ni en API adicional');
-                $kommoWebhook->setFecha(new \DateTime());
-
-                $em->persist($kommoWebhook);
-                $em->flush();
-
-                error_log('KommoController: Webhook guardado como incompleto para auditoría (ID: ' . $kommoWebhook->getId() . ')');
-
-                return new JsonResponse([
-                    'ok' => false,
-                    'mensaje' => 'Webhook guardado para auditoría - imposible encontrar teléfono y/o email',
-                    'tipo' => $tipoWebhook,
-                    'contactId' => $contactId,
-                    'ia_used' => $iaUsed,
-                    'ia_available' => $iaAvailable,
-                    'timestamp' => date('Y-m-d H:i:s')
-                ]);
+            // Obtener EntityManager (si no lo obtuvimos antes)
+            if (!isset($em)) {
+                $em = $this->getDoctrine()->getManager();
             }
 
             // Buscar o crear cliente
@@ -388,6 +384,17 @@ class KommoController extends Controller
             // Buscar o crear expediente
             $expediente = $this->buscarOCrearExpediente($em, $cliente);
             error_log('KommoController: Expediente procesado (ID: ' . $expediente->getIdExpediente() . ')');
+
+            // 🔗 Guardar referencia a Kommo en el expediente (si el método existe)
+            if (method_exists($expediente, 'setKommoContactId')) {
+                $expediente->setKommoContactId($contactId);
+                error_log('KommoController: Kommo Contact ID guardado en expediente: ' . $contactId);
+            }
+            if (method_exists($expediente, 'setKommoLastUpdate')) {
+                $expediente->setKommoLastUpdate(new \DateTime());
+            }
+            $em->persist($expediente);
+            $em->flush();
 
             // Actualizar hitos con datos de Kommo + datos del mensaje
             $desglose = $this->actualizarHitosKommo($em, $expediente, $contactoKommo, $datosMensaje);
