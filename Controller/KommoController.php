@@ -381,8 +381,7 @@ class KommoController extends Controller
                     ob_end_clean();
                 }
                 
-                header('Content-Type: application/json; charset=UTF-8', true);
-                header('Status: 200 OK', true);
+                header('Content-Type: application/json; charset=UTF-8');
                 http_response_code(200);
                 
                 $data = array(
@@ -394,7 +393,7 @@ class KommoController extends Controller
                 );
                 
                 $jsonResponse = json_encode($data, JSON_UNESCAPED_UNICODE);
-                header('Content-Length: ' . strlen($jsonResponse), true);
+                header('Content-Length: ' . strlen($jsonResponse));
                 echo $jsonResponse;
                 
                 // Asegurar que FastCGI envíe la respuesta completa
@@ -463,8 +462,7 @@ class KommoController extends Controller
             }
             
             // Establecer headers HTTP ANTES de cualquier output
-            header('Content-Type: application/json; charset=UTF-8', true);
-            header('Status: 200 OK', true);
+            header('Content-Type: application/json; charset=UTF-8');
             http_response_code(200);
             
             // Preparar JSON
@@ -484,7 +482,7 @@ class KommoController extends Controller
             $jsonResponse = json_encode($responseData, JSON_UNESCAPED_UNICODE);
             
             // Enviar Content-Length header para asegurar cierre correcto de conexión
-            header('Content-Length: ' . strlen($jsonResponse), true);
+            header('Content-Length: ' . strlen($jsonResponse));
             
             // Enviar JSON
             echo $jsonResponse;
@@ -543,8 +541,7 @@ class KommoController extends Controller
                 ob_end_clean();
             }
             
-            header('Content-Type: application/json; charset=UTF-8', true);
-            header('Status: 400 Bad Request', true);
+            header('Content-Type: application/json; charset=UTF-8');
             http_response_code(400);
             
             $errorData = array(
@@ -555,7 +552,7 @@ class KommoController extends Controller
             );
             
             $jsonError = json_encode($errorData, JSON_UNESCAPED_UNICODE);
-            header('Content-Length: ' . strlen($jsonError), true);
+            header('Content-Length: ' . strlen($jsonError));
             echo $jsonError;
             
             // Asegurar que FastCGI envíe la respuesta completa
@@ -574,8 +571,7 @@ class KommoController extends Controller
             ob_end_clean();
         }
         
-        header('Content-Type: application/json; charset=UTF-8', true);
-        header('Status: 500 Internal Server Error', true);
+        header('Content-Type: application/json; charset=UTF-8');
         http_response_code(500);
         
         $fallbackData = array(
@@ -585,7 +581,7 @@ class KommoController extends Controller
         );
         
         $jsonFallback = json_encode($fallbackData, JSON_UNESCAPED_UNICODE);
-        header('Content-Length: ' . strlen($jsonFallback), true);
+        header('Content-Length: ' . strlen($jsonFallback));
         echo $jsonFallback;
         
         // Asegurar que FastCGI envíe la respuesta completa
