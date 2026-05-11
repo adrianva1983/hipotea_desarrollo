@@ -394,15 +394,12 @@ class KommoController extends Controller
                 
                 error_log('KommoController: ✅ JsonResponse lista. Status: 200');
                 
-                // Enviar respuesta de forma explícita y garantizada
+                // Enviar respuesta de forma explícita
                 error_log('KommoController: Enviando respuesta HTTP al cliente...');
-                header('Content-Type: application/json; charset=UTF-8');
-                header('HTTP/1.1 200 OK');
-                header('Status: 200 OK');
-                $data = array('ok' => true, 'mensaje' => 'Webhook recibido pero no procesado (falta teléfono/email)', 'tipo' => $tipoWebhook, 'estado' => 'incompleto', 'timestamp' => date('Y-m-d H:i:s'));
-                echo json_encode($data, JSON_UNESCAPED_UNICODE);
+                $respuesta->send();
                 error_log('KommoController: ✅ RESPUESTA ENVIADA AL CLIENTE (200 OK)');
-                exit(0);
+                die();
+
             }
 
             // Obtener EntityManager (si no lo obtuvimos antes)
@@ -480,25 +477,11 @@ class KommoController extends Controller
             
             error_log('KommoController: ✅ JsonResponse lista. Status: 200');
             
-            // Enviar respuesta de forma explícita y garantizada
+            // Enviar respuesta de forma explícita
             error_log('KommoController: Enviando respuesta HTTP al cliente...');
-            $responseData = array(
-                'ok' => true,
-                'mensaje' => 'Webhook recibido y procesado correctamente',
-                'tipo' => $tipoWebhook,
-                'idCliente' => $idClienteSeguro,
-                'idExpediente' => $idExpedienteSeguro,
-                'desgloseHitos' => $desgloseSeguro,
-                'ia_used' => $iaUsedSeguro,
-                'ia_available' => $iaAvailableSeguro,
-                'timestamp' => date('Y-m-d H:i:s')
-            );
-            header('Content-Type: application/json; charset=UTF-8');
-            header('HTTP/1.1 200 OK');
-            header('Status: 200 OK');
-            echo json_encode($responseData, JSON_UNESCAPED_UNICODE);
+            $respuesta->send();
             error_log('KommoController: ✅ RESPUESTA ENVIADA AL CLIENTE (200 OK)');
-            exit(0);
+            die();
 
         } catch (\Throwable $e) {
             // Log detallado del error (captura Exception Y Error/Fatal)
@@ -547,19 +530,19 @@ class KommoController extends Controller
                 ob_end_clean();
             }
             
-            error_log('KommoController: Enviando respuesta de error 400...');
-            $errorData = array(
+            $respuestaError = new JsonResponse([
                 'ok' => false,
                 'error' => $e->getMessage(),
                 'tipo_error' => get_class($e),
                 'timestamp' => date('Y-m-d H:i:s')
-            );
-            header('Content-Type: application/json; charset=UTF-8');
-            header('HTTP/1.1 400 Bad Request');
-            header('Status: 400 Bad Request');
-            echo json_encode($errorData, JSON_UNESCAPED_UNICODE);
+            ], 400);
+            
+            $respuestaError->headers->set('Content-Type', 'application/json; charset=UTF-8');
+            
+            error_log('KommoController: Enviando respuesta de error 400...');
+            $respuestaError->send();
             error_log('KommoController: ✅ RESPUESTA DE ERROR ENVIADA AL CLIENTE (400)');
-            exit(0);
+            die();
         }
         
         // FALLBACK: Si por alguna razón no hay return antes, retornar error
@@ -570,17 +553,15 @@ class KommoController extends Controller
             ob_end_clean();
         }
         
-        $fallbackData = array(
+        $respuestaFallback = new JsonResponse([
             'ok' => false,
             'error' => 'Error desconocido en el flujo de procesamiento',
             'timestamp' => date('Y-m-d H:i:s')
-        );
-        header('Content-Type: application/json; charset=UTF-8');
-        header('HTTP/1.1 500 Internal Server Error');
-        header('Status: 500 Internal Server Error');
-        echo json_encode($fallbackData, JSON_UNESCAPED_UNICODE);
-        error_log('KommoController: ✅ RESPUESTA FALLBACK ENVIADA AL CLIENTE (500)');
-        exit(0);
+        ], 500);
+        
+        $respuestaFallback->headers->set('Content-Type', 'application/json; charset=UTF-8');
+        $respuestaFallback->send();
+        die();
     }
 
     /*public function kommoWebhookAction(Request $request)
