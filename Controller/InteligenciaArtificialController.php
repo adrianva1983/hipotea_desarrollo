@@ -588,7 +588,6 @@ class InteligenciaArtificialController extends Controller
         2. CAMPOS DE SELECCIÓN [SELECCIÓN] - OPCIONES EXACTAS A DEVOLVER:
 
            ESTADO CIVIL (ID 198):
-           Opciones exactas disponibles:
            - "Solter@" (si dice soltero/a)
            - "Casad@ en gananciales" (si dice casado/a SIN especificar régimen → gananciales es DEFAULT)
            - "Casad@ en separación de bienes" (si especifica "separación de bienes")
@@ -596,20 +595,68 @@ class InteligenciaArtificialController extends Controller
            - "Separad@" (si dice separado/a)
            - "Divorciad@" (si dice divorciado/a)
            - "Viud@" (si dice viudo/a)
-           
-           EJEMPLOS CONCRETOS:
-           - Texto: "soy casado" → {"id": "198", "valor": "Casad@ en gananciales"} ← GANANCIALES es default
-           - Texto: "estoy divorciado" → {"id": "198", "valor": "Divorciad@"}
-           - Texto: "soltero" → {"id": "198", "valor": "Solter@"}
+           Ejemplos: "soy casado" → "Casad@ en gananciales" | "divorciado" → "Divorciad@"
 
-           OTROS CAMPOS DE SELECCIÓN:
-           - Tipo de Contrato: Devuelve EXACTAMENTE una de las opciones disponibles
-           - Domicilio: Devuelve EXACTAMENTE una de las opciones disponibles
-           
-           IMPORTANTE: 
-           - Si menciona estado civil: DEBES incluirlo, incluso sin formato "estado civil:"
-           - Ejemplo: "soy casado y estoy interesado..." → INCLUYE estado civil como opción exacta
-           - Devuelve SIEMPRE el valor de OPCIÓN EXACTA (no versión genérica)
+           ¿PARA QUÉ NECESITAS LA HIPOTECA? (ID 179):
+           - "Adquirir una propiedad" (si quiere comprar piso/casa/inmueble)
+           - "Mejorar mi hipoteca actual" (si quiere mejorar/cambiar/subrogación de hipoteca existente)
+           - "Agrupación de deudas" (si quiere reunificar/agrupar deudas)
+           - "Autopromoción" (si quiere construir su propia vivienda)
+
+           TIPO DE HIPOTECA DESEADA (ID 411):
+           - "Variable" | "Mixta" | "Fija" | "No lo sé aún"
+
+           TIPO DE INMUEBLE (ID 412):
+           - "Obra nueva" | "Segunda mano"
+
+           DESTINO DE LA PROPIEDAD (ID 414):
+           - "Vivienda habitual" (para vivir habitualmente)
+           - "Segunda residencia" (segunda vivienda, vacaciones)
+           - "Inversión" (para alquilar o invertir)
+           - "Rústica" (finca rústica, terreno)
+           - "Autopromoción" (construir)
+           - "Otros (oficina, nave, terreno, etc)" (local, nave industrial, terreno)
+           - "Extinción de condominio" (extinción de condominio, compra de parte)
+
+           MOMENTO DE LA COMPRA (ID 183):
+           - "Sigo buscando" (aún no ha encontrado piso)
+           - "Ya encontré una propiedad" (ya tiene piso elegido)
+           - "Tengo reserva entregada" (ya ha dado señal/reserva)
+
+           COMPRA CON INMOBILIARIA O PARTICULAR (ID 184):
+           - "Inmobiliaria" | "Particular"
+
+           CUÁNTOS TITULARES (ID 456):
+           - "Uno" (solo un titular) | "Dos" (dos titulares, hipoteca conjunta)
+
+           AVALISTA (ID 190):
+           - "No" (sin avalista) | "Uno" (un avalista) | "Dos" (dos avalistas)
+
+           DOMICILIO ACTUAL (ID 211):
+           - "Propiedad" (vive en casa propia)
+           - "Alquiler" (vive de alquiler)
+           - "Otra situación" (vive con familia, pareja, cedida, etc.)
+
+           TIPO DE EMPLEO (ID 193):
+           - "Autónom@" (autónomo, freelance, trabajador por cuenta propia)
+           - "Pensionista" (jubilado, pensionista, cobra pensión)
+           - "Emplead@" (empleado por cuenta ajena, asalariado, trabajador en empresa)
+           - "Mercantil" (administrador/socio de empresa mercantil)
+
+           TIPO DE CONTRATO (ID 221):
+           - "Indefinido a tiempo completo" (contrato indefinido, fijo a jornada completa)
+           - "Indefinido a tiempo parcial" (fijo pero a tiempo parcial/media jornada)
+           - "Indefinido discontinuo" (fijo discontinuo, temporada)
+           - "Funcionario" (funcionario de carrera, opositor aprobado)
+           - "Interinidad" (interino)
+           - "Temporal a tiempo completo" (temporal, por obra, eventual a jornada completa)
+           - "Temporal a tiempo parcial" (temporal a media jornada)
+           - "Militar" (militar de carrera, fuerzas armadas)
+           - "Personal laboral fijo" (laboral fijo de la administración pública)
+
+           IMPORTANTE PARA TODOS LOS CAMPOS DE SELECCIÓN:
+           - Devuelve SIEMPRE el texto EXACTO de la opción (sin variaciones)
+           - Si menciona estado civil: DEBES incluirlo aunque no venga con etiqueta "estado civil:"
 
         3. EXTRACCIÓN DE DATOS:
            - Extrae SOLO información que el usuario mencione explícitamente en el texto
