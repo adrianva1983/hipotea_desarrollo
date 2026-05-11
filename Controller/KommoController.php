@@ -413,72 +413,88 @@ class KommoController extends Controller
 
             error_log('KommoController: Webhook registrado en BD con ID: ' . $kommoWebhook->getId());
 
+            // Preparar datos de respuesta de forma segura
+            $idClienteSeguro = isset($cliente) ? $cliente->getIdUsuario() : null;
+            $idExpedienteSeguro = isset($expediente) ? $expediente->getIdExpediente() : null;
+            $desgloseSeguro = isset($desglose) ? $desglose : [];
+            $iaUsedSeguro = isset($iaUsed) ? $iaUsed : false;
+            $iaAvailableSeguro = isset($iaAvailable) ? $iaAvailable : false;
+            
+            error_log('KommoController: Preparando respuesta final - Cliente: ' . $idClienteSeguro . ', Expediente: ' . $idExpedienteSeguro);
+
             // Respuesta exitosa
-            return new JsonResponse([
+            error_log('KommoController: ✅ Creando JsonResponse para respuesta exitosa (200 OK)...');
+            $respuesta = new JsonResponse([
                 'ok' => true,
                 'mensaje' => 'Webhook recibido y procesado correctamente',
                 'tipo' => $tipoWebhook,
-                'idCliente' => $cliente->getIdUsuario(),
-                'idExpediente' => $expediente->getIdExpediente(),
-                'desgloseHitos' => $desglose,
-                'ia_used' => $iaUsed,
-                'ia_available' => $iaAvailable,
+                'idCliente' => $idClienteSeguro,
+                'idExpediente' => $idExpedienteSeguro,
+                'desgloseHitos' => $desgloseSeguro,
+                'ia_used' => $iaUsedSeguro,
+                'ia_available' => $iaAvailableSeguro,
                 'timestamp' => date('Y-m-d H:i:s')
             ]);
+            
+            error_log('KommoController: ✅ JsonResponse creada. Retornando 200 OK...');
+            return $respuesta;
 
-        } catch (\Exception $e) {
-            // Log del error
-            error_log('KommoController Error: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
+        } catch (\Throwable $e) {
+            // Log detallado del error (captura Exception Y Error/Fatal)
+            error_log('KommoController: ❌ EXCEPCIÓN/ERROR CAPTURADO: ' . $e->getMessage());
+            error_log('KommoController: Tipo: ' . get_class($e) . ', File: ' . $e->getFile() . ':' . $e->getLine());
+            error_log('KommoController: Stack trace: ' . $e->getTraceAsString());
 
-            // Intentar guardar el error en BD
+            // Intentar guardar el error en BD (sin que falle el return)
             try {
+                error_log('KommoController: Intentando guardar error en BD...');
                 $em = $this->getDoctrine()->getManager();
                 $kommoWebhook = new KommoWebhook();
                 $kommoWebhook->setWebhookType('error');
-                $kommoWebhook->setKommoId('error-sin-id');
+                $kommoWebhook->setKommoId('error-' . uniqid());
                 
-                // 🔧 Intentar parsear el contenido de forma segura
-                $dataParaGuardar = [];
+                // Parsear contenido de forma muy segura
+                $dataParaGuardar = ['error' => $e->getMessage()];
                 if (!empty($content)) {
-                    // Primero intentar JSON
-                    $dataParaGuardar = json_decode($content, true);
-                    
-                    // Si falla JSON, intentar form-urlencoded
-                    if ($dataParaGuardar === null) {
-                        parse_str($content, $dataParaGuardar);
+                    $parsed = @json_decode($content, true);
+                    if ($parsed === null) {
+                        @parse_str($content, $parsed);
                     }
-                    
-                    // Si sigue siendo null, al menos guardar contenido raw en array
-                    if ($dataParaGuardar === null) {
-                        $dataParaGuardar = ['raw_content' => substr($content, 0, 1000)];
+                    if (is_array($parsed) && !empty($parsed)) {
+                        $dataParaGuardar = array_merge(['error' => $e->getMessage()], $parsed);
                     }
                 }
                 
-                // Garantizar que sea un array
-                if (!is_array($dataParaGuardar)) {
-                    $dataParaGuardar = ['raw_content' => (string)$content];
-                }
-                
-                $kommoWebhook->setJsonRecibido($dataParaGuardar ?: ['vacio' => true]);
+                $kommoWebhook->setJsonRecibido($dataParaGuardar);
                 $kommoWebhook->setEstado('error');
-                $kommoWebhook->setErrorMensaje($e->getMessage());
+                $kommoWebhook->setErrorMensaje(substr($e->getMessage(), 0, 1000));
                 $kommoWebhook->setFecha(new \DateTime());
 
                 $em->persist($kommoWebhook);
                 $em->flush();
                 
-                error_log('KommoController: Error guardado en BD (ID: ' . $kommoWebhook->getId() . ')');
-            } catch (\Exception $dbError) {
-                error_log('KommoController: Error guardando fallo en BD: ' . $dbError->getMessage());
+                error_log('KommoController: ✅ Error guardado en BD');
+            } catch (\Throwable $dbError) {
+                error_log('KommoController: ⚠️ No se pudo guardar error en BD: ' . $dbError->getMessage());
             }
 
-            // Respuesta de error
+            // Respuesta de error garantizada (SIEMPRE retorna JSON válido)
+            error_log('KommoController: Retornando respuesta de error 400');
             return new JsonResponse([
                 'ok' => false,
                 'error' => $e->getMessage(),
+                'tipo_error' => get_class($e),
                 'timestamp' => date('Y-m-d H:i:s')
             ], 400);
         }
+        
+        // FALLBACK: Si por alguna razón no hay return antes, retornar error
+        error_log('KommoController: ⚠️ FALLBACK - Alcanzado final sin return');
+        return new JsonResponse([
+            'ok' => false,
+            'error' => 'Error desconocido en el flujo de procesamiento',
+            'timestamp' => date('Y-m-d H:i:s')
+        ], 500);
     }
 
     /*public function kommoWebhookAction(Request $request)
