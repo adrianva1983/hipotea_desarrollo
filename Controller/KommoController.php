@@ -440,21 +440,15 @@ class KommoController extends Controller
             $respuesta->headers->set('Content-Type', 'application/json; charset=UTF-8');
             $respuesta->setStatusCode(200);
             
-            // Limpiar cualquier output buffer existente
+            // Limpiar cualquier output buffer existente ANTES de retornar
             while (ob_get_level() > 0) {
                 ob_end_clean();
             }
             
-            error_log('KommoController: ✅ JsonResponse lista. Headers: ' . json_encode($respuesta->headers->all()));
-            error_log('KommoController: ✅ JsonResponse creada. Status: ' . $respuesta->getStatusCode() . ' - Enviando...');
+            error_log('KommoController: ✅ JsonResponse lista. Status: 200');
+            error_log('KommoController: ✅ ENVIANDO RESPUESTA (Symfony manejará send() automáticamente)');
             
-            // Enviar la respuesta explícitamente
-            $respuesta->send();
-            
-            error_log('KommoController: ✅ RESPUESTA ENVIADA AL CLIENTE (200 OK)');
-            
-            // Terminar ejecución limpiamente
-            exit(0);
+            return $respuesta;
 
         } catch (\Throwable $e) {
             // Log detallado del error (captura Exception Y Error/Fatal)
@@ -512,10 +506,8 @@ class KommoController extends Controller
                 ob_end_clean();
             }
             
-            error_log('KommoController: Enviando respuesta de error 400');
-            $respuestaError->send();
-            error_log('KommoController: ⚠️ RESPUESTA DE ERROR ENVIADA (400)');
-            exit(0);
+            error_log('KommoController: Retornando respuesta de error 400');
+            return $respuestaError;
         }
         
         // FALLBACK: Si por alguna razón no hay return antes, retornar error
@@ -534,8 +526,7 @@ class KommoController extends Controller
             ob_end_clean();
         }
         
-        $respuestaFallback->send();
-        exit(0);
+        return $respuestaFallback;
     }
 
     /*public function kommoWebhookAction(Request $request)
