@@ -439,7 +439,7 @@ class KommoController extends Controller
                 json_encode([
                     'texto' => $texto,
                     'tipo_entrada' => 'kommo',
-                    'grupos' => [4],
+                    'grupos' => [4, 29, 5],
                 ])
             );
 
@@ -694,7 +694,7 @@ class KommoController extends Controller
                     'json' => [
                         'texto' => $texto,
                         'tipo_entrada' => 'kommo',
-                        'grupos' => [4],
+                        'grupos' => [4, 29, 5],
                     ],
                     'timeout' => 30,
                     'connect_timeout' => 10
