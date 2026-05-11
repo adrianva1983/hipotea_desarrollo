@@ -654,14 +654,24 @@ class InteligenciaArtificialController extends Controller
            - "Militar" (militar de carrera, fuerzas armadas)
            - "Personal laboral fijo" (laboral fijo de la administración pública)
 
+           ¿MENOR DE 35 AÑOS? (ID 698):
+           - "Sí" (si la edad mencionada es menor de 35)
+           - "No" (si la edad mencionada es 35 o mayor)
+           NUNCA devuelvas la edad numérica en este campo.
+
            IMPORTANTE PARA TODOS LOS CAMPOS DE SELECCIÓN:
            - Devuelve SIEMPRE el texto EXACTO de la opción (sin variaciones)
            - Si menciona estado civil: DEBES incluirlo aunque no venga con etiqueta "estado civil:"
+           - Los campos [SELECCIÓN] tienen PRIORIDAD sobre los campos de texto relacionados.
+             Ejemplo: si dices "vivo de alquiler" DEBES incluir ID 211="Alquiler" Y también puedes incluir ID 212 con la cuota.
+             Ejemplo: si dices "trabajo como empleada" DEBES incluir ID 193="Emplead@" Y también ID 690 con descripción.
+           - Si el texto permite deducir el valor de un campo [SELECCIÓN], es OBLIGATORIO incluirlo en el JSON.
 
         3. EXTRACCIÓN DE DATOS:
            - Extrae SOLO información que el usuario mencione explícitamente en el texto
            - Si un campo no tiene información, NO lo incluyas en el JSON
            - Si datos relevantes no encajan con los campos anteriores, inclúyelos en ID: 191 (Comentarios)
+           - Cuando rellenes un campo [SELECCIÓN], rellena TAMBIÉN los subcampos de texto relacionados si hay datos
 
         4. FORMATO DE SALIDA - CRÍTICO:
            - Devuelve ÚNICAMENTE el objeto JSON plano
