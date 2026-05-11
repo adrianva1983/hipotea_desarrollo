@@ -585,14 +585,31 @@ class InteligenciaArtificialController extends Controller
            - Cantidades monetarias como números enteros sin € ni puntos (ej: 250000 no 250.000€)
            - Fechas en formato dd/mm/yyyy
 
-        2. CAMPOS DE SELECCIÓN [SELECCIÓN] - BUSCAR ACTIVAMENTE:
-           - Estado Civil: Busca "soy", "estoy", "casado", "soltero", "divorciado", "viudo", "pareja de hecho"
-           - Tipo de Contrato: Busca "trabajo", "empleado", "indefinido", "temporal", "autónomo", "funcionario"
-           - Domicilio: Busca "vivo", "alquiler", "propiedad", "casa propia"
-           - IMPORTANTE: Incluir INCLUSO si no viene precedido de "estado civil:" o similar
-           - Ejemplo: Si dice "soy casado" → {"id": "198", "nombre": "Estado Civil", "valor": "casado"}
-           - Si es un campo de opción/desplegable, intenta deducir el ID de la opción si lo conoces
-           - Si no estás seguro, devuelve la descripción del valor de forma clara
+        2. CAMPOS DE SELECCIÓN [SELECCIÓN] - OPCIONES EXACTAS A DEVOLVER:
+
+           ESTADO CIVIL (ID 198):
+           Opciones exactas disponibles:
+           - "Solter@" (si dice soltero/a)
+           - "Casad@ en gananciales" (si dice casado/a SIN especificar régimen → gananciales es DEFAULT)
+           - "Casad@ en separación de bienes" (si especifica "separación de bienes")
+           - "Pareja de hecho" (si dice pareja de hecho/unión de hecho)
+           - "Separad@" (si dice separado/a)
+           - "Divorciad@" (si dice divorciado/a)
+           - "Viud@" (si dice viudo/a)
+           
+           EJEMPLOS CONCRETOS:
+           - Texto: "soy casado" → {"id": "198", "valor": "Casad@ en gananciales"} ← GANANCIALES es default
+           - Texto: "estoy divorciado" → {"id": "198", "valor": "Divorciad@"}
+           - Texto: "soltero" → {"id": "198", "valor": "Solter@"}
+
+           OTROS CAMPOS DE SELECCIÓN:
+           - Tipo de Contrato: Devuelve EXACTAMENTE una de las opciones disponibles
+           - Domicilio: Devuelve EXACTAMENTE una de las opciones disponibles
+           
+           IMPORTANTE: 
+           - Si menciona estado civil: DEBES incluirlo, incluso sin formato "estado civil:"
+           - Ejemplo: "soy casado y estoy interesado..." → INCLUYE estado civil como opción exacta
+           - Devuelve SIEMPRE el valor de OPCIÓN EXACTA (no versión genérica)
 
         3. EXTRACCIÓN DE DATOS:
            - Extrae SOLO información que el usuario mencione explícitamente en el texto
