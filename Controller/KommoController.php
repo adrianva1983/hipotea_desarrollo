@@ -142,14 +142,37 @@ class KommoController extends Controller
         try {
             // Obtener el contenido del request
             $content = $request->getContent();
+            
+            // ⚠️ LOG COMPLETO del webhook recibido para debugging
+            error_log('KommoController: Raw webhook content (primeros 1000 chars): ' . substr($content, 0, 1000));
+            
+            // Validar que el contenido no esté vacío
+            if (empty($content)) {
+                throw new \Exception('Webhook vacío - No se recibió contenido en el request body');
+            }
+            
+            // Decodificar JSON con validación
             $data = json_decode($content, true);
+            
+            // Validar que la decodificación fue exitosa
+            if ($data === null) {
+                $jsonError = json_last_error_msg();
+                throw new \Exception('Error decodificando JSON del webhook: ' . $jsonError . '. Content: ' . substr($content, 0, 500));
+            }
+            
+            // Validar que sea un array
+            if (!is_array($data)) {
+                throw new \Exception('Webhook no es un array válido. Tipo: ' . gettype($data));
+            }
             
             // Crear cliente HTTP
             $httpClient = new GuzzleClient();
 
-            // Log de la recepción del webhook
+            // Log de la recepción del webhook (MEJORADO)
+            $tiposPresentes = is_array($data) ? array_keys($data) : [];
             error_log('KommoController: Webhook de Kommo recibido: ' . json_encode([
-                'tipos' => array_keys($data),
+                'tipos' => $tiposPresentes,
+                'total_keys' => count($tiposPresentes),
                 'timestamp' => date('Y-m-d H:i:s')
             ]));
 
@@ -207,7 +230,40 @@ class KommoController extends Controller
                     break;
 
                 default:
-                    throw new \Exception('Tipo de webhook no soportado: ' . $tipoWebhook);
+                    // Webhook con estructura no reconocida
+                    error_log('KommoController: Webhook con tipo no soportado: ' . $tipoWebhook . '. Data: ' . json_encode($data));
+                    
+                    // Guardar webhook para auditoría y debugging
+                    try {
+                        $em = $this->getDoctrine()->getManager();
+                        $kommoWebhook = new KommoWebhook();
+                        $kommoWebhook->setWebhookType('no_soportado');
+                        $kommoWebhook->setKommoId('webhook-desconocido');
+                        $kommoWebhook->setJsonRecibido($data);
+                        $kommoWebhook->setEstado('no_procesado');
+                        $kommoWebhook->setErrorMensaje('Estructura de webhook no reconocida. Tipos esperados: message, contact, lead. Recibido: ' . $tipoWebhook);
+                        $kommoWebhook->setFecha(new \DateTime());
+                        $em->persist($kommoWebhook);
+                        $em->flush();
+                        
+                        error_log('KommoController: Webhook desconocido guardado para auditoría (ID: ' . $kommoWebhook->getId() . ')');
+                    } catch (\Exception $e) {
+                        error_log('KommoController: Error guardando webhook desconocido: ' . $e->getMessage());
+                    }
+                    
+                    // Retornar respuesta explicativa
+                    return new JsonResponse([
+                        'ok' => false,
+                        'error' => 'Estructura de webhook no soportada',
+                        'detalles' => [
+                            'tipo_detectado' => $tipoWebhook,
+                            'tipos_esperados' => ['message', 'contact', 'lead'],
+                            'keys_recibidas' => array_keys($data),
+                            'mensaje' => 'El webhook recibido no tiene la estructura esperada de Kommo v4'
+                        ],
+                        'timestamp' => date('Y-m-d H:i:s'),
+                        'instrucciones' => 'Verifica la configuración de webhooks en Kommo y que sea v4 API'
+                    ], 400);
             }
 
             if (!$contactId) {
@@ -361,15 +417,33 @@ class KommoController extends Controller
      */
     private function detectarTipoWebhook(array $data): string
     {
+        // Formato estándar Kommo v4 con estructura anidada
         if (!empty($data['message']['add'])) {
+            error_log('KommoController: Detectado webhook MESSAGE (formato standard)');
             return 'message';
         }
         if (!empty($data['contacts']['add'])) {
+            error_log('KommoController: Detectado webhook CONTACT (formato standard)');
             return 'contact';
         }
         if (!empty($data['leads']['add'])) {
+            error_log('KommoController: Detectado webhook LEAD (formato standard)');
             return 'lead';
         }
+        
+        // Formatos alternativos o heredados
+        if (!empty($data['message']) && is_array($data['message'])) {
+            error_log('KommoController: Detectado webhook MESSAGE (formato alternativo)');
+            return 'message';
+        }
+        if (!empty($data['contact']) && is_array($data['contact'])) {
+            error_log('KommoController: Detectado webhook CONTACT (formato alternativo)');
+            return 'contact';
+        }
+        
+        // Log detallado de estructura recibida
+        error_log('KommoController: Estructura webhook no reconocida. Keys: ' . json_encode(array_keys($data)));
+        
         return 'unknown';
     }
 
