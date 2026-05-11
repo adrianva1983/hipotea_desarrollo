@@ -352,24 +352,48 @@ class KommoController extends Controller
                 }
             }
 
-            // Si sigue sin haber teléfono ni email después de intentos, USAR IDENTIFICADORES TEMPORALES
+            // Si sigue sin haber teléfono ni email después de intentos, NO PROCESAR
             if (empty($telefono) && empty($email)) {
-                error_log('KommoController: ⚠️ Sin teléfono ni email. Usando identificadores temporales basados en contactId: ' . $contactId);
+                error_log('KommoController: ⚠️ Sin teléfono ni email. Webhook incompleto - Solo registrando en BD sin procesar');
                 
-                // Generar identificadores temporales usando contactId + nombre
-                $nombreContacto = $contactoKommo['name'] ?? 'Contacto Kommo';
-                $telefonoTemporal = 'kommo-' . $contactId;
-                $emailTemporal = 'kommo+' . $contactId . '@kommo-temp.local';
+                // Obtener EntityManager (si no lo obtuvimos antes)
+                if (!isset($em)) {
+                    $em = $this->getDoctrine()->getManager();
+                }
+
+                // Crear registro de webhook INCOMPLETO (auditoría)
+                $kommoWebhook = new KommoWebhook();
+                $kommoWebhook->setWebhookType($tipoWebhook);
+                $kommoWebhook->setKommoId($contactId ?: 'sin-id');
+                $kommoWebhook->setJsonRecibido($data);
+                $kommoWebhook->setEstado('incompleto_sin_contacto');
+                $kommoWebhook->setErrorMensaje('Webhook sin teléfono ni email - No se creó cliente ni expediente');
+                $kommoWebhook->setFecha(new \DateTime());
+
+                $em->persist($kommoWebhook);
+                $em->flush();
+
+                error_log('KommoController: Webhook incompleto registrado en BD (sin procesar)');
+
+                // Retornar 200 OK igual (para que Kommo no reintente)
+                error_log('KommoController: ✅ Creando JsonResponse para webhook incompleto (200 OK)...');
+                $respuesta = new JsonResponse([
+                    'ok' => true,
+                    'mensaje' => 'Webhook recibido pero no procesado (falta teléfono/email)',
+                    'tipo' => $tipoWebhook,
+                    'estado' => 'incompleto',
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
                 
-                error_log('KommoController: Tel temporal: ' . $telefonoTemporal . ', Email temporal: ' . $emailTemporal);
+                $respuesta->headers->set('Content-Type', 'application/json; charset=UTF-8');
+                $respuesta->setStatusCode(200);
                 
-                // Usar los temporales pero loguear que son temporales
-                $telefono = $telefonoTemporal;
-                $email = $emailTemporal;
-                $contactoKommo['_telefono_temporal'] = true;
-                $contactoKommo['_email_temporal'] = true;
+                while (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
                 
-                error_log('KommoController: ⚠️ Usando identificadores TEMPORALES para este contacto');
+                error_log('KommoController: ✅ JsonResponse lista. Status: 200');
+                return $respuesta;
             }
 
             // Obtener EntityManager (si no lo obtuvimos antes)
