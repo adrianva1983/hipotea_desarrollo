@@ -23,6 +23,20 @@ use GuzzleHttp\Client as GuzzleClient;
 class KommoController extends Controller
 {
     /**
+     * Log que funciona tanto antes como DESPUÉS de fastcgi_finish_request().
+     * error_log() estándar tras fastcgi_finish_request() va al log de PHP-FPM,
+     * no al de Apache. Este método escribe directo al archivo de logs de Symfony.
+     */
+    private function bgLog(string $msg): void
+    {
+        $logFile = $this->get('kernel')->getLogDir() . '/kommo_bg.log';
+        $linea = '[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL;
+        file_put_contents($logFile, $linea, FILE_APPEND | LOCK_EX);
+        // También a error_log para antes del fastcgi_finish_request
+        error_log($msg);
+    }
+
+    /**
      * 🔑 MAPEO MAESTRO: Claves extraídas → IDs de campos en Hipotea
      * Permite rellenar CUALQUIER campo dinámicamente
      * Estructura: 'clave_extraida' => [campos_id_1, campo_id_2, ...]
@@ -172,7 +186,6 @@ class KommoController extends Controller
 
         // ── PASO 4: Procesar en background (Kommo ya tiene el 200) ──
         if (empty($data)) {
-            // $this->kommoLog('KommoController: Data vacía tras parseo. Fin.');
             return new Response('', 200);
         }
 
@@ -180,7 +193,6 @@ class KommoController extends Controller
             $httpClient = new GuzzleClient();
 
             $tipoWebhook = $this->detectarTipoWebhook($data);
-            // $this->kommoLog('KommoController: Tipo: ' . $tipoWebhook);
 
             $contactId = null;
             $datosMensaje = [];
@@ -191,16 +203,16 @@ class KommoController extends Controller
                     $textoMensaje = $this->extraerTextoDelMensaje($data);
 
                     if (!empty($textoMensaje)) {
-                        error_log('🔵 KOMMO: Intentando extraer datos de IA del mensaje: ' . substr($textoMensaje, 0, 100) . '...');
+                        $this->bgLog('🔵 KOMMO: Intentando extraer datos de IA del mensaje: ' . substr($textoMensaje, 0, 100) . '...');
                         $datosIA = $this->extraerDatosConIA($textoMensaje);
-                        error_log('🟠 KOMMO: Resultado IA: ' . json_encode($datosIA));
+                        $this->bgLog('🟠 KOMMO: Resultado IA: ' . json_encode($datosIA));
                         if ($datosIA['success'] ?? false) {
-                            error_log('✅ KOMMO: IA exitosa - ' . $datosIA['campos_detectados'] . ' campos detectados');
+                            $this->bgLog('✅ KOMMO: IA exitosa - ' . $datosIA['campos_detectados'] . ' campos detectados');
                             $datosMensaje = $datosIA;
                         } else {
-                            error_log('⚠️ KOMMO: IA falló. Usando fallback regex...');
+                            $this->bgLog('⚠️ KOMMO: IA falló. Usando fallback regex...');
                             $datosMensaje = $this->extraerDatosDelMensaje($data);
-                            error_log('🟠 KOMMO: Resultado Regex: ' . json_encode($datosMensaje));
+                            $this->bgLog('🟠 KOMMO: Resultado Regex: ' . json_encode($datosMensaje));
                         }
                     } else {
                         $datosMensaje = $this->extraerDatosDelMensaje($data);
@@ -285,9 +297,9 @@ class KommoController extends Controller
             $em->persist($expediente);
             $em->flush();
 
-            error_log('DEBUG KOMMO: Llamando a actualizarHitosKommo()...');
+            $this->bgLog('DEBUG KOMMO: Llamando a actualizarHitosKommo()...');
             $this->actualizarHitosKommo($em, $expediente, $contactoKommo, $datosMensaje);
-            error_log('DEBUG KOMMO: ✅ actualizarHitosKommo() retornó exitosamente');
+            $this->bgLog('DEBUG KOMMO: ✅ actualizarHitosKommo() retornó exitosamente');
 
             $kommoWebhook = new KommoWebhook();
             $kommoWebhook->setWebhookType($tipoWebhook);
@@ -296,17 +308,14 @@ class KommoController extends Controller
             $kommoWebhook->setEstado('procesado');
             $kommoWebhook->setFecha(new \DateTime());
             $em->persist($kommoWebhook);
-            error_log('DEBUG KOMMO: Guardando KommoWebhook con estado procesado...');
+            $this->bgLog('DEBUG KOMMO: Guardando KommoWebhook con estado procesado...');
             $em->flush();
-            error_log('DEBUG KOMMO: ✅ KommoWebhook guardado exitosamente');
-
-            // $this->kommoLog('KommoController: ✅ Procesado. Cliente: ' . $cliente->getIdUsuario() . ', Expediente: ' . $expediente->getIdExpediente());
-            return new Response('', 200);
+            $this->bgLog('DEBUG KOMMO: ✅ KommoWebhook guardado exitosamente');
+            $this->bgLog('DEBUG KOMMO: ✅ Procesamiento completado');
 
         } catch (\Throwable $e) {
-            error_log('❌ KOMMO ERROR CAPTURADO: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
-            error_log('❌ KOMMO TRACE: ' . $e->getTraceAsString());
-            // $this->kommoLog('KommoController: ERROR: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine(), true);
+            $this->bgLog('❌ KOMMO ERROR CAPTURADO: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
+            $this->bgLog('❌ KOMMO TRACE: ' . $e->getTraceAsString());
 
             try {
                 $em = $this->getDoctrine()->getManager();
@@ -320,14 +329,10 @@ class KommoController extends Controller
                 $em->persist($kommoWebhook);
                 $em->flush();
             } catch (\Throwable $dbError) {
-                error_log('❌ KOMMO No se pudo guardar error en BD: ' . $dbError->getMessage());
-                // $this->kommoLog('KommoController: No se pudo guardar error en BD: ' . $dbError->getMessage(), true);
+                $this->bgLog('❌ KOMMO No se pudo guardar error en BD: ' . $dbError->getMessage());
             }
-
-            return new Response('', 200);
         }
-        error_log('KOMMO: Webhook recibido en /API/kommo - Paso 4');   
-             
+
         return new Response('', 200);
     }
 
@@ -1201,8 +1206,8 @@ class KommoController extends Controller
      */
     private function actualizarHitosKommo($em, ExpedienteEntidad $expediente, array $contactoKommo, array $datosMensaje = []): array
     {
-        error_log('DEBUG KOMMO: actualizarHitosKommo() - Contacto: ' . json_encode($contactoKommo));
-        error_log('DEBUG KOMMO: actualizarHitosKommo() - DatosMensaje: ' . json_encode($datosMensaje));
+        $this->bgLog('DEBUG KOMMO: actualizarHitosKommo() - Contacto: ' . json_encode($contactoKommo));
+        $this->bgLog('DEBUG KOMMO: actualizarHitosKommo() - DatosMensaje: ' . json_encode($datosMensaje));
         
         $camposAActualizar = $this->construirAutorrellenoHitosKommo($contactoKommo, $datosMensaje);
         // $this->kommoLog('KommoController: Actualizando ' . count($camposAActualizar) . ' campos');
@@ -1210,7 +1215,7 @@ class KommoController extends Controller
         $desglose = [];
         $hitosActualizados = [];
 
-        error_log('Paso 1.1');
+        $this->bgLog('Paso 1.1');
 
         foreach ($camposAActualizar as $idCampoHito => $configuracion) {
             $campoHitoExpediente = $em->getRepository(CampoHitoExpedienteEntidad::class)->findOneBy([
@@ -1244,7 +1249,7 @@ class KommoController extends Controller
             // Actualizar el campo
             if (isset($configuracion['opcion_id'])) {
                 $opcionId = $configuracion['opcion_id'];
-                error_log('DEBUG KOMMO: Actualizando campo ' . $idCampoHito . ' con opcion_id: ' . $opcionId);
+                $this->bgLog('DEBUG KOMMO: Actualizando campo ' . $idCampoHito . ' con opcion_id: ' . $opcionId);
                 $setterUsed = null;
 
                 // Intentar resolver la entidad OpcionesCampo si existe el EntityManager
@@ -1313,7 +1318,7 @@ class KommoController extends Controller
                     'valor' => $opcionId
                 ];
             } elseif (isset($configuracion['valor'])) {
-                error_log('DEBUG KOMMO: Actualizando campo ' . $idCampoHito . ' con valor: ' . $configuracion['valor']);
+                $this->bgLog('DEBUG KOMMO: Actualizando campo ' . $idCampoHito . ' con valor: ' . $configuracion['valor']);
                 $campoHitoExpediente->setValor($configuracion['valor']);
                 $hitosActualizados[$idHito]['campos'][] = [
                     'idCampo' => $idCampoHito,
@@ -1327,29 +1332,28 @@ class KommoController extends Controller
             $em->persist($campoHitoExpediente);
         }
 
-        error_log('Paso 1.2');
+        $this->bgLog('Paso 1.2');
 
         // Actualizar fecha de modificación del expediente
         $expediente->setFechaModificacion(new \DateTime());
         $em->persist($expediente);
 
         try {
-            error_log('DEBUG KOMMO: Intentando flush() de cambios...');
+            $this->bgLog('DEBUG KOMMO: Intentando flush() de cambios...');
             $em->flush();
-            error_log('DEBUG KOMMO: ✅ Flush exitoso');
+            $this->bgLog('DEBUG KOMMO: ✅ Flush exitoso');
         } catch (\Exception $e) {
-            error_log('DEBUG KOMMO: ❌ ERROR EN FLUSH: ' . $e->getMessage());
-            error_log('DEBUG KOMMO: Exception trace: ' . $e->getTraceAsString());
+            $this->bgLog('DEBUG KOMMO: ❌ ERROR EN FLUSH: ' . $e->getMessage());
+            $this->bgLog('DEBUG KOMMO: Exception trace: ' . $e->getTraceAsString());
             throw $e;
         }
 
         // Convertir a array indexado
         $desglose = array_values($hitosActualizados);
         
-        error_log('DEBUG KOMMO: Desglose retornando: ' . json_encode($desglose));
-        $this->kommoLog('KommoController: Desglose de actualización: ' . json_encode($desglose));
+        $this->bgLog('DEBUG KOMMO: Desglose retornando: ' . json_encode($desglose));
 
-        error_log('DEBUG KOMMO: ✅ actualizarHitosKommo() completado exitosamente');
+        $this->bgLog('DEBUG KOMMO: ✅ actualizarHitosKommo() completado exitosamente');
         return $desglose;
     }
 
@@ -1363,14 +1367,13 @@ class KommoController extends Controller
         // AMBAS fuentes (IA y regex) ahora devuelven la misma estructura:
         // { valores_texto: {campo_id: valor}, valores_opcion: {campo_id: opcion_id} }
         
-        error_log('🟢 KOMMO construirAutorrellenoHitosKommo() - datosMensaje recibido: ' . json_encode($datosMensaje));
+        $this->bgLog('🟢 KOMMO construirAutorrellenoHitosKommo() - datosMensaje recibido: ' . json_encode($datosMensaje));
         
         $valoresTexto = $datosMensaje['valores_texto'] ?? [];
         $valoresOpcion = $datosMensaje['valores_opcion'] ?? [];
         
-        error_log('DEBUG KOMMO: datosMensaje completo recibido: ' . json_encode($datosMensaje));
-        error_log('DEBUG KOMMO: valoresTexto extraidos: ' . json_encode($valoresTexto));
-        error_log('DEBUG KOMMO: valoresOpcion extraidos: ' . json_encode($valoresOpcion));
+        $this->bgLog('DEBUG KOMMO: valoresTexto: ' . json_encode($valoresTexto));
+        $this->bgLog('DEBUG KOMMO: valoresOpcion: ' . json_encode($valoresOpcion));
 
         // Construir array de campos compatible con actualizarHitosExpediente()
         $campos = [];
@@ -1378,7 +1381,7 @@ class KommoController extends Controller
         // 📋 CAMPOS AUTOMÁTICOS DESDE KOMMO (origen RRSS + fecha + contacto)
         // Campo 673: Origen → opción 663 (RRSS)
         $campos[673] = ['opcion_id' => 663];
-        error_log('Paso 10');
+        $this->bgLog('Paso 10');
 
         // Campo 693: Nombre y Campo 694: Apellido desde el nombre del contacto
         $nombreCompleto = $lead['name'] ?? '';
