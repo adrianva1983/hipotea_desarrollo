@@ -316,7 +316,7 @@ class KommoController extends Controller
         }
         error_log('KOMMO: Webhook recibido en /API/kommo - Paso 4');   
         // ── PASO 3: ENVIAR 200 OK Y CERRAR CONEXIÓN ANTES DEL PROCESAMIENTO ──
-        ignore_user_abort(true);
+        /*ignore_user_abort(true);
         while (@ob_get_level() > 0) { @ob_end_clean(); }
         $ackBody = '{"ok":true}';
         @header('Content-Type: application/json; charset=UTF-8');
@@ -326,7 +326,7 @@ class KommoController extends Controller
         flush();
         if (function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
-        }
+        }*/
         error_log('KOMMO: Webhook recibido en /API/kommo - Paso 3');         
         return new Response('', 200);
     }
