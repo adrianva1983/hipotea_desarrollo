@@ -1342,7 +1342,9 @@ class KommoController extends Controller
         $telefono = $this->extraerTelefono($lead);
         if (!empty($telefono)) {
             $campos[695] = ['valor' => $telefono];
-            error_log('KommoController: Teléfono (campo 695) establecido a ' . $telefono);
+            // También rellenar el campo 408 (telefono en vistas/formularios)
+            $campos[408] = ['valor' => $telefono];
+            error_log('KommoController: Teléfono (campos 695 y 408) establecido a ' . $telefono);
         }
 
         // Campo 696: Email desde Kommo
