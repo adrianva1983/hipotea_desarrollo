@@ -232,18 +232,39 @@ class KommoController extends Controller
             // ✅ RESPONDER 200 OK INMEDIATAMENTE a Kommo (después de parseo exitoso, antes de procesamiento)
             @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18] Enviando 200 OK\n", FILE_APPEND);
             @error_log('KommoController: [18] Enviando 200 OK');
-            while (ob_get_level() > 0) {
-                ob_end_clean();
+            
+            try {
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.1] Limpiando buffers\n", FILE_APPEND);
+                while (ob_get_level() > 0) {
+                    @ob_end_clean();
+                }
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.2] Buffers limpios\n", FILE_APPEND);
+                
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.3] Enviando http_response_code\n", FILE_APPEND);
+                @http_response_code(200);
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.4] Code 200 OK\n", FILE_APPEND);
+                
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.5] Enviando headers\n", FILE_APPEND);
+                @header('Content-Type: application/json; charset=UTF-8');
+                $ackJson = '{"ok":true,"mensaje":"Webhook recibido"}';
+                @header('Content-Length: ' . strlen($ackJson));
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.6] Headers OK\n", FILE_APPEND);
+                
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.7] Echo y flush\n", FILE_APPEND);
+                echo $ackJson;
+                @flush();
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.8] Echo OK\n", FILE_APPEND);
+                
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.9] Llamando fastcgi_finish_request\n", FILE_APPEND);
+                if (function_exists('fastcgi_finish_request')) {
+                    @fastcgi_finish_request();
+                }
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.10] FCGI OK\n", FILE_APPEND);
+            } catch (\Throwable $httpError) {
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR-18] " . get_class($httpError) . ": " . $httpError->getMessage() . "\n", FILE_APPEND);
+                @error_log('KommoController: [ERROR-18] ' . get_class($httpError) . ': ' . $httpError->getMessage());
             }
-            http_response_code(200);
-            header('Content-Type: application/json; charset=UTF-8');
-            $ackJson = '{"ok":true,"mensaje":"Webhook recibido"}';
-            header('Content-Length: ' . strlen($ackJson));
-            echo $ackJson;
-            flush();
-            if (function_exists('fastcgi_finish_request')) {
-                fastcgi_finish_request();
-            }
+            
             @file_put_contents($logFile, date('Y-m-d H:i:s') . " [19] 200 OK enviado. Procesando en background\n", FILE_APPEND);
             @error_log('KommoController: [19] 200 OK enviado. Procesando en background...');
             
