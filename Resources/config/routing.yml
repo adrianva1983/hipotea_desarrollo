@@ -807,6 +807,38 @@ resetear_usos_calculadoras:
   controller: AppBundle:Calculadoras:resetearUsosCalculadoras
   methods: [GET, POST]
 
+# ===== KOMMO WEBHOOK ROUTES =====
+kommo_webhook:
+  path: /API/kommo
+  controller: AppBundle:Kommo:kommoWebhook
+  methods: [POST]
+
+admin_kommo_webhooks:
+  path: /Admin/Kommo/Webhooks
+  controller: AppBundle:Kommo:adminWebhooks
+  methods: [GET]
+
+admin_kommo_limpiar:
+  path: /Admin/Kommo/Limpiar
+  controller: AppBundle:Kommo:limpiarWebhooks
+  methods: [POST]
+
+procesar_texto_para_expediente:
+  path: /API/procesar_texto_para_expediente
+  controller: AppBundle:InteligenciaArtificial:procesarTextoParaExpediente
+  methods: [POST]
+
+# rutas para la IA
+crear_prompt_expediente:
+  path: /API/crear_prompt_expediente
+  controller: AppBundle:InteligenciaArtificial:crearPromptExpediente
+  methods: [POST]
+
+procesar_texto_expediente:
+  path: /API/procesar_texto_expediente
+  controller: AppBundle:InteligenciaArtificial:procesarTextoExpediente
+  methods: [POST]
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }
