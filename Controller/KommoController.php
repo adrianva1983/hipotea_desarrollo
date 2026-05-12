@@ -229,52 +229,75 @@ class KommoController extends Controller
             @file_put_contents($logFile, date('Y-m-d H:i:s') . " [17] Parseo exitoso. Datos: " . count($data) . " keys\n", FILE_APPEND);
             @error_log('KommoController: [17] Parseo exitoso. Datos: ' . count($data) . ' keys');
 
-            // ✅ RESPONDER 200 OK INMEDIATAMENTE a Kommo (después de parseo exitoso, antes de procesamiento)
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18] Enviando 200 OK\n", FILE_APPEND);
-            @error_log('KommoController: [18] Enviando 200 OK');
-            
-            try {
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.1] Limpiando buffers\n", FILE_APPEND);
-                while (ob_get_level() > 0) {
-                    @ob_end_clean();
-                }
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.2] Buffers limpios\n", FILE_APPEND);
-                
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.3] Enviando http_response_code\n", FILE_APPEND);
-                @http_response_code(200);
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.4] Code 200 OK\n", FILE_APPEND);
-                
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.5] Enviando headers\n", FILE_APPEND);
-                @header('Content-Type: application/json; charset=UTF-8');
-                $ackJson = '{"ok":true,"mensaje":"Webhook recibido"}';
-                @header('Content-Length: ' . strlen($ackJson));
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.6] Headers OK\n", FILE_APPEND);
-                
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.7] Echo y flush\n", FILE_APPEND);
-                echo $ackJson;
-                @flush();
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.8] Echo OK\n", FILE_APPEND);
-                
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.9] Llamando fastcgi_finish_request\n", FILE_APPEND);
-                if (function_exists('fastcgi_finish_request')) {
-                    @fastcgi_finish_request();
-                }
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.10] FCGI OK\n", FILE_APPEND);
-            } catch (\Throwable $httpError) {
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR-18] " . get_class($httpError) . ": " . $httpError->getMessage() . "\n", FILE_APPEND);
-                @error_log('KommoController: [ERROR-18] ' . get_class($httpError) . ': ' . $httpError->getMessage());
+        } catch (\Throwable $parseError) {
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR-PARSE] " . get_class($parseError) . ": " . $parseError->getMessage() . "\n", FILE_APPEND);
+            @error_log('KommoController: [ERROR-PARSE] Parse error: ' . $parseError->getMessage());
+            $data = [];
+        }
+        
+        // ============================================================================
+        // BLOQUE DE RESPUESTA 200 OK (FUERA DEL TRY-CATCH PRINCIPAL)
+        // Se ejecuta incluso si el parsing falla, garantiza respuesta a Kommo
+        // ============================================================================
+        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18] Enviando 200 OK a Kommo\n", FILE_APPEND);
+        @error_log('KommoController: [18] Enviando 200 OK a Kommo');
+        
+        try {
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.1] Limpiando buffers\n", FILE_APPEND);
+            while (ob_get_level() > 0) {
+                @ob_end_clean();
             }
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.2] Buffers OK\n", FILE_APPEND);
             
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [19] 200 OK enviado. Procesando en background\n", FILE_APPEND);
-            @error_log('KommoController: [19] 200 OK enviado. Procesando en background...');
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.3] http_response_code(200)\n", FILE_APPEND);
+            @http_response_code(200);
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.4] Code OK\n", FILE_APPEND);
             
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.5] Headers\n", FILE_APPEND);
+            @header('Content-Type: application/json; charset=UTF-8');
+            $ackJson = '{"ok":true,"mensaje":"Webhook recibido"}';
+            @header('Content-Length: ' . strlen($ackJson));
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.6] Headers OK\n", FILE_APPEND);
+            
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.7] Echo flush\n", FILE_APPEND);
+            echo $ackJson;
+            @flush();
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.8] Echo OK\n", FILE_APPEND);
+            
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.9] fastcgi_finish_request\n", FILE_APPEND);
+            if (function_exists('fastcgi_finish_request')) {
+                @fastcgi_finish_request();
+            }
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.10] FCGI OK\n", FILE_APPEND);
+        } catch (\Throwable $httpError) {
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR-HTTP] " . get_class($httpError) . ": " . $httpError->getMessage() . "\n", FILE_APPEND);
+            @error_log('KommoController: [ERROR-HTTP] ' . get_class($httpError) . ': ' . $httpError->getMessage());
+        }
+        
+        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [19] 200 OK COMPLETADO\n", FILE_APPEND);
+        @error_log('KommoController: [19] 200 OK COMPLETADO. Procesando en background...');
+        
+        // ============================================================================
+        // BLOQUE DE PROCESAMIENTO (sin depender del 200 OK)
+        // ============================================================================
+        
+        // Si el parsing falló, no procesar más
+        if (empty($data)) {
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR-20] Data vacía. Fin.\n", FILE_APPEND);
+            @error_log('KommoController: [ERROR-20] Data vacía después del parsing');
+            return null;
+        }
+        
+        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [20] Iniciando procesamiento\n", FILE_APPEND);
+        
+        try {
             // Crear cliente HTTP
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [20] Creando cliente HTTP\n", FILE_APPEND);
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [21] Creando cliente HTTP\n", FILE_APPEND);
             $httpClient = new GuzzleClient();
 
             // Log de la recepción del webhook (MEJORADO)
             $tiposPresentes = is_array($data) ? array_keys($data) : [];
-            @error_log('KommoController: [21] Webhook de Kommo recibido: ' . json_encode([
+            @error_log('KommoController: [22] Webhook de Kommo recibido: ' . json_encode([
                 'tipos' => $tiposPresentes,
                 'total_keys' => count($tiposPresentes),
                 'timestamp' => date('Y-m-d H:i:s')
