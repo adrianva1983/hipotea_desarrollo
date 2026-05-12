@@ -136,20 +136,7 @@ class KommoController extends Controller
      */
     public function kommoWebhookAction(Request $request)
     {
-        // ✅ PASO 1: ENVIAR 200 OK INMEDIATAMENTE - ANTES DE CUALQUIER OTRA COSA
-        // Esto garantiza que Kommo reciba respuesta aunque todo falle
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        http_response_code(200);
-        @header('Content-Type: application/json; charset=UTF-8');
-        @header('Content-Length: 38');
-        echo '{"ok":true,"mensaje":"Webhook recibido"}';
-        @ob_end_flush();
-        flush();
-        
-        // ✅ AHORA SÍ: Procesar en background (después de responder a Kommo)
-        // Usar error_log como fallback en caso de que file_put_contents falle
+        // ✅ Inicializar logging primero
         error_log('KommoController: ===== INICIANDO WEBHOOK PROCESAMIENTO =====');
         
         $logFile = $this->getParameter('kernel.project_dir') . '/var/logs/kommo_webhook_debug.log';
@@ -237,7 +224,7 @@ class KommoController extends Controller
         if (empty($data)) {
             error_log('KommoController: [SKIP] Data vacía. Fin.');
             @file_put_contents($logFile, date('Y-m-d H:i:s') . " [SKIP] Data vacía. Retornando.\n", FILE_APPEND);
-            return null;
+            return new JsonResponse(['ok' => true, 'mensaje' => 'Webhook recibido'], 200);
         }
         
         error_log('KommoController: [8] Iniciando procesamiento');
@@ -282,7 +269,7 @@ class KommoController extends Controller
                 case 'contact_update':
                 case 'talk_ignored':
                     error_log('KommoController: [SKIP] Tipo ignorado: ' . $tipoWebhook);
-                    return null;
+                    return new JsonResponse(['ok' => true, 'mensaje' => 'Webhook recibido'], 200);
                 
                 case 'lead':
                     $leadData = $data['leads']['add'][0] ?? null;
@@ -293,7 +280,7 @@ class KommoController extends Controller
 
                 default:
                     error_log('KommoController: [ERROR] Tipo no soportado: ' . $tipoWebhook);
-                    return null;
+                    return new JsonResponse(['ok' => true, 'mensaje' => 'Webhook recibido'], 200);
             }
 
             if (!$contactId) {
@@ -364,7 +351,7 @@ class KommoController extends Controller
                 error_log('KommoController: Webhook incompleto registrado en BD (sin procesar)');
 
                 error_log('KommoController: Webhook incompleto - fin de procesamiento');
-                return null;
+                return new JsonResponse(['ok' => true, 'mensaje' => 'Webhook recibido'], 200);
 
             }
 
@@ -460,14 +447,13 @@ class KommoController extends Controller
                 error_log('KommoController: ⚠️ No se pudo guardar error en BD: ' . $dbError->getMessage());
             }
 
-            error_log('KommoController: Error en procesamiento (200 ya fue enviado a Kommo)');
-            return null;
+            error_log('KommoController: Error en procesamiento');
+            return new JsonResponse(['ok' => true, 'mensaje' => 'Webhook recibido'], 200);
         }
         
-        // FALLBACK: El 200 ya fue enviado al inicio
-        error_log('KommoController: ⚠️ FALLBACK - Alcanzado final sin return');
-        
-        return null;
+        // Retorno normal: 200 OK
+        error_log('KommoController: ✅ Webhook procesado exitosamente');
+        return new JsonResponse(['ok' => true, 'mensaje' => 'Webhook recibido'], 200);
     }
 
     /*public function kommoWebhookAction(Request $request)
