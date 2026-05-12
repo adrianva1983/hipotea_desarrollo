@@ -1437,6 +1437,9 @@ class KommoController extends Controller
             return (isset($configuracion['opcion_id']) && !empty($configuracion['opcion_id']))
                 || (isset($configuracion['valor']) && trim((string)$configuracion['valor']) !== '');
         });
+        
+        error_log('DEBUG KOMMO: camposFinales despues de filtrar: ' . json_encode($camposFinales));
+        return $camposFinales;
     }
 
     /**
