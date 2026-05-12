@@ -289,7 +289,7 @@ class KommoController extends Controller
             error_log('DEBUG KOMMO: ✅ KommoWebhook guardado exitosamente');
 
             // $this->kommoLog('KommoController: ✅ Procesado. Cliente: ' . $cliente->getIdUsuario() . ', Expediente: ' . $expediente->getIdExpediente());
-            return new Response('', 200);
+            //return new Response('', 200);
 
         } catch (\Throwable $e) {
             error_log('❌ KOMMO ERROR CAPTURADO: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
