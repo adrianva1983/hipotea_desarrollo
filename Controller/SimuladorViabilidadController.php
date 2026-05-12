@@ -918,8 +918,8 @@ class SimuladorViabilidadController extends Controller
 
             // Ahora enviar un segundo correo específico a Hipotea (copia separada)
             try {
-                //$hipoteaEmail = 'info@hipotea.com';
-                $hipoteaEmail = 'adrian.verdecia@semillaproyectos.com';
+                $hipoteaEmail = 'info@hipotea.com';
+                //$hipoteaEmail = 'adrian.verdecia@semillaproyectos.com';
                 $variablesTwig['origen'] = 'hipotea';
                 $variablesTwig['email'] = $email;
                 $variablesTwig['telefono'] = $telefono;

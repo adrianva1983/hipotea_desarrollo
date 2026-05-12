@@ -5499,7 +5499,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			),
 			'agregarModificarExpediente' => $formularioExpediente->createView(),
 			'arraySeguimientosFase' => $arraySeguimientosFase,
-			'idExpediente' => $expediente->getIdExpediente(),
+			'idExpediente' => $expediente->getIdExpediente(), 
 			'irADocumentos' => $irADocumentos,
 			'fases' => $fases,
 			'faseActual' => $faseActual
