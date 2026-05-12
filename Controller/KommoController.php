@@ -1447,6 +1447,22 @@ class KommoController extends Controller
         $campos[673] = ['opcion_id' => 663];
         error_log('KommoController: Origen (campo 673) establecido a RRSS (opción 663)');
 
+        // Campo 693: Nombre y Campo 694: Apellido desde el nombre del contacto
+        $nombreCompleto = $lead['name'] ?? '';
+        if (!empty($nombreCompleto)) {
+            list($nombre, $apellido) = $this->separarNombreCompleto($nombreCompleto);
+            
+            if (!empty($nombre)) {
+                $campos[693] = ['valor' => $nombre];
+                error_log('KommoController: Nombre (campo 693) establecido a ' . $nombre);
+            }
+            
+            if (!empty($apellido)) {
+                $campos[694] = ['valor' => $apellido];
+                error_log('KommoController: Apellido (campo 694) establecido a ' . $apellido);
+            }
+        }
+
         // Campo 688: Fecha del lead → fecha de creación del contacto en Kommo
         if (!empty($lead['date_create']) || !empty($lead['created_at'])) {
             $fechaCreacion = $lead['date_create'] ?? $lead['created_at'];
