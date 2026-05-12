@@ -1314,7 +1314,12 @@ class KommoController extends Controller
         $nuevoCliente = new UsuarioEntidad();
         $nuevoCliente->setUsername($nombreCliente);
         $nuevoCliente->setApellidos($apellidosCliente);
-        $nuevoCliente->setEmail($email ?: 'kommo_' . uniqid() . '@example.com');
+        // Solo guardar email si Kommo lo proporciona
+        if ($email) {
+            $nuevoCliente->setEmail($email);
+        } else {
+            $nuevoCliente->setEmail('');
+        }
         $nuevoCliente->setTelefonoMovil($telefono ?: '');
         $nuevoCliente->setRole('ROLE_CLIENTE');
         $nuevoCliente->setEstado(true);
