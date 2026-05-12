@@ -136,6 +136,21 @@ class KommoController extends Controller
      */
     public function kommoWebhookAction(Request $request)
     {
+        // ✅ RESPONDER 200 OK INMEDIATAMENTE a Kommo (SIEMPRE, antes de cualquier procesamiento)
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        http_response_code(200);
+        header('Content-Type: application/json; charset=UTF-8');
+        $ackJson = '{"ok":true,"mensaje":"Webhook recibido"}';
+        header('Content-Length: ' . strlen($ackJson));
+        echo $ackJson;
+        flush();
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+        error_log('KommoController: ✅ 200 OK enviado a Kommo. Procesando en background...');
+
         error_log('ENtro11111111111');
         $content = null;
         $data = [];
@@ -244,13 +259,7 @@ class KommoController extends Controller
                 case 'contact_update':
                     // Actualización de contacto existente - ignorar de momento
                     error_log('KommoController: Webhook de actualización de contacto - ignorando por ahora');
-                    return new JsonResponse([
-                        'ok' => true,
-                        'mensaje' => 'Webhook de actualización de contacto recibido pero ignorado',
-                        'tipo' => 'contact_update',
-                        'timestamp' => date('Y-m-d H:i:s')
-                    ]);
-                    break;
+                    return null;
                 
                 case 'lead':
                     // Para leads, buscamos el contact asociado
@@ -267,13 +276,7 @@ class KommoController extends Controller
                 case 'talk_ignored':
                     // Webhook de conversación/talk - ignorar completamente
                     error_log('KommoController: Webhook TALK ignorado correctamente');
-                    return new JsonResponse([
-                        'ok' => true,
-                        'mensaje' => 'Webhook TALK (conversación) recibido pero ignorado',
-                        'tipo' => 'talk',
-                        'timestamp' => date('Y-m-d H:i:s')
-                    ]);
-                    break;
+                    return null;
 
                 default:
                     // Webhook con estructura no reconocida
@@ -297,18 +300,8 @@ class KommoController extends Controller
                         error_log('KommoController: Error guardando webhook desconocido: ' . $e->getMessage());
                     }
                     
-                    // Retornar respuesta explicativa
-                    return new JsonResponse([
-                        'ok' => false,
-                        'error' => 'Estructura de webhook no soportada',
-                        'detalles' => [
-                            'tipo_detectado' => $tipoWebhook,
-                            'tipos_soportados' => ['message', 'contact', 'lead'],
-                            'keys_recibidas' => array_keys($data),
-                            'mensaje' => 'El webhook recibido no tiene una estructura reconocida'
-                        ],
-                        'timestamp' => date('Y-m-d H:i:s')
-                    ], 400);
+                    error_log('KommoController: Webhook no soportado - solo registrado en BD');
+                    return null;
             }
 
             if (!$contactId) {
@@ -375,33 +368,8 @@ class KommoController extends Controller
 
                 error_log('KommoController: Webhook incompleto registrado en BD (sin procesar)');
 
-                // Retornar 200 OK igual (para que Kommo no reintente)
-                // Limpiar completamente
-                while (ob_get_level() > 0) {
-                    ob_end_clean();
-                }
-                
-                header('Content-Type: application/json; charset=UTF-8');
-                http_response_code(200);
-                
-                $data = array(
-                    'ok' => true,
-                    'mensaje' => 'Webhook recibido pero no procesado (falta teléfono/email)',
-                    'tipo' => $tipoWebhook,
-                    'estado' => 'incompleto',
-                    'timestamp' => date('Y-m-d H:i:s')
-                );
-                
-                $jsonResponse = json_encode($data, JSON_UNESCAPED_UNICODE);
-                header('Content-Length: ' . strlen($jsonResponse));
-                echo $jsonResponse;
-                
-                // Asegurar que FastCGI envíe la respuesta completa
-                if (function_exists('fastcgi_finish_request')) {
-                    fastcgi_finish_request();
-                }
-                
-                exit;
+                error_log('KommoController: Webhook incompleto - fin de procesamiento');
+                return null;
 
             }
 
@@ -455,44 +423,8 @@ class KommoController extends Controller
             
             error_log('KommoController: Preparando respuesta final - Cliente: ' . $idClienteSeguro . ', Expediente: ' . $idExpedienteSeguro);
 
-            // Respuesta exitosa - Enviar de forma directa
-            // Limpiar completamente todos los buffers ANTES de hacer nada
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-            
-            // Establecer headers HTTP ANTES de cualquier output
-            header('Content-Type: application/json; charset=UTF-8');
-            http_response_code(200);
-            
-            // Preparar JSON
-            $responseData = array(
-                'ok' => true,
-                'mensaje' => 'Webhook recibido y procesado correctamente',
-                'tipo' => $tipoWebhook,
-                'idCliente' => $idClienteSeguro,
-                'idExpediente' => $idExpedienteSeguro,
-                'desgloseHitos' => $desgloseSeguro,
-                'ia_used' => $iaUsedSeguro,
-                'ia_available' => $iaAvailableSeguro,
-                'timestamp' => date('Y-m-d H:i:s')
-            );
-            
-            // Convertir a JSON
-            $jsonResponse = json_encode($responseData, JSON_UNESCAPED_UNICODE);
-            
-            // Enviar Content-Length header para asegurar cierre correcto de conexión
-            header('Content-Length: ' . strlen($jsonResponse));
-            
-            // Enviar JSON
-            echo $jsonResponse;
-            
-            // Asegurar que FastCGI envíe la respuesta completa
-            if (function_exists('fastcgi_finish_request')) {
-                fastcgi_finish_request();
-            }
-            
-            exit;
+            error_log('KommoController: ✅ Procesamiento completo - Cliente: ' . $idClienteSeguro . ', Expediente: ' . $idExpedienteSeguro);
+            return null;
 
         } catch (\Throwable $e) {
             // Log detallado del error (captura Exception Y Error/Fatal)
@@ -533,63 +465,13 @@ class KommoController extends Controller
                 error_log('KommoController: ⚠️ No se pudo guardar error en BD: ' . $dbError->getMessage());
             }
 
-            // Respuesta de error garantizada (SIEMPRE retorna JSON válido)
-            error_log('KommoController: Error capturado, preparando respuesta 400');
-            
-            // Limpiar completamente
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-            
-            header('Content-Type: application/json; charset=UTF-8');
-            http_response_code(400);
-            
-            $errorData = array(
-                'ok' => false,
-                'error' => $e->getMessage(),
-                'tipo_error' => get_class($e),
-                'timestamp' => date('Y-m-d H:i:s')
-            );
-            
-            $jsonError = json_encode($errorData, JSON_UNESCAPED_UNICODE);
-            header('Content-Length: ' . strlen($jsonError));
-            echo $jsonError;
-            
-            // Asegurar que FastCGI envíe la respuesta completa
-            if (function_exists('fastcgi_finish_request')) {
-                fastcgi_finish_request();
-            }
-            
-            exit;
+            error_log('KommoController: Error en procesamiento (200 ya fue enviado a Kommo)');
+            return null;
         }
         
-        // FALLBACK: Si por alguna razón no hay return antes, retornar error
+        // FALLBACK: El 200 ya fue enviado al inicio
         error_log('KommoController: ⚠️ FALLBACK - Alcanzado final sin return');
-        
-        // Limpiar completamente
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        
-        header('Content-Type: application/json; charset=UTF-8');
-        http_response_code(500);
-        
-        $fallbackData = array(
-            'ok' => false,
-            'error' => 'Error desconocido en el flujo de procesamiento',
-            'timestamp' => date('Y-m-d H:i:s')
-        );
-        
-        $jsonFallback = json_encode($fallbackData, JSON_UNESCAPED_UNICODE);
-        header('Content-Length: ' . strlen($jsonFallback));
-        echo $jsonFallback;
-        
-        // Asegurar que FastCGI envíe la respuesta completa
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-        
-        exit;
+        return null;
     }
 
     /*public function kommoWebhookAction(Request $request)
