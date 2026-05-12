@@ -1244,7 +1244,7 @@ class KommoController extends Controller
         $expediente->setIdCliente($cliente);
         $expediente->setIdFaseActual($primeraFase);
         $expediente->setEstado(1);
-        $expediente->setVivienda('NUEVA VIVIENDA');
+        $expediente->setVivienda('NUEVA VIVIENDA KOMMO');
         $expediente->setFechaCreacion(new \DateTime());
 
         $em->persist($expediente);
@@ -1443,9 +1443,9 @@ class KommoController extends Controller
         $campos = [];
 
         // 📋 CAMPOS AUTOMÁTICOS DESDE KOMMO (origen RRSS + fecha + contacto)
-        // Campo 676: Origen → opción 663 (RRSS)
-        $campos[676] = ['opcion_id' => 663];
-        error_log('KommoController: Origen (campo 676) establecido a RRSS (opción 663)');
+        // Campo 673: Origen → opción 663 (RRSS)
+        $campos[673] = ['opcion_id' => 663];
+        error_log('KommoController: Origen (campo 673) establecido a RRSS (opción 663)');
 
         // Campo 688: Fecha del lead → fecha de creación del contacto en Kommo
         if (!empty($lead['date_create']) || !empty($lead['created_at'])) {
