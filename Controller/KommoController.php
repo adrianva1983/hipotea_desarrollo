@@ -136,6 +136,7 @@ class KommoController extends Controller
      */
     public function kommoWebhookAction(Request $request)
     {
+        error_log('ENtro11111111111');
         // ✅ RESPONDER 200 OK INMEDIATAMENTE a Kommo (SIEMPRE, antes de cualquier procesamiento)
         while (ob_get_level() > 0) {
             ob_end_clean();
@@ -151,7 +152,6 @@ class KommoController extends Controller
         }
         error_log('KommoController: ✅ 200 OK enviado a Kommo. Procesando en background...');
 
-        error_log('ENtro11111111111');
         $content = null;
         $data = [];
 
