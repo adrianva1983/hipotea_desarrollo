@@ -622,6 +622,12 @@ class KommoController extends Controller
                 // Regex - Banco extraído: $datosExtraidos['banco'] (silenciado)
             }
 
+            // Patrón: número de hijos (captura "2 hijos", "2 hijos a mi cargo", "tengo 2 hijos", etc.)
+            if (preg_match('/(\d{1,2})\s+hij(?:o|os|a|as)(?:\s+a\s+mi\s+cargo)?\b/i', $texto, $matches)) {
+                $datosExtraidos['hijos'] = (int)$matches[1];
+                // Regex - Número de hijos extraído: $datosExtraidos['hijos'] (silenciado)
+            }
+
             // 🔄 CONVERTIR DATOS EXTRAÍDOS A ESTRUCTURA UNIFICADA
             $valoresTexto = [];
             $valoresOpcion = [];
