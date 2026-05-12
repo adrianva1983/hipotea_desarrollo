@@ -1442,14 +1442,50 @@ class KommoController extends Controller
         // Construir array de campos compatible con actualizarHitosExpediente()
         $campos = [];
 
-        // Mapear valores de texto (campo_id => valor)
+        // 📋 CAMPOS AUTOMÁTICOS DESDE KOMMO (origen RRSS + fecha + contacto)
+        // Campo 676: Origen → opción 663 (RRSS)
+        $campos[676] = ['opcion_id' => 663];
+        error_log('KommoController: Origen (campo 676) establecido a RRSS (opción 663)');
+
+        // Campo 688: Fecha del lead → fecha de creación del contacto en Kommo
+        if (!empty($lead['date_create']) || !empty($lead['created_at'])) {
+            $fechaCreacion = $lead['date_create'] ?? $lead['created_at'];
+            // Si es timestamp, convertir a fecha
+            if (is_numeric($fechaCreacion)) {
+                $fechaFormato = date('Y-m-d', $fechaCreacion);
+            } else {
+                // Si es string, intentar parsearlo
+                $fechaObj = \DateTime::createFromFormat('Y-m-d H:i:s', $fechaCreacion) ?:
+                           \DateTime::createFromFormat('U', $fechaCreacion) ?:
+                           new \DateTime($fechaCreacion);
+                $fechaFormato = $fechaObj->format('Y-m-d');
+            }
+            $campos[688] = ['valor' => $fechaFormato];
+            error_log('KommoController: Fecha del lead (campo 688) establecida a ' . $fechaFormato);
+        }
+
+        // Campo 695: Teléfono desde Kommo
+        $telefono = $this->extraerTelefono($lead);
+        if (!empty($telefono)) {
+            $campos[695] = ['valor' => $telefono];
+            error_log('KommoController: Teléfono (campo 695) establecido a ' . $telefono);
+        }
+
+        // Campo 696: Email desde Kommo
+        $email = $this->extraerEmail($lead);
+        if (!empty($email)) {
+            $campos[696] = ['valor' => $email];
+            error_log('KommoController: Email (campo 696) establecido a ' . $email);
+        }
+
+        // Mapear valores de texto (campo_id => valor) - pueden sobrescribir los automáticos
         foreach ($valoresTexto as $idCampo => $valor) {
             if (!empty($valor) && trim((string)$valor) !== '') {
                 $campos[$idCampo] = ['valor' => (string)$valor];
             }
         }
 
-        // Mapear opciones (campo_id => opcion_id)
+        // Mapear opciones (campo_id => opcion_id) - pueden sobrescribir los automáticos
         foreach ($valoresOpcion as $idCampo => $opcionId) {
             if (!empty($opcionId)) {
                 $campos[$idCampo] = ['opcion_id' => (int)$opcionId];
