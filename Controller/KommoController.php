@@ -1081,7 +1081,7 @@ class KommoController extends Controller
         $expediente->setIdCliente($cliente);
         $expediente->setIdFaseActual($primeraFase);
         $expediente->setEstado(1);
-        $expediente->setVivienda('NUEVA VIVIENDA KOMMO');
+        $expediente->setVivienda('NUEVO LEAD KOMMO');
         $expediente->setFechaCreacion(new \DateTime());
 
         $em->persist($expediente);
