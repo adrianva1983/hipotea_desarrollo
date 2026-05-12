@@ -1599,6 +1599,8 @@ class KommoController extends Controller
 
     private function extraerTelefono(array $contacto): string
     {
+        $telefono = '';
+        
         // Kommo API v4: buscar en custom_fields_values por field_code = 'PHONE'
         if (!empty($contacto['custom_fields_values']) && is_array($contacto['custom_fields_values'])) {
             foreach ($contacto['custom_fields_values'] as $campo) {
@@ -1606,25 +1608,36 @@ class KommoController extends Controller
                     if (!empty($campo['values'][0]['value'])) {
                         $telefono = (string)$campo['values'][0]['value'];
                         error_log('KommoController: Teléfono extraído de custom_fields_values: ' . $telefono);
-                        return $telefono;
+                        break;
                     }
                 }
             }
         }
         
         // Fallback: campos antiguos
-        if (!empty($contacto['phone'])) {
-            return (string)$contacto['phone'];
+        if (!$telefono && !empty($contacto['phone'])) {
+            $telefono = (string)$contacto['phone'];
         }
-        if (!empty($contacto['custom_fields']['telefono'])) {
-            return (string)$contacto['custom_fields']['telefono'];
+        if (!$telefono && !empty($contacto['custom_fields']['telefono'])) {
+            $telefono = (string)$contacto['custom_fields']['telefono'];
         }
-        if (isset($contacto['_embedded']['phones'][0]['value'])) {
-            return (string)$contacto['_embedded']['phones'][0]['value'];
+        if (!$telefono && isset($contacto['_embedded']['phones'][0]['value'])) {
+            $telefono = (string)$contacto['_embedded']['phones'][0]['value'];
         }
         
-        error_log('KommoController: No se encontró teléfono en el contacto');
-        return '';
+        if (!$telefono) {
+            error_log('KommoController: No se encontró teléfono en el contacto');
+            return '';
+        }
+        
+        // Normalizar teléfono: quitar +34 si existe
+        $telefono = trim($telefono);
+        if (strpos($telefono, '+34') === 0) {
+            $telefono = substr($telefono, 3); // Quitar los 3 primeros caracteres (+34)
+        }
+        
+        error_log('KommoController: Teléfono normalizado: ' . $telefono);
+        return $telefono;
     }
 
     private function extraerEmail(array $contacto): string
