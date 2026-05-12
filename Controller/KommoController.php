@@ -136,7 +136,8 @@ class KommoController extends Controller
      * 3. leads.add → Lead creado (linked_leads_id apunta al contact)
      */
     public function kommoWebhookAction(Request $request)
-    {
+    { 
+        error_log('KOMMO: Webhook recibido en /API/kommo - Iniciando procesamiento...');
         // ── PASO 1: Leer contenido ANTES de cualquier output ──
         $rawContent = $request->getContent();
         if (empty($rawContent)) {
