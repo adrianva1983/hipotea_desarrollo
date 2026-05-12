@@ -1203,6 +1203,8 @@ class KommoController extends Controller
         $desglose = [];
         $hitosActualizados = [];
 
+        error_log('Paso 1.1');
+
         foreach ($camposAActualizar as $idCampoHito => $configuracion) {
             $campoHitoExpediente = $em->getRepository(CampoHitoExpedienteEntidad::class)->findOneBy([
                 'idExpediente' => $expediente,
@@ -1318,6 +1320,8 @@ class KommoController extends Controller
             $em->persist($campoHitoExpediente);
         }
 
+        error_log('Paso 1.2');
+
         // Actualizar fecha de modificación del expediente
         $expediente->setFechaModificacion(new \DateTime());
         $em->persist($expediente);
@@ -1350,8 +1354,6 @@ class KommoController extends Controller
         error_log('DEBUG KOMMO: datosMensaje completo recibido: ' . json_encode($datosMensaje));
         error_log('DEBUG KOMMO: valoresTexto extraidos: ' . json_encode($valoresTexto));
         error_log('DEBUG KOMMO: valoresOpcion extraidos: ' . json_encode($valoresOpcion));
-        
-        $this->kommoLog('KommoController: Construyendo autorrelleno dinámico: ' . count($valoresTexto) . ' valores de texto, ' . count($valoresOpcion) . ' opciones');
 
         // Construir array de campos compatible con actualizarHitosExpediente()
         $campos = [];
@@ -1359,7 +1361,7 @@ class KommoController extends Controller
         // 📋 CAMPOS AUTOMÁTICOS DESDE KOMMO (origen RRSS + fecha + contacto)
         // Campo 673: Origen → opción 663 (RRSS)
         $campos[673] = ['opcion_id' => 663];
-        $this->kommoLog('KommoController: Origen (campo 673) establecido a RRSS (opción 663)');
+        error_log('Paso 10');
 
         // Campo 693: Nombre y Campo 694: Apellido desde el nombre del contacto
         $nombreCompleto = $lead['name'] ?? '';
@@ -1376,7 +1378,7 @@ class KommoController extends Controller
                 $this->kommoLog('KommoController: Apellido (campo 694) establecido a ' . $apellido);
             }
         }
-
+        error_log('Paso 11');            
         // Campo 688: Fecha del lead → fecha de creación del contacto en Kommo
         if (!empty($lead['date_create']) || !empty($lead['created_at'])) {
             $fechaCreacion = $lead['date_create'] ?? $lead['created_at'];
@@ -1393,7 +1395,7 @@ class KommoController extends Controller
             $campos[688] = ['valor' => $fechaFormato];
             $this->kommoLog('KommoController: Fecha del lead (campo 688) establecida a ' . $fechaFormato);
         }
-
+        error_log('Paso 12');                
         // Campo 695: Teléfono desde Kommo
         $telefono = $this->extraerTelefono($lead);
         if (!empty($telefono)) {
