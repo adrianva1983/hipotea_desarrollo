@@ -273,7 +273,9 @@ class KommoController extends Controller
             $em->persist($expediente);
             $em->flush();
 
+            error_log('DEBUG KOMMO: Llamando a actualizarHitosKommo()...');
             $this->actualizarHitosKommo($em, $expediente, $contactoKommo, $datosMensaje);
+            error_log('DEBUG KOMMO: ✅ actualizarHitosKommo() retornó exitosamente');
 
             $kommoWebhook = new KommoWebhook();
             $kommoWebhook->setWebhookType($tipoWebhook);
@@ -282,12 +284,16 @@ class KommoController extends Controller
             $kommoWebhook->setEstado('procesado');
             $kommoWebhook->setFecha(new \DateTime());
             $em->persist($kommoWebhook);
+            error_log('DEBUG KOMMO: Guardando KommoWebhook con estado procesado...');
             $em->flush();
+            error_log('DEBUG KOMMO: ✅ KommoWebhook guardado exitosamente');
 
             // $this->kommoLog('KommoController: ✅ Procesado. Cliente: ' . $cliente->getIdUsuario() . ', Expediente: ' . $expediente->getIdExpediente());
             return new Response('', 200);
 
         } catch (\Throwable $e) {
+            error_log('❌ KOMMO ERROR CAPTURADO: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
+            error_log('❌ KOMMO TRACE: ' . $e->getTraceAsString());
             // $this->kommoLog('KommoController: ERROR: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine(), true);
 
             try {
@@ -302,6 +308,7 @@ class KommoController extends Controller
                 $em->persist($kommoWebhook);
                 $em->flush();
             } catch (\Throwable $dbError) {
+                error_log('❌ KOMMO No se pudo guardar error en BD: ' . $dbError->getMessage());
                 // $this->kommoLog('KommoController: No se pudo guardar error en BD: ' . $dbError->getMessage(), true);
             }
 
@@ -1326,13 +1333,23 @@ class KommoController extends Controller
         $expediente->setFechaModificacion(new \DateTime());
         $em->persist($expediente);
 
-        $em->flush();
+        try {
+            error_log('DEBUG KOMMO: Intentando flush() de cambios...');
+            $em->flush();
+            error_log('DEBUG KOMMO: ✅ Flush exitoso');
+        } catch (\Exception $e) {
+            error_log('DEBUG KOMMO: ❌ ERROR EN FLUSH: ' . $e->getMessage());
+            error_log('DEBUG KOMMO: Exception trace: ' . $e->getTraceAsString());
+            throw $e;
+        }
 
         // Convertir a array indexado
         $desglose = array_values($hitosActualizados);
         
+        error_log('DEBUG KOMMO: Desglose retornando: ' . json_encode($desglose));
         $this->kommoLog('KommoController: Desglose de actualización: ' . json_encode($desglose));
 
+        error_log('DEBUG KOMMO: ✅ actualizarHitosKommo() completado exitosamente');
         return $desglose;
     }
 
