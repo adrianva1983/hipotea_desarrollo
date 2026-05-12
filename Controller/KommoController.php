@@ -136,40 +136,39 @@ class KommoController extends Controller
      */
     public function kommoWebhookAction(Request $request)
     {
-        // Verificar que error_log funciona
-        @error_log('KommoController: [INICIO] === INICIANDO KOMMO WEBHOOK ===');
+        // ✅ PASO 1: ENVIAR 200 OK INMEDIATAMENTE - ANTES DE CUALQUIER OTRA COSA
+        // Esto garantiza que Kommo reciba respuesta aunque todo falle
+        while (@ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+        @http_response_code(200);
+        @header('Content-Type: application/json; charset=UTF-8');
+        @header('Content-Length: 38');
+        echo '{"ok":true,"mensaje":"Webhook recibido"}';
+        @flush();
+        if (function_exists('fastcgi_finish_request')) {
+            @fastcgi_finish_request();
+        }
         
-        // Intentar escribir al inicio de inmediato
-        // Usar ruta del servidor (en production es areaprivada.hipotea.com)
+        // ✅ AHORA SÍ: Procesar en background (después de responder a Kommo)
         $logFile = $this->getParameter('kernel.project_dir') . '/var/logs/kommo_webhook_debug.log';
         if (!is_dir(dirname($logFile))) {
             @mkdir(dirname($logFile), 0777, true);
         }
-        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [INICIO] === INICIANDO KOMMO WEBHOOK ===\n", FILE_APPEND);
+        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [WEBHOOK] ===== INICIANDO WEBHOOK =====\n", FILE_APPEND);
         
         $content = null;
         $data = [];
-
+        
         try {
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [1] Iniciando bloque try\n", FILE_APPEND);
-            @error_log('KommoController: [1] Iniciando bloque try');
-            
-            // 📖 PASO 1: Leer contenido del request ANTES de fastcgi_finish_request() 
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [2] Intentando leer contenido\n", FILE_APPEND);
-            @error_log('KommoController: [2] Intentando leer contenido');
-            
+            // 📖 PASO 1: Leer contenido del request 
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [1] Leyendo contenido\n", FILE_APPEND);
             try {
                 $content = $request->getContent();
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [3] Contenido leído OK. Tamaño: " . strlen($content) . " bytes\n", FILE_APPEND);
-                @error_log('KommoController: [3] Contenido leído OK. Tamaño: ' . strlen($content) . ' bytes');
-            } catch (\Throwable $contentError) {
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [4] ERROR AL LEER CONTENIDO: " . $contentError->getMessage() . "\n", FILE_APPEND);
-                @error_log('KommoController: [4] ERROR AL LEER CONTENIDO: ' . $contentError->getMessage());
-                
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [5] Intentando php://input\n", FILE_APPEND);
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [2] Contenido OK: " . strlen($content) . " bytes\n", FILE_APPEND);
+            } catch (\Throwable $e) {
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [2-ERROR] " . $e->getMessage() . "\n", FILE_APPEND);
                 $content = @file_get_contents('php://input');
-                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [6] php://input leído. Tamaño: " . strlen($content) . " bytes\n", FILE_APPEND);
-                @error_log('KommoController: [6] php://input leído. Tamaño: ' . strlen($content) . ' bytes');
             }
             
             // ⚠️ LOG COMPLETO del webhook recibido para debugging
@@ -226,69 +225,20 @@ class KommoController extends Controller
                 throw new \Exception('No se pudieron parsear los datos del webhook. Content: ' . substr($content, 0, 500));
             }
 
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [17] Parseo exitoso. Datos: " . count($data) . " keys\n", FILE_APPEND);
-            @error_log('KommoController: [17] Parseo exitoso. Datos: ' . count($data) . ' keys');
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [3] Parseo OK. " . count($data) . " keys\n", FILE_APPEND);
 
         } catch (\Throwable $parseError) {
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR-PARSE] " . get_class($parseError) . ": " . $parseError->getMessage() . "\n", FILE_APPEND);
-            @error_log('KommoController: [ERROR-PARSE] Parse error: ' . $parseError->getMessage());
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [3-ERROR] " . get_class($parseError) . ": " . $parseError->getMessage() . "\n", FILE_APPEND);
             $data = [];
         }
         
-        // ============================================================================
-        // BLOQUE DE RESPUESTA 200 OK (FUERA DEL TRY-CATCH PRINCIPAL)
-        // Se ejecuta incluso si el parsing falla, garantiza respuesta a Kommo
-        // ============================================================================
-        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18] Enviando 200 OK a Kommo\n", FILE_APPEND);
-        @error_log('KommoController: [18] Enviando 200 OK a Kommo');
-        
-        try {
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.1] Limpiando buffers\n", FILE_APPEND);
-            while (ob_get_level() > 0) {
-                @ob_end_clean();
-            }
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.2] Buffers OK\n", FILE_APPEND);
-            
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.3] http_response_code(200)\n", FILE_APPEND);
-            @http_response_code(200);
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.4] Code OK\n", FILE_APPEND);
-            
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.5] Headers\n", FILE_APPEND);
-            @header('Content-Type: application/json; charset=UTF-8');
-            $ackJson = '{"ok":true,"mensaje":"Webhook recibido"}';
-            @header('Content-Length: ' . strlen($ackJson));
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.6] Headers OK\n", FILE_APPEND);
-            
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.7] Echo flush\n", FILE_APPEND);
-            echo $ackJson;
-            @flush();
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.8] Echo OK\n", FILE_APPEND);
-            
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.9] fastcgi_finish_request\n", FILE_APPEND);
-            if (function_exists('fastcgi_finish_request')) {
-                @fastcgi_finish_request();
-            }
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18.10] FCGI OK\n", FILE_APPEND);
-        } catch (\Throwable $httpError) {
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR-HTTP] " . get_class($httpError) . ": " . $httpError->getMessage() . "\n", FILE_APPEND);
-            @error_log('KommoController: [ERROR-HTTP] ' . get_class($httpError) . ': ' . $httpError->getMessage());
-        }
-        
-        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [19] 200 OK COMPLETADO\n", FILE_APPEND);
-        @error_log('KommoController: [19] 200 OK COMPLETADO. Procesando en background...');
-        
-        // ============================================================================
-        // BLOQUE DE PROCESAMIENTO (sin depender del 200 OK)
-        // ============================================================================
-        
         // Si el parsing falló, no procesar más
         if (empty($data)) {
-            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR-20] Data vacía. Fin.\n", FILE_APPEND);
-            @error_log('KommoController: [ERROR-20] Data vacía después del parsing');
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [4-SKIP] Data vacía. Fin.\n", FILE_APPEND);
             return null;
         }
         
-        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [20] Iniciando procesamiento\n", FILE_APPEND);
+        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [4] Procesando datos\n", FILE_APPEND);
         
         try {
             // Crear cliente HTTP
