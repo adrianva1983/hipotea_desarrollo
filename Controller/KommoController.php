@@ -1444,7 +1444,7 @@ class KommoController extends Controller
 
         // 📋 CAMPOS AUTOMÁTICOS DESDE KOMMO (origen RRSS + fecha + contacto)
         // Campo 673: Origen → opción 663 (RRSS)
-        $campos[673] = ['opcion_id' => 663];
+        $campos[673] = ['id_opciones_campo' => 663];
         error_log('KommoController: Origen (campo 673) establecido a RRSS (opción 663)');
 
         // Campo 693: Nombre y Campo 694: Apellido desde el nombre del contacto
