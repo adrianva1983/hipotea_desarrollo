@@ -136,44 +136,62 @@ class KommoController extends Controller
      */
     public function kommoWebhookAction(Request $request)
     {
-        error_log('ENtro11111111111');
-        // ✅ RESPONDER 200 OK INMEDIATAMENTE a Kommo (SIEMPRE, antes de cualquier procesamiento)
-        /*while (ob_get_level() > 0) {
-            ob_end_clean();
+        // Verificar que error_log funciona
+        @error_log('KommoController: [INICIO] === INICIANDO KOMMO WEBHOOK ===');
+        
+        // Intentar escribir al inicio de inmediato
+        // Usar ruta del servidor (en production es areaprivada.hipotea.com)
+        $logFile = $this->getParameter('kernel.project_dir') . '/var/logs/kommo_webhook_debug.log';
+        if (!is_dir(dirname($logFile))) {
+            @mkdir(dirname($logFile), 0777, true);
         }
-        http_response_code(200);*/
-        header('Content-Type: application/json; charset=UTF-8');
-        $ackJson = '{"ok":true,"mensaje":"Webhook recibido"}';
-        header('Content-Length: ' . strlen($ackJson));
-        echo $ackJson;
-        flush();
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-        error_log('KommoController: ✅ 200 OK enviado a Kommo. Procesando en background...');
-
+        @file_put_contents($logFile, date('Y-m-d H:i:s') . " [INICIO] === INICIANDO KOMMO WEBHOOK ===\n", FILE_APPEND);
+        
         $content = null;
         $data = [];
 
         try {
-            // Obtener el contenido del request
-            $content = $request->getContent();
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [1] Iniciando bloque try\n", FILE_APPEND);
+            @error_log('KommoController: [1] Iniciando bloque try');
+            
+            // 📖 PASO 1: Leer contenido del request ANTES de fastcgi_finish_request() 
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [2] Intentando leer contenido\n", FILE_APPEND);
+            @error_log('KommoController: [2] Intentando leer contenido');
+            
+            try {
+                $content = $request->getContent();
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [3] Contenido leído OK. Tamaño: " . strlen($content) . " bytes\n", FILE_APPEND);
+                @error_log('KommoController: [3] Contenido leído OK. Tamaño: ' . strlen($content) . ' bytes');
+            } catch (\Throwable $contentError) {
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [4] ERROR AL LEER CONTENIDO: " . $contentError->getMessage() . "\n", FILE_APPEND);
+                @error_log('KommoController: [4] ERROR AL LEER CONTENIDO: ' . $contentError->getMessage());
+                
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [5] Intentando php://input\n", FILE_APPEND);
+                $content = @file_get_contents('php://input');
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [6] php://input leído. Tamaño: " . strlen($content) . " bytes\n", FILE_APPEND);
+                @error_log('KommoController: [6] php://input leído. Tamaño: ' . strlen($content) . ' bytes');
+            }
             
             // ⚠️ LOG COMPLETO del webhook recibido para debugging
-            error_log('KommoController: Raw webhook content (primeros 1000 chars): ' . substr($content, 0, 1000));
-            error_log('KommoController: Content-Type: ' . $request->getContentType());
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [7] Content-Type: " . $request->getContentType() . "\n", FILE_APPEND);
+            @error_log('KommoController: [7] Content-Type: ' . $request->getContentType());
+            @error_log('KommoController: [8] Raw webhook content (primeros 1000 chars): ' . substr($content, 0, 1000));
             
             // Validar que el contenido no esté vacío
             if (empty($content)) {
                 throw new \Exception('Webhook vacío - No se recibió contenido en el request body');
             }
             
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [9] Detectando Content-Type\n", FILE_APPEND);
+            
             // 🔑 DETECCIÓN AUTOMÁTICA: JSON vs Form-Urlencoded
             $contentType = $request->getContentType();
+            @error_log('KommoController: [10] Detectando Content-Type: ' . $contentType);
             
             // Intentar parsear como JSON primero (si Content-Type es json)
             if (strpos($contentType, 'json') !== false) {
-                error_log('KommoController: Detectado Content-Type JSON - Parseando como JSON');
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [11] Parseando como JSON\n", FILE_APPEND);
+                @error_log('KommoController: [11] Parseando como JSON');
                 $data = json_decode($content, true);
                 
                 if ($data === null) {
@@ -183,41 +201,68 @@ class KommoController extends Controller
             } 
             // Intentar parsear como form-urlencoded (Content-Type = form)
             elseif (strpos($contentType, 'form') !== false || strpos($contentType, 'urlencoded') !== false) {
-                error_log('KommoController: Detectado Content-Type Form-Urlencoded - Parseando con parse_str()');
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [12] Parseando como form-urlencoded\n", FILE_APPEND);
+                @error_log('KommoController: [12] Parseando como form-urlencoded');
                 parse_str($content, $data);
-                error_log('KommoController: Form-urlencoded parseado. Keys: ' . json_encode(array_keys($data)));
+                @error_log('KommoController: [13] Form-urlencoded parseado. Keys: ' . json_encode(array_keys($data)));
             }
             // Si no detectamos Content-Type, intentar ambos
             else {
-                error_log('KommoController: Content-Type no especificado o desconocido. Intentando JSON primero...');
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [14] Content-Type no especificado. Intentando JSON primero\n", FILE_APPEND);
+                @error_log('KommoController: [14] Content-Type no especificado. Intentando JSON primero');
                 $data = json_decode($content, true);
                 
                 if ($data === null) {
-                    error_log('KommoController: JSON parsing falló. Intentando form-urlencoded...');
+                    @file_put_contents($logFile, date('Y-m-d H:i:s') . " [15] JSON falló. Intentando form-urlencoded\n", FILE_APPEND);
+                    @error_log('KommoController: [15] JSON falló. Intentando form-urlencoded');
                     parse_str($content, $data);
-                    error_log('KommoController: Form-urlencoded parseado. Keys: ' . json_encode(array_keys($data)));
+                    @error_log('KommoController: [16] Form-urlencoded parseado. Keys: ' . json_encode(array_keys($data)));
                 }
             }
             
             // Validar que obtuvimos datos
             if (!is_array($data) || empty($data)) {
+                @file_put_contents($logFile, date('Y-m-d H:i:s') . " [ERROR] No se parsearon datos\n", FILE_APPEND);
                 throw new \Exception('No se pudieron parsear los datos del webhook. Content: ' . substr($content, 0, 500));
             }
+
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [17] Parseo exitoso. Datos: " . count($data) . " keys\n", FILE_APPEND);
+            @error_log('KommoController: [17] Parseo exitoso. Datos: ' . count($data) . ' keys');
+
+            // ✅ RESPONDER 200 OK INMEDIATAMENTE a Kommo (después de parseo exitoso, antes de procesamiento)
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [18] Enviando 200 OK\n", FILE_APPEND);
+            @error_log('KommoController: [18] Enviando 200 OK');
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            http_response_code(200);
+            header('Content-Type: application/json; charset=UTF-8');
+            $ackJson = '{"ok":true,"mensaje":"Webhook recibido"}';
+            header('Content-Length: ' . strlen($ackJson));
+            echo $ackJson;
+            flush();
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [19] 200 OK enviado. Procesando en background\n", FILE_APPEND);
+            @error_log('KommoController: [19] 200 OK enviado. Procesando en background...');
             
             // Crear cliente HTTP
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [20] Creando cliente HTTP\n", FILE_APPEND);
             $httpClient = new GuzzleClient();
 
             // Log de la recepción del webhook (MEJORADO)
             $tiposPresentes = is_array($data) ? array_keys($data) : [];
-            error_log('KommoController: Webhook de Kommo recibido: ' . json_encode([
+            @error_log('KommoController: [21] Webhook de Kommo recibido: ' . json_encode([
                 'tipos' => $tiposPresentes,
                 'total_keys' => count($tiposPresentes),
                 'timestamp' => date('Y-m-d H:i:s')
             ]));
 
             // Detectar tipo de webhook y extraer datos
+            @file_put_contents($logFile, date('Y-m-d H:i:s') . " [22] Detectando tipo de webhook\n", FILE_APPEND);
             $tipoWebhook = $this->detectarTipoWebhook($data);
-            error_log('KommoController: Tipo de webhook detectado: ' . $tipoWebhook);
+            @error_log('KommoController: [23] Tipo de webhook detectado: ' . $tipoWebhook);
 
             $contactId = null;
             $datosMensaje = [];
