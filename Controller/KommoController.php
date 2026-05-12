@@ -138,7 +138,10 @@ class KommoController extends Controller
     {
         // ✅ PASO 1: ENVIAR 200 OK INMEDIATAMENTE - ANTES DE CUALQUIER OTRA COSA
         // Esto garantiza que Kommo reciba respuesta aunque todo falle
-        @http_response_code(200);
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        http_response_code(200);
         @header('Content-Type: application/json; charset=UTF-8');
         @header('Content-Length: 38');
         echo '{"ok":true,"mensaje":"Webhook recibido"}';
@@ -463,10 +466,7 @@ class KommoController extends Controller
         
         // FALLBACK: El 200 ya fue enviado al inicio
         error_log('KommoController: ⚠️ FALLBACK - Alcanzado final sin return');
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        http_response_code(200);
+        
         return null;
     }
 
