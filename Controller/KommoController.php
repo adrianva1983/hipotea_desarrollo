@@ -1252,64 +1252,12 @@ class KommoController extends Controller
                 $this->bgLog('DEBUG KOMMO: Actualizando campo ' . $idCampoHito . ' con opcion_id: ' . $opcionId);
                 $setterUsed = null;
 
-                // Intentar resolver la entidad OpcionesCampo si existe el EntityManager
-                $opcionesEntity = null;
-                try {
-                    $opcionesEntity = $em->getRepository('AppBundle:OpcionesCampo')->find($opcionId);
-                    if ($opcionesEntity) {
-                        // $this->kommoLog('KommoController: OpcionesCampo encontrada: id=' . $opcionId . ', valor=' . ($opcionesEntity->getValor() ?? 'NULL'));
-                    } else {
-                        // $this->kommoLog('KommoController: OpcionesCampo NO encontrada para id ' . $opcionId . ' - intentando fallback directo');
-                    }
-                } catch (\Exception $e) {
-                    // No bloquear, seguiremos con fallback
-                    // $this->kommoLog('KommoController: Error al buscar OpcionesCampo id ' . $opcionId . ' - ' . $e->getMessage(), true);
-                }
-
-                // Intentar usar setIdOpcionesCampo con la entidad si existe
-                if ($opcionesEntity && method_exists($campoHitoExpediente, 'setIdOpcionesCampo')) {
-                    $campoHitoExpediente->setIdOpcionesCampo($opcionesEntity);
-                    $setterUsed = 'setIdOpcionesCampo(entity)';
-                    // $this->kommoLog('KommoController: Campo ' . $idCampoHito . ' - usando setIdOpcionesCampo con entidad OpcionesCampo id=' . $opcionId);
-                } 
-                // Si no encontramos la entidad pero el setter existe, intentar pasar el ID directamente
-                elseif (!$opcionesEntity && method_exists($campoHitoExpediente, 'setIdOpcionesCampo')) {
-                    // Intentar pasar el ID directamente al setter
-                    try {
-                        $campoHitoExpediente->setIdOpcionesCampo($opcionId);
-                        $setterUsed = 'setIdOpcionesCampo(id-fallback)';
-                        // $this->kommoLog('KommoController: Campo ' . $idCampoHito . ' - usando setIdOpcionesCampo directamente con id=' . $opcionId);
-                    } catch (\Throwable $te) {
-                        // $this->kommoLog('KommoController: Fallback setIdOpcionesCampo(id) falló: ' . $te->getMessage(), true);
-                        $setterUsed = 'FALLBACK_FAILED';
-                    }
-                }
-                // Otros setters alternativos
-                elseif (method_exists($campoHitoExpediente, 'setOpcion')) {
-                    if ($opcionesEntity) {
-                        $campoHitoExpediente->setOpcion($opcionesEntity);
-                        $setterUsed = 'setOpcion(entity)';
-                    } else {
-                        $setterUsed = 'setOpcion(no-entity)';
-                    }
-                    // $this->kommoLog('KommoController: Campo ' . $idCampoHito . ' - usando ' . $setterUsed);
-                } elseif (method_exists($campoHitoExpediente, 'setIdOpcion')) {
-                    try {
-                        $campoHitoExpediente->setIdOpcion($opcionesEntity ?: $opcionId);
-                        $setterUsed = 'setIdOpcion';
-                        // $this->kommoLog('KommoController: Campo ' . $idCampoHito . ' - usando setIdOpcion');
-                    } catch (\TypeError $te) {
-                        $setterUsed = 'setIdOpcion(failed)';
-                        // $this->kommoLog('KommoController: Campo ' . $idCampoHito . ' - setIdOpcion falló: ' . $te->getMessage(), true);
-                    }
-                }
-
-                // Limpiar el campo valor para opciones
-                if (method_exists($campoHitoExpediente, 'setValor')) {
-                    $campoHitoExpediente->setValor(null);
-                }
-
-                // $this->kommoLog('KommoController: Actualizando campo opcion ' . $idCampoHito . ' usando ' . $setterUsed . ' => opción_id=' . $opcionId);
+                // Usar getReference() de Doctrine: crea un proxy sin consultar la BD,
+                // siempre funciona para asignar FKs mientras el id sea válido.
+                $opcionesRef = $em->getReference('AppBundle:OpcionesCampo', $opcionId);
+                $campoHitoExpediente->setIdOpcionesCampo($opcionesRef);
+                $campoHitoExpediente->setValor(null);
+                $this->bgLog('DEBUG KOMMO: Campo ' . $idCampoHito . ' - opción guardada con referencia id=' . $opcionId);
 
                 $hitosActualizados[$idHito]['campos'][] = [
                     'idCampo' => $idCampoHito,
