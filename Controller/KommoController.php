@@ -190,15 +190,16 @@ class KommoController extends Controller
                     $textoMensaje = $this->extraerTextoDelMensaje($data);
 
                     if (!empty($textoMensaje)) {
+                        error_log('🔵 KOMMO: Intentando extraer datos de IA del mensaje: ' . substr($textoMensaje, 0, 100) . '...');
                         $datosIA = $this->extraerDatosConIA($textoMensaje);
+                        error_log('🟠 KOMMO: Resultado IA: ' . json_encode($datosIA));
                         if ($datosIA['success'] ?? false) {
-                            // IA result (silenced unless significant)
-                            // $this->kommoLog('KommoController: IA OK - ' . $datosIA['campos_detectados'] . ' campos');
+                            error_log('✅ KOMMO: IA exitosa - ' . $datosIA['campos_detectados'] . ' campos detectados');
                             $datosMensaje = $datosIA;
                         } else {
-                            // IA falló. Usar fallback regex (silenciado)
-                            // $this->kommoLog('KommoController: IA falló. Regex fallback');
+                            error_log('⚠️ KOMMO: IA falló. Usando fallback regex...');
                             $datosMensaje = $this->extraerDatosDelMensaje($data);
+                            error_log('🟠 KOMMO: Resultado Regex: ' . json_encode($datosMensaje));
                         }
                     } else {
                         $datosMensaje = $this->extraerDatosDelMensaje($data);
@@ -1191,6 +1192,9 @@ class KommoController extends Controller
      */
     private function actualizarHitosKommo($em, ExpedienteEntidad $expediente, array $contactoKommo, array $datosMensaje = []): array
     {
+        error_log('DEBUG KOMMO: actualizarHitosKommo() - Contacto: ' . json_encode($contactoKommo));
+        error_log('DEBUG KOMMO: actualizarHitosKommo() - DatosMensaje: ' . json_encode($datosMensaje));
+        
         $camposAActualizar = $this->construirAutorrellenoHitosKommo($contactoKommo, $datosMensaje);
         // $this->kommoLog('KommoController: Actualizando ' . count($camposAActualizar) . ' campos');
 
@@ -1229,6 +1233,7 @@ class KommoController extends Controller
             // Actualizar el campo
             if (isset($configuracion['opcion_id'])) {
                 $opcionId = $configuracion['opcion_id'];
+                error_log('DEBUG KOMMO: Actualizando campo ' . $idCampoHito . ' con opcion_id: ' . $opcionId);
                 $setterUsed = null;
 
                 // Intentar resolver la entidad OpcionesCampo si existe el EntityManager
@@ -1297,6 +1302,7 @@ class KommoController extends Controller
                     'valor' => $opcionId
                 ];
             } elseif (isset($configuracion['valor'])) {
+                error_log('DEBUG KOMMO: Actualizando campo ' . $idCampoHito . ' con valor: ' . $configuracion['valor']);
                 $campoHitoExpediente->setValor($configuracion['valor']);
                 $hitosActualizados[$idHito]['campos'][] = [
                     'idCampo' => $idCampoHito,
@@ -1334,8 +1340,14 @@ class KommoController extends Controller
         // AMBAS fuentes (IA y regex) ahora devuelven la misma estructura:
         // { valores_texto: {campo_id: valor}, valores_opcion: {campo_id: opcion_id} }
         
+        error_log('🟢 KOMMO construirAutorrellenoHitosKommo() - datosMensaje recibido: ' . json_encode($datosMensaje));
+        
         $valoresTexto = $datosMensaje['valores_texto'] ?? [];
         $valoresOpcion = $datosMensaje['valores_opcion'] ?? [];
+        
+        error_log('DEBUG KOMMO: datosMensaje completo recibido: ' . json_encode($datosMensaje));
+        error_log('DEBUG KOMMO: valoresTexto extraidos: ' . json_encode($valoresTexto));
+        error_log('DEBUG KOMMO: valoresOpcion extraidos: ' . json_encode($valoresOpcion));
         
         $this->kommoLog('KommoController: Construyendo autorrelleno dinámico: ' . count($valoresTexto) . ' valores de texto, ' . count($valoresOpcion) . ' opciones');
 
@@ -1413,10 +1425,11 @@ class KommoController extends Controller
         }
 
         // Registrar resumen de campos que se van a actualizar
+        error_log('DEBUG KOMMO: CAMPOS FINALES A GUARDAR: ' . json_encode($campos));
         $this->kommoLog('KommoController: Total de campos a actualizar: ' . count($campos) . '. Desglose: ' . json_encode(array_keys($campos)));
 
         // Filtrar campos vacíos
-        return array_filter($campos, function ($configuracion) {
+        $camposFinales = array_filter($campos, function ($configuracion) {
             return (isset($configuracion['opcion_id']) && !empty($configuracion['opcion_id']))
                 || (isset($configuracion['valor']) && trim((string)$configuracion['valor']) !== '');
         });
