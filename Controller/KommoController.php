@@ -1356,39 +1356,60 @@ class KommoController extends Controller
                 $opcionesEntity = null;
                 try {
                     $opcionesEntity = $em->getRepository('AppBundle:OpcionesCampo')->find($opcionId);
+                    if ($opcionesEntity) {
+                        error_log('KommoController: OpcionesCampo encontrada: id=' . $opcionId . ', valor=' . ($opcionesEntity->getValor() ?? 'NULL'));
+                    } else {
+                        error_log('KommoController: OpcionesCampo NO encontrada para id ' . $opcionId . ' - intentando fallback directo');
+                    }
                 } catch (\Exception $e) {
                     // No bloquear, seguiremos con fallback
                     error_log('KommoController: Error al buscar OpcionesCampo id ' . $opcionId . ' - ' . $e->getMessage());
                 }
 
+                // Intentar usar setIdOpcionesCampo con la entidad si existe
                 if ($opcionesEntity && method_exists($campoHitoExpediente, 'setIdOpcionesCampo')) {
                     $campoHitoExpediente->setIdOpcionesCampo($opcionesEntity);
                     $setterUsed = 'setIdOpcionesCampo(entity)';
-                } elseif (method_exists($campoHitoExpediente, 'setOpcion')) {
-                    // métodos menos comunes: intentar pasar la entidad si acepta objeto
+                    error_log('KommoController: Campo ' . $idCampoHito . ' - usando setIdOpcionesCampo con entidad OpcionesCampo id=' . $opcionId);
+                } 
+                // Si no encontramos la entidad pero el setter existe, intentar pasar el ID directamente
+                elseif (!$opcionesEntity && method_exists($campoHitoExpediente, 'setIdOpcionesCampo')) {
+                    // Intentar pasar el ID directamente al setter
+                    try {
+                        $campoHitoExpediente->setIdOpcionesCampo($opcionId);
+                        $setterUsed = 'setIdOpcionesCampo(id-fallback)';
+                        error_log('KommoController: Campo ' . $idCampoHito . ' - usando setIdOpcionesCampo directamente con id=' . $opcionId);
+                    } catch (\Throwable $te) {
+                        error_log('KommoController: Fallback setIdOpcionesCampo(id) falló: ' . $te->getMessage());
+                        $setterUsed = 'FALLBACK_FAILED';
+                    }
+                }
+                // Otros setters alternativos
+                elseif (method_exists($campoHitoExpediente, 'setOpcion')) {
                     if ($opcionesEntity) {
                         $campoHitoExpediente->setOpcion($opcionesEntity);
                         $setterUsed = 'setOpcion(entity)';
                     } else {
-                        $campoHitoExpediente->setValor((string)$opcionId);
-                        $setterUsed = 'setValor(fallback)';
+                        $setterUsed = 'setOpcion(no-entity)';
                     }
+                    error_log('KommoController: Campo ' . $idCampoHito . ' - usando ' . $setterUsed);
                 } elseif (method_exists($campoHitoExpediente, 'setIdOpcion')) {
-                    // intentar pasar entidad o id según firma
                     try {
                         $campoHitoExpediente->setIdOpcion($opcionesEntity ?: $opcionId);
                         $setterUsed = 'setIdOpcion';
+                        error_log('KommoController: Campo ' . $idCampoHito . ' - usando setIdOpcion');
                     } catch (\TypeError $te) {
-                        $campoHitoExpediente->setValor((string)$opcionId);
-                        $setterUsed = 'setValor(fallback)';
+                        $setterUsed = 'setIdOpcion(failed)';
+                        error_log('KommoController: Campo ' . $idCampoHito . ' - setIdOpcion falló: ' . $te->getMessage());
                     }
-                } else {
-                    // Último recurso: almacenar el id de opción en el campo de texto `valor`
-                    $campoHitoExpediente->setValor((string)$opcionId);
-                    $setterUsed = 'setValor(fallback)';
                 }
 
-                error_log('KommoController: Actualizando campo opcion ' . $idCampoHito . ' usando ' . $setterUsed . ' => ' . $opcionId);
+                // Limpiar el campo valor para opciones
+                if (method_exists($campoHitoExpediente, 'setValor')) {
+                    $campoHitoExpediente->setValor(null);
+                }
+
+                error_log('KommoController: Actualizando campo opcion ' . $idCampoHito . ' usando ' . $setterUsed . ' => opción_id=' . $opcionId);
 
                 $hitosActualizados[$idHito]['campos'][] = [
                     'idCampo' => $idCampoHito,
