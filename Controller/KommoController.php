@@ -1351,7 +1351,9 @@ class KommoController extends Controller
         $email = $this->extraerEmail($lead);
         if (!empty($email)) {
             $campos[696] = ['valor' => $email];
-            error_log('KommoController: Email (campo 696) establecido a ' . $email);
+            // También rellenar el campo 407 (email en vistas/formularios)
+            $campos[407] = ['valor' => $email];
+            error_log('KommoController: Email (campos 696 y 407) establecido a ' . $email);
         }
 
         // Mapear valores de texto (campo_id => valor) - pueden sobrescribir los automáticos
