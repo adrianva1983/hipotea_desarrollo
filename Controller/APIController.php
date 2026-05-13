@@ -3429,6 +3429,8 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 
 			}
 
+			// Asignar referencia única al expediente
+			$this->asignarReferenciaAExpediente($expediente);
 
 			$managerEntidad->persist($expediente);
 			$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Creación del expediente', $expediente));
@@ -3618,6 +3620,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 							}
 			
 						}
+
+						// Asignar referencia única al expediente
+						$this->asignarReferenciaAExpediente($expediente);
 
 						$managerEntidad->persist($expediente);
 						$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Creación del expediente', $expediente));
@@ -4088,8 +4093,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					->setVivienda('CUESTIONARIO APP')
 				;
 				
-				// Ahora creamos el nuevo expediente para el cuestionario
-				$managerEntidad->persist($expediente);
+			// Asignar referencia única al expediente
+			$this->asignarReferenciaAExpediente($expediente);
+			
 				$managerEntidad->flush();
 
 
@@ -4519,8 +4525,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					$expediente->setIdCliente($usuario);
 				}
 				
-				// Ahora creamos el nuevo expediente para el cuestionario
-				$managerEntidad->persist($expediente);
+			// Asignar referencia única al expediente
+			$this->asignarReferenciaAExpediente($expediente);
+			
 				$managerEntidad->flush();
 
 
@@ -5820,5 +5827,71 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			$mailer = Swift_Mailer::newInstance($transport);
 		}
 		return $mailer;
+	}
+
+	/**
+	 * Genera una referencia única para un expediente
+	 * Formato: NNNN/YY (ej: 0001/26, 0002/26, etc.)
+	 * 
+	 * @param int $anio El año de 2 dígitos para el que generar la referencia
+	 * @return string Referencia en formato NNNN/YY
+	 * @throws \Exception Si hay error al generar la referencia
+	 */
+	private function generarReferencia(int $anio): string
+	{
+		try {
+			$doctrine = $this->getDoctrine();
+			$conn = $doctrine->getConnection();
+			
+			// Query SQL para obtener el máximo número de referencia del año especificado
+			$sql = "
+				SELECT MAX(CAST(SUBSTRING_INDEX(referencia, '/', 1) AS UNSIGNED)) as max_numero
+				FROM expediente
+				WHERE referencia LIKE :patron
+			";
+			
+			$stmt = $conn->prepare($sql);
+			$patron = '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT);
+			$stmt->bindValue('patron', $patron);
+			$stmt->execute();
+			$result = $stmt->fetch();
+			
+			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero']) 
+				? (int)$result['max_numero'] 
+				: 0;
+			
+			$siguienteNumero = $maxNumero + 1;
+			
+			// Formatear: NNNN/YY (4 dígitos para número, 2 para año)
+			$referencia = sprintf('%04d/%02d', $siguienteNumero, $anio);
+			
+			return $referencia;
+		} catch (\Exception $e) {
+			throw new \Exception('Error al generar referencia de expediente: ' . $e->getMessage());
+		}
+	}
+
+	/**
+	 * Asigna una referencia a un expediente si no la tiene
+	 * 
+	 * @param Expediente $expediente
+	 * @return string La referencia asignada
+	 * @throws \Exception
+	 */
+	private function asignarReferenciaAExpediente(Expediente $expediente): string
+	{
+		// Si ya tiene referencia, no generar otra
+		if (!empty($expediente->getReferencia())) {
+			return $expediente->getReferencia();
+		}
+		
+		// Obtener el año desde la fecha de creación del expediente
+		$anio = (int)$expediente->getFechaCreacion()->format('y');
+		
+		// Generar y asignar la referencia
+		$referencia = $this->generarReferencia($anio);
+		$expediente->setReferencia($referencia);
+		
+		return $referencia;
 	}
 }
