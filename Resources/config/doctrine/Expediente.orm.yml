@@ -67,6 +67,13 @@ AppBundle\Entity\Expediente:
       options:
         fixed: false
         comment: 'Explicacion del motivo de cancelacion'
+    referencia:
+      type: string
+      nullable: true
+      length: 10
+      options:
+        fixed: false
+        comment: 'Referencia única NNNN/YY'
   manyToOne:
     idFaseActual:
       targetEntity: Fase
