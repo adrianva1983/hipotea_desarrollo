@@ -303,7 +303,7 @@ class KommoController extends Controller
                 ->getQuery()
                 ->getOneOrNullResult();
             if ($comercialRotativo != null) {
-                $comercial = $this->getDoctrine()->getRepository(Usuario::class)->findOneBy([
+                $comercial = $this->getDoctrine()->getRepository(UsuarioEntidad::class)->findOneBy([
                     'idUsuario' => $comercialRotativo->getIdUsuario()
                 ]);
                 if ($comercial) {
