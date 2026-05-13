@@ -722,6 +722,13 @@ class SimuladorViabilidadController extends Controller
 
             $em->flush();
 
+            // Generar y asignar referencia única solo para expedientes nuevos
+            if (!$expedienteActualizado) {
+                $referenciaService = $this->get('app.referencia_expediente');
+                $referenciaService->asignarReferenciaAExpediente($expediente);
+                $em->flush();
+            }
+
             if ($expedienteActualizado) {
                 $msg = $clienteCreado
                     ? 'Cliente registrado y expediente actualizado correctamente.'

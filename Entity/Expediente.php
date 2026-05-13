@@ -52,6 +52,11 @@ class Expediente
 	private $vivienda;
 
 	/**
+	 * @var string
+	 */
+	private $referencia;
+
+	/**
 	 * @var integer
 	 */
 	private $estado = 1;
@@ -235,6 +240,30 @@ class Expediente
 	public function getVivienda()
 	{
 		return $this->vivienda;
+	}
+
+	/**
+	 * Set referencia
+	 *
+	 * @param string $referencia
+	 *
+	 * @return Expediente
+	 */
+	public function setReferencia($referencia)
+	{
+		$this->referencia = $referencia;
+
+		return $this;
+	}
+
+	/**
+	 * Get referencia
+	 *
+	 * @return string
+	 */
+	public function getReferencia()
+	{
+		return $this->referencia;
 	}
 
 	/**

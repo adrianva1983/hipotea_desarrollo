@@ -239,6 +239,12 @@ class GrupoNegociadorController extends Controller
 				$managerEntidad->persist($expediente);
 				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($usuario, 'Creación del expediente', $expediente));
 				$managerEntidad->flush();
+
+				// Generar y asignar referencia única
+				$referenciaService = $this->get('app.referencia_expediente');
+				$referenciaService->asignarReferenciaAExpediente($expediente);
+				$managerEntidad->flush();
+
 				// Enviar notificación NO PUSH al admin y al comercial
 
 
@@ -5036,6 +5042,15 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				$expediente = (new ExpedienteEntidad())
 					->setIdFaseActual($primeraFase);
 				$fasePrevia = $primeraFase;
+				
+				// Persistir el expediente nuevo
+				$managerEntidad->persist($expediente);
+				$managerEntidad->flush();
+				
+				// Generar y asignar referencia única
+				$referenciaService = $this->get('app.referencia_expediente');
+				$referenciaService->asignarReferenciaAExpediente($expediente);
+				$managerEntidad->flush();
 			} else {
 				$this->addFlash('warning', 'No hay fases.');
 				return $this->redirectToRoute('lista_expedientes');

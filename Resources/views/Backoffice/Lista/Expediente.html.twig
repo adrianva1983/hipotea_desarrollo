@@ -647,6 +647,7 @@ $('#tecnicos').val('{{ app.user.idUsuario }}').change();{% endif %}
 								<th scope="col">Fecha</th>
 								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
 									<th scope="col">Nº Exp.</th>
+									<th scope="col">Referencia</th>
 								{% endif %}
 								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
 									<th scope="col">Origen</th>
@@ -702,8 +703,9 @@ $('#tecnicos').val('{{ app.user.idUsuario }}').change();{% endif %}
 													]</span>
 											{% endif %}
 
-										</td>
-									{% endif %}
+										</td>									<td>
+										{{ expediente.referencia ?? '—' }}
+									</td>									{% endif %}
 									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
 										<td>{{ camposPersonalizados[expediente.idExpediente]['origen']}}</td>
 									{% endif %}

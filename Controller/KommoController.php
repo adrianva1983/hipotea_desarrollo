@@ -1144,6 +1144,11 @@ class KommoController extends Controller
         $em->persist($expediente);
         $em->flush();
 
+        // Generar y asignar referencia única
+        $referenciaService = $this->get('app.referencia_expediente');
+        $referenciaService->asignarReferenciaAExpediente($expediente);
+        $em->flush();
+
         // Crear estructura completa: fases → hitos → grupos → campos
         $fases = $em->getRepository(FaseEntidad::class)->findBy([], ['orden' => 'ASC']);
 

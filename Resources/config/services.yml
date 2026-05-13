@@ -1,0 +1,4 @@
+services:
+    app.referencia_expediente:
+        class: AppBundle\Services\ReferenciaExpedienteService
+        arguments: ['@doctrine.orm.entity_manager']
