@@ -38,15 +38,6 @@ AppBundle\Entity\Expediente:
       options:
         fixed: false
         comment: 'Descripción breve de la vivienda'
-    referencia:
-      type: string
-      nullable: true
-      length: 8
-      column: referencia
-      options:
-        fixed: false
-        comment: 'Referencia única del expediente (formato: NNNN/YY)'
-      unique: true
     estado:
       type: smallint
       nullable: true

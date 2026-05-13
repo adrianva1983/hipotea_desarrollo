@@ -2726,12 +2726,6 @@
 							{{ form_widget(agregarModificarExpediente.vivienda) }}
 							{{ form_errors(agregarModificarExpediente.vivienda) }}
 						</div>
-						{% if idExpediente is not null %}
-							<div class="form-group col-xl">
-								<label for="">Referencia</label>
-								<input class="form-control" type="text" readonly value="{{ agregarModificarExpediente.vars.data.referencia ?? '—' }}" />
-							</div>
-						{% endif %}
 						{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined %}
 							<div class="form-group col-md oculto">
 								{{ form_label(agregarModificarExpediente.idFaseActual) }}
@@ -2777,12 +2771,6 @@
 							{{ form_widget(agregarModificarExpediente.vivienda) }}
 							{{ form_errors(agregarModificarExpediente.vivienda) }}
 						</div>
-						{% if idExpediente is not null %}
-							<div class="form-group col-xl">
-								<label for="">Referencia</label>
-								<input class="form-control" type="text" readonly value="{{ agregarModificarExpediente.vars.data.referencia ?? '—' }}" />
-							</div>
-						{% endif %}
 					</div>
 					{% if attribute(agregarModificarExpediente, 'idFaseActual') is defined %}
 						<div class="form-row">
