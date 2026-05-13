@@ -3103,6 +3103,7 @@ class GrupoNegociadorController extends Controller
 			$qb->andWhere(
 				$qb->expr()->orX(
 					$qb->expr()->like('CONCAT(e.idExpediente, \'\')', ':buscar'),
+					$qb->expr()->like('e.referencia', ':buscar'),
 					$qb->expr()->like('e.vivienda', ':buscar'),
 					$qb->expr()->like('buscarCli.apellidos', ':buscar'),
 					$qb->expr()->like('buscarCli.nombre', ':buscar'),
@@ -3899,6 +3900,7 @@ class GrupoNegociadorController extends Controller
 			$qb->andWhere(
 				$qb->expr()->orX(
 					$qb->expr()->like('CONCAT(e.idExpediente, \'\')', ':buscar'),
+					$qb->expr()->like('e.referencia', ':buscar'),
 					$qb->expr()->like('e.vivienda', ':buscar'),
 					$qb->expr()->like('buscarCli.apellidos', ':buscar'),
 					$qb->expr()->like('buscarCli.nombre', ':buscar'),
