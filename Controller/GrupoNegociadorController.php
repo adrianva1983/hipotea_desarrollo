@@ -15925,7 +15925,8 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			$stmt = $conn->prepare($sql);
 			$patron = '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT);
 			$stmt->bindValue('patron', $patron);
-			$result = $stmt->executeQuery()->fetchAssociative();
+			$stmt->execute();
+			$result = $stmt->fetch();
 			
 			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero']) 
 				? (int)$result['max_numero'] 
