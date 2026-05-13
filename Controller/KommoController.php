@@ -19,6 +19,7 @@ use AppBundle\Entity\CampoHitoExpediente as CampoHitoExpedienteEntidad;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Client as GuzzleClient;
+use AppBundle\Entity\VistaRotacionComerciales;
 
 class KommoController extends Controller
 {
@@ -293,6 +294,22 @@ class KommoController extends Controller
 
             $expediente = $this->buscarOCrearExpediente($em, $cliente);
             // $this->kommoLog('KommoController: Expediente ID: ' . $expediente->getIdExpediente());
+
+            // Esta es la versión rotativa de uno en uno
+            $repoRotacion = $this->getDoctrine()->getRepository(VistaRotacionComerciales::class);
+            $comercialRotativo = $repoRotacion->createQueryBuilder('v')
+                ->orderBy('v.ultimaAsignacion', 'ASC')
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+            if ($comercialRotativo != null) {
+                $comercial = $this->getDoctrine()->getRepository(Usuario::class)->findOneBy([
+                    'idUsuario' => $comercialRotativo->getIdUsuario()
+                ]);
+                if ($comercial) {
+                    $expediente->setIdComercial($comercial);
+                }
+            }
 
             $em->persist($expediente);
             $em->flush();
@@ -1142,11 +1159,6 @@ class KommoController extends Controller
         $expediente->setFechaCreacion(new \DateTime());
 
         $em->persist($expediente);
-        $em->flush();
-
-        // Generar y asignar referencia única
-        $referenciaService = $this->get('app.referencia_expediente');
-        $referenciaService->asignarReferenciaAExpediente($expediente);
         $em->flush();
 
         // Crear estructura completa: fases → hitos → grupos → campos
