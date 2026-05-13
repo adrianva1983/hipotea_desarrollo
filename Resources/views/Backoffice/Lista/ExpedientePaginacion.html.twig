@@ -624,6 +624,7 @@
 								{% endif %}
 								<th scope="col">Fecha</th>
 								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
+									<th scope="col">Nº Exp.</th>
 									<th scope="col">Referencia</th>
 								{% endif %}
 								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
@@ -664,7 +665,7 @@
 									<td data-order="{{ expediente.fechaCreacion|date('U') }}">{{ expediente.fechaCreacion|date('d/m/Y') }}</td>
 									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
 										<td>
-											{{ expediente.referencia ?? expediente.idExpediente }}
+											{{ expediente.idExpediente }}
 											{% if expedientesRelacionados[expediente.idExpediente] is defined %}
 												{% set idsRelacionados = expedientesRelacionados[expediente.idExpediente] | split(',') %}
 												<span style="color:red;font-weight:bold;">[
@@ -677,6 +678,7 @@
 											{% endif %}
 
 										</td>
+										<td>{{ expediente.referencia ?? '-' }}</td>
 									{% endif %}
 									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
 										<td>{{ camposPersonalizados[expediente.idExpediente]['origen'] is defined ? camposPersonalizados[expediente.idExpediente]['origen'] : '' }}</td>
