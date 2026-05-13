@@ -2540,6 +2540,7 @@ PROMPT;
             }
 
             $mergedDocs = array_values($mergedById);
+            $configIA = $this->obtenerConfiguracionIA();
 
             // Guardar consolidado combinado en BD (insert/update)
             try {
