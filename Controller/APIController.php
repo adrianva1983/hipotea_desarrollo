@@ -3436,64 +3436,52 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			$managerEntidad->persist($expediente);
 			$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Creación del expediente', $expediente));
 			$managerEntidad->flush();
-			// Enviar notificación NO PUSH al admin y al comercial
+			// Enviar notificación NO PUSH al equipo asignado (o a todo el equipo si no hay nadie asignado)
 			error_log("ENVIO DE NOTIFICACIONES");
-			$comercialesnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-					'role' => 'ROLE_COMERCIAL'
-				)
-			);
-			foreach($comercialesnoti as $comercialnoti){
-				error_log("NOTIFICACION COMERCIAL: ".$comercialnoti->getUsername());
-				$notificacion = (new Notificacion)
-					->setIdExpediente($expediente)
-					->setEstado(1)
-					->setFecha(new DateTime())
-					->setIdUsuario($comercialnoti)
-					->setTitulo('Nuevo expediente creado')
-					->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-				$managerEntidad->persist($notificacion);
-				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-				$managerEntidad->flush();
-				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($comercialnoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-			}
-			
-			$tecnicosnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-					'role' => 'ROLE_TECNICO'
-				)
-			);
-			foreach($tecnicosnoti as $tecniconoti){
-				error_log("NOTIFICACION TECNICO: ".$tecniconoti->getUsername());
+			$textoNotif = 'El colaborador ' . $colaborador->getUsername() . ' ' . $colaborador->getApellidos() . ' ha creado un nuevo expediente: ' . $expediente->getVivienda();
+			$tituloNotif = 'Nuevo expediente creado';
+			$hayAsignados = false;
 
-				$this->enviarNotificacion($expediente, null, $tecniconoti, 'Nuevo expediente creado', 'El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-
-				/*$notificacion = (new Notificacion)
-					->setIdExpediente($expediente)
-					->setEstado(1)
-					->setFecha(new DateTime())
-					->setIdUsuario($tecniconoti)
-					->setTitulo('Nuevo expediente creado')
-					->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-				$managerEntidad->persist($notificacion);*/
-				
-				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-				$managerEntidad->flush();
-				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($tecniconoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+			// Notificar al comercial asignado (si lo hay)
+			if ($expediente->getIdComercial()) {
+				$hayAsignados = true;
+				$comercialnoti = $expediente->getIdComercial();
+				error_log("NOTIFICACION COMERCIAL ASIGNADO: " . $comercialnoti->getUsername());
+				$this->enviarNotificacion($expediente, null, $comercialnoti, $tituloNotif, $textoNotif);
+				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($comercialnoti), $expediente));
 			}
-			$admin = $doctrine->getRepository(Usuario::class)->findOneBy(array(
-					'role' => 'ROLE_ADMIN'
-				)
-			);
-			error_log("NOTIFICACION ADMIN: ".$admin->getUsername());
-			$notificacion = (new Notificacion)
-				->setIdExpediente($expediente)
-				->setEstado(1)
-				->setFecha(new DateTime())
-				->setIdUsuario($admin)
-				->setTitulo('Nuevo expediente creado')
-				->setTexto('El colaborador ' . $colaborador->getUsername() . ' ' . $colaborador->getApellidos() . ' ha creado un nuevo expediente');
-			$managerEntidad->persist($notificacion);
-			$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-			$managerEntidad->flush();
+
+			// Notificar al técnico asignado (si lo hay)
+			if ($expediente->getIdTecnico()) {
+				$hayAsignados = true;
+				$tecniconoti = $expediente->getIdTecnico();
+				error_log("NOTIFICACION TECNICO ASIGNADO: " . $tecniconoti->getUsername());
+				$this->enviarNotificacion($expediente, null, $tecniconoti, $tituloNotif, $textoNotif);
+				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($tecniconoti), $expediente));
+			}
+
+			// Si no hay nadie asignado, notificar a todos los comerciales y técnicos activos
+			if (!$hayAsignados) {
+				error_log("EXPEDIENTE SIN ASIGNAR - notificando a todo el equipo");
+				$usuariosEquipo = $doctrine->getRepository(Usuario::class)->findBy(array(
+					'role' => array('ROLE_COMERCIAL', 'ROLE_TECNICO'),
+					'estado' => 1
+				));
+				foreach ($usuariosEquipo as $usuarioEquipo) {
+					error_log("NOTIFICACION EQUIPO: " . $usuarioEquipo->getUsername());
+					$this->enviarNotificacion($expediente, null, $usuarioEquipo, $tituloNotif, $textoNotif);
+					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($usuarioEquipo), $expediente));
+				}
+			}
+
+			// Notificar siempre a todos los admins
+			$admins = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_ADMIN'));
+			foreach ($admins as $admin) {
+				error_log("NOTIFICACION ADMIN: " . $admin->getUsername());
+				$this->enviarNotificacion($expediente, null, $admin, $tituloNotif, $textoNotif);
+				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($admin), $expediente));
+			}
+
 			$respuesta['errorlevel'] = 0;
 			return new JsonResponse($respuesta, JSON_UNESCAPED_UNICODE);
 		}
