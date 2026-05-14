@@ -247,12 +247,12 @@ class GrupoNegociadorController extends Controller
 
 				// Ahora creamos los hitos campos etc del expediente para que en la app se puedan ver los formularios
 				
-				$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-
-				$usuarios_gn = $repositorios['Usuarios']->findBy(array(
-						'role' => $roles
-					)
-				);
+				// Notificar a todo el equipo: admins, comerciales y técnicos activos
+				$admins = $repositorios['Usuarios']->findBy(array('role' => 'ROLE_ADMIN'));
+				$comerciales = $repositorios['Usuarios']->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+				$tecnicos = $repositorios['Usuarios']->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+				$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
+				
 				foreach($usuarios_gn as $usuario_gn){
 					$notificacion = (new NotificacionEntidad)
 						->setIdExpediente($expediente)
@@ -442,13 +442,13 @@ class GrupoNegociadorController extends Controller
 						$managerEntidad = $doctrine->getManager();
 						$managerEntidad->persist($usuario);
 						$managerEntidad->flush();
-						$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+						// Notificar a todo el equipo: admins, comerciales y técnicos activos
+						$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
+						$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+						$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+						$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 
 						//Aviso de que se ha creado una cuenta
-						$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-								'role' => $roles
-							)
-						);
 						foreach($usuarios_gn as $usuario_gn){
 							$notificacion = (new NotificacionEntidad)
 								->setEstado(1)
@@ -4896,12 +4896,11 @@ class GrupoNegociadorController extends Controller
 								}
 
 								if($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null){
-									//Aviso de que se ha creado una cuenta
-									$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-									$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-											'role' => $roles
-										)
-									);
+									//Aviso de que se ha creado una cuenta - notificar a todo el equipo
+									$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
+									$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+									$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+									$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 									foreach($usuarios_gn as $usuario_gn){
 										$notificacion = (new NotificacionEntidad)
 											->setIdExpediente($expediente)
@@ -7039,12 +7038,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 								}
 
 								if($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null){
-									//Aviso de que se ha creado una cuenta
-									$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-									$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-											'role' => $roles
-										)
-									);
+									//Aviso de que se ha creado una cuenta - notificar a todo el equipo
+									$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
+									$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+									$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+									$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 									foreach($usuarios_gn as $usuario_gn){
 										$notificacion = (new NotificacionEntidad)
 											->setIdExpediente($expediente)
@@ -10382,11 +10380,10 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			$managerEntidad->flush();
 
 			//Aviso de que se ha creado una cuenta
-			$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-			$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-					'role' => $roles
-				)
-			);
+			$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
+			$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+			$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+			$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 			foreach($usuarios_gn as $usuario_gn){
 				$notificacion = (new NotificacionEntidad)
 					->setEstado(1)
@@ -10443,11 +10440,10 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				$managerEntidad->flush();
 
 				//Aviso de que se ha creado una cuenta
-				$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-				$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-						'role' => $roles
-					)
-				);
+				$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
+				$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+				$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+				$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 				foreach($usuarios_gn as $usuario_gn){
 					$notificacion = (new NotificacionEntidad)
 						->setEstado(1)
@@ -10497,11 +10493,10 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						$managerEntidad->persist($usuario);
 						$managerEntidad->flush();
 
-						$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-						$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-								'role' => $roles
-							)
-						);
+						$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
+						$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+						$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+						$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 						foreach($usuarios_gn as $usuario_gn){
 							$notificacion = (new NotificacionEntidad)
 								->setEstado(1)
