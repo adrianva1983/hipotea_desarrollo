@@ -3337,6 +3337,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 
 	public function crearExpedienteColaboradorAction(Request $request, UserPasswordEncoderInterface $passwordEncoder, Swift_Mailer $mailer)
 	{
+		error_log("ENTRO EN CREAR EXPEDIENTE COLABORADOR");
 		if ($request->headers->get('Content-Type') === 'application/json') {
 			$usuarioRecibido = json_decode($request->getContent(), true);
 			if(array_key_exists('idUsuario', $usuarioRecibido)){
@@ -3436,6 +3437,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Creación del expediente', $expediente));
 			$managerEntidad->flush();
 			// Enviar notificación NO PUSH al admin y al comercial
+			error_log("ENVIO DE NOTIFICACIONES");
 			$comercialesnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
 					'role' => 'ROLE_COMERCIAL'
 				)
