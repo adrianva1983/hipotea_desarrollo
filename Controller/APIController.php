@@ -4437,19 +4437,20 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					$managerEntidad->flush();
 				}
 
-				$admin = $doctrine->getRepository(Usuario::class)->findOneBy(array(
+				$admins = $doctrine->getRepository(Usuario::class)->findBy(array(
 						'role' => 'ROLE_ADMIN'
 					)
 				);
-				$notificacion = (new Notificacion)
-					->setIdExpediente($expediente)
-					->setEstado(1)
-					->setFecha(new DateTime())
-					->setIdUsuario($admin)
-					->setTitulo('Nuevo expediente creado')
-					->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-				$managerEntidad->persist($notificacion);
-				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+				foreach ($admins as $admin) {
+					$notificacion = (new Notificacion)
+						->setIdExpediente($expediente)
+						->setEstado(1)
+						->setFecha(new DateTime())
+						->setIdUsuario($admin)
+						->setTitulo('Nuevo expediente creado')
+						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+					$managerEntidad->persist($notificacion);
+				}
 				$managerEntidad->flush();
 				
 				$respuesta['errorlevel']= 0;
