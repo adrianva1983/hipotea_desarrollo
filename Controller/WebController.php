@@ -1661,12 +1661,10 @@ class WebController extends Controller
 
 							if ($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null) {
 								//Aviso de que se ha creado una cuenta
-								$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-								$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
-									array(
-										'role' => $roles
-									)
-								);
+								$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
+								$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+								$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+								$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 								foreach ($usuarios_gn as $usuario_gn) {
 									$notificacion = (new NotificacionEntidad)
 										->setIdExpediente($expediente)
