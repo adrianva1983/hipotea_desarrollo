@@ -3443,6 +3443,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				)
 			);
 			foreach($comercialesnoti as $comercialnoti){
+				error_log("NOTIFICACION COMERCIAL: ".$comercialnoti->getUsername());
 				$notificacion = (new Notificacion)
 					->setIdExpediente($expediente)
 					->setEstado(1)
@@ -3461,6 +3462,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				)
 			);
 			foreach($tecnicosnoti as $tecniconoti){
+				error_log("NOTIFICACION TECNICO: ".$tecniconoti->getUsername());
 				$notificacion = (new Notificacion)
 					->setIdExpediente($expediente)
 					->setEstado(1)
