@@ -4402,12 +4402,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					}
 				}
 
-				// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
-				$comercialesnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-						'role' => 'ROLE_COMERCIAL'
-					)
-				);
-				foreach($comercialesnoti as $comercialnoti){
+				// Enviar notificación NO PUSH al equipo asignado (o a todo el equipo si nadie asignado)
+				$hayAsignadosCuest = false;
+
+				// Notificar al comercial asignado (si lo hay)
+				if ($expediente->getIdComercial()) {
+					$hayAsignadosCuest = true;
+					$comercialnoti = $expediente->getIdComercial();
 					$notificacion = (new Notificacion)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -4416,15 +4417,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo('Nuevo expediente creado')
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 				}
-				
-				$tecnicosnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-						'role' => 'ROLE_TECNICO'
-					)
-				);
-				foreach($tecnicosnoti as $tecniconoti){
+
+				// Notificar al técnico asignado (si lo hay)
+				if ($expediente->getIdTecnico()) {
+					$hayAsignadosCuest = true;
+					$tecniconoti = $expediente->getIdTecnico();
 					$notificacion = (new Notificacion)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -4433,8 +4432,26 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo('Nuevo expediente creado')
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
+				}
+
+				// Si no hay nadie asignado, notificar a todos los comerciales y técnicos activos
+				if (!$hayAsignadosCuest) {
+					$usuariosEquipoCuest = $doctrine->getRepository(Usuario::class)->findBy(array(
+						'role' => array('ROLE_COMERCIAL', 'ROLE_TECNICO'),
+						'estado' => 1
+					));
+					foreach ($usuariosEquipoCuest as $usuarioEquipoCuest) {
+						$notificacion = (new Notificacion)
+							->setIdExpediente($expediente)
+							->setEstado(1)
+							->setFecha(new DateTime())
+							->setIdUsuario($usuarioEquipoCuest)
+							->setTitulo('Nuevo expediente creado')
+							->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+						$managerEntidad->persist($notificacion);
+						$managerEntidad->flush();
+					}
 				}
 
 				$admins = $doctrine->getRepository(Usuario::class)->findBy(array(
@@ -4837,12 +4854,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					}
 				}
 
-				// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
-				$comercialesnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-						'role' => 'ROLE_COMERCIAL'
-					)
-				);
-				foreach($comercialesnoti as $comercialnoti){
+				// Enviar notificación NO PUSH al equipo asignado (o a todo el equipo si nadie asignado)
+				$hayAsignadosCuestCliente = false;
+
+				// Notificar al comercial asignado (si lo hay)
+				if ($expediente->getIdComercial()) {
+					$hayAsignadosCuestCliente = true;
+					$comercialnoti = $expediente->getIdComercial();
 					$notificacion = (new Notificacion)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -4851,15 +4869,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo('Nuevo expediente creado')
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 				}
-				
-				$tecnicosnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-						'role' => 'ROLE_TECNICO'
-					)
-				);
-				foreach($tecnicosnoti as $tecniconoti){
+
+				// Notificar al técnico asignado (si lo hay)
+				if ($expediente->getIdTecnico()) {
+					$hayAsignadosCuestCliente = true;
+					$tecniconoti = $expediente->getIdTecnico();
 					$notificacion = (new Notificacion)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -4868,8 +4884,26 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo('Nuevo expediente creado')
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
+				}
+
+				// Si no hay nadie asignado, notificar a todos los comerciales y técnicos activos
+				if (!$hayAsignadosCuestCliente) {
+					$usuariosEquipoCuestCliente = $doctrine->getRepository(Usuario::class)->findBy(array(
+						'role' => array('ROLE_COMERCIAL', 'ROLE_TECNICO'),
+						'estado' => 1
+					));
+					foreach ($usuariosEquipoCuestCliente as $usuarioEquipoCuestCliente) {
+						$notificacion = (new Notificacion)
+							->setIdExpediente($expediente)
+							->setEstado(1)
+							->setFecha(new DateTime())
+							->setIdUsuario($usuarioEquipoCuestCliente)
+							->setTitulo('Nuevo expediente creado')
+							->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+						$managerEntidad->persist($notificacion);
+						$managerEntidad->flush();
+					}
 				}
 
 				$admins = $doctrine->getRepository(Usuario::class)->findBy(array(
@@ -4886,7 +4920,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
 				}
-				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 				$managerEntidad->flush();
 
 				$respuesta['errorlevel']= 0;
