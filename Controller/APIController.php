@@ -3477,6 +3477,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					'role' => 'ROLE_ADMIN'
 				)
 			);
+			error_log("NOTIFICACION ADMIN: ".$admin->getUsername());
 			$notificacion = (new Notificacion)
 				->setIdExpediente($expediente)
 				->setEstado(1)
