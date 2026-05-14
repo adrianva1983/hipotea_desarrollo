@@ -3463,14 +3463,18 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			);
 			foreach($tecnicosnoti as $tecniconoti){
 				error_log("NOTIFICACION TECNICO: ".$tecniconoti->getUsername());
-				$notificacion = (new Notificacion)
+
+				$this->enviarNotificacion($expediente, null, $tecniconoti, 'Nuevo expediente creado', 'El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+
+				/*$notificacion = (new Notificacion)
 					->setIdExpediente($expediente)
 					->setEstado(1)
 					->setFecha(new DateTime())
 					->setIdUsuario($tecniconoti)
 					->setTitulo('Nuevo expediente creado')
 					->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-				$managerEntidad->persist($notificacion);
+				$managerEntidad->persist($notificacion);*/
+				
 				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 				$managerEntidad->flush();
 				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($tecniconoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
