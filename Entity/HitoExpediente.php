@@ -15,7 +15,7 @@ class HitoExpediente
 	private $idHitoExpediente;
 
 	/**
-	 * @var boolean
+	 * @var integer
 	 */
 	private $estado = 0;
 
