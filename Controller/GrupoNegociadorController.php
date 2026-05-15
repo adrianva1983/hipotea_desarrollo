@@ -15965,7 +15965,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			$siguienteNumero = $maxNumero + 1;
 			
 			// Formatear: NNNN/YY (4 dígitos para número, 2 para año)
-			$referencia = sprintf('%04d/%02d', $siguienteNumero, $anio);
+			$referencia = sprintf('%05d/%02d', $siguienteNumero, $anio);
 			
 			return $referencia;
 		} catch (\Exception $e) {
