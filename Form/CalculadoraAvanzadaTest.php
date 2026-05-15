@@ -30,7 +30,7 @@ class CalculadoraAvanzadaTest extends AbstractType
 			'attr' => array(
 				'max' => 65,
 				'min' => 18,
-				'placeholder' => '¿Edad del mayor de los titulares?'
+				'placeholder' => '¿Edad del menor de los titulares?'
 			),
 			'label' => 'Edad',
 			'required' => false

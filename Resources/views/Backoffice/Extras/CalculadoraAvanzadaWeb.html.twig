@@ -871,6 +871,21 @@
 									</div>
 								{% endif %}
 							{% else %}
+								{% if error_limit_reached is defined %}
+								<div style="background: linear-gradient(135deg, #fff5e6 0%, #fffef9 100%); border: 3px solid #ff7722; border-radius: 15px; padding: 40px; margin-top: 30px; text-align: center;">
+									<div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+									<h2 style="color: #ff7722; margin-bottom: 15px; font-size: 24px;">Límite de Usos Alcanzado</h2>
+									<p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+										{{ error_limit_reached }}
+									</p>
+									<p style="color: #666; font-size: 14px; margin-bottom: 25px;">
+										Puedes contactar con nosotros a través de WhatsApp para solicitar usar de nuevo la calculadora.
+									</p>
+									<a href="https://wa.me/34671234567?text=Hola%2C+mi+nombre+es+{{ nombre|default('Usuario')|url_encode }}.+He+alcanzado+el+l%C3%ADmite+de+3+usos+en+la+calculadora.+Me+gustar%C3%ADa+realizar+m%C3%A1s+c%C3%A1lculos.+Mi+email+es+{{ email|default('')|url_encode }}.+Gracias." target="_blank" style="display: inline-block; background: #25d366; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; transition: all 0.3s;">
+										📱 Contactar por WhatsApp
+									</a>
+								</div>
+								{% else %}
 								<style>
 									#plazoAmortizacion {
 										padding-left: 0 !important;
@@ -1310,6 +1325,7 @@
 									{% endif %}
 								</div>
 							</div>
+							{% endif %}
 							<div class="text-muted{% if resultado is defined %} d-none{% endif %} centrado-caja texto-resultado-vacio" data-contenedor-resultado-vacio>
 								Por favor, completa la información para ver el resultado.
 							</div>

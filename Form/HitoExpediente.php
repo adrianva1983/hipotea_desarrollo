@@ -17,7 +17,9 @@ class HitoExpediente extends AbstractType
 				'Pendiente' => 0,
 				'Completado' => 1
 			),
-			'label' => 'Estado'
+			'label' => 'Estado',
+			'required' => true,
+			'empty_data' => 0
 		));
 	}
 

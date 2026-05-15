@@ -434,12 +434,11 @@ class APIController extends Controller
 						}
 
 						if($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null){
-							//Aviso de que se ha creado una cuenta
-							$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-							$usuarios_gn = $doctrine->getRepository(Usuario::class)->findBy(array(
-									'role' => $roles
-								)
-							);
+							//Aviso de que se ha creado una cuenta - notificar a todo el equipo
+							$admins = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_ADMIN'));
+							$comerciales = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+							$tecnicos = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+							$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 							foreach($usuarios_gn as $usuario_gn){
 								$notificacion = (new Notificacion)
 									->setIdExpediente($expediente)
@@ -691,12 +690,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 							}
 
 							if($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null){
-								//Aviso de que se ha creado una cuenta
-								$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-								$usuarios_gn = $doctrine->getRepository(Usuario::class)->findBy(array(
-										'role' => $roles
-									)
-								);
+								//Aviso de que se ha creado una cuenta - notificar a todo el equipo
+								$admins = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_ADMIN'));
+								$comerciales = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+								$tecnicos = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+								$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 								foreach($usuarios_gn as $usuario_gn){
 									$notificacion = (new Notificacion)
 										->setIdExpediente($expediente)
@@ -3169,13 +3167,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 									), UrlGeneratorInterface::ABSOLUTE_URL)
 								)), 'text/html');
 							if ($mailer->send($mensaje)) {
-								$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+								// Notificar a todo el equipo: admins, comerciales y técnicos activos
+								$admins = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_ADMIN'));
+								$comerciales = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+								$tecnicos = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+								$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 
 								//Aviso de que se ha creado una cuenta
-								$usuarios_gn = $doctrine->getRepository(Usuario::class)->findBy(array(
-										'role' => $roles
-									)
-								);
 								foreach($usuarios_gn as $usuario_gn){
 									$notificacion = (new Notificacion)
 										->setEstado(1)
@@ -3337,6 +3335,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 
 	public function crearExpedienteColaboradorAction(Request $request, UserPasswordEncoderInterface $passwordEncoder, Swift_Mailer $mailer)
 	{
+		error_log("ENTRO EN CREAR EXPEDIENTE COLABORADOR");
 		if ($request->headers->get('Content-Type') === 'application/json') {
 			$usuarioRecibido = json_decode($request->getContent(), true);
 			if(array_key_exists('idUsuario', $usuarioRecibido)){
@@ -3429,60 +3428,58 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 
 			}
 
+			// Asignar referencia única al expediente
+			$this->asignarReferenciaAExpediente($expediente);
 
 			$managerEntidad->persist($expediente);
 			$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Creación del expediente', $expediente));
 			$managerEntidad->flush();
-			// Enviar notificación NO PUSH al admin y al comercial
-			$comercialesnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-					'role' => 'ROLE_COMERCIAL'
-				)
-			);
-			foreach($comercialesnoti as $comercialnoti){
-				$notificacion = (new Notificacion)
-					->setIdExpediente($expediente)
-					->setEstado(1)
-					->setFecha(new DateTime())
-					->setIdUsuario($comercialnoti)
-					->setTitulo('Nuevo expediente creado')
-					->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-				$managerEntidad->persist($notificacion);
-				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-				$managerEntidad->flush();
-				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($comercialnoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+			// Enviar notificación NO PUSH al equipo asignado (o a todo el equipo si no hay nadie asignado)
+			error_log("ENVIO DE NOTIFICACIONES");
+			$textoNotif = 'El colaborador ' . $colaborador->getUsername() . ' ' . $colaborador->getApellidos() . ' ha creado un nuevo expediente: ' . $expediente->getVivienda();
+			$tituloNotif = 'Nuevo expediente creado';
+			$hayAsignados = false;
+
+			// Notificar al comercial asignado (si lo hay)
+			if ($expediente->getIdComercial()) {
+				$hayAsignados = true;
+				$comercialnoti = $expediente->getIdComercial();
+				error_log("NOTIFICACION COMERCIAL ASIGNADO: " . $comercialnoti->getUsername());
+				$this->enviarNotificacion($expediente, null, $comercialnoti, $tituloNotif, $textoNotif);
+				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($comercialnoti), $expediente));
 			}
-			
-			$tecnicosnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-					'role' => 'ROLE_TECNICO'
-				)
-			);
-			foreach($tecnicosnoti as $tecniconoti){
-				$notificacion = (new Notificacion)
-					->setIdExpediente($expediente)
-					->setEstado(1)
-					->setFecha(new DateTime())
-					->setIdUsuario($tecniconoti)
-					->setTitulo('Nuevo expediente creado')
-					->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-				$managerEntidad->persist($notificacion);
-				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-				$managerEntidad->flush();
-				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($tecniconoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+
+			// Notificar al técnico asignado (si lo hay)
+			if ($expediente->getIdTecnico()) {
+				$hayAsignados = true;
+				$tecniconoti = $expediente->getIdTecnico();
+				error_log("NOTIFICACION TECNICO ASIGNADO: " . $tecniconoti->getUsername());
+				$this->enviarNotificacion($expediente, null, $tecniconoti, $tituloNotif, $textoNotif);
+				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($tecniconoti), $expediente));
 			}
-			$admin = $doctrine->getRepository(Usuario::class)->findOneBy(array(
-					'role' => 'ROLE_ADMIN'
-				)
-			);
-			$notificacion = (new Notificacion)
-				->setIdExpediente($expediente)
-				->setEstado(1)
-				->setFecha(new DateTime())
-				->setIdUsuario($admin)
-				->setTitulo('Nuevo expediente creado')
-				->setTexto('El colaborador ' . $colaborador->getUsername() . ' ' . $colaborador->getApellidos() . ' ha creado un nuevo expediente');
-			$managerEntidad->persist($notificacion);
-			$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-			$managerEntidad->flush();
+
+			// Si no hay nadie asignado, notificar a todos los comerciales y técnicos activos
+			if (!$hayAsignados) {
+				error_log("EXPEDIENTE SIN ASIGNAR - notificando a todo el equipo");
+				$usuariosEquipo = $doctrine->getRepository(Usuario::class)->findBy(array(
+					'role' => array('ROLE_COMERCIAL', 'ROLE_TECNICO'),
+					'estado' => 1
+				));
+				foreach ($usuariosEquipo as $usuarioEquipo) {
+					error_log("NOTIFICACION EQUIPO: " . $usuarioEquipo->getUsername());
+					$this->enviarNotificacion($expediente, null, $usuarioEquipo, $tituloNotif, $textoNotif);
+					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($usuarioEquipo), $expediente));
+				}
+			}
+
+			// Notificar siempre a todos los admins
+			$admins = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_ADMIN'));
+			foreach ($admins as $admin) {
+				error_log("NOTIFICACION ADMIN: " . $admin->getUsername());
+				$this->enviarNotificacion($expediente, null, $admin, $tituloNotif, $textoNotif);
+				$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($admin), $expediente));
+			}
+
 			$respuesta['errorlevel'] = 0;
 			return new JsonResponse($respuesta, JSON_UNESCAPED_UNICODE);
 		}
@@ -3619,17 +3616,20 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			
 						}
 
+						// Asignar referencia única al expediente
+						$this->asignarReferenciaAExpediente($expediente);
+
 						$managerEntidad->persist($expediente);
 						$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Creación del expediente', $expediente));
 						$managerEntidad->flush();
 						
-						$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+						// Notificar a todo el equipo: admins, comerciales y técnicos activos
+						$admins = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_ADMIN'));
+						$comerciales = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+						$tecnicos = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+						$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 
 						//Aviso de que se ha creado una cuenta
-						$usuarios_gn = $doctrine->getRepository(Usuario::class)->findBy(array(
-								'role' => $roles
-							)
-						);
 						foreach($usuarios_gn as $usuario_gn){
 							$notificacion = (new Notificacion)
 								->setIdExpediente($expediente)
@@ -4088,8 +4088,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					->setVivienda('CUESTIONARIO APP')
 				;
 				
-				// Ahora creamos el nuevo expediente para el cuestionario
-				$managerEntidad->persist($expediente);
+			// Asignar referencia única al expediente
+			$this->asignarReferenciaAExpediente($expediente);
+			
 				$managerEntidad->flush();
 
 
@@ -4399,12 +4400,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					}
 				}
 
-				// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
-				$comercialesnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-						'role' => 'ROLE_COMERCIAL'
-					)
-				);
-				foreach($comercialesnoti as $comercialnoti){
+				// Enviar notificación NO PUSH al equipo asignado (o a todo el equipo si nadie asignado)
+				$hayAsignadosCuest = false;
+
+				// Notificar al comercial asignado (si lo hay)
+				if ($expediente->getIdComercial()) {
+					$hayAsignadosCuest = true;
+					$comercialnoti = $expediente->getIdComercial();
 					$notificacion = (new Notificacion)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -4413,15 +4415,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo('Nuevo expediente creado')
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 				}
-				
-				$tecnicosnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-						'role' => 'ROLE_TECNICO'
-					)
-				);
-				foreach($tecnicosnoti as $tecniconoti){
+
+				// Notificar al técnico asignado (si lo hay)
+				if ($expediente->getIdTecnico()) {
+					$hayAsignadosCuest = true;
+					$tecniconoti = $expediente->getIdTecnico();
 					$notificacion = (new Notificacion)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -4430,23 +4430,42 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo('Nuevo expediente creado')
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 				}
 
-				$admin = $doctrine->getRepository(Usuario::class)->findOneBy(array(
+				// Si no hay nadie asignado, notificar a todos los comerciales y técnicos activos
+				if (!$hayAsignadosCuest) {
+					$usuariosEquipoCuest = $doctrine->getRepository(Usuario::class)->findBy(array(
+						'role' => array('ROLE_COMERCIAL', 'ROLE_TECNICO'),
+						'estado' => 1
+					));
+					foreach ($usuariosEquipoCuest as $usuarioEquipoCuest) {
+						$notificacion = (new Notificacion)
+							->setIdExpediente($expediente)
+							->setEstado(1)
+							->setFecha(new DateTime())
+							->setIdUsuario($usuarioEquipoCuest)
+							->setTitulo('Nuevo expediente creado')
+							->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+						$managerEntidad->persist($notificacion);
+						$managerEntidad->flush();
+					}
+				}
+
+				$admins = $doctrine->getRepository(Usuario::class)->findBy(array(
 						'role' => 'ROLE_ADMIN'
 					)
 				);
-				$notificacion = (new Notificacion)
-					->setIdExpediente($expediente)
-					->setEstado(1)
-					->setFecha(new DateTime())
-					->setIdUsuario($admin)
-					->setTitulo('Nuevo expediente creado')
-					->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-				$managerEntidad->persist($notificacion);
-				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+				foreach ($admins as $admin) {
+					$notificacion = (new Notificacion)
+						->setIdExpediente($expediente)
+						->setEstado(1)
+						->setFecha(new DateTime())
+						->setIdUsuario($admin)
+						->setTitulo('Nuevo expediente creado')
+						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+					$managerEntidad->persist($notificacion);
+				}
 				$managerEntidad->flush();
 				
 				$respuesta['errorlevel']= 0;
@@ -4519,8 +4538,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					$expediente->setIdCliente($usuario);
 				}
 				
-				// Ahora creamos el nuevo expediente para el cuestionario
-				$managerEntidad->persist($expediente);
+			// Asignar referencia única al expediente
+			$this->asignarReferenciaAExpediente($expediente);
+			
 				$managerEntidad->flush();
 
 
@@ -4832,12 +4852,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					}
 				}
 
-				// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
-				$comercialesnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-						'role' => 'ROLE_COMERCIAL'
-					)
-				);
-				foreach($comercialesnoti as $comercialnoti){
+				// Enviar notificación NO PUSH al equipo asignado (o a todo el equipo si nadie asignado)
+				$hayAsignadosCuestCliente = false;
+
+				// Notificar al comercial asignado (si lo hay)
+				if ($expediente->getIdComercial()) {
+					$hayAsignadosCuestCliente = true;
+					$comercialnoti = $expediente->getIdComercial();
 					$notificacion = (new Notificacion)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -4846,15 +4867,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo('Nuevo expediente creado')
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 				}
-				
-				$tecnicosnoti = $doctrine->getRepository(Usuario::class)->findBy(array(
-						'role' => 'ROLE_TECNICO'
-					)
-				);
-				foreach($tecnicosnoti as $tecniconoti){
+
+				// Notificar al técnico asignado (si lo hay)
+				if ($expediente->getIdTecnico()) {
+					$hayAsignadosCuestCliente = true;
+					$tecniconoti = $expediente->getIdTecnico();
 					$notificacion = (new Notificacion)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -4863,8 +4882,26 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo('Nuevo expediente creado')
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
+				}
+
+				// Si no hay nadie asignado, notificar a todos los comerciales y técnicos activos
+				if (!$hayAsignadosCuestCliente) {
+					$usuariosEquipoCuestCliente = $doctrine->getRepository(Usuario::class)->findBy(array(
+						'role' => array('ROLE_COMERCIAL', 'ROLE_TECNICO'),
+						'estado' => 1
+					));
+					foreach ($usuariosEquipoCuestCliente as $usuarioEquipoCuestCliente) {
+						$notificacion = (new Notificacion)
+							->setIdExpediente($expediente)
+							->setEstado(1)
+							->setFecha(new DateTime())
+							->setIdUsuario($usuarioEquipoCuestCliente)
+							->setTitulo('Nuevo expediente creado')
+							->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+						$managerEntidad->persist($notificacion);
+						$managerEntidad->flush();
+					}
 				}
 
 				$admins = $doctrine->getRepository(Usuario::class)->findBy(array(
@@ -4881,7 +4918,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
 				}
-				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 				$managerEntidad->flush();
 
 				$respuesta['errorlevel']= 0;
@@ -5389,12 +5425,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				}
 
 				if($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null){
-					//Aviso de que se ha creado una cuenta
-					$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-					$usuarios_gn = $doctrine->getRepository(Usuario::class)->findBy(array(
-							'role' => $roles
-						)
-					);
+					//Aviso de que se ha creado una cuenta - notificar a todo el equipo
+					$admins = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_ADMIN'));
+					$comerciales = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+					$tecnicos = $doctrine->getRepository(Usuario::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+					$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 					foreach($usuarios_gn as $usuario_gn){
 						$notificacion = (new Notificacion)
 							->setIdExpediente($expediente)
@@ -5823,225 +5858,68 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 	}
 
 	/**
-	 * Recibe webhook de Kommo, lo guarda en la tabla y auto-crea/actualiza
-	 * el expediente asociado al mismo lead cuando hay datos suficientes.
+	 * Genera una referencia única para un expediente
+	 * Formato: NNNN/YY (ej: 0001/26, 0002/26, etc.)
+	 * 
+	 * @param int $anio El año de 2 dígitos para el que generar la referencia
+	 * @return string Referencia en formato NNNN/YY
+	 * @throws \Exception Si hay error al generar la referencia
 	 */
-	public function recibirKommoWebhookAction(Request $request, LoggerInterface $logger)
+	private function generarReferencia(int $anio): string
 	{
-		$respuesta = array();
-		$respuestaEnviada = false;
-		$responseKommo = null;
-		error_log('Kommo webhook: Webhook recibido', 0);
-		class_exists('AppBundle\\Controller\\KommoController');
-
-		$tokenEsperado = $this->getParameter('kommo_webhook_token');
-		$tokenRecibido = $request->query->get('token');
-		if ($tokenRecibido !== $tokenEsperado) {
-			$logger->warning('Kommo webhook: Token inválido', ['received' => $tokenRecibido]);
-			return jsonUnicodeResponseKommo([
-				'errorlevel' => 0,
-				'mensaje' => 'Webhook recibido pero token no válido',
-				'auto_accion' => 'token_invalido'
-			]);
-		}
-
-		$payload = json_decode($request->getContent(), true);
-		if (json_last_error() !== 0 || !is_array($payload)) {
-			$payload = $request->request->all();
-		}
-
-		if (empty($payload) || !is_array($payload)) {
-			$respuesta['errorlevel'] = 1;
-			$respuesta['mensaje'] = 'No se pudo decodificar el payload recibido';
-			return jsonUnicodeResponseKommo($respuesta);
-		}
-
-		$doctrine = $this->getDoctrine();
-		$manager = $doctrine->getManager();
-		$webhookType = function_exists(__NAMESPACE__ . '\\resolverWebhookTypeKommo') ? resolverWebhookTypeKommo($payload) : null;
-		$kommoId = function_exists(__NAMESPACE__ . '\\resolverKommoLeadIdDesdePayloadKommo') ? resolverKommoLeadIdDesdePayloadKommo($payload) : null;
-		$motivoProcesado = function_exists(__NAMESPACE__ . '\\obtenerMotivoProcesadoWebhookKommo')
-			? obtenerMotivoProcesadoWebhookKommo($webhookType, $payload)
-			: 'sin_diagnostico';
-
-		$logger->info('Kommo webhook: recibido y decodificado', [
-			'webhook_type' => $webhookType,
-			'kommo_id' => $kommoId,
-			'motivo_procesado' => $motivoProcesado,
-			'content_type' => (string) $request->headers->get('Content-Type'),
-			'content_length' => (int) $request->headers->get('Content-Length', 0),
-		]);
-
-		
-
 		try {
-			error_log('Kommo webhook: intentando detectar duplicado', 0);
-			if (function_exists(__NAMESPACE__ . '\\esWebhookKommoDuplicado') && esWebhookKommoDuplicado($doctrine, $webhookType, $kommoId, $payload)) {
-				$respuesta['errorlevel'] = 0;
-				$respuesta['mensaje'] = 'Webhook duplicado ignorado';
-				$respuesta['webhook_type'] = $webhookType;
-				$respuesta['kommo_id'] = $kommoId;
-				$respuesta['auto_accion'] = 'duplicado';
-				return jsonUnicodeResponseKommo($respuesta);
-			}
-			error_log('Kommo webhook: no es duplicado, continúa procesamiento', 0);
-			$kommoWebhook = new \AppBundle\Entity\KommoWebhook();
-			if ($webhookType !== null) {
-				$kommoWebhook->setWebhookType($webhookType);
-			}
-			if ($kommoId !== null) {
-				$kommoWebhook->setKommoId($kommoId);
-			}
-			error_log('Kommo webhook: guardando en BD', 0);
-			$payloadGuardar = compactarPayloadKommoParaGuardarKommo($payload);
-
-			$kommoWebhook
-				->setJsonRecibido($payloadGuardar)
-				->setEstado('recibido')
-				->setErrorMensaje(null);
-
-			$manager->persist($kommoWebhook);
-			$manager->flush();
-
-			$dbId = $kommoWebhook->getId();
-			$respuesta['errorlevel'] = 0;
-			$respuesta['mensaje'] = 'Webhook recibido correctamente';
-			$respuesta['db_id'] = $dbId;
-			$respuesta['webhook_type'] = $webhookType;
-			$respuesta['kommo_id'] = $kommoId;
-			$respuesta['auto_accion'] = 'pendiente';
-			error_log('Kommo webhook: guardado en BD con ID ' . $dbId, 0);
-
-			$responseKommo = jsonUnicodeResponseKommo($respuesta);
-			if (function_exists('session_write_close')) {
-				@session_write_close();
-			}
-			if (function_exists('fastcgi_finish_request')) {
-				$responseKommo->send();
-				@fastcgi_finish_request();
-				$respuestaEnviada = true;
-				error_log('Kommo webhook: respuesta HTTP 200 enviada inmediatamente a Kommo', 0);
-			}
-
-			// ============================================================
-			// REGISTRAR PROCESAMIENTO EN BACKGROUND
-			// ============================================================
-			if (function_exists('ignore_user_abort')) {
-				@ignore_user_abort(true);
-			}
-
-			//register_shutdown_function(function () use ($doctrine, $manager, $kommoId, $logger, $payload, $webhookType, $motivoProcesado, $kommoWebhook) {
-				error_log('Kommo webhook: **SHUTDOWN HANDLER INICIANDO** (este mensaje confirma que se ejecutó)', 0);
-				
-				try {
-					// Crear nuevo entity manager si el actual está cerrado
-					try {
-						if ($manager->getConnection()->getWrappedConnection() === null || !$manager->isOpen()) {
-							error_log('Kommo webhook: recobrando entity manager cerrado', 0);
-							$manager = $doctrine->getManager();
-						}
-					} catch (\Throwable $e) {
-						error_log('Kommo webhook: recobro de entity manager falló, crear nuevo', 0);
-						$manager = $doctrine->resetManager();
-					}
-
-					$auto = ['accion' => 'solo_guardado'];
-					$debeAutoProcesarse = function_exists(__NAMESPACE__ . '\\debeAutoProcesarWebhookKommo')
-						? debeAutoProcesarWebhookKommo($webhookType, $payload)
-						: in_array((string) $webhookType, ['leads', 'contacts', 'unsorted'], true);
-
-					error_log('Kommo webhook: (shutdown) decisión de auto-procesado - ' . ($debeAutoProcesarse ? 'Sí' : 'No'), 0);
-
-					if ($debeAutoProcesarse) {
-						try {
-							error_log('Kommo webhook: (shutdown) iniciando auto-procesado', 0);
-							$auto = function_exists(__NAMESPACE__ . '\\autoProcesarLeadKommo')
-								? autoProcesarLeadKommo($doctrine, $manager, $kommoId, $logger, $payload)
-								: ['accion' => 'solo_guardado'];
-							error_log('Kommo webhook: auto-procesado finalizado con acción ');//hasta aca
-
-							$accionAuto = $auto['accion'] ?? 'solo_guardado';
-							if (in_array($accionAuto, ['solo_guardado', 'pendiente', 'duplicado'], true)) {
-								if (method_exists($kommoWebhook, 'setEstado')) {
-									$kommoWebhook->setEstado('recibido');
-								}
-								if (method_exists($kommoWebhook, 'setErrorMensaje')) {
-									$kommoWebhook->setErrorMensaje(null);
-								}
-								$manager->persist($kommoWebhook);
-								$manager->flush();
-							} elseif (!empty($auto['motivo']) && method_exists($kommoWebhook, 'setErrorMensaje')) {
-								$kommoWebhook->setErrorMensaje(function_exists(__NAMESPACE__ . '\\limitarTextoKommo') ? limitarTextoKommo($auto['motivo'], 250) : substr((string) $auto['motivo'], 0, 250));
-								$manager->persist($kommoWebhook);
-								$manager->flush();
-							} else {
-								if (method_exists($kommoWebhook, 'setEstado')) {
-									$kommoWebhook->setEstado('procesado');
-								}
-								if (method_exists($kommoWebhook, 'setErrorMensaje')) {
-									$kommoWebhook->setErrorMensaje(null);
-								}
-								$manager->persist($kommoWebhook);
-								$manager->flush();
-							}
-							error_log('Kommo webhook: (shutdown) auto-procesado finalizado con acción: ' . ($auto['accion'] ?? 'desconocido'), 0);
-						} catch (\Exception $e) {
-							error_log('Kommo webhook: (shutdown) Error en auto-procesado: ' . $e->getMessage(), 0);
-							$logger->error('Kommo webhook: Error en auto-procesado (background)', [
-								'kommo_id' => $kommoId,
-								'error' => $e->getMessage(),
-								'trace' => $e->getTraceAsString(),
-							]);
-
-							if (method_exists($kommoWebhook, 'setEstado')) {
-								$kommoWebhook->setEstado('error');
-							}
-							if (method_exists($kommoWebhook, 'setErrorMensaje')) {
-								$kommoWebhook->setErrorMensaje(function_exists(__NAMESPACE__ . '\\limitarTextoKommo') ? limitarTextoKommo($e->getMessage(), 250) : substr((string) $e->getMessage(), 0, 250));
-							}
-							$manager->persist($kommoWebhook);
-							$manager->flush();
-						}
-					} else {
-						error_log('Kommo webhook: (shutdown) sin auto-procesado, solo_guardado', 0);
-						if (method_exists($kommoWebhook, 'setEstado')) {
-							$kommoWebhook->setEstado('recibido');
-						}
-						if (method_exists($kommoWebhook, 'setErrorMensaje')) {
-							$kommoWebhook->setErrorMensaje(null);
-						}
-						$manager->persist($kommoWebhook);
-						$manager->flush();
-					}
-				} catch (\Throwable $e) {
-					error_log('Kommo webhook: (shutdown) Error general en background: ' . $e->getMessage(), 0);
-					$logger->error('Kommo webhook: Error en procesamiento background', [
-						'error' => $e->getMessage(),
-						'trace' => $e->getTraceAsString()
-					]);
-				}
-				error_log('Kommo webhook: **SHUTDOWN HANDLER COMPLETADO CORRECTAMENTE**', 0);
-			//});
-			// FIN register_shutdown_function
-
-			// Retornar respuesta normalmente para que Symfony la envíe
-			// El shutdown handler se ejecutará después
-			error_log('Kommo webhook: retornando respuesta a Symfony, procesamiento en background registrado', 0);
-			return $respuestaEnviada ? new \Symfony\Component\HttpFoundation\Response('', 200) : $responseKommo;
-		} catch (\Throwable $e) {
-			$logger->error('Kommo webhook: Error inesperado', [
-				'error' => $e->getMessage(),
-				'trace' => $e->getTraceAsString()
-			]);
-			$respuesta['errorlevel'] = 0;
-			$respuesta['mensaje'] = 'Webhook recibido con incidencia controlada';
-			$respuesta['auto_accion'] = 'error_controlado';
+			$doctrine = $this->getDoctrine();
+			$conn = $doctrine->getConnection();
+			
+			// Query SQL para obtener el máximo número de referencia del año especificado
+			$sql = "
+				SELECT MAX(CAST(SUBSTRING_INDEX(referencia, '/', 1) AS UNSIGNED)) as max_numero
+				FROM expediente
+				WHERE referencia LIKE :patron
+			";
+			
+			$stmt = $conn->prepare($sql);
+			$patron = '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT);
+			$stmt->bindValue('patron', $patron);
+			$stmt->execute();
+			$result = $stmt->fetch();
+			
+			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero']) 
+				? (int)$result['max_numero'] 
+				: 0;
+			
+			$siguienteNumero = $maxNumero + 1;
+			
+			// Formatear: NNNN/YY (4 dígitos para número, 2 para año)
+			$referencia = sprintf('%04d/%02d', $siguienteNumero, $anio);
+			
+			return $referencia;
+		} catch (\Exception $e) {
+			throw new \Exception('Error al generar referencia de expediente: ' . $e->getMessage());
 		}
+	}
 
-		if ($respuestaEnviada) {
-			return new \Symfony\Component\HttpFoundation\Response('', 200);
+	/**
+	 * Asigna una referencia a un expediente si no la tiene
+	 * 
+	 * @param Expediente $expediente
+	 * @return string La referencia asignada
+	 * @throws \Exception
+	 */
+	private function asignarReferenciaAExpediente(Expediente $expediente): string
+	{
+		// Si ya tiene referencia, no generar otra
+		if (!empty($expediente->getReferencia())) {
+			return $expediente->getReferencia();
 		}
-
-		return jsonUnicodeResponseKommo($respuesta);
+		
+		// Obtener el año desde la fecha de creación del expediente
+		$anio = (int)$expediente->getFechaCreacion()->format('y');
+		
+		// Generar y asignar la referencia
+		$referencia = $this->generarReferencia($anio);
+		$expediente->setReferencia($referencia);
+		
+		return $referencia;
 	}
 }

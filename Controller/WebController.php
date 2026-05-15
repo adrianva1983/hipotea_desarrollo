@@ -1181,6 +1181,11 @@ class WebController extends Controller
 			$expediente->setIdComercial($comercial);
 
 			if (!$this->comprobarSiLasEntidadesSonIguales($managerEntidad, $expediente)) {
+				// Asignar referencia única si es un expediente nuevo
+				if (!isset($id)) {
+					$this->asignarReferenciaAExpediente($expediente);
+				}
+				
 				$managerEntidad->persist($expediente);
 				if (isset($id)) {
 					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($this->getUser(), 'Modificación del expediente', $expediente));
@@ -1625,6 +1630,9 @@ class WebController extends Controller
 								$notificacion->setIdUsuario($expediente->getIdColaborador())
 									->setTexto('El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.');
 								$managerEntidad->persist($notificacion);
+								// Notificar a la jerarquía del colaborador (jefe de inmobiliaria / jefe de oficina)
+								$textoJerarquiaWeb = 'El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.';
+								$this->notificarJerarquiaColaborador($expediente, 'Nuevo documento en expediente', $textoJerarquiaWeb, $managerEntidad, $doctrine);
 							}
 
 							// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
@@ -1656,12 +1664,10 @@ class WebController extends Controller
 
 							if ($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null) {
 								//Aviso de que se ha creado una cuenta
-								$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
-								$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
-									array(
-										'role' => $roles
-									)
-								);
+								$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
+								$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
+								$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
+								$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
 								foreach ($usuarios_gn as $usuario_gn) {
 									$notificacion = (new NotificacionEntidad)
 										->setIdExpediente($expediente)
@@ -1904,49 +1910,75 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					}
 				}
 
-				// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
-				$comercialesnoti = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
-					array(
-						'role' => 'ROLE_COMERCIAL'
-					)
-				);
-				foreach ($comercialesnoti as $comercialnoti) {
+				// Enviar notificación con lógica "solo asignados"
+				$hayAsignados = ($expediente->getIdComercial() != null || $expediente->getIdTecnico() != null);
+
+				// Notificar al comercial asignado si existe
+				if ($expediente->getIdComercial()) {
 					$notificacion = (new NotificacionEntidad)
 						->setIdExpediente($expediente)
 						->setEstado(1)
 						->setFecha(new DateTime())
-						->setIdUsuario($comercialnoti)
+						->setIdUsuario($expediente->getIdComercial())
 						->setTitulo($asunto)
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
-					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($comercialnoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($expediente->getIdComercial(), 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 				}
 
-				$tecnicosnoti = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
-					array(
-						'role' => 'ROLE_TECNICO'
-					)
-				);
-				foreach ($tecnicosnoti as $tecniconoti) {
+				// Notificar al técnico asignado si existe
+				if ($expediente->getIdTecnico()) {
 					$notificacion = (new NotificacionEntidad)
 						->setIdExpediente($expediente)
 						->setEstado(1)
 						->setFecha(new DateTime())
-						->setIdUsuario($tecniconoti)
+						->setIdUsuario($expediente->getIdTecnico())
 						->setTitulo($asunto)
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
-					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($tecniconoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($expediente->getIdTecnico(), 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 				}
 
+				// Si no hay nadie asignado, notificar a todo el equipo
+				if (!$hayAsignados) {
+					$comercialesnoti = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
+						array('role' => 'ROLE_COMERCIAL', 'estado' => 1)
+					);
+					foreach ($comercialesnoti as $comercialnoti) {
+						$notificacion = (new NotificacionEntidad)
+							->setIdExpediente($expediente)
+							->setEstado(1)
+							->setFecha(new DateTime())
+							->setIdUsuario($comercialnoti)
+							->setTitulo($asunto)
+							->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+						$managerEntidad->persist($notificacion);
+						$managerEntidad->flush();
+						$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($comercialnoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+					}
+
+					$tecnicosnoti = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
+						array('role' => 'ROLE_TECNICO', 'estado' => 1)
+					);
+					foreach ($tecnicosnoti as $tecniconoti) {
+						$notificacion = (new NotificacionEntidad)
+							->setIdExpediente($expediente)
+							->setEstado(1)
+							->setFecha(new DateTime())
+							->setIdUsuario($tecniconoti)
+							->setTitulo($asunto)
+							->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
+						$managerEntidad->persist($notificacion);
+						$managerEntidad->flush();
+						$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($tecniconoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
+					}
+				}
+
+				// Siempre notificar a los admins
 				$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(
-					array(
-						'role' => 'ROLE_ADMIN'
-					)
+					array('role' => 'ROLE_ADMIN')
 				);
 				foreach ($admins as $admin) {
 					$notificacion = (new NotificacionEntidad)
@@ -1957,7 +1989,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo($asunto)
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
-					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 				}
 			}
@@ -2207,4 +2238,129 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 		fclose($ficheroAbierto);
 		return $valido;
 	}
+
+	/**
+	 * Genera una referencia única para un expediente
+	 * Formato: NNNN/YY (ej: 0001/26, 0002/26, etc.)
+	 * 
+	 * @param int $anio El año de 2 dígitos para el que generar la referencia
+	 * @return string Referencia en formato NNNN/YY
+	 * @throws \Exception Si hay error al generar la referencia
+	 */
+	private function generarReferencia(int $anio): string
+	{
+		try {
+			$doctrine = $this->getDoctrine();
+			$conn = $doctrine->getConnection();
+			
+			// Query SQL para obtener el máximo número de referencia del año especificado
+			$sql = "
+				SELECT MAX(CAST(SUBSTRING_INDEX(referencia, '/', 1) AS UNSIGNED)) as max_numero
+				FROM expediente
+				WHERE referencia LIKE :patron
+			";
+			
+			$stmt = $conn->prepare($sql);
+			$patron = '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT);
+			$stmt->bindValue('patron', $patron);
+			$stmt->execute();
+			$result = $stmt->fetch();
+			
+			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero']) 
+				? (int)$result['max_numero'] 
+				: 0;
+			
+			$siguienteNumero = $maxNumero + 1;
+			
+			// Formatear: NNNN/YY (4 dígitos para número, 2 para año)
+			$referencia = sprintf('%04d/%02d', $siguienteNumero, $anio);
+			
+			return $referencia;
+		} catch (\Exception $e) {
+			throw new \Exception('Error al generar referencia de expediente: ' . $e->getMessage());
+		}
+	}
+
+	/**
+	 * Asigna una referencia a un expediente si no la tiene
+	 * 
+	 * @param ExpedienteEntidad $expediente
+	 * @return string La referencia asignada
+	 * @throws \Exception
+	 */
+	private function asignarReferenciaAExpediente(ExpedienteEntidad $expediente): string
+	{
+		// Si ya tiene referencia, no generar otra
+		if (!empty($expediente->getReferencia())) {
+			return $expediente->getReferencia();
+		}
+		
+		// Obtener el año desde la fecha de creación del expediente
+		$anio = (int)$expediente->getFechaCreacion()->format('y');
+		
+		// Generar y asignar la referencia
+		$referencia = $this->generarReferencia($anio);
+		$expediente->setReferencia($referencia);
+		
+		return $referencia;
+	}
+
+	/**
+	 * Notifica al jefe de inmobiliaria y jefe de oficina del colaborador asignado al expediente.
+	 * Se llama siempre que el colaborador recibe una notificación, para que su jerarquía también la reciba.
+	 */
+	private function notificarJerarquiaColaborador(
+		ExpedienteEntidad $expediente,
+		string $titulo,
+		string $texto,
+		$managerEntidad,
+		$doctrine
+	): void {
+		$colaborador = $expediente->getIdColaborador();
+		if (!$colaborador) {
+			return;
+		}
+
+		$jefes = array();
+
+		// Jefes de la inmobiliaria del colaborador
+		if ($colaborador->getIdInmobiliaria()) {
+			$jefesInmobiliaria = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+				'role' => 'ROLE_JEFE_INMOBILIARIA',
+				'idInmobiliaria' => $colaborador->getIdInmobiliaria(),
+				'estado' => 1
+			));
+			$jefes = array_merge($jefes, $jefesInmobiliaria);
+		}
+
+		// Jefes de la oficina del colaborador
+		if ($colaborador->getIdOficina()) {
+			$jefesOficina = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+				'role' => 'ROLE_JEFE_OFICINA',
+				'idOficina' => $colaborador->getIdOficina(),
+				'estado' => 1
+			));
+			$jefes = array_merge($jefes, $jefesOficina);
+		}
+
+		foreach ($jefes as $jefe) {
+			// No duplicar si el jefe coincide con el propio colaborador
+			if ($jefe->getIdUsuario() === $colaborador->getIdUsuario()) {
+				continue;
+			}
+			$notificacionJefe = (new NotificacionEntidad())
+				->setIdExpediente($expediente)
+				->setEstado(1)
+				->setFecha(new \DateTime())
+				->setIdUsuario($jefe)
+				->setTitulo($titulo)
+				->setTexto($texto);
+			$managerEntidad->persist($notificacionJefe);
+		}
+
+		if (!empty($jefes)) {
+			$managerEntidad->flush();
+		}
+	}
+
 }

@@ -18,7 +18,6 @@ class SimuladorDatosClienteType extends AbstractType
 	{
 		$builder->add('nombre', TextType::class, array(
 			'label' => 'Nombre completo',
-			'data'=>'Kilian Mbappe',
 			'required' => true,
 			'attr' => array(
 				'placeholder' => 'Ej: Juan García López'
@@ -29,24 +28,23 @@ class SimuladorDatosClienteType extends AbstractType
 				))
 			)
 		))->add('dni', TextType::class, array(
-			'label' => 'DNI / NIE',
-			'data'=>'Y4516712D',
+			'label' => 'DNI / NIE / Pasaporte',
 			'required' => true,
 			'attr' => array(
-				'placeholder' => 'Ej: 12345678A'
+				'placeholder' => 'Ej: 12345678A o X1234567L o AA1234567'
 			),
 			'constraints' => array(
 				new NotBlank(array(
-					'message' => 'El DNI/NIE es obligatorio.'
+					'message' => 'El documento es obligatorio.'
 				)),
 				new Regex(array(
-					'pattern' => '/^[0-9]{8}[A-Z]$|^[XYZ][0-9]{7}[A-Z]$/',
-					'message' => 'El formato del DNI/NIE no es válido.'
+					// Acepta DNI (8 dígitos + letra), NIE (X/Y/Z + 7 dígitos + letra) o números de pasaporte alfanuméricos (5-20 chars)
+					'pattern' => '/(^[0-9]{8}[A-Z]$|^[XYZ][0-9]{7}[A-Z]$|^[A-Z0-9]{5,20}$)/',
+					'message' => 'El formato del DNI/NIE/Pasaporte no es válido.'
 				))
 			)
 		))->add('telefono', TelType::class, array(
 			'label' => 'Teléfono',
-			'data'=>'699699699',
 			'required' => true,
 			'attr' => array(
 				'placeholder' => 'Ej: 666123456'
@@ -58,7 +56,6 @@ class SimuladorDatosClienteType extends AbstractType
 			)
 		))->add('email', EmailType::class, array(
 			'label' => 'Email',
-			'data'=>'mbappe@gmail.com',
 			'required' => true,
 			'attr' => array(
 				'placeholder' => 'Ej: juan@example.com'

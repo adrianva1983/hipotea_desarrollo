@@ -136,87 +136,6 @@
 			font-size: 18px;
 		}
 
-		a.chat-expediente {
-			display: inline-block;
-			min-width: 30px;
-			text-align: center;
-			border: 2px solid #17a2b8;
-			padding: 2px 5px;
-			border-radius: 5px;
-			color: #17a2b8;
-			background: white;
-			font-size: 18px;
-			line-height: 1.2;
-		}
-		tr a.chat-expediente {
-			color: #17a2b8;
-		}
-
-		a.chat-expediente.sin-mensajes {
-			border-color: #b8bfc6;
-			color: #b8bfc6;
-			background: #f5f6f7;
-		}
-
-		a.chat-expediente i {
-			display: inline-block;
-		}
-
-		#modal-chat-expediente {
-			max-height: 90vh;
-		}
-
-		#modal-chat-expediente .modal-content {
-			max-height: 85vh;
-		}
-
-		#modal-chat-expediente .modal-body {
-			background: #f7f9fc;
-			max-height: 60vh;
-			overflow-y: auto;
-		}
-
-		#modal-chat-expediente .modal-footer {
-			max-height: 35vh;
-		}
-
-		.chat-expediente-contenedor {
-			display: flex;
-			flex-direction: column;
-			gap: 10px;
-		}
-
-		.chat-expediente-item {
-			max-width: 80%;
-			padding: 10px 12px;
-			border-radius: 14px;
-			background: #fff;
-			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-		}
-
-		.chat-expediente-item.entrante {
-			align-self: flex-start;
-			border-left: 4px solid #17a2b8;
-		}
-
-		.chat-expediente-item.saliente {
-			align-self: flex-end;
-			border-right: 4px solid #28a745;
-			background: #eefcf1;
-		}
-
-		.chat-expediente-meta {
-			font-size: 12px;
-			color: #6c757d;
-			margin-bottom: 4px;
-		}
-
-		.chat-expediente-vacio {
-			text-align: center;
-			color: #6c757d;
-			padding: 20px;
-		}
-
 		a.editar span,
 		a.documentos span,
 		a.notificar span,
@@ -227,8 +146,7 @@
 		a.duplicar span,
 		a.firmas span,
 		a.seguimiento span,
-		a.cancelar span,
-		a.chat-expediente span {
+		a.cancelar span {
 			display: none;
 		}
 
@@ -367,18 +285,6 @@
 		function rutaCancelarExpediente() {
 			return '{{ path('cancelar_expediente',{'id':' '}) }}';
 		}
-
-		function rutaExpedienteChatMensajes() {
-			return '{{ path('expediente_chat_mensajes',{'id':'__ID__'}) }}';
-		}
-
-		function rutaExpedienteChatResponder() {
-			return '{{ path('expediente_chat_responder_kommo',{'id':'__ID__'}) }}';
-		}
-
-		function rutaExpedienteChatSugerir() {
-			return '{{ path('expediente_chat_sugerir_kommo_ajax',{'id':'__ID__'}) }}';
-		}
 		
 		function cambiarLimit(nuevoLimit) {
 			// Obtener la URL actual con todos sus parámetros
@@ -439,176 +345,6 @@
 				// Actualizar el valor del input oculto
 				$('#estado-filtro').val(estado);
 			});
-		});
-		function cargarMensajesExpediente(idExpediente, vivienda) {
-			var url = rutaExpedienteChatMensajes().replace('__ID__', idExpediente);
-			var $contenedor = $('#chat-expediente-contenido');
-
-			$('#chat-expediente-titulo').text('Mensajes del expediente #' + idExpediente);
-			$('#chat-expediente-subtitulo').text(vivienda || '');
-			$contenedor.html('<div class="chat-expediente-vacio">Cargando mensajes...</div>');
-
-			$.get(url)
-				.done(function (respuesta) {
-					if (!respuesta || !respuesta.mensajes || respuesta.mensajes.length === 0) {
-						$contenedor.html('<div class="chat-expediente-vacio">Todavía no hay mensajes guardados para este expediente.</div>');
-						return;
-					}
-
-					var html = '<div class="chat-expediente-contenedor">';
-					respuesta.mensajes.forEach(function (mensaje) {
-						var direccion = (mensaje.direccion || 'entrante').toLowerCase() === 'saliente' ? 'saliente' : 'entrante';
-						html += '<div class="chat-expediente-item ' + direccion + '">';
-						html += '<div class="chat-expediente-meta">' + $('<div>').text(mensaje.autor || 'Usuario').html() + ' · ' + $('<div>').text(mensaje.fecha || '').html() + '</div>';
-						html += '<div class="chat-expediente-texto">' + $('<div>').text(mensaje.texto || '').html().replace(/\n/g, '<br>') + '</div>';
-						html += '</div>';
-					});
-					html += '</div>';
-					$contenedor.html(html);
-				})
-				.fail(function () {
-					$contenedor.html('<div class="chat-expediente-vacio">No se han podido cargar los mensajes del expediente.</div>');
-				});
-		}
-
-		$(document).on('click', '[data-expediente-chat]', function (e) {
-			e.preventDefault();
-
-			var idExpediente = $(this).data('expediente-chat');
-			var vivienda = $(this).data('vivienda') || '';
-			$('#chat-expediente-id').val(idExpediente);
-			$('#chat-expediente-respuesta').val('');
-			$('#chat-expediente-alerta').addClass('d-none').removeClass('alert-success alert-danger').text('');
-			$('#modal-chat-expediente').modal('show');
-			cargarMensajesExpediente(idExpediente, vivienda);
-		});
-
-		$(document).on('click', '#chat-expediente-sugerir', function (e) {
-			e.preventDefault();
-
-			var idExpediente = $('#chat-expediente-id').val();
-			var $boton = $(this);
-			var $botonEnviar = $('#chat-expediente-enviar');
-			var $cargando = $('#chat-expediente-cargando-ia');
-			var $textarea = $('#chat-expediente-respuesta');
-			var $alerta = $('#chat-expediente-alerta');
-			var $infoTokens = $('#chat-expediente-info-tokens');
-			var $divInfoTokens = $('#chat-expediente-info-tokens').parent();
-
-			if (!idExpediente) {
-				$alerta.removeClass('d-none alert-success').addClass('alert-danger').text('No se ha cargado un expediente válido.');
-				return;
-			}
-
-			// Mostrar indicador de carga
-			$cargando.removeClass('d-none');
-			$divInfoTokens.addClass('d-none');
-			$boton.prop('disabled', true);
-			$botonEnviar.prop('disabled', true);
-			$alerta.addClass('d-none').removeClass('alert-success alert-danger').text('');
-
-			console.log('🚀 [SUGERIR] Iniciando petición para expediente:', idExpediente);
-			console.log('🔗 [SUGERIR] URL:', rutaExpedienteChatSugerir().replace('__ID__', idExpediente));
-
-			// Realizar petición a la API de sugerencia IA
-			$.ajax({
-				url: rutaExpedienteChatSugerir().replace('__ID__', idExpediente),
-				method: 'POST',
-				contentType: 'application/json; charset=utf-8',
-				dataType: 'json',
-				data: JSON.stringify({})
-			})
-				.done(function (respuesta) {
-					console.log('📥 [SUGERIR] Respuesta recibida:', respuesta);
-					
-					if (respuesta.success && respuesta.sugerencia) {
-						console.log('✅ [SUGERIR] Sugerencia válida. Longitud:', respuesta.sugerencia.length);
-						
-						// Insertar sugerencia en textarea
-						$textarea.val(respuesta.sugerencia);
-						
-						// Mostrar información de tokens
-						var tokensInfo = 'Entrada: ' + (respuesta.tokens.entrada || 0) + ' | Salida: ' + (respuesta.tokens.salida || 0) + ' | Total: ' + (respuesta.tokens.total || 0) + ' | Proveedor: ' + (respuesta.proveedor || 'Desconocido');
-						$infoTokens.text(tokensInfo);
-						$divInfoTokens.removeClass('d-none');
-						
-						$alerta.removeClass('d-none alert-danger').addClass('alert-success').text('Sugerencia obtenida correctamente. Puedes editarla antes de enviar.');
-					} else {
-						console.log('❌ [SUGERIR] Respuesta sin éxito:', respuesta);
-						var msg = (respuesta && respuesta.message) ? respuesta.message : 'No se obtuvo una sugerencia válida.';
-						$alerta.removeClass('d-none alert-success').addClass('alert-danger').text(msg);
-					}
-				})
-				.fail(function (xhr) {
-					console.log('❌ [SUGERIR] Error AJAX:', {
-						status: xhr.status,
-						statusText: xhr.statusText,
-						responseJSON: xhr.responseJSON,
-						responseText: xhr.responseText
-					});
-					
-					var mensajeError = 'No se pudo obtener la sugerencia de IA.';
-					
-					if (xhr.responseJSON) {
-						if (xhr.responseJSON.message) {
-							mensajeError = xhr.responseJSON.message;
-							if (xhr.responseJSON.debug_exception) {
-								mensajeError += ' [' + xhr.responseJSON.debug_exception + ' en ' + xhr.responseJSON.debug_file + ':' + xhr.responseJSON.debug_line + ']';
-							}
-						}
-					} else if (xhr.status === 400) {
-						mensajeError = 'No hay conversación cargada para sugerir respuesta.';
-					} else if (xhr.status === 500) {
-						mensajeError = 'Error en la API de IA. Por favor, intenta más tarde.';
-					}
-					
-					$alerta.removeClass('d-none alert-success').addClass('alert-danger').text(mensajeError);
-				})
-				.always(function () {
-					console.log('✅ [SUGERIR] Petición completada');
-					$cargando.addClass('d-none');
-					$boton.prop('disabled', false);
-					$botonEnviar.prop('disabled', false);
-				});
-		});
-
-		$(document).on('click', '#chat-expediente-enviar', function (e) {
-			e.preventDefault();
-
-			var idExpediente = $('#chat-expediente-id').val();
-			var mensaje = $.trim($('#chat-expediente-respuesta').val());
-			var $boton = $(this);
-			var $alerta = $('#chat-expediente-alerta');
-
-			if (!mensaje) {
-				$alerta.removeClass('d-none alert-success').addClass('alert-danger').text('Escribe un mensaje antes de enviarlo.');
-				return;
-			}
-
-			$boton.prop('disabled', true).text('Enviando...');
-			$alerta.addClass('d-none').removeClass('alert-success alert-danger').text('');
-
-			$.ajax({
-				url: rutaExpedienteChatResponder().replace('__ID__', idExpediente),
-				method: 'POST',
-				contentType: 'application/json; charset=utf-8',
-				data: JSON.stringify({ mensaje: mensaje })
-			})
-				.done(function (respuesta) {
-					$alerta.removeClass('d-none alert-danger').addClass('alert-success').text((respuesta && respuesta.mensaje) ? respuesta.mensaje : 'Mensaje enviado correctamente.');
-					$('#chat-expediente-respuesta').val('');
-					cargarMensajesExpediente(idExpediente, $('#chat-expediente-subtitulo').text());
-				})
-				.fail(function (xhr) {
-					var mensajeError = 'No se pudo enviar el mensaje a Kommo.';
-					if (xhr.responseJSON && xhr.responseJSON.mensaje) {
-						mensajeError = xhr.responseJSON.mensaje;
-					}
-					$alerta.removeClass('d-none alert-success').addClass('alert-danger').text(mensajeError);
-				})
-				.always(function () {
-					$boton.prop('disabled', false).text('Enviar a Kommo');
-				});
 		});
 	</script>
 	<script src="{{ asset('assets/js/custom/lista-expedientes.min.js') }}"></script>
@@ -889,6 +625,7 @@
 								<th scope="col">Fecha</th>
 								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
 									<th scope="col">Nº Exp.</th>
+									<th scope="col">Referencia</th>
 								{% endif %}
 								{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
 									<th scope="col">Origen</th>
@@ -941,6 +678,7 @@
 											{% endif %}
 
 										</td>
+										<td>{{ expediente.referencia ?? '-' }}</td>
 									{% endif %}
 									{% if not is_granted('ROLE_CLIENTE')and not is_granted('ROLE_COLABORADOR') and not is_granted('ROLE_JEFE_INMOBILIARIA') and not is_granted('ROLE_JEFE_OFICINA') and not is_granted('ROLE_RESPONSABLE_ZONA') %}
 										<td>{{ camposPersonalizados[expediente.idExpediente]['origen'] is defined ? camposPersonalizados[expediente.idExpediente]['origen'] : '' }}</td>
@@ -1024,17 +762,11 @@
 										</td>
 									{% endif %}
 									<td>
-										{% set totalMensajesExpediente = expedientesConMensajes[expediente.idExpediente] is defined ? expedientesConMensajes[expediente.idExpediente] : 0 %}
-										{% set chatDisponible = totalMensajesExpediente > 0 %}
 										{% if is_granted('ROLE_CLIENTE') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}
 											{% if expediente.estado is same as(1) %}
 												<a class="mr-2 seguimiento" href="{{ path('seguimiento_expediente',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Seguimiento" data-trigger="hover">
 													<i class="fas fa-eye"></i>
 													<span>Seguimiento</span>
-												</a>
-												<a class="mr-2 chat-expediente{% if not chatDisponible %} sin-mensajes{% endif %}" href="javascript:void(0)" data-expediente-chat="{{ expediente.idExpediente }}" data-vivienda="{{ expediente.vivienda|e('html_attr') }}" data-toggle="popover" data-content="{{ chatDisponible ? 'Mensajes disponibles' : 'Sin mensajes' }}" data-trigger="hover">
-													<i class="fas fa-comments"></i>
-													<span>Mensajes</span>
 												</a>
 												<a class="mr-2 editar" href="{{ path('modificar_expediente',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Editar" data-trigger="hover">
 													<i class="far fa-edit"></i>
@@ -1065,10 +797,6 @@
 											<a class="mr-2 email" href="{{ path('expediente_email',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Enviar Email" data-trigger="hover">
 												<i class="far fa-envelope"></i>
 												<span>E-Mail</span>
-											</a>
-											<a class="mr-2 chat-expediente{% if not chatDisponible %} sin-mensajes{% endif %}" href="javascript:void(0)" data-expediente-chat="{{ expediente.idExpediente }}" data-vivienda="{{ expediente.vivienda|e('html_attr') }}" data-toggle="popover" data-content="{{ chatDisponible ? 'Mensajes disponibles' : 'Sin mensajes' }}" data-trigger="hover">
-												<i class="fas fa-comments"></i>
-												<span>Mensajes</span>
 											</a>
 											<a class="mr-2 informe" href="{{ path('informe_expediente',{'id':expediente.idExpediente}) }}" target="_blank" data-toggle="popover" data-content="Informe" data-trigger="hover">
 												<i class="fas fa-info"></i>
@@ -1238,56 +966,4 @@
 	{% include '@App/Backoffice/Modal/ConfirmarDuplicar.html' %}
 	{% include '@App/Backoffice/Modal/NotificacionExpediente.html.twig' %}
 	{% include '@App/Backoffice/Modal/CancelarExpediente.html.twig' %}
-
-	<div class="modal fade" id="modal-chat-expediente" tabindex="-1" role="dialog" aria-labelledby="chat-expediente-titulo" aria-hidden="true">
-		<div class="modal-dialog modal-lg" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="chat-expediente-titulo">Mensajes del expediente</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<div class="modal-body">
-					<p class="text-muted mb-3" id="chat-expediente-subtitulo"></p>
-					<div id="chat-expediente-contenido">
-						<div class="chat-expediente-vacio">Todavía no hay mensajes para este expediente.</div>
-					</div>
-				</div>
-				<div class="modal-footer d-block">
-					<div id="chat-expediente-alerta" class="alert d-none mb-2"></div>
-					<input type="hidden" id="chat-expediente-id" value="">
-					<div class="form-group mb-2">
-						<label for="chat-expediente-respuesta">Responder manualmente</label>
-						<textarea class="form-control" id="chat-expediente-respuesta" rows="10" placeholder="Escribe aquí la respuesta para enviar al cliente desde Kommo"></textarea>
-						<small class="form-text text-muted mt-1">
-							<i class="fas fa-lightbulb"></i> Usa el botón "Solicitar Sugerencia IA" para obtener una respuesta automática basada en la conversación.
-						</small>
-						<!-- Indicador de carga de sugerencia IA -->
-						<div id="chat-expediente-cargando-ia" class="alert alert-info d-none mt-2 mb-0" role="alert">
-							<div class="spinner-border spinner-border-sm mr-2" role="status">
-								<span class="sr-only">Cargando...</span>
-							</div>
-							<span>Obteniendo sugerencia de IA...</span>
-						</div>
-						<!-- Información de tokens utilizados -->
-						<div id="chat-expediente-info-tokens" class="alert alert-light d-none mt-2 mb-0" role="alert">
-							<small>
-								<strong>Tokens utilizados:</strong> 
-								<span id="chat-expediente-tokens-info"></span>
-							</small>
-						</div>
-					</div>
-					<div class="text-right">
-						<button type="button" class="btn btn-outline-secondary mr-2" id="chat-expediente-sugerir">
-							<i class="fas fa-magic"></i> Solicitar Sugerencia IA
-						</button>
-						<button type="button" class="btn btn-primary" id="chat-expediente-enviar">
-							<i class="fas fa-paper-plane"></i> Enviar a Kommo
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
 {% endblock %}

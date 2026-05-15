@@ -1,4 +1,4 @@
-{% extends '@App/Frontoffice/base.html.twig' %}
+﻿{% extends '@App/Frontoffice/base.html.twig' %}
 {% form_theme calculadora_comparativa '@App/Backoffice/bootstrap_4_layout.html.twig' %}
 {% block customscripts %}
 	{{ parent() }}
@@ -24,7 +24,7 @@
 					fetch("{{ path('calculadora_comparativa_ajax') }}", {
 						method: 'POST',
 						body: formData,
-        				credentials: 'same-origin' // Asegura que las cookies (sesión) se envíen
+        				credentials: 'same-origin' // Asegura que las cookies (sesiÃ³n) se envÃ­en
 					})
 					.then(response => response.text()) // Recibe el HTML de Symfony
 					.then(data => {
@@ -53,7 +53,7 @@
 					<h4 class="card-title mb-1" id="titulo-principal">
 						Calcula y compara tu oferta actual con nuestras ofertas
 					</h4>
-					<div class="text-muted mb-4">Rellena la siguiente información</div>
+					<div class="text-muted mb-4">Rellena la siguiente informaciÃ³n</div>
 					{{ form_start(calculadora_comparativa, { 'attr': { 'target': '_self' } }) }}
 					<div class="form-row">
 						<div class="form-group col">
@@ -62,7 +62,7 @@
 							{{ form_errors(calculadora_comparativa.destino) }}
 						</div>
 					</div>
-					<h6>¿Cuéntanos qué condiciones tienes?</h6>
+					<h6>Â¿CuÃ©ntanos quÃ© condiciones tienes?</h6>
 					<div class="form-row">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.tipoHipoteca) }}
@@ -70,7 +70,7 @@
 							{{ form_errors(calculadora_comparativa.tipoHipoteca) }}
 						</div>
 					</div>
-					{# <h6 class="plazo-amortizacion">Plazo de amortización:</h6> #}
+					{# <h6 class="plazo-amortizacion">Plazo de amortizaciÃ³n:</h6> #}
 					<div class="form-row mejorar">
 						<div class="form-group col">
 							{{ form_label(calculadora_comparativa.aniosPendientesHipoteca) }}
@@ -233,7 +233,22 @@
 				</h4>
 				<div class="card-body d-flex flex-column justify-content-center m-auto" style="width:100%;padding: 1.25rem 0;">
 					{# {% if tipo_calculo is defined and tipo_calculo =='cuota' %} #}
-						<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado>
+					{% if error_limit_reached is defined %}
+					<div style="background: linear-gradient(135deg, #fff5e6 0%, #fffef9 100%); border: 3px solid #ff7722; border-radius: 15px; padding: 40px; margin-top: 30px; text-align: center;">
+						<div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+						<h2 style="color: #ff7722; margin-bottom: 15px; font-size: 24px;">Límite de Usos Alcanzado</h2>
+						<p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+							{{ error_limit_reached }}
+						</p>
+						<p style="color: #666; font-size: 14px; margin-bottom: 25px;">
+							Puedes contactar con nosotros a través de WhatsApp para solicitar usar de nuevo la calculadora.
+						</p>
+						<a href="https://wa.me/34671234567?text=Hola%2C+mi+nombre+es+{{ nombre|default('Usuario')|url_encode }}.+He+alcanzado+el+l%C3%ADmite+de+3+usos+en+la+calculadora.+Me+gustar%C3%ADa+realizar+m%C3%A1s+c%C3%A1lculos.+Mi+email+es+{{ email|default('')|url_encode }}.+Gracias." target="_blank" style="display: inline-block; background: #25d366; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; transition: all 0.3s;">
+							📱 Contactar por WhatsApp
+						</a>
+					</div>
+					{% else %}
+					<div {% if resultado is not defined %} class="d-none" {% else %} class="text-muted centrado-caja texto-resultado" {% endif %} data-contenedor-resultado>
 							{% if resultado is defined %}
 								<style>
 
@@ -410,10 +425,10 @@
 											
 											// Verifica si el elemento existe en el DOM
 											if (resultadoElement) {
-												// Obtiene la posición del elemento desde la parte superior de la página
+												// Obtiene la posiciÃ³n del elemento desde la parte superior de la pÃ¡gina
 												const position = resultadoElement.getBoundingClientRect().top + window.scrollY - 60;
 												
-												// Desplaza la página hasta esa posición calculada y lo deja en la parte superior
+												// Desplaza la pÃ¡gina hasta esa posiciÃ³n calculada y lo deja en la parte superior
 												window.scrollTo({
 													top: position,
 													behavior: 'smooth' // Desplazamiento suave
@@ -433,7 +448,7 @@
 												{{ nombreOferta }}
 											{% endif %}
 											{% if resultado is defined and tipoOferta == 'Mixto' %}
-												y el resto de años euribor + {{ margen }}%
+												y el resto de aÃ±os euribor + {{ margen }}%
 											{% endif %}
 										</h2>
 									</div>
@@ -452,25 +467,25 @@
 													<tr>
 														<td>Cuota Mensual</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -483,39 +498,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} años)</td>
+														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -528,39 +543,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primer año)</td>
+														<td>Cuota Mensual<br>(Primer aÃ±o)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -575,39 +590,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} años)</td>
+														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -620,39 +635,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primeros años)</td>
+														<td>Cuota Mensual<br>(Primeros aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -665,39 +680,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primer año)</td>
+														<td>Cuota Mensual<br>(Primer aÃ±o)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -716,25 +731,25 @@
 													<tr>
 														<td>Cuota Mensual</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -747,39 +762,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} años)</td>
+														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -792,39 +807,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primer año)</td>
+														<td>Cuota Mensual<br>(Primer aÃ±o)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -839,39 +854,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} años)</td>
+														<td>Cuota Mensual<br>(Primeros {{ primerosAnios }} aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -884,39 +899,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primeros años)</td>
+														<td>Cuota Mensual<br>(Primeros aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -929,39 +944,39 @@
 														<th>Diferencia</th>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Primer año)</td>
+														<td>Cuota Mensual<br>(Primer aÃ±o)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
-														<td>Cuota Mensual<br>(Resto años)</td>
+														<td>Cuota Mensual<br>(Resto aÃ±os)</td>
 														<td>
-															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_original_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_oferta_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}€</span>
+															<span class="value">{{ cuota_mensual_ahorro_variable|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 													<tr>
 														<td>Intereses totales</td>
 														<td>
-															<span class="value">{{ intereses_original|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_original|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_oferta|number_format(0,',','.') }}â‚¬</span>
 														</td>
 														<td>
-															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}€</span>
+															<span class="value">{{ intereses_ahorro|number_format(0,',','.') }}â‚¬</span>
 														</td>
 													</tr>
 												</table>
@@ -981,15 +996,15 @@
 											</div>
 											<div class="column">
 												<span class="value">{{ cuota_mensual_original|number_format(0,',','.') }}
-													€</span>
+													â‚¬</span>
 											</div>
 											<div class="column">
 												<span class="value">{{ cuota_mensual_oferta|number_format(0,',','.') }}
-													€</span>
+													â‚¬</span>
 											</div>
 											<div class="column">
 												<span class="value">{{ cuota_mensual_ahorro|number_format(0,',','.') }}
-												€</span>
+												â‚¬</span>
 											</div>
 										</div>
 									</div> #}
@@ -1006,22 +1021,22 @@
 							<br>
 							{% if resultado is defined and vinculaciones %}
 								<h5 style="text-align:left;color: black;">
-									Opción con vinculaciones: personalizada para ti
+									OpciÃ³n con vinculaciones: personalizada para ti
 								</h5>
 								<p style="color:grey;font-size:12px;text-align:justify;">
-									En Hipotea, entendemos que cada cliente es único. Por eso, las condiciones de vinculación se negocian de forma individualizada, adaptándose a tus necesidades y preferencias. Las vinculaciones más comunes incluyen la domiciliación de nómina y la contratación de seguros de hogar y vida, pero estudiaremos juntos las opciones que más te beneficien.
+									En Hipotea, entendemos que cada cliente es Ãºnico. Por eso, las condiciones de vinculaciÃ³n se negocian de forma individualizada, adaptÃ¡ndose a tus necesidades y preferencias. Las vinculaciones mÃ¡s comunes incluyen la domiciliaciÃ³n de nÃ³mina y la contrataciÃ³n de seguros de hogar y vida, pero estudiaremos juntos las opciones que mÃ¡s te beneficien.
 								</p>
 							{% else %}
 								<h5 style="text-align:left;color: black; display: none;">
-									Opción sin vinculaciones: la hipoteca que no te ata
+									OpciÃ³n sin vinculaciones: la hipoteca que no te ata
 								</h5>
 								<p style="color:grey;font-size:12px;text-align:justify; display: none;">
-									Al optar por esta opción, no solo disfrutarás de ahorros en la cuota e intereses, sino también de la ventaja de no tener que contratar productos adicionales que otras ofertas podrían requerir. Por ejemplo, si otras ofertas te solicitan 2.000 € anuales en seguros innecesarios o más costosos de lo que encontrarías en el mercado externo, es importante que sumes este ahorro al total que hemos calculado para ti cada año.
+									Al optar por esta opciÃ³n, no solo disfrutarÃ¡s de ahorros en la cuota e intereses, sino tambiÃ©n de la ventaja de no tener que contratar productos adicionales que otras ofertas podrÃ­an requerir. Por ejemplo, si otras ofertas te solicitan 2.000 â‚¬ anuales en seguros innecesarios o mÃ¡s costosos de lo que encontrarÃ­as en el mercado externo, es importante que sumes este ahorro al total que hemos calculado para ti cada aÃ±o.
 								</p>
 							{% endif %}
 							{% if resultado is defined and (tipoOferta == 'Mixto' or tipo == 2 or tipo == 3) %}
 								<p style="color:grey;font-size:12px;text-align:justify;">
-									<strong>*</strong> En la parte variable, hemos utilizado un Euríbor medio del 2% al que hemos sumado, por un lado, el margen de tu hipoteca actual y, por otro, el margen de nuestra oferta para compararlos. Es importante destacar que, aunque hemos hecho estos cálculos, no podemos cuantificar la tranquilidad que aporta una hipoteca a tipo fijo frente a una variable. Si el Euríbor sube más allá de las medias estimadas, las diferencias en el ahorro podrían ser significativas a favor del tipo fijo.
+									<strong>*</strong> En la parte variable, hemos utilizado un EurÃ­bor medio del 2% al que hemos sumado, por un lado, el margen de tu hipoteca actual y, por otro, el margen de nuestra oferta para compararlos. Es importante destacar que, aunque hemos hecho estos cÃ¡lculos, no podemos cuantificar la tranquilidad que aporta una hipoteca a tipo fijo frente a una variable. Si el EurÃ­bor sube mÃ¡s allÃ¡ de las medias estimadas, las diferencias en el ahorro podrÃ­an ser significativas a favor del tipo fijo.
 								</p>
 							{% endif %}
 							{% if resultado is defined and (tipoOferta == 'Fijo' or tipo == 1) %}
@@ -1031,29 +1046,30 @@
 							{% endif %}
 							{% if resultado is defined and plazoAmortizacion %}
 								<p style="color:grey;font-size:12px;text-align:justify;">
-									Tu oferta tiene un plazo superior a 30 años, lo que puede reducir la cuota al extender el pago en más años, pero también supone pagar más intereses en total. Nuestras ofertas están limitadas a un máximo de 30 años, por lo que en esta comparativa estás comparando períodos diferentes, algo que debes tener en cuenta tanto en la comparativa de la cuota como el total de intereses.
+									Tu oferta tiene un plazo superior a 30 aÃ±os, lo que puede reducir la cuota al extender el pago en mÃ¡s aÃ±os, pero tambiÃ©n supone pagar mÃ¡s intereses en total. Nuestras ofertas estÃ¡n limitadas a un mÃ¡ximo de 30 aÃ±os, por lo que en esta comparativa estÃ¡s comparando perÃ­odos diferentes, algo que debes tener en cuenta tanto en la comparativa de la cuota como el total de intereses.
 								</p>
 							{% endif %}
 
 							<p style="color:grey;font-size:12px;text-align:justify;">
-								<strong>IMPORTANTE:</strong> Recuerda que siempre tienes la opción de cambiar tu hipoteca para ajustarla a las mejores ofertas disponibles. Si ya has firmado tu hipoteca con nosotros, no te cobramos nada por estudiar y tramitar mejoras posteriores. Asegúrate de contar con la hipoteca más conveniente hoy y adapta tu elección a futuro según tus necesidades, como pasar de una hipoteca mixta a una fija o al revés, sin costes adicionales.
+								<strong>IMPORTANTE:</strong> Recuerda que siempre tienes la opciÃ³n de cambiar tu hipoteca para ajustarla a las mejores ofertas disponibles. Si ya has firmado tu hipoteca con nosotros, no te cobramos nada por estudiar y tramitar mejoras posteriores. AsegÃºrate de contar con la hipoteca mÃ¡s conveniente hoy y adapta tu elecciÃ³n a futuro segÃºn tus necesidades, como pasar de una hipoteca mixta a una fija o al revÃ©s, sin costes adicionales.
 							</p>
 						</div>
+						{% endif %}
 						<div class="text-muted{% if resultado is defined %} d-none{% endif %} centrado-caja texto-resultado-vacio" data-contenedor-resultado-vacio>
-							{# Por favor, completa la información para ver el resultado. #}
+							{# Por favor, completa la informaciÃ³n para ver el resultado. #}
 							<p>
-								En Hipotea sabemos que encontrar la hipoteca adecuada puede marcar una gran diferencia en tu economía. Por eso, hemos diseñado esta calculadora para ayudarte a visualizar claramente los beneficios que podrías obtener al elegir una de nuestras opciones.
+								En Hipotea sabemos que encontrar la hipoteca adecuada puede marcar una gran diferencia en tu economÃ­a. Por eso, hemos diseÃ±ado esta calculadora para ayudarte a visualizar claramente los beneficios que podrÃ­as obtener al elegir una de nuestras opciones.
 							</p>
 							<p>
-								<strong>¿Cómo funciona?</strong>
+								<strong>Â¿CÃ³mo funciona?</strong>
 							</p>
 							<ol>
-								<li>Introduce los detalles de tu oferta actual: Solo necesitas especificar el importe del préstamo, el tipo de interés y el plazo.</li>
-								<li>Selecciona la oferta de Hipotea que deseas comparar: Puedes elegir entre nuestra hipoteca mixta de 10 años, o nuestra atractiva oferta a tipo fijo. Además, te ofrecemos la opción de comparar las condiciones con o sin vinculación.</li>
-								<li>Analiza los resultados: Te mostraremos cuánto podrías ahorrar en la cuota mensual y en el total de intereses a lo largo del plazo de la hipoteca.</li>
+								<li>Introduce los detalles de tu oferta actual: Solo necesitas especificar el importe del prÃ©stamo, el tipo de interÃ©s y el plazo.</li>
+								<li>Selecciona la oferta de Hipotea que deseas comparar: Puedes elegir entre nuestra hipoteca mixta de 10 aÃ±os, o nuestra atractiva oferta a tipo fijo. AdemÃ¡s, te ofrecemos la opciÃ³n de comparar las condiciones con o sin vinculaciÃ³n.</li>
+								<li>Analiza los resultados: Te mostraremos cuÃ¡nto podrÃ­as ahorrar en la cuota mensual y en el total de intereses a lo largo del plazo de la hipoteca.</li>
 							</ol>
 							<p>
-								Con esta herramienta, queremos que tengas toda la información para que tomes la mejor decisión y descubras cómo mejorar tu oferta. ¡Comienza ahora y descubre el ahorro que podrías conseguir con Hipotea!
+								Con esta herramienta, queremos que tengas toda la informaciÃ³n para que tomes la mejor decisiÃ³n y descubras cÃ³mo mejorar tu oferta. Â¡Comienza ahora y descubre el ahorro que podrÃ­as conseguir con Hipotea!
 							</p>
 						</div>
 					</div>
@@ -1065,3 +1081,4 @@
 		{{ parent() }}
 		{% include '@App/Backoffice/Modal/ErrorCalculadora.html' %}
 	{% endblock %}
+

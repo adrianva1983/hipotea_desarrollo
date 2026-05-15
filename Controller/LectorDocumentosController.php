@@ -264,7 +264,7 @@ class LectorDocumentosController extends Controller
     }
 
     
-    public function enviarAOllama($rutaArchivo, $documento, $configIA)
+    private function enviarAOllama($rutaArchivo, $documento, $configIA)
     {
         $prompt = $this->construirPromptAnalisis($documento['nombre_campo']);
         $base64Content = base64_encode(file_get_contents($rutaArchivo));
@@ -343,7 +343,7 @@ class LectorDocumentosController extends Controller
     /**
      * Obtiene configuración de IA desde tabla ia_config o variables de entorno
      */
-    public function obtenerConfiguracionIA()
+    private function obtenerConfiguracionIA()
     {
         try {
             $em = $this->getDoctrine()->getManager();
@@ -408,7 +408,7 @@ class LectorDocumentosController extends Controller
     /**
      * Envía documento a Google Gemini Vision API
      */
-    public function enviarAGemini($rutaArchivo, $documento, $configIA)
+    private function enviarAGemini($rutaArchivo, $documento, $configIA)
     {
         $prompt = $this->construirPromptAnalisis($documento['nombre_campo']);
         
@@ -504,7 +504,7 @@ class LectorDocumentosController extends Controller
     /**
      * Envía documento a OpenAI Vision API
      */
-    public function enviarAOpenAI($rutaArchivo, $documento, $configIA)
+    private function enviarAOpenAI($rutaArchivo, $documento, $configIA)
     {
         $prompt = $this->construirPromptAnalisis($documento['nombre_campo']);
         
@@ -2540,10 +2540,7 @@ PROMPT;
             }
 
             $mergedDocs = array_values($mergedById);
-            // Obtener configuración IA
-            error_log('⚙️ Obteniendo configuración IA...');
             $configIA = $this->obtenerConfiguracionIA();
-            error_log('✅ Configuración IA: Provider=' . ($configIA['provider'] ?? 'UNKNOWN') . ', Model=' . ($configIA['model'] ?? 'UNKNOWN'));
 
             // Guardar consolidado combinado en BD (insert/update)
             try {
@@ -2570,7 +2567,10 @@ PROMPT;
                 ], 404);
             }
             
-            
+            // Obtener configuración IA
+            error_log('⚙️ Obteniendo configuración IA...');
+            $configIA = $this->obtenerConfiguracionIA();
+            error_log('✅ Configuración IA: Provider=' . ($configIA['provider'] ?? 'UNKNOWN') . ', Model=' . ($configIA['model'] ?? 'UNKNOWN'));
             
             if (!$configIA || !isset($configIA['api_key']) || !$configIA['api_key']) {
                 error_log('❌ API Key no configurada para proveedor: ' . ($configIA['provider'] ?? 'UNKNOWN'));

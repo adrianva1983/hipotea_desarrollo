@@ -206,6 +206,7 @@
             border-radius: 40px;
             box-shadow: rgb(188, 188, 188) 2px 1px 7px 2px;
         }
+        
 
         @media (max-width: 1200px) {
             .simulador-container {
@@ -215,6 +216,29 @@
             .formulario-panel,
             .resultado-panel {
                 flex: 1 1 auto;
+            }
+        }
+        @media(max-width: 576px) {
+            #btnAnterior, #btnSiguiente, #btnCalcularPrecioMaximo, #btnReiniciar, #btnResultado {
+                font-size: 16px;
+            }
+            #resultado-final {
+                padding: 5px !important;
+            }
+            #resultado-final a {
+                width : 100% !important;
+            }
+            .mientras_vende {
+                font-size: 14px !important;
+            }
+            .resultado-panel {
+                padding: 2px;
+            }
+            .info-peqenna {
+                font-size: 8px !important;
+            }
+            .simulador-container {
+                width: 100% !important;
             }
         }
     </style>
@@ -233,11 +257,11 @@
         const totalPasos = 5;
         const pasos = ['paso0', 'paso1', 'paso2', 'paso3', 'paso4'];
         const titulosStep = [
-            'Paso 0: Aviso Legal',
-            'Paso 1: Datos del Cliente',
-            'Paso 2: Precio Maximo',
-            'Paso 3: Cuota y Gastos',
-            'Paso 4: Analisis de Riesgo',
+            'Paso 0/4: Aviso Legal',
+            'Paso 1/4: Datos solicitante',
+            'Paso 2/4: Precio Maximo',
+            'Paso 3/4: Cuota y Gastos',
+            'Paso 4/4: Analisis de Riesgo',
             'Resultado: Evaluacion de Viabilidad'
         ];
 
@@ -272,7 +296,7 @@
             
             mensaje += '.';
             
-            const url = `https://wa.me/send?phone=34672511771&text=${encodeURIComponent(mensaje)}`;
+            const url = `https://wa.me/send?phone=34613356474&text=${encodeURIComponent(mensaje)}`;
             window.open(url, '_blank');
         }
 
@@ -294,9 +318,9 @@
                 }
             }
             
-            // Validación especial para Paso 1: Datos del Cliente (DNI/NIE válido)
+            // Validación especial para Paso 1: Datos del Cliente (DNI/NIE/Pasaporte válido)
             if (pasoActual === 1) {
-                // validarPaso1 comprueba campos obligatorios y el dígito de control del DNI/NIE
+                // validarPaso1 comprueba campos obligatorios y el dígito de control del DNI/NIE/Pasaporte
                 try {
                     if (typeof validarPaso1 === 'function') {
                         const resultPaso1 = validarPaso1();
@@ -372,25 +396,31 @@
         function validarDNI(dni) {
             if (!dni) return false;
             dni = dni.toUpperCase().trim();
-            const patternRegex = /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z])$/;
-            if (!patternRegex.test(dni)) return false;
-            const letras = 'TRWAGMYFPDXBNJZSQVHLCKE';
-            let numeroStr;
-            const first = dni.charAt(0);
-            if (first === 'X' || first === 'Y' || first === 'Z') {
-                const pref = first === 'X' ? '0' : (first === 'Y' ? '1' : '2');
-                numeroStr = pref + dni.substring(1, 8);
-            } else {
-                numeroStr = dni.substring(0, 8);
+            // Primero intentar validar DNI/NIE/Pasaporte con letra de control
+            const dniNieRegex = /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z])$/;
+            if (dniNieRegex.test(dni)) {
+                const letras = 'TRWAGMYFPDXBNJZSQVHLCKE';
+                let numeroStr;
+                const first = dni.charAt(0);
+                if (first === 'X' || first === 'Y' || first === 'Z') {
+                    const pref = first === 'X' ? '0' : (first === 'Y' ? '1' : '2');
+                    numeroStr = pref + dni.substring(1, 8);
+                } else {
+                    numeroStr = dni.substring(0, 8);
+                }
+                const numero = parseInt(numeroStr, 10);
+                if (isNaN(numero)) return false;
+                const letraEsperada = letras.charAt(numero % 23);
+                return dni.charAt(dni.length - 1) === letraEsperada;
             }
-            const numero = parseInt(numeroStr, 10);
-            if (isNaN(numero)) return false;
-            const letraEsperada = letras.charAt(numero % 23);
-            return dni.charAt(dni.length - 1) === letraEsperada;
+
+            // Si no es DNI/NIE/Pasaporte válido, aceptar pasaporte: cadenas alfanuméricas (5-20 caracteres)
+            const passportRegex = /^[A-Z0-9]{5,20}$/;
+            return passportRegex.test(dni);
         }
 
         function validarPaso1() {
-            // Comprueba campos obligatorios del Paso 1 y validez del DNI/NIE
+            // Comprueba campos obligatorios del Paso 1 y validez del DNI/NIE/Pasaporte
             const section = document.getElementById('paso1Section');
             if (!section) return true; // si no existe, no bloquear
             // Helpers para feedback inline (Bootstrap compatible)
@@ -448,15 +478,15 @@
                 else { setValidField(telefono); }
             }
 
-            // DNI/NIE: usar validarDNI
+            // Documento: usar validarDNI (DNI/NIE o Pasaporte)
             if (dni) {
                 const val = dni.value.trim();
                 if (!val) {
-                    setInvalidField(dni, 'DNI/NIE requerido');
-                    valido = false; errores.push('DNI/NIE requerido');
+                    setInvalidField(dni, 'Documento requerido');
+                    valido = false; errores.push('Documento requerido');
                 } else if (!validarDNI(val)) {
-                    setInvalidField(dni, 'DNI/NIE no válido');
-                    valido = false; errores.push('DNI/NIE no válido o dígito de control incorrecto');
+                    setInvalidField(dni, 'Documento no válido');
+                    valido = false; errores.push('Documento no válido o dígito de control incorrecto');
                 } else {
                     setValidField(dni);
                 }
@@ -1225,7 +1255,11 @@
                         .result h2,
                         .result th,
                         .result td {
-                            font-size: 1em;
+                            font-size: 0.8em;
+                        }
+
+                        .costs .value {
+                            font-size: 12px;
                         }
 
                         .costs .column {
@@ -1301,43 +1335,43 @@
                             <th>Tipo Mixto</th>
                         </tr>
                         <tr>
-                            <td style="width:25%;font-size:18px;">
+                            <td class="mientras_vende" style="width:25%;font-size:18px;">
                                 Mientras Vende
                             </td>
                             <td style="width:25%">
                                 ${formatNum(cuotaFija)}€
-                                <br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
+                                <br><span class="info-peqenna" style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
                                     ${tipoFijo}%) *</span>
                             </td>
                             <td style="width:25%">
                                 ${formatNum(cuotaVariable)}€
-                                <br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
+                                <br><span class="info-peqenna" style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
                                     ${tipoVariable}%, posteriormente Euribor + 0.5) *</span>
                             </td>
                             <td style="width:25%">
                                 ${formatNum(cuotaMixta)}€
-                                <br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
+                                <br><span class="info-peqenna" style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
                                     ${tipoMixto}%, posteriormente Euribor +
                                     ${tipoLuegoMixto}) *</span>
                             </td>
                         </tr>
                         <tr>
-                            <td style="width:25%;font-size:18px;">
+                            <td class="mientras_vende" style="width:25%;font-size:18px;">
                                 Cuando Venda
                             </td>
                             <td style="width:25%">
                                 ${formatNum(cuotaFijaFinal)}€
-                                <br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
+                                <br><span class="info-peqenna" style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Tipo de interés
                                     ${tipoFijo}%) *</span>
                             </td>
                             <td style="width:25%">
                                 ${formatNum(cuotaVariableFinal)}€
-                                <br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
+                                <br><span class="info-peqenna" style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primer año
                                     ${tipoVariable}%, posteriormente Euribor + 0.5) *</span>
                             </td>
                             <td style="width:25%">
                                 ${formatNum(cuotaMixtaFinal)}€
-                                <br><span style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
+                                <br><span class="info-peqenna" style="color:#888;font-size:10px;line-height:10px;margin-top: 10px;display: block;">(Primeros 5 años
                                     ${tipoMixto}%, posteriormente Euribor +
                                     ${tipoLuegoMixto}) *</span>
                             </td>
@@ -1740,11 +1774,17 @@
                 }
             }
             
-            // ROJO: si se cumple CUALQUIERA de estas condiciones
+            // Definir umbrales explícitos para rojo/amarillo en porcentaje de financiación y ratio
+            const isPorcentajeRojo = porcentajeFinanciacion > financiacionMedia; // por encima del umbral media -> rojo
+            const isPorcentajeAmarillo = porcentajeFinanciacion > financiacionVerde && porcentajeFinanciacion <= financiacionMedia; // entre verde y media -> amarillo
+            const isRatioRojo = ratioEndeudamiento > 45;
+            const isRatioAmarillo = ratioEndeudamiento > 35 && ratioEndeudamiento <= 45;
+
+            // ROJO: si se cumple CUALQUIERA de estas condiciones críticas
             const esRojo = 
                 tienePrestamosPagados ||
-                porcentajeFinanciacion > financiacionMedia ||  // Usa el umbral dinámico
-                ratioEndeudamiento > 45 ||
+                isPorcentajeRojo ||
+                isRatioRojo ||
                 (mejorTitular.ant === 'menos_1_anio' && mejorTitular.sit !== 'funcionario') ||
                 (valorInmueblePaso3 > 0 && precioMaxRec > 0 && valorInmueblePaso3 > precioMaxRec) ||
                 mejorTitular.sit === 'contrato_temporal';  // ROJO: Contrato temporal = viabilidad baja
@@ -1802,7 +1842,7 @@
             // Colores de fondo por resultado
             const bgMensaje = esRojo ? '#f8d7da' : (esVerde ? '#d4edda' : '#fff3cd');
             const colorMensaje = esRojo ? '#721c24' : (esVerde ? '#155724' : '#856404');
-            const colorPct = porcentajeFinanciacion > financiacionMedia ? '#dc3545' : (porcentajeFinanciacion > financiacionVerde ? '#e6a817' : '#28a745');
+            const colorPct = isPorcentajeRojo ? '#dc3545' : (isPorcentajeAmarillo ? '#e6a817' : '#28a745');
             
             // Guardar datos del semáforo para el informe
             resultadoViabilidad = resultado;  // Guardar resultado para mensaje WhatsApp
@@ -1930,7 +1970,7 @@
                                 <span style="color: #555; font-size: 14px; font-weight: 600;">📊 Ratio de Endeudamiento (Cuota/Ingresos)</span>
                                 <span style="font-weight: 700; font-size: 14px; color: ${ratioEndeudamiento > 45 ? '#dc3545' : (ratioEndeudamiento > 35 ? '#ff9800' : '#28a745')};">
                                     ${ratioEndeudamiento.toFixed(1)}%
-                                    ${ratioEndeudamiento > 45 ? ' ❌ ROJO' : (ratioEndeudamiento > 35 ? ' ⚠ AMARILLO' : ' ✓ VERDE')}
+                                    ${ratioEndeudamiento > 45 ? ' ❌' : (ratioEndeudamiento > 35 ? ' ⚠' : ' ✓')}
                                 </span>
                             </div>
                             <div style="font-size: 12px; color: #666; margin-top: 6px;">
@@ -1955,7 +1995,7 @@
                     <!-- Acción Recomendada según resultado --> 
                     ${esVerde ? `
                     <div style="background: #d4edda; border: 2px solid #28a745; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-                        <h4 style="color: #155724; margin: 0 0 12px; font-size: 15px; font-weight: 700;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:8px;fill:none;stroke:currentColor;stroke-width:2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg> Próximos Pasos</h4>
+                        <h4 style="color: #155724; margin: 0 0 12px; font-size: 15px; font-weight: 700;">✅ Próximos Pasos</h4>
                         <div style="color: #155724; font-size: 13px; line-height: 1.6; margin: 0;">
                             <p><strong>1. Solicita tu estudio personalizado</strong></p>
                             <p>Así podremos confirmar tu viabilidad definitiva y decirte qué oferta hipotecaria puedes obtener realmente.</p>
@@ -1969,17 +2009,78 @@
                     </div>` : ''}
                     ${!esVerde && !esRojo ? `
                     <div style="background: #fff3cd; border: 2px solid #e6a817; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-                        <h4 style="color: #856404; margin: 0 0 12px; font-size: 15px; font-weight: 700;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:8px;fill:none;stroke:currentColor;stroke-width:2"><path d="M12 8v4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="16" r="1"/></svg> Próximos Pasos</h4>
-                        <div style="color: #856404; font-size: 13px; line-height: 1.6; margin: 0;">
-                            <p><strong>1. Solicita tu estudio personalizado</strong></p>
-                            <p>Así podremos confirmar tu viabilidad definitiva y decirte qué oferta hipotecaria puedes obtener realmente.</p>
-                            <p><strong>Opción 1. Completa nuestro cuestionario</strong><br>Rellénalo <a id="formExp2" href="https://hipotea.com/cuestionario/" target="_blank">aquí</a> para que estudiemos tu caso en profundidad.</p>
-                            <p><strong>Opción 2. Contacta con un asesor.</strong><br><a href="#" onclick="abrirWhatsAppEstudio(); return false;">Agenda una reunión</a>.</p>
-                            <hr style="border:none;border-top:1px solid rgba(0,0,0,0.06);margin:12px 0;" />
-                            <p><strong>2. Documentación</strong></p>
-                            <p style="margin:0 0 6px;">Si decides continuar con nosotros, te pediremos la documentación necesaria para tramitar tu hipoteca.</p>
-                            <p style="margin:0;">Además, podrás descargar gran parte desde tu área de documentos, gracias a nuestra conexión con organismos oficiales.</p>
-                        </div>
+                        <h4 style="color: #856404; margin: 0 0 12px; font-size: 15px; font-weight: 700;">⚠️ Recomendaciones para mejorar la viabilidad</h4>
+                        <ul style="color: #856404; font-size: 13px; line-height: 1.8; margin: 0 0 12px; padding-left: 20px;">
+                            ${esRojoPorTemporal ? '<li><strong>⚠️ Contrato Temporal:</strong> Tu tipo de contrato actual no permite acceder a financiación hipotecaria. Recomendación: <ul style="margin-top: 6px;"><li><strong>Espera a tener un contrato indefinido</strong>, o</li><li><strong>Busca un cotitular</strong> con situación laboral más estable (funcionario, contrato indefinido, autónomo consolidado)</li></ul></li>' : ''}
+                            ${tienePrestamosPagados ? '<li><strong>Acción prioritaria:</strong> Cancela o regulariza los préstamos con cuotas impagadas antes de solicitar hipoteca</li>' : ''}
+                            ${(function() {
+                                // Para AMARILLO: sugerir aumento de aportación para alcanzar viabilidad ALTA (umbral verde)
+                                if (porcentajeFinanciacion > financiacionVerde) {
+                                    let aportacionNecesaria = Math.ceil(precioVivienda + gastosTotales - (financiacionVerde / 100) * precioVivienda);
+                                    let diferenciaAportacion = aportacionNecesaria - aportacion;
+                                    if (diferenciaAportacion > 0) {
+                                        return `<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad alta necesitarías aportar ${diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0})} € adicionales, o</li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>`;
+                                    } else {
+                                        return `<li><strong>Nivel de financiación (${porcentajeFinanciacion.toFixed(1)}%):</strong> Reduce el precio del inmueble o aumenta la aportación inicial para mejorar el porcentaje de financiación.</li>`;
+                                    }
+                                }
+                                return '';
+                            })()}
+                            ${ratioEndeudamiento > 45 ? `<li><strong>⚠️ Ratio de Endeudamiento (${ratioEndeudamiento.toFixed(1)}%):</strong> La cuota mensual es muy alta respecto a tus ingresos. Necesitas realizar algún ajuste:<ul style="margin-top: 6px;"><li>Reduce el precio del inmueble, o</li><li>Aumenta la aportación inicial, o</li><li>Busca mejorar tus ingresos mensuales</li></ul></li>` : ''}
+                            ${valorInmueblePaso3 > 0 && precioMaxRec > 0 && valorInmueblePaso3 > precioMaxRec ? '<li><strong>⚠️ Precio del inmueble supera máximo:</strong> El precio (€' + valorInmueblePaso3.toLocaleString() + ') excede al máximo recomendado (€' + precioMaxRec.toLocaleString() + '). <strong>Considera un inmueble de menor precio, más acorde con tus ingresos actuales o aumenta la aportación a la compra</strong></li>' : ''}
+                            ${(() => {
+                                const msgs = [];
+                                if (mejorTitular.sit === 'autonomo' && mejorTitular.ant === 'un_anio') {
+                                    msgs.push('<li><strong>Antigüedad como autónomo insuficiente:</strong> Espera a completar <strong>2 años de actividad</strong>. Esto mejorará significativamente tu perfil hipotecario.</li>');
+                                } else if (mejorTitular.sit === 'empresario') {
+                                    msgs.push('<li><strong>Perfil como empresario:</strong> Refuerza tu solicitud con documentación contable actualizada (últimas declaraciones de IRPF e IVA). Un mayor historial de ingresos estables mejorará tu viabilidad.</li>');
+                                } else if (mejorTitular.sit === 'otros') {
+                                    msgs.push('<li><strong>Situación laboral no estándar:</strong> Tu perfil puede requerir un análisis personalizado. Contacta con nuestros asesores para estudiar las opciones disponibles.</li>');
+                                }
+                                return msgs.join('');
+                            })()}
+                            ${(() => {
+                                const deudaActiva = (prestamosCuotaT1 + prestamosCuotaT2) > 0;
+                                const plazoActual = (datosCalculadosPaso3 && datosCalculadosPaso3.plazo) ? parseInt(datosCalculadosPaso3.plazo) : 0;
+                                const edadInput = (paso3Section && paso3Section.querySelector) ? paso3Section.querySelector('input[name="simulador_p3[edadTitularUno]"]')?.value || 0 : 0;
+                                const edadNum = parseInt(edadInput) || 0;
+                                const msgs = [];
+
+                                // 1) Ratio alto por préstamos personales
+                                if (deudaActiva && ratioEndeudamiento > 35) {
+                                    msgs.push('<li><strong>Para mejorar, cancela o reduce tus préstamos personales y volver a simular.</strong></li>');
+                                }
+
+                                // 2) Ratio alto por plazo fijo 30 años y edad < 45
+                                if (ratioEndeudamiento > 35 && plazoActual === 30 && edadNum > 0 && edadNum < 45) {
+                                    msgs.push('<li><strong>Si tienes menos de 45 años, amplía el plazo hasta el máximo permitido según tu edad para reducir la cuota y mejorar tu ratio.</strong></li>');
+                                }
+
+                                // 3) Ratio alto y no ha aprovechado plazo máximo (plazo actual menor que 30)
+                                if (ratioEndeudamiento > 35 && plazoActual > 0 && plazoActual < 30) {
+                                    msgs.push('<li><strong>Si amplías el plazo (si tu edad lo permite) o mejoras tu situación financiera, podrías tener más opciones.</strong></li>');
+                                }
+
+                                // 4) Combinación: préstamos + plazo fijo (ambos contribuyen)
+                                if (deudaActiva && ratioEndeudamiento > 35 && plazoActual >= 30) {
+                                    msgs.push('<li><strong>Cancela deudas o, si puedes, elige un plazo mayor. Esto mejorará tu ratio y tus opciones.</strong></li>');
+                                }
+
+                                // Fallback: si no se añadió ningún mensaje y hay deuda activa, mantener consejo genérico
+                                if (msgs.length === 0 && deudaActiva) {
+                                    msgs.push('<li><strong>Reduce deudas activas</strong> para disminuir tu ratio de endeudamiento total</li>');
+                                }
+
+                                // Fallback: ratio entre 35-45% sin deuda activa ni ajuste de plazo aplicable
+                                if (msgs.length === 0 && ratioEndeudamiento > 35) {
+                                    msgs.push(`<li><strong>Ratio de endeudamiento (${ratioEndeudamiento.toFixed(1)}%) por encima del óptimo:</strong> Considera reducir el precio del inmueble o mejorar tus ingresos mensuales para obtener mejores condiciones.</li>`);
+                                }
+
+                                return msgs.join('');
+                            })()}
+                            <li><strong>Una vez mejorado tu perfil,</strong> solicita un nuevo análisis de viabilidad</li>
+                        </ul>
+                        <p style="color: #856404; font-size: 12px; margin: 0; font-style: italic; border-top: 1px solid #e6a817; padding-top: 10px;">⚠️ Estos cambios te permitirán acceder a financiación hipotecaria en mejores condiciones.</p>
                     </div>` : ''}
                     ${esRojo ? `
                     <div style="background: #f8d7da; border: 2px solid #dc3545; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
@@ -1988,23 +2089,56 @@
                             ${esRojoPorTemporal ? '<li><strong>⚠️ Contrato Temporal:</strong> Tu tipo de contrato actual no permite acceder a financiación hipotecaria. Recomendación: <ul style="margin-top: 6px;"><li><strong>Espera a tener un contrato indefinido</strong>, o</li><li><strong>Busca un cotitular</strong> con situación laboral más estable (funcionario, contrato indefinido, autónomo consolidado)</li></ul></li>' : ''}
                             ${tienePrestamosPagados ? '<li><strong>Acción prioritaria:</strong> Cancela o regulariza los préstamos con cuotas impagadas antes de solicitar hipoteca</li>' : ''}
                             ${(function() {
-                                if (porcentajeFinanciacion > financiacionMedia) {
-                                    // Cálculo de la aportación mínima necesaria para llegar justo al umbral de financiación media
-                                    let aportacionNecesaria = Math.ceil(precioVivienda + gastosTotales - (financiacionMedia / 100) * precioVivienda);
-                                    let diferenciaAportacion = aportacionNecesaria - aportacion;
-                                    if (diferenciaAportacion > 0) {
-                                        return `<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad media necesitarías aportar ${diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0})} € </li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>`;
+                                    // En BLOQUE ROJO: sigue comprobando contra financiacionMedia
+                                    if (porcentajeFinanciacion > financiacionMedia) {
+                                        let aportacionNecesaria = Math.ceil(precioVivienda + gastosTotales - (financiacionMedia / 100) * precioVivienda);
+                                        let diferenciaAportacion = aportacionNecesaria - aportacion;
+                                        if (diferenciaAportacion > 0) {
+                                            return `<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad media necesitarías aportar ${diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0})} €, o</li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>`;
+                                        } else {
+                                            return '';
+                                        }
                                     } else {
                                         return '';
                                     }
-                                } else {
-                                    return '';
-                                }
-                            })()}
+                                })()}
                             ${ratioEndeudamiento > 45 ? `<li><strong>⚠️ Ratio de Endeudamiento (${ratioEndeudamiento.toFixed(1)}%):</strong> La cuota mensual es muy alta respecto a tus ingresos. Necesitas realizar algún ajuste:<ul style="margin-top: 6px;"><li>Reduce el precio del inmueble, o</li><li>Aumenta la aportación inicial, o</li><li>Busca mejorar tus ingresos mensuales</li></ul></li>` : ''}
                             ${valorInmueblePaso3 > 0 && precioMaxRec > 0 && valorInmueblePaso3 > precioMaxRec ? '<li><strong>⚠️ Precio del inmueble supera máximo:</strong> El precio (€' + valorInmueblePaso3.toLocaleString() + ') excede al máximo recomendado (€' + precioMaxRec.toLocaleString() + '). <strong>Considera un inmueble de menor precio, más acorde con tus ingresos actuales o aumenta la aportación a la compra</strong></li>' : ''}
                             ${mejorTitular.ant === 'menos_1_anio' && mejorTitular.sit !== 'contrato_temporal' && mejorTitular.sit !== 'funcionario' ? '<li><strong>Espera a tener mayor antigüedad laboral</strong></li>' : ''}
-                            ${(prestamosCuotaT1 + prestamosCuotaT2) > 0 && !tienePrestamosPagados && !esRojoPorTemporal ? '<li><strong>Reduce deudas activas</strong> para disminuir tu ratio de endeudamiento total</li>' : ''}
+                            ${(() => {
+                                const deudaActiva = (prestamosCuotaT1 + prestamosCuotaT2) > 0;
+                                const plazoActual = (datosCalculadosPaso3 && datosCalculadosPaso3.plazo) ? parseInt(datosCalculadosPaso3.plazo) : 0;
+                                const edadInput = (paso3Section && paso3Section.querySelector) ? paso3Section.querySelector('input[name="simulador_p3[edadTitularUno]"]')?.value || 0 : 0;
+                                const edadNum = parseInt(edadInput) || 0;
+                                const msgs = [];
+
+                                // 1) Ratio alto por préstamos personales
+                                if (deudaActiva && ratioEndeudamiento > 35) {
+                                    msgs.push('<li><strong>Para mejorar, cancela o reduce tus préstamos personales y volver a simular.</strong></li>');
+                                }
+
+                                // 2) Ratio alto por plazo fijo 30 años y edad < 45
+                                if (ratioEndeudamiento > 35 && plazoActual === 30 && edadNum > 0 && edadNum < 45) {
+                                    msgs.push('<li><strong>Si tienes menos de 45 años, amplía el plazo hasta el máximo permitido según tu edad para reducir la cuota y mejorar tu ratio.</strong></li>');
+                                }
+
+                                // 3) Ratio alto y no ha aprovechado plazo máximo (plazo actual menor que 30)
+                                if (ratioEndeudamiento > 35 && plazoActual > 0 && plazoActual < 30) {
+                                    msgs.push('<li><strong>Si amplías el plazo (si tu edad lo permite) o mejoras tu situación financiera, podrías tener más opciones.</strong></li>');
+                                }
+
+                                // 4) Combinación: préstamos + plazo fijo (ambos contribuyen)
+                                if (deudaActiva && ratioEndeudamiento > 35 && plazoActual >= 30) {
+                                    msgs.push('<li><strong>Cancela deudas o, si puedes, elige un plazo mayor. Esto mejorará tu ratio y tus opciones.</strong></li>');
+                                }
+
+                                // Fallback: si no se añadió ningún mensaje y hay deuda activa, mantener consejo genérico
+                                if (msgs.length === 0 && deudaActiva) {
+                                    msgs.push('<li><strong>Reduce deudas activas</strong> para disminuir tu ratio de endeudamiento total</li>');
+                                }
+
+                                return msgs.join('');
+                            })()}
                             <li><strong>Una vez mejorado tu perfil,</strong> solicita un nuevo análisis de viabilidad</li>
                         </ul>
                         <p style="color: #721c24; font-size: 12px; margin: 0; font-style: italic; border-top: 1px solid #dc3545; padding-top: 10px;">⚠️ Estos cambios te permitirán acceder a financiación hipotecaria en mejores condiciones.</p>
@@ -2427,7 +2561,7 @@
                 : (ratioEndeudamientoNumero > 45 ? '#ef4444' : (ratioEndeudamientoNumero > 35 ? '#f59e0b' : '#22c55e'));
             const ratioEndeudamientoEtiqueta = ratioEndeudamientoNumero === null
                 ? '—'
-                : `${ratioEndeudamientoNumero.toFixed(1)}%${ratioEndeudamientoNumero > 45 ? ' ❌ ROJO' : (ratioEndeudamientoNumero > 35 ? ' ⚠ AMARILLO' : ' ✓ VERDE')}`;
+                : `${ratioEndeudamientoNumero.toFixed(1)}%${ratioEndeudamientoNumero > 45 ? ' ❌' : (ratioEndeudamientoNumero > 35 ? ' ⚠ ' : ' ✓ ')}`;
             const ratioEndeudamientoDescripcion = ratioEndeudamientoNumero === null
                 ? 'No disponible.'
                 : (ratioEndeudamientoNumero > 45
@@ -2594,19 +2728,69 @@
                             </div>
                         </div>` : ''}
 
-                        ${!sd.esVerde && !sd.esRojo ? `
+                            ${!sd.esVerde && !sd.esRojo ? `
                         <div style="background: #fff3cd; border: 2px solid #e6a817; border-radius: 10px; padding: 20px; margin-top: 80px;">
-                            <h4 style="color: #856404; margin: 0 0 12px; font-size: 15px; font-weight: 700;">⚠️ Próximos Pasos</h4>
-                            <div style="color: #856404; font-size: 13px; line-height: 1.6; margin: 0;">
-                                <p><strong>1. Solicita tu estudio personalizado</strong></p>
-                                <p>Así podremos confirmar tu viabilidad definitiva y decirte qué oferta hipotecaria puedes obtener realmente.</p>
-                                <p><strong>Opción 1. Completa nuestro cuestionario</strong><br>Rellénalo <a id="formExp4" href="https://hipotea.com/cuestionario/" target="_blank">aquí</a> para que estudiemos tu caso en profundidad.</p>
-                                <p><strong>Opción 2. Contacta con un asesor.</strong><br><a href="#" onclick="abrirWhatsAppEstudio(); return false;">Agenda una reunión</a>.</p>
-                                <hr style="border:none;border-top:1px solid rgba(0,0,0,0.06);margin:12px 0;" />
-                                <p><strong>2. Documentación</strong></p>
-                                <p style="margin:0 0 6px;">Si decides continuar con nosotros, te pediremos la documentación necesaria para tramitar tu hipoteca.</p>
-                                <p style="margin:0;">Además, podrás descargar gran parte desde tu área de documentos, gracias a nuestra conexión con organismos oficiales.</p>
-                            </div>
+                            <h4 style="color: #856404; margin: 0 0 12px; font-size: 15px; font-weight: 700;">⚠️ Recomendaciones para mejorar la viabilidad</h4>
+                        <ul style="color: #856404; font-size: 13px; line-height: 1.8; margin: 0 0 12px; padding-left: 20px;">
+                                ${sd.esRojoPorTemporal ? '<li><strong>⚠️ Contrato Temporal:</strong> Tu tipo de contrato actual no permite acceder a financiación hipotecaria. Recomendación: <ul style="margin-top: 6px;"><li><strong>Espera a tener un contrato indefinido</strong>, o</li><li><strong>Busca un cotitular</strong> con situación laboral más estable (funcionario, contrato indefinido, autónomo consolidado)</li></ul></li>' : ''}
+                                ${sd.tienePrestamosPagados ? '<li><strong>Acción prioritaria:</strong> Cancela o regulariza los préstamos con cuotas impagadas antes de solicitar hipoteca</li>' : ''}
+                                ${(function() {
+                                    // Sugerencia de aportación para alcanzar viabilidad ALTA (umbral verde)
+                                    if (sd.porcentajeFinanciacion > sd.financiacionVerde) {
+                                        const aportacionNecesaria = Math.ceil(sd.valorInmueblePaso3 + sd.gastosTotales - (sd.financiacionVerde / 100) * sd.valorInmueblePaso3);
+                                        const diferenciaAportacion = aportacionNecesaria - sd.aportacion;
+                                        if (diferenciaAportacion > 0) {
+                                            return '<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad alta necesitarías aportar ' + diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0}) + ' € adicionales, o</li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>';
+                                        } else {
+                                            return '<li><strong>Nivel de financiación (' + sd.porcentajeFinanciacion.toFixed(1) + '%):</strong> Reduce el precio del inmueble o aumenta la aportación inicial para mejorar el porcentaje de financiación.</li>';
+                                        }
+                                    }
+                                    return '';
+                                })()}
+                                ${sd.ratioEndeudamiento > 45 ? '<li><strong>⚠️ Ratio de Endeudamiento (' + sd.ratioEndeudamiento.toFixed(1) + '%):</strong> La cuota mensual es muy alta respecto a tus ingresos. Necesitas realizar algún ajuste:<ul style="margin-top: 6px;"><li>Reduce el precio del inmueble, o</li><li>Aumenta la aportación inicial, o</li><li>Busca mejorar tus ingresos mensuales</li></ul></li>' : ''}
+                                ${sd.valorInmueblePaso3 > 0 && sd.precioMaxRec > 0 && sd.valorInmueblePaso3 > sd.precioMaxRec ? '<li><strong>⚠️ Precio del inmueble supera máximo:</strong> El precio (€' + sd.valorInmueblePaso3.toLocaleString() + ') excede al máximo recomendado (€' + sd.precioMaxRec.toLocaleString() + '). <strong>Considera un inmueble de menor precio, más acorde con tus ingresos actuales o aumenta la aportación a la compra</strong></li>' : ''}
+                                ${(function() {
+                                    const msgs = [];
+                                    if (sd.mejorTitular && sd.mejorTitular.sit === 'autonomo' && sd.mejorTitular.ant === 'un_anio') {
+                                        msgs.push('<li><strong>Antigüedad como autónomo insuficiente:</strong> Espera a completar <strong>2 años de actividad</strong>. Esto mejorará significativamente tu perfil hipotecario.</li>');
+                                    } else if (sd.mejorTitular && sd.mejorTitular.sit === 'empresario') {
+                                        msgs.push('<li><strong>Perfil como empresario:</strong> Refuerza tu solicitud con documentación contable actualizada (últimas declaraciones de IRPF e IVA). Un mayor historial de ingresos estables mejorará tu viabilidad.</li>');
+                                    } else if (sd.mejorTitular && sd.mejorTitular.sit === 'otros') {
+                                        msgs.push('<li><strong>Situación laboral no estándar:</strong> Tu perfil puede requerir un análisis personalizado. Contacta con nuestros asesores para estudiar las opciones disponibles.</li>');
+                                    }
+                                    return msgs.join('');
+                                })()}
+                                ${(() => {
+                                    const msgsPdf = [];
+                                    const deudaActivaPdf = (sd.prestamosCuotaT1 + sd.prestamosCuotaT2) > 0;
+                                    const plazoActualPdf = (datosCalculadosPaso3 && datosCalculadosPaso3.plazo) ? parseInt(datosCalculadosPaso3.plazo) : 0;
+                                    const paso3SecPdf = document.getElementById('paso3Section');
+                                    const edadInputPdf = paso3SecPdf ? paso3SecPdf.querySelector('input[name="simulador_p3[edadTitularUno]"]')?.value || 0 : 0;
+                                    const edadNumPdf = parseInt(edadInputPdf) || 0;
+
+                                    if (deudaActivaPdf && sd.ratioEndeudamiento > 35) {
+                                        msgsPdf.push('<li><strong>Para mejorar, cancela o reduce tus préstamos personales y volver a simular.</strong></li>');
+                                    }
+                                    if (sd.ratioEndeudamiento > 35 && plazoActualPdf === 30 && edadNumPdf > 0 && edadNumPdf < 45) {
+                                        msgsPdf.push('<li><strong>Si tienes menos de 45 años, amplía el plazo hasta el máximo permitido según tu edad para reducir la cuota y mejorar tu ratio.</strong></li>');
+                                    }
+                                    if (sd.ratioEndeudamiento > 35 && plazoActualPdf > 0 && plazoActualPdf < 30) {
+                                        msgsPdf.push('<li><strong>Si amplías el plazo (si tu edad lo permite) o mejoras tu situación financiera, podrías tener más opciones.</strong></li>');
+                                    }
+                                    if (deudaActivaPdf && sd.ratioEndeudamiento > 35 && plazoActualPdf >= 30) {
+                                        msgsPdf.push('<li><strong>Cancela deudas o, si puedes, elige un plazo mayor. Esto mejorará tu ratio y tus opciones.</strong></li>');
+                                    }
+                                    if (msgsPdf.length === 0 && deudaActivaPdf) {
+                                        msgsPdf.push('<li><strong>Reduce deudas activas</strong> para disminuir tu ratio de endeudamiento total</li>');
+                                    }
+                                    if (msgsPdf.length === 0 && sd.ratioEndeudamiento > 35) {
+                                        msgsPdf.push('<li><strong>Ratio de endeudamiento (' + sd.ratioEndeudamiento.toFixed(1) + '%) por encima del óptimo:</strong> Considera reducir el precio del inmueble o mejorar tus ingresos mensuales para obtener mejores condiciones.</li>');
+                                    }
+                                    return msgsPdf.join('');
+                                })()}
+                                <li><strong>Una vez mejorado tu perfil,</strong> solicita un nuevo análisis de viabilidad</li>
+                            </ul>
+                            <p style="color: #856404; font-size: 12px; margin: 0; font-style: italic; border-top: 1px solid #e6a817; padding-top: 10px;">⚠️ Estos cambios te permitirán acceder a financiación hipotecaria en mejores condiciones.</p>
                         </div>` : ''}
 
                         ${sd.esRojo ? `
@@ -2620,7 +2804,7 @@
                                         let aportacionNecesaria = Math.ceil(sd.valorInmueblePaso3 + sd.gastosTotales - (sd.financiacionMedia / 100) * sd.valorInmueblePaso3);
                                         let diferenciaAportacion = aportacionNecesaria - sd.aportacion;
                                         if (diferenciaAportacion > 0) {
-                                            return '<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad media necesitarías aportar ' + diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0}) + ' € </li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>';
+                                            return '<li><strong>Aumenta tu aportación inicial.</strong> Para alcanzar una viabilidad media necesitarías aportar ' + diferenciaAportacion.toLocaleString('es-ES', {maximumFractionDigits: 0}) + ' €, o</li><li><strong>Aportar una vivienda como aval</strong> para garantizar la operación</li>';
                                         } else {
                                             return '';
                                         }
@@ -2631,7 +2815,41 @@
                                 ${sd.ratioEndeudamiento > 45 ? '<li><strong>⚠️ Ratio de Endeudamiento (' + sd.ratioEndeudamiento.toFixed(1) + '%):</strong> La cuota mensual es muy alta respecto a tus ingresos. Necesitas realizar algún ajuste:<ul style="margin-top: 6px;"><li>Reduce el precio del inmueble, o</li><li>Aumenta la aportación inicial, o</li><li>Busca mejorar tus ingresos mensuales</li></ul></li>' : ''}
                                 ${sd.valorInmueblePaso3 > 0 && sd.precioMaxRec > 0 && sd.valorInmueblePaso3 > sd.precioMaxRec ? '<li><strong>⚠️ Precio del inmueble supera máximo:</strong> El precio (€' + sd.valorInmueblePaso3.toLocaleString() + ') excede al máximo recomendado (€' + sd.precioMaxRec.toLocaleString() + '). <strong>Considera un inmueble de menor precio, más acorde con tus ingresos actuales o aumenta la aportación a la compra</strong></li>' : ''}
                                 ${sd.mejorTitular && sd.mejorTitular.ant === 'menos_1_anio' && sd.mejorTitular.sit !== 'contrato_temporal' && sd.mejorTitular.sit !== 'funcionario' ? '<li><strong>Espera a tener mayor antigüedad laboral</strong></li>' : ''}
-                                ${(sd.prestamosCuotaT1 + sd.prestamosCuotaT2) > 0 && !sd.tienePrestamosPagados && !sd.esRojoPorTemporal ? '<li><strong>Reduce deudas activas</strong> para disminuir tu ratio de endeudamiento total</li>' : ''}
+                                ${(() => {
+                                    const msgsPdf = [];
+                                    const deudaActivaPdf = (sd.prestamosCuotaT1 + sd.prestamosCuotaT2) > 0;
+                                    const plazoActualPdf = (datosCalculadosPaso3 && datosCalculadosPaso3.plazo) ? parseInt(datosCalculadosPaso3.plazo) : (sd && sd.plazo ? parseInt(sd.plazo) : 0);
+                                    const paso3SecPdf = document.getElementById('paso3Section');
+                                    const edadInputPdf = paso3SecPdf ? paso3SecPdf.querySelector('input[name="simulador_p3[edadTitularUno]"]')?.value || 0 : 0;
+                                    const edadNumPdf = parseInt(edadInputPdf) || 0;
+
+                                    // 1) Ratio alto por préstamos personales
+                                    if (deudaActivaPdf && (sd.ratioEndeudamiento > 35)) {
+                                        msgsPdf.push('<li><strong>Para mejorar, cancela o reduce tus préstamos personales y volver a simular.</strong></li>');
+                                    }
+
+                                    // 2) Ratio alto por haber elegido plazo 30 años y edad < 45
+                                    if ((sd.ratioEndeudamiento > 35) && plazoActualPdf === 30 && edadNumPdf > 0 && edadNumPdf < 45) {
+                                        msgsPdf.push('<li><strong>Si tienes menos de 45 años, amplía el plazo hasta el máximo permitido según tu edad para reducir la cuota y mejorar tu ratio.</strong></li>');
+                                    }
+
+                                    // 3) Ratio alto y no ha aprovechado plazo máximo (plazo actual menor que 30)
+                                    if ((sd.ratioEndeudamiento > 35) && plazoActualPdf > 0 && plazoActualPdf < 30) {
+                                        msgsPdf.push('<li><strong>Si amplías el plazo (si tu edad lo permite) o mejoras tu situación financiera, podrías tener más opciones.</strong></li>');
+                                    }
+
+                                    // 4) Combinación: préstamos + plazo fijo
+                                    if (deudaActivaPdf && (sd.ratioEndeudamiento > 35) && plazoActualPdf >= 30) {
+                                        msgsPdf.push('<li><strong>Cancela deudas o, si puedes, elige un plazo mayor. Esto mejorará tu ratio y tus opciones.</strong></li>');
+                                    }
+
+                                    // Fallback genérico
+                                    if (msgsPdf.length === 0 && deudaActivaPdf) {
+                                        msgsPdf.push('<li><strong>Reduce deudas activas</strong> para disminuir tu ratio de endeudamiento total</li>');
+                                    }
+
+                                    return msgsPdf.join('');
+                                })()}
                                 <li><strong>Una vez mejorado tu perfil,</strong> solicita un nuevo análisis de viabilidad</li>
                             </ul>
                             <p style="color: #721c24; font-size: 12px; margin: 0; font-style: italic; border-top: 1px solid #dc3545; padding-top: 10px;">⚠️ Estos cambios te permitirán acceder a financiación hipotecaria en mejores condiciones.</p>
@@ -2987,7 +3205,7 @@
 
                     <!-- PASO 0: Aviso Previo Obligatorio -->
                     <div id="paso0Section" class="paso-section">
-                        <div class="paso-title">Paso 0: Aviso Previo Obligatorio</div>
+                        <div class="paso-title">Paso 0/4: Aviso Previo Obligatorio</div>
                         
                         <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                             <div style="font-size: 13px; color: #333; line-height: 1.6;">
@@ -3021,7 +3239,7 @@
 
                     <!-- PASO 1: Datos del Cliente -->
                     <div id="paso1Section" class="paso-section d-none">
-                        <div class="paso-title">Paso 1: Datos del Cliente</div>
+                        <div class="paso-title">Paso 1/4: Datos solicitante</div>
                         <h6 style="font-size: 13px; color: #666; margin-bottom: 20px;">Cuéntanos tus datos personales</h6>
                         <p style="font-size: 12px; color: #999; margin-bottom: 20px; font-style: italic;">Estos datos servirán para generar el informe resumen de tu solicitud.</p>
                         
@@ -3040,7 +3258,7 @@
 
                     <!-- PASO 2: Precio Maximo (simplificado) -->
                     <div id="paso2Section" class="paso-section d-none">
-                        <div class="paso-title">Paso 2: Cálculo de Precio Máximo</div>
+                        <div class="paso-title">Paso 2/4: Cálculo de Precio Máximo</div>
                         <h6 style="font-size: 13px; color: #666; margin-bottom: 20px;">Indica cuántos titulares sois</h6>
 
                         <div class="form-row">
@@ -3204,7 +3422,7 @@
 
                     <!-- PASO 3: Cuota y Gastos -->
                     <div id="paso3Section" class="paso-section d-none">
-                        <div class="paso-title">Paso 3: Calcula la Cuota de tu Hipoteca</div>
+                        <div class="paso-title">Paso 3/4: Calcula la Cuota de tu Hipoteca</div>
                         <h6 style="font-size: 13px; color: #666; margin-bottom: 20px;">Rellena la siguiente información</h6>
                         
                         <!-- PANEL 1: RESUMEN DATOS PASO 2 (readonly) -->
@@ -3485,7 +3703,7 @@
 
                     <!-- PASO 4: Riesgo -->
                     <div id="paso4Section" class="paso-section d-none">
-                        <div class="paso-title">Paso 4: Análisis de Riesgo</div>
+                        <div class="paso-title">Paso 4/4: Análisis de Riesgo</div>
                         <h6 style="font-size: 13px; color: #666; margin-bottom: 20px;">Evaluación de tu perfil</h6>
                         
                         {% for child in formulario_riesgo %}

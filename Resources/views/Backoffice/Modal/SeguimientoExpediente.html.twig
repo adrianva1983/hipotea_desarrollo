@@ -97,6 +97,47 @@
 		</div>
 	</div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	document.getElementById('guardar_seguimiento').addEventListener('click', function() {
+		const modal = document.getElementById('modal-seguimiento-expediente');
+		const forms = modal.querySelectorAll('form');
+		const idExpediente = modal.querySelector('input[name="idExpedienteSeguimiento"]').value;
+		const elementos = [];
+		
+		forms.forEach(function(form) {
+			const fecha = form.querySelector('input[name*="fecha"]')?.value || '';
+			const concepto = form.querySelector('select[name*="idConceptoSeguimientoExpediente"]')?.value;
+			const comentario = form.querySelector('input[name*="comentario"]')?.value || '';
+			const cliente = form.querySelector('select[name*="cliente"]')?.value || 0;
+			
+			if (concepto) {
+				elementos.push({ idExpediente, concepto, fecha, comentario, cliente });
+			}
+		});
+		
+		if (!elementos.length) return alert('No hay datos para guardar');
+		
+		fetch('{{ path("actualizar_seguimiento_expediente_ajax") }}', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+			body: JSON.stringify(elementos)
+		})
+		.then(r => r.json())
+		.then(data => {
+			if (data.error) {
+				alert('Error: ' + (data.mensaje || 'Desconocido'));
+			} else {
+				//alert('✅ Guardado: ' + data.actualizados + ' registros');
+				$('#modal-seguimiento-expediente').modal('hide');
+				//location.reload();
+			}
+		})
+		.catch(err => alert('Error: ' + err.message));
+	});
+});
+</script>
 {# <div aria-modal="true" aria-labelledby="modal-expediente-sin-cliente" class="modal fade" id="modal-expediente-sin-cliente" role="dialog" tabindex="-1">
 	<div class="modal-dialog modal-dialog-centered modal-sm" role="document">
 		<div class="modal-content">

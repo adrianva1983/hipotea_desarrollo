@@ -15,9 +15,9 @@ class HitoExpediente
 	private $idHitoExpediente;
 
 	/**
-	 * @var integer
+	 * @var boolean
 	 */
-	private $estado = 0;
+	private $estado = '0';
 
 	/**
 	 * @var DateTime
