@@ -4867,6 +4867,12 @@ class GrupoNegociadorController extends Controller
 									}
 								}
 
+								// Notificar a la jerarquía del colaborador (jefe de inmobiliaria / jefe de oficina)
+								if (($this->getUser()->getRoles()[0] === 'ROLE_CLIENTE' || $this->getUser()->getRoles()[0] === '') && $campoHitoExpediente->getEnviarAlColaborador() && $expediente->getIdColaborador()) {
+									$textoJerarquia = 'El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.';
+									$this->notificarJerarquiaColaborador($expediente, 'Nuevo documento en expediente', $textoJerarquia, $managerEntidad, $doctrine);
+								}
+
 								// $this->enviarNotificacion($expediente,$campoHitoExpediente,null,$titulo,$mensaje);
 								// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
 								if($expediente->getIdComercial()){
@@ -6952,7 +6958,8 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 									if($destinatario != "" || count($grupo_destinatarios)>0){
 										$helpers->sendFCM($textoNotificacion, $tituloNotificacion, $destinatario, $grupo_destinatarios, $notificacion->getIdNotificacion());
 									}
-										// ->setTexto('El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo hito "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.');
+									// Notificar a la jerarquía del colaborador (jefe de inmobiliaria / jefe de oficina)
+									$this->notificarJerarquiaColaborador($expediente, $tituloNotificacion, $textoNotificacion, $managerEntidad, $doctrine);
 								}
 								if ($campoHitoExpediente->getEnviarAlCliente() && $expediente->getIdCliente()) {
 									$notificacion = (new NotificacionEntidad())
@@ -7002,6 +7009,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 										$notificacion->setIdUsuario($expediente->getIdColaborador())
 											->setTexto('El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.');
 										$managerEntidad->persist($notificacion);
+										// Notificar a la jerarquía del colaborador (jefe de inmobiliaria / jefe de oficina)
+										$textoJerarquia3 = 'El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.';
+										$this->notificarJerarquiaColaborador($expediente, 'Nuevo documento en expediente', $textoJerarquia3, $managerEntidad, $doctrine);
 										}
 								} elseif ($campoHitoExpediente->getEnviarAlCliente()) {
 									$enviarNotificacion = true;
@@ -15976,6 +15986,64 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 		$expediente->setReferencia($referencia);
 		
 		return $referencia;
+	}
+
+	/**
+	 * Notifica al jefe de inmobiliaria y jefe de oficina del colaborador asignado al expediente.
+	 * Se llama siempre que el colaborador recibe una notificación, para que su jerarquía también la reciba.
+	 */
+	private function notificarJerarquiaColaborador(
+		ExpedienteEntidad $expediente,
+		string $titulo,
+		string $texto,
+		$managerEntidad,
+		$doctrine
+	): void {
+		$colaborador = $expediente->getIdColaborador();
+		if (!$colaborador) {
+			return;
+		}
+
+		$jefes = array();
+
+		// Jefes de la inmobiliaria del colaborador
+		if ($colaborador->getIdInmobiliaria()) {
+			$jefesInmobiliaria = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+				'role' => 'ROLE_JEFE_INMOBILIARIA',
+				'idInmobiliaria' => $colaborador->getIdInmobiliaria(),
+				'estado' => 1
+			));
+			$jefes = array_merge($jefes, $jefesInmobiliaria);
+		}
+
+		// Jefes de la oficina del colaborador
+		if ($colaborador->getIdOficina()) {
+			$jefesOficina = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+				'role' => 'ROLE_JEFE_OFICINA',
+				'idOficina' => $colaborador->getIdOficina(),
+				'estado' => 1
+			));
+			$jefes = array_merge($jefes, $jefesOficina);
+		}
+
+		foreach ($jefes as $jefe) {
+			// No duplicar si el jefe coincide con el propio colaborador
+			if ($jefe->getIdUsuario() === $colaborador->getIdUsuario()) {
+				continue;
+			}
+			$notificacionJefe = (new NotificacionEntidad())
+				->setIdExpediente($expediente)
+				->setEstado(1)
+				->setFecha(new \DateTime())
+				->setIdUsuario($jefe)
+				->setTitulo($titulo)
+				->setTexto($texto);
+			$managerEntidad->persist($notificacionJefe);
+		}
+
+		if (!empty($jefes)) {
+			$managerEntidad->flush();
+		}
 	}
 
 }
