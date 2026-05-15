@@ -20,11 +20,11 @@ AppBundle\Entity\HitoExpediente:
         strategy: IDENTITY
   fields:
     estado:
-      type: boolean
+      type: integer
       nullable: false
       options:
         comment: "0: Pendiente\n1: Completado"
-        default: '0'
+        default: 0
     fechaModificacion:
       type: datetime
       nullable: true
