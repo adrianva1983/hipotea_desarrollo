@@ -7456,6 +7456,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			}
 		}
 
+		// Flush final de todos los cambios pendientes
+		$managerEntidad->flush();
+
 		// Obtener valor del campo 707 (Activar Belender) para clientes
 		$valores_campo_707 = [];
 		try {
