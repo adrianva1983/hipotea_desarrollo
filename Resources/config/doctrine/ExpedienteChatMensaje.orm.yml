@@ -1,0 +1,88 @@
+AppBundle\Entity\ExpedienteChatMensaje:
+  type: entity
+  table: expediente_chat_mensaje
+  repositoryClass: Doctrine\ORM\EntityRepository
+  id:
+    id:
+      type: integer
+      column: id
+      generator:
+        strategy: AUTO
+  fields:
+    proveedor:
+      type: string
+      length: 30
+    externalMessageId:
+      type: string
+      column: external_message_id
+      length: 120
+    idKommoWebhook:
+      type: integer
+      column: id_kommo_webhook
+      nullable: true
+    kommoLeadId:
+      type: string
+      column: kommo_lead_id
+      length: 50
+      nullable: true
+    kommoContactId:
+      type: string
+      column: kommo_contact_id
+      length: 50
+      nullable: true
+    talkId:
+      type: string
+      column: talk_id
+      length: 50
+      nullable: true
+    chatId:
+      type: string
+      column: chat_id
+      length: 120
+      nullable: true
+    direccion:
+      type: string
+      length: 20
+    autorNombre:
+      type: string
+      column: autor_nombre
+      length: 150
+      nullable: true
+    autorTipo:
+      type: string
+      column: autor_tipo
+      length: 30
+      nullable: true
+    telefono:
+      type: string
+      length: 30
+      nullable: true
+    mensaje:
+      type: text
+    payloadJson:
+      type: text
+      column: payload_json
+      nullable: true
+    estado:
+      type: string
+      length: 30
+    leido:
+      type: boolean
+    fechaMensaje:
+      type: datetime
+      column: fecha_mensaje
+      nullable: true
+    fechaCreacion:
+      type: datetime
+      column: fecha_creacion
+    fechaActualizacion:
+      type: datetime
+      column: fecha_actualizacion
+      nullable: true
+  manyToOne:
+    idExpediente:
+      targetEntity: Expediente
+      joinColumn:
+        name: id_expediente
+        referencedColumnName: id_expediente
+        nullable: true

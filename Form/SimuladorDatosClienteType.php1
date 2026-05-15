@@ -18,7 +18,6 @@ class SimuladorDatosClienteType extends AbstractType
 	{
 		$builder->add('nombre', TextType::class, array(
 			'label' => 'Nombre completo',
-			'data'=>'Kilian Mbappe',
 			'required' => true,
 			'attr' => array(
 				'placeholder' => 'Ej: Juan García López'
@@ -30,7 +29,6 @@ class SimuladorDatosClienteType extends AbstractType
 			)
 		))->add('dni', TextType::class, array(
 			'label' => 'DNI / NIE',
-			'data'=>'Y4516712D',
 			'required' => true,
 			'attr' => array(
 				'placeholder' => 'Ej: 12345678A'
@@ -46,7 +44,6 @@ class SimuladorDatosClienteType extends AbstractType
 			)
 		))->add('telefono', TelType::class, array(
 			'label' => 'Teléfono',
-			'data'=>'699699699',
 			'required' => true,
 			'attr' => array(
 				'placeholder' => 'Ej: 666123456'
@@ -58,7 +55,6 @@ class SimuladorDatosClienteType extends AbstractType
 			)
 		))->add('email', EmailType::class, array(
 			'label' => 'Email',
-			'data'=>'mbappe@gmail.com',
 			'required' => true,
 			'attr' => array(
 				'placeholder' => 'Ej: juan@example.com'

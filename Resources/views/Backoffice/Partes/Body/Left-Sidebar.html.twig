@@ -151,9 +151,6 @@
 								<li>
 									<a href="{{ path('lista_responsables_zona') }}">Responsables de Zona</a>
 								</li>
-								<li>
-									<a href="{{ path('resetear_usos_calculadoras') }}">Resetear Usos Calculadoras</a>
-								</li>
 								{% if is_granted('ROLE_ADMIN') %}
 									<li>
 										<a href="{{ path('lista_usuarios') }}">Usuarios GN</a>
@@ -168,7 +165,7 @@
 									</li>
 								{% endif %}
 								<li>
-									<a href="{{ path('admin_kommo_webhooks') }}">Webhooks de Kommo</a>
+									<a href="{{ path('leads_kommo2') }}">Leads Kommo</a>
 								</li>
 							</ul>
 						</li>

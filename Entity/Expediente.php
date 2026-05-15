@@ -82,11 +82,6 @@ class Expediente
 	 */
 	private $idResponsableZona;
 
-	/**
-	 * @var string
-	 */
-	private $referencia;
-
 
 	/**
 	 * Get idExpediente
@@ -388,30 +383,6 @@ class Expediente
 	public function getIdResponsableZona()
 	{
 		return $this->idResponsableZona;
-	}
-
-	/**
-	 * Set referencia
-	 *
-	 * @param string $referencia
-	 *
-	 * @return Expediente
-	 */
-	public function setReferencia($referencia)
-	{
-		$this->referencia = $referencia;
-
-		return $this;
-	}
-
-	/**
-	 * Get referencia
-	 *
-	 * @return string|null
-	 */
-	public function getReferencia()
-	{
-		return $this->referencia;
 	}
 
 	/**

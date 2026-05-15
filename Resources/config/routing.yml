@@ -189,6 +189,10 @@ descargar_fichero_documento:
 notificacion_expediente:
   path: /AJAX/NotificacionExpediente
   controller: AppBundle:GrupoNegociador:notificacionExpediente
+expediente_chat_mensajes:
+  path: /AJAX/ExpedienteChatMensajes/{id}
+  controller: AppBundle:GrupoNegociador:expedienteChatMensajes
+  methods: [GET]
 cancelar_expediente:
   path: /AJAX/CancelarExpediente
   controller: AppBundle:GrupoNegociador:cancelarExpediente
@@ -281,9 +285,6 @@ calculadora_precio_maximo_web_nm:
 calculadora_precio_maximo_web_ihs:
   path: /web/calculadora-precio-maximo-ihs
   controller: AppBundle:Calculadoras:calculadoraPrecioMaximoWebIHS
-calculadora_precio_maximo_web_cliente:
-  path: /web/calculadora-precio-maximo-cliente
-  controller: AppBundle:Calculadoras:calculadoraPrecioMaximoWebCliente
 calculadora_cambio_de_casa_web:
   path: /web/calculadora-cambio-de-casa
   controller: AppBundle:Calculadoras:calculadoraCambioDeCasaWeb
@@ -802,42 +803,38 @@ calcular_avanzada_ajax:
   controller: AppBundle:API:calcularAvanzada
   methods: [POST]
 
-resetear_usos_calculadoras:
-  path: /Admin/ResetearUsosCalculadoras
-  controller: AppBundle:Calculadoras:resetearUsosCalculadoras
-  methods: [GET, POST]
-
-# ===== KOMMO WEBHOOK ROUTES =====
 kommo_webhook:
   path: /API/kommo
-  controller: AppBundle:Kommo:kommoWebhook
+  controller: AppBundle:API:recibirKommoWebhook
   methods: [POST]
 
-admin_kommo_webhooks:
-  path: /Admin/Kommo/Webhooks
-  controller: AppBundle:Kommo:adminWebhooks
+leads_kommo2:
+  path: /Admin/Lista/LeadsKommo
+  controller: AppBundle:Kommo:leadsKommo
+
+borrar_leads_kommo:
+  path: /Admin/Borrar/LeadsKommo
+  controller: AppBundle:Kommo:borrarLeadsKommo
+  methods: [POST]
+
+procesar_lead_kommo:
+  path: /Admin/Procesar/LeadKommo/{groupKey}
+  controller: AppBundle:Kommo:procesarLeadKommo
   methods: [GET]
 
-admin_kommo_limpiar:
-  path: /Admin/Kommo/Limpiar
-  controller: AppBundle:Kommo:limpiarWebhooks
+expediente_parse_texto_ai:
+  path: /AJAX/ExpedienteParseTextoAI
+  controller: AppBundle:InteligenciaArtificial:expedienteParseTextoAI
   methods: [POST]
 
-procesar_texto_para_expediente:
-  path: /API/procesar_texto_para_expediente
-  controller: AppBundle:InteligenciaArtificial:procesarTextoParaExpediente
+expediente_chat_responder_kommo:
+  path: /AJAX/ExpedienteChatResponderKommo/{id}
+  controller: AppBundle:Kommo:responderMensajeExpediente
   methods: [POST]
 
-# rutas para la IA
-crear_prompt_expediente:
-  path: /API/crear_prompt_expediente
-  controller: AppBundle:InteligenciaArtificial:crearPromptExpediente
-  methods: [POST]
-
-procesar_texto_expediente:
-  path: /API/procesar_texto_expediente
-  controller: AppBundle:InteligenciaArtificial:procesarTextoExpediente
-  methods: [POST]
+expediente_chat_sugerir_kommo_ajax:
+  path: /AJAX/ExpedienteChatSugerirRespuesta/{id}
+  controller: AppBundle:Kommo:sugerirRespuesta
 
 pageNotFound:
     path:  /{path}

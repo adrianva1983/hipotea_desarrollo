@@ -529,17 +529,14 @@ class CalculadoraAvanzada
 		// echo "bonificacion: ".$bonificacion."<br>";
 		// echo "escritura_compra_impuesto_transmisiones: ".$escritura_compra_impuesto_transmisiones."<br>";
 		// die;
-		if ($nueva) {
-			if (isset($nombreCCAA) && $nombreCCAA === 'Canarias') {
-				// IGIC aplicable en Canarias
-				$tipo_iva = 0.07;
-			} elseif ($habitual && $vpo) {
-				$tipo_iva = 0.04;
-			} else {
-				$tipo_iva = 0.1;
-			}
+		if($nueva && $habitual && $vpo){
+			$tipo_iva = 0.04;
+		}else{
+			$tipo_iva = 0.1;
+		}
+		if($nueva){
 			$importe_iva = $valor_inmueble * $tipo_iva;
-		} else {
+		}else{
 			$importe_iva = 0;
 		}
 

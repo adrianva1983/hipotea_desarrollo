@@ -1,6 +1,5 @@
 AppBundle\Entity\KommoWebhook:
   type: entity
-  repositoryClass: AppBundle\Repository\KommoRepository
   table: kommo_webhook
   id:
     id:

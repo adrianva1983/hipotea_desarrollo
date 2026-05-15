@@ -353,6 +353,66 @@
 			font-size: 18px;
 		}
 
+		a.chat-expediente {
+			display: inline-block;
+			min-width: 30px;
+			text-align: center;
+			border: 2px solid #17a2b8;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: #17a2b8;
+			background: white;
+			font-size: 18px;
+			line-height: 1.2;
+		}
+
+		a.chat-expediente i {
+			display: inline-block;
+		}
+
+		#modal-chat-expediente .modal-body {
+			background: #f7f9fc;
+			max-height: 65vh;
+			overflow-y: auto;
+		}
+
+		.chat-expediente-contenedor {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.chat-expediente-item {
+			max-width: 80%;
+			padding: 10px 12px;
+			border-radius: 14px;
+			background: #fff;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+		}
+
+		.chat-expediente-item.entrante {
+			align-self: flex-start;
+			border-left: 4px solid #17a2b8;
+		}
+
+		.chat-expediente-item.saliente {
+			align-self: flex-end;
+			border-right: 4px solid #28a745;
+			background: #eefcf1;
+		}
+
+		.chat-expediente-meta {
+			font-size: 12px;
+			color: #6c757d;
+			margin-bottom: 4px;
+		}
+
+		.chat-expediente-vacio {
+			text-align: center;
+			color: #6c757d;
+			padding: 20px;
+		}
+
 		a.editar span,
 		a.documentos span,
 		a.notificar span,
@@ -363,6 +423,7 @@
 		a.duplicar span,
 		a.firmas span,
 		a.seguimiento span,
+		a.chat-expediente span,
 		a.cancelar span {
 			display: none;
 		}
@@ -444,6 +505,10 @@ return '{{ path('notificacion_expediente',{'id':' '}) }}';
 function rutaCancelarExpediente() {
 return '{{ path('cancelar_expediente',{'id':' '}) }}';
 }
+
+function rutaExpedienteChatMensajes() {
+return '{{ path('expediente_chat_mensajes',{'id':'__ID__'}) }}';
+}
 	</script>
 	<script src="{{ asset('assets/js/custom/lista-expedientes.min.js') }}"></script>
 	<script>
@@ -487,6 +552,47 @@ $('#tecnicos').val('{{ app.user.idUsuario }}').change();{% endif %}
 });
 		</script>
 	{% endif %}
+	<script>
+		function escaparHtmlChatExpediente(texto) {
+			return $('<div>').text(texto || '').html();
+		}
+
+		$(document).on('click', '[data-expediente-chat]', function (e) {
+			e.preventDefault();
+
+			var idExpediente = $(this).data('expediente-chat');
+			var vivienda = $(this).data('vivienda') || '';
+			var url = rutaExpedienteChatMensajes().replace('__ID__', idExpediente);
+			var $contenedor = $('#chat-expediente-contenido');
+
+			$('#chat-expediente-titulo').text('Mensajes del expediente #' + idExpediente);
+			$('#chat-expediente-subtitulo').text(vivienda);
+			$contenedor.html('<div class="chat-expediente-vacio">Cargando mensajes...</div>');
+			$('#modal-chat-expediente').modal('show');
+
+			$.get(url)
+				.done(function (respuesta) {
+					if (!respuesta || !respuesta.mensajes || respuesta.mensajes.length === 0) {
+						$contenedor.html('<div class="chat-expediente-vacio">Todavía no hay mensajes guardados para este expediente.</div>');
+						return;
+					}
+
+					var html = '<div class="chat-expediente-contenedor">';
+					respuesta.mensajes.forEach(function (mensaje) {
+						var direccion = (mensaje.direccion || 'entrante').toLowerCase() === 'saliente' ? 'saliente' : 'entrante';
+						html += '<div class="chat-expediente-item ' + direccion + '">';
+						html += '<div class="chat-expediente-meta">' + escaparHtmlChatExpediente(mensaje.autor || 'Usuario') + ' · ' + escaparHtmlChatExpediente(mensaje.fecha || '') + '</div>';
+						html += '<div class="chat-expediente-texto">' + escaparHtmlChatExpediente(mensaje.texto || '').replace(/\n/g, '<br>') + '</div>';
+						html += '</div>';
+					});
+					html += '</div>';
+					$contenedor.html(html);
+				})
+				.fail(function () {
+					$contenedor.html('<div class="chat-expediente-vacio">No se han podido cargar los mensajes del expediente.</div>');
+				});
+		});
+	</script>
 	<script src="{{ asset('assets/js/custom/notificacion-expediente.js') }}"></script>
 	<script src="{{ asset('assets/js/custom/cancelar-expediente.js') }}"></script>
 {% endblock %}
@@ -833,6 +939,10 @@ $('#tecnicos').val('{{ app.user.idUsuario }}').change();{% endif %}
 													<span>
 														Seguimiento</span>
 												</a>
+												<a class="mr-2 chat-expediente" href="javascript:void(0)" data-expediente-chat="{{ expediente.idExpediente }}" data-vivienda="{{ expediente.vivienda|e('html_attr') }}" data-toggle="popover" data-content="Mensajes" data-trigger="hover">
+													<i class="fas fa-comments"></i>
+													<span>Mensajes</span>
+												</a>
 												<a class="mr-2 editar" href="{{ path('modificar_expediente',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Editar" data-trigger="hover">
 													<i class="far fa-edit"></i>
 													<span>
@@ -865,10 +975,14 @@ $('#tecnicos').val('{{ app.user.idUsuario }}').change();{% endif %}
 												<span>
 													Notificar</span>
 											</a>
-											<a class="mr-2 email" href="{{ path('expediente_email',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Enviar Email" data-trigger="hover">
+											<a class="mr-2 email" href="{{ path('expediente_email',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Enviar Email111" data-trigger="hover">
 												<i class="far fa-envelope"></i>
 												<span>
 													E-Mail</span>
+											</a>
+											<a class="mr-2 chat-expediente" href="javascript:void(0)" data-expediente-chat="{{ expediente.idExpediente }}" data-vivienda="{{ expediente.vivienda|e('html_attr') }}" data-toggle="popover" data-content="Mensajes" data-trigger="hover">
+												<i class="fas fa-comments"></i>
+												<span>Mensajes</span>
 											</a>
 											<a class="mr-2 informe" href="{{ path('informe_expediente',{'id':expediente.idExpediente}) }}" target="_blank" data-toggle="popover" data-content="Informe" data-trigger="hover">
 												<i class="fas fa-info"></i>
@@ -985,4 +1099,23 @@ $('#tecnicos').val('{{ app.user.idUsuario }}').change();{% endif %}
 	{% include '@App/Backoffice/Modal/ConfirmarDuplicar.html' %}
 	{% include '@App/Backoffice/Modal/NotificacionExpediente.html.twig' %}
 	{% include '@App/Backoffice/Modal/CancelarExpediente.html.twig' %}
+
+	<div class="modal fade" id="modal-chat-expediente" tabindex="-1" role="dialog" aria-labelledby="chat-expediente-titulo" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="chat-expediente-titulo">Mensajes del expediente</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted mb-3" id="chat-expediente-subtitulo"></p>
+					<div id="chat-expediente-contenido">
+						<div class="chat-expediente-vacio">Todavía no hay mensajes para este expediente.</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock %}

@@ -236,9 +236,6 @@ class GrupoNegociadorController extends Controller
 
 				}
 
-				// Asignar referencia única al expediente
-				$this->asignarReferenciaAExpediente($expediente);
-
 				$managerEntidad->persist($expediente);
 				// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($usuario, 'Creación del expediente', $expediente));
 				$managerEntidad->flush();
@@ -247,12 +244,12 @@ class GrupoNegociadorController extends Controller
 
 				// Ahora creamos los hitos campos etc del expediente para que en la app se puedan ver los formularios
 				
-				// Notificar a todo el equipo: admins, comerciales y técnicos activos
-				$admins = $repositorios['Usuarios']->findBy(array('role' => 'ROLE_ADMIN'));
-				$comerciales = $repositorios['Usuarios']->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
-				$tecnicos = $repositorios['Usuarios']->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
-				$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
-				
+				$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+
+				$usuarios_gn = $repositorios['Usuarios']->findBy(array(
+						'role' => $roles
+					)
+				);
 				foreach($usuarios_gn as $usuario_gn){
 					$notificacion = (new NotificacionEntidad)
 						->setIdExpediente($expediente)
@@ -442,13 +439,13 @@ class GrupoNegociadorController extends Controller
 						$managerEntidad = $doctrine->getManager();
 						$managerEntidad->persist($usuario);
 						$managerEntidad->flush();
-						// Notificar a todo el equipo: admins, comerciales y técnicos activos
-						$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
-						$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
-						$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
-						$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
+						$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
 
 						//Aviso de que se ha creado una cuenta
+						$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+								'role' => $roles
+							)
+						);
 						foreach($usuarios_gn as $usuario_gn){
 							$notificacion = (new NotificacionEntidad)
 								->setEstado(1)
@@ -3103,7 +3100,6 @@ class GrupoNegociadorController extends Controller
 			$qb->andWhere(
 				$qb->expr()->orX(
 					$qb->expr()->like('CONCAT(e.idExpediente, \'\')', ':buscar'),
-					$qb->expr()->like('e.referencia', ':buscar'),
 					$qb->expr()->like('e.vivienda', ':buscar'),
 					$qb->expr()->like('buscarCli.apellidos', ':buscar'),
 					$qb->expr()->like('buscarCli.nombre', ':buscar'),
@@ -3900,7 +3896,6 @@ class GrupoNegociadorController extends Controller
 			$qb->andWhere(
 				$qb->expr()->orX(
 					$qb->expr()->like('CONCAT(e.idExpediente, \'\')', ':buscar'),
-					$qb->expr()->like('e.referencia', ':buscar'),
 					$qb->expr()->like('e.vivienda', ':buscar'),
 					$qb->expr()->like('buscarCli.apellidos', ':buscar'),
 					$qb->expr()->like('buscarCli.nombre', ':buscar'),
@@ -4048,6 +4043,35 @@ class GrupoNegociadorController extends Controller
 		if ($usuario->getIdUsuario() === 1656) {
 			$inmobiliariasFiltradas = $request->query->get('inmobiliarias', []);
 		}
+
+		$expedientesConMensajes = [];
+		if (!empty($expedientes) && class_exists('AppBundle\\Entity\\ExpedienteChatMensaje')) {
+			try {
+				$idsExpedientesPagina = array_values(array_unique(array_filter(array_map(function ($expedienteActual) {
+					return $expedienteActual ? (int) $expedienteActual->getIdExpediente() : 0;
+				}, $expedientes))));
+
+				if (!empty($idsExpedientesPagina)) {
+					$idsExpedientesSql = implode(',', array_map('intval', $idsExpedientesPagina));
+
+					if ($idsExpedientesSql !== '') {
+						$sql = 'SELECT id_expediente, COUNT(*) AS total_mensajes FROM expediente_chat_mensaje WHERE id_expediente IN (' . $idsExpedientesSql . ') GROUP BY id_expediente';
+						$filasMensajes = $em->getConnection()->executeQuery($sql)->fetchAll();
+
+						foreach ($filasMensajes as $filaMensaje) {
+							$idExpedienteMensaje = isset($filaMensaje['id_expediente']) ? (int) $filaMensaje['id_expediente'] : 0;
+							$totalMensajes = isset($filaMensaje['total_mensajes']) ? (int) $filaMensaje['total_mensajes'] : 0;
+
+							if ($idExpedienteMensaje > 0 && $totalMensajes > 0) {
+								$expedientesConMensajes[$idExpedienteMensaje] = $totalMensajes;
+							}
+						}
+					}
+				}
+			} catch (\Exception $e) {
+				$expedientesConMensajes = [];
+			}
+		}
 		
 		return $this->render('@App/Backoffice/Lista/ExpedientePaginacion.html.twig', [
 			'titulo' => 'Lista de expedientes',
@@ -4061,6 +4085,7 @@ class GrupoNegociadorController extends Controller
 			'totalExpedientes' => $totalExpedientes,
 			'limit' => $limit,
 			'camposPersonalizados' => $camposPersonalizados,
+			'expedientesConMensajes' => $expedientesConMensajes,
 			'formularioNotificacionExpediente' => $formularioNotificacionExpediente->createView(),
 			'formularionCancelarExpediente' => $formularionCancelarExpediente->createView(),
 			'sinAsignar' => false,
@@ -4867,12 +4892,6 @@ class GrupoNegociadorController extends Controller
 									}
 								}
 
-								// Notificar a la jerarquía del colaborador (jefe de inmobiliaria / jefe de oficina)
-								if (($this->getUser()->getRoles()[0] === 'ROLE_CLIENTE' || $this->getUser()->getRoles()[0] === '') && $campoHitoExpediente->getEnviarAlColaborador() && $expediente->getIdColaborador()) {
-									$textoJerarquia = 'El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.';
-									$this->notificarJerarquiaColaborador($expediente, 'Nuevo documento en expediente', $textoJerarquia, $managerEntidad, $doctrine);
-								}
-
 								// $this->enviarNotificacion($expediente,$campoHitoExpediente,null,$titulo,$mensaje);
 								// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
 								if($expediente->getIdComercial()){
@@ -4902,11 +4921,12 @@ class GrupoNegociadorController extends Controller
 								}
 
 								if($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null){
-									//Aviso de que se ha creado una cuenta - notificar a todo el equipo
-									$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
-									$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
-									$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
-									$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
+									//Aviso de que se ha creado una cuenta
+									$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+									$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+											'role' => $roles
+										)
+									);
 									foreach($usuarios_gn as $usuario_gn){
 										$notificacion = (new NotificacionEntidad)
 											->setIdExpediente($expediente)
@@ -5509,7 +5529,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			),
 			'agregarModificarExpediente' => $formularioExpediente->createView(),
 			'arraySeguimientosFase' => $arraySeguimientosFase,
-			'idExpediente' => $expediente->getIdExpediente(), 
+			'idExpediente' => $id,
 			'irADocumentos' => $irADocumentos,
 			'fases' => $fases,
 			'faseActual' => $faseActual
@@ -6479,11 +6499,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				}
 			}*/
 			if (!$this->comprobarSiLasEntidadesSonIguales($managerEntidad, $expediente)) {
-				// Asignar referencia única si es un expediente nuevo
-				if (!isset($id)) {
-					$this->asignarReferenciaAExpediente($expediente);
-				}
-				
 				$managerEntidad->persist($expediente);
 				if (isset($id)) {
 					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($this->getUser(), 'Modificación del expediente', $expediente));
@@ -6958,8 +6973,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 									if($destinatario != "" || count($grupo_destinatarios)>0){
 										$helpers->sendFCM($textoNotificacion, $tituloNotificacion, $destinatario, $grupo_destinatarios, $notificacion->getIdNotificacion());
 									}
-									// Notificar a la jerarquía del colaborador (jefe de inmobiliaria / jefe de oficina)
-									$this->notificarJerarquiaColaborador($expediente, $tituloNotificacion, $textoNotificacion, $managerEntidad, $doctrine);
+										// ->setTexto('El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo hito "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.');
 								}
 								if ($campoHitoExpediente->getEnviarAlCliente() && $expediente->getIdCliente()) {
 									$notificacion = (new NotificacionEntidad())
@@ -7009,9 +7023,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 										$notificacion->setIdUsuario($expediente->getIdColaborador())
 											->setTexto('El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.');
 										$managerEntidad->persist($notificacion);
-										// Notificar a la jerarquía del colaborador (jefe de inmobiliaria / jefe de oficina)
-										$textoJerarquia3 = 'El cliente ' . (new UsuariosNombreCompleto())->obtener($expediente->getIdCliente()) . ' acaba de subir un documento al campo "' . $campoHito . '" del hito "' . $campoHito->getIdGrupoCamposHito()->getIdHito() . '" del expediente nº ' . $expediente->getIdExpediente() . '.';
-										$this->notificarJerarquiaColaborador($expediente, 'Nuevo documento en expediente', $textoJerarquia3, $managerEntidad, $doctrine);
 										}
 								} elseif ($campoHitoExpediente->getEnviarAlCliente()) {
 									$enviarNotificacion = true;
@@ -7048,11 +7059,12 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 								}
 
 								if($expediente->getIdComercial() == null && $expediente->getIdTecnico() == null){
-									//Aviso de que se ha creado una cuenta - notificar a todo el equipo
-									$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
-									$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
-									$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
-									$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
+									//Aviso de que se ha creado una cuenta
+									$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+									$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+											'role' => $roles
+										)
+									);
 									foreach($usuarios_gn as $usuario_gn){
 										$notificacion = (new NotificacionEntidad)
 											->setIdExpediente($expediente)
@@ -7272,12 +7284,12 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					}
 				}
 
-				// Enviar notificación NO PUSH al equipo asignado (o a todo el equipo si nadie asignado)
-				$hayAsignadosGN = false;
-
-				if ($expediente->getIdComercial()) {
-					$hayAsignadosGN = true;
-					$comercialnoti = $expediente->getIdComercial();
+				// Enviar notificación NO PUSH al admin y al comercial  y al tecnico
+				$comercialesnoti = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+						'role' => 'ROLE_COMERCIAL'
+					)
+				);
+				foreach($comercialesnoti as $comercialnoti){
 					$notificacion = (new NotificacionEntidad)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -7286,13 +7298,16 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo($asunto)
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
+					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($comercialnoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 				}
-
-				if ($expediente->getIdTecnico()) {
-					$hayAsignadosGN = true;
-					$tecniconoti = $expediente->getIdTecnico();
+				
+				$tecnicosnoti = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+						'role' => 'ROLE_TECNICO'
+					)
+				);
+				foreach($tecnicosnoti as $tecniconoti){
 					$notificacion = (new NotificacionEntidad)
 						->setIdExpediente($expediente)
 						->setEstado(1)
@@ -7301,27 +7316,9 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo($asunto)
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
+					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 					$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($tecniconoti, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-				}
-
-				if (!$hayAsignadosGN) {
-					$usuariosEquipoGN = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-						'role' => array('ROLE_COMERCIAL', 'ROLE_TECNICO'),
-						'estado' => 1
-					));
-					foreach ($usuariosEquipoGN as $usuarioEquipoGN) {
-						$notificacion = (new NotificacionEntidad)
-							->setIdExpediente($expediente)
-							->setEstado(1)
-							->setFecha(new DateTime())
-							->setIdUsuario($usuarioEquipoGN)
-							->setTitulo($asunto)
-							->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
-						$managerEntidad->persist($notificacion);
-						$managerEntidad->flush();
-						$this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($usuarioEquipoGN, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
-					}
 				}
 
 				$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
@@ -7337,6 +7334,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						->setTitulo($asunto)
 						->setTexto('El expediente ' . $expediente->getVivienda() . ' se ha actualizado.');
 					$managerEntidad->persist($notificacion);
+					// $this->get('event_dispatcher')->dispatch('log.registrarActividadConEntidad', new RegistrarActividad($colaborador, 'Se ha enviado una notificacion a ' . (new UsuariosNombreCompleto())->obtener($notificacion->getIdUsuario()), $expediente));
 					$managerEntidad->flush();
 				}
 			}
@@ -7455,9 +7453,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				));//Recarga forzada para poder ver la imagen en el plugin Dropify
 			}
 		}
-
-		// Flush final de todos los cambios pendientes
-		$managerEntidad->flush();
 
 		// Obtener valor del campo 707 (Activar Belender) para clientes
 		$valores_campo_707 = [];
@@ -10292,84 +10287,58 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 	{
 		if ($request->isXmlHttpRequest()) {
 			$elementos = json_decode($request->getContent(), true);
+			$mensaje = null;
 			
 			if (json_last_error() === 0 && isset($elementos[0])) {
-				try {
-					$doctrine = $this->getDoctrine();
-					$managerEntidad = $doctrine->getManager();
-					$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
-					$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
-					$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
+				$doctrine = $this->getDoctrine();
+				$managerEntidad = $doctrine->getManager();
+				$repositorio_seguimientos = $doctrine->getRepository(SeguimientoExpedienteEntidad::class);
+				$repositorio_expedientes = $doctrine->getRepository(ExpedienteEntidad::class);
+				$repositorio_conceptos = $doctrine->getRepository(ConceptoSeguimientoExpedienteEntidad::class);
 
-					$actualizados = 0;
-					foreach( $elementos as $fila){
-						if (!isset($fila['idExpediente']) || !isset($fila['concepto'])) {
-							continue;
-						}
-
-						$expediente = $repositorio_expedientes->find($fila['idExpediente']);
-						if (!$expediente) {
-							continue;
-						}
-
-						$concepto = $repositorio_conceptos->find($fila['concepto']);
-						if (!$concepto) {
-							continue;
-						}
-
-						$seguimiento = $repositorio_seguimientos->findOneBy(array(
-							'idExpediente' => $expediente,
-							'idConceptoSeguimientoExpediente' => $concepto
-						));
-
-						try {
-							if($seguimiento){
-								if(!empty($fila['fecha'])){
-									$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
-									if ($fecha !== false) {
-										$seguimiento->setFecha($fecha);
-									}
-								}
-								$seguimiento->setComentario($fila['comentario'] ?? '');
-								$seguimiento->setCliente($fila['cliente'] ?? 0);
-								$managerEntidad->persist($seguimiento);
-								$managerEntidad->flush();
-								$actualizados++;
-							}else{
-								$seguimiento = new SeguimientoExpedienteEntidad();
-								$seguimiento->setIdExpediente($expediente);
-								$seguimiento->setIdConceptoSeguimientoExpediente($concepto);
-								if(!empty($fila['fecha'])){
-									$fecha = \DateTime::createFromFormat("d/m/Y",trim($fila['fecha']));
-									if ($fecha !== false) {
-										$seguimiento->setFecha($fecha);
-									}
-								}
-								$seguimiento->setComentario($fila['comentario'] ?? '');
-								$seguimiento->setCliente($fila['cliente'] ?? 0);
-								$managerEntidad->persist($seguimiento);
-								$managerEntidad->flush();
-								$actualizados++;
-							}
-						} catch (\Exception $e) {
-							continue;
-						}
-					}
-					
-					return $this->json(array(
-						'error' => false,
-						'actualizados' => $actualizados
+				foreach( $elementos as $fila){
+					$expediente = $repositorio_expedientes->findOneBy(array(
+						'idExpediente' => $fila['idExpediente']
 					));
-				} catch (\Exception $e) {
-					return $this->json(array(
-						'error' => true,
-						'mensaje' => $e->getMessage()
-					), 500);
+					$concepto = $repositorio_conceptos->findOneBy(array(
+						'idConceptoSeguimientoExpediente' => $fila['concepto']
+					));
+					$seguimiento = $repositorio_seguimientos->findOneBy(array(
+						'idExpediente' => $expediente,
+						'idConceptoSeguimientoExpediente' => $concepto
+					));
+
+					if($seguimiento){
+						if($fila['fecha']){
+							$seguimiento->setFecha(\DateTime::createFromFormat("d/m/Y",trim($fila['fecha'])));
+						}
+						$seguimiento->setComentario($fila['comentario']);
+						$seguimiento->setCliente($fila['cliente']);
+						$seguimiento->setColaborador($fila['colaborador']);
+						$managerEntidad->persist($seguimiento);
+						$managerEntidad->flush();
+					}else{
+						$seguimiento = new SeguimientoExpedienteEntidad();
+						$seguimiento->setIdExpediente($expediente);
+						$seguimiento->setIdConceptoSeguimientoExpediente($concepto);
+						if($fila['fecha']){
+							$seguimiento->setFecha(\DateTime::createFromFormat("d/m/Y",trim($fila['fecha'])));
+						}
+						$seguimiento->setComentario($fila['comentario']);
+						$seguimiento->setCliente($fila['cliente']);
+						$seguimiento->setColaborador($fila['colaborador']);
+						$managerEntidad->persist($seguimiento);
+						$managerEntidad->flush();
+					}
 				}
+
+				
+				return $this->json(array(
+					'error' => false
+				));
 			}else{
 				return $this->json(array(
-					'error' => true,
-					'mensaje' => 'JSON inválido'
+					'error' => true
 				));
 			}
 		} else {
@@ -10393,10 +10362,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			$managerEntidad->flush();
 
 			//Aviso de que se ha creado una cuenta
-			$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
-			$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
-			$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
-			$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
+			$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+			$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+					'role' => $roles
+				)
+			);
 			foreach($usuarios_gn as $usuario_gn){
 				$notificacion = (new NotificacionEntidad)
 					->setEstado(1)
@@ -10453,10 +10423,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				$managerEntidad->flush();
 
 				//Aviso de que se ha creado una cuenta
-				$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
-				$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
-				$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
-				$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
+				$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+				$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+						'role' => $roles
+					)
+				);
 				foreach($usuarios_gn as $usuario_gn){
 					$notificacion = (new NotificacionEntidad)
 						->setEstado(1)
@@ -10506,10 +10477,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 						$managerEntidad->persist($usuario);
 						$managerEntidad->flush();
 
-						$admins = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_ADMIN'));
-						$comerciales = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_COMERCIAL', 'estado' => 1));
-						$tecnicos = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array('role' => 'ROLE_TECNICO', 'estado' => 1));
-						$usuarios_gn = array_merge($admins, $comerciales, $tecnicos);
+						$roles = array("ROLE_ADMIN", "ROLE_TECNICO", "ROLE_COMERCIAL");
+						$usuarios_gn = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
+								'role' => $roles
+							)
+						);
 						foreach($usuarios_gn as $usuario_gn){
 							$notificacion = (new NotificacionEntidad)
 								->setEstado(1)
@@ -13004,6 +12976,69 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				}
 			}
 
+	}
+
+	public function expedienteChatMensajesAction(Request $request, $id)
+	{
+		$doctrine = $this->getDoctrine();
+		$expediente = $doctrine->getRepository(ExpedienteEntidad::class)->findOneBy(array(
+			'idExpediente' => $id
+		));
+
+		if (!$expediente) {
+			return new JsonResponse(array(
+				'ok' => false,
+				'mensaje' => 'Expediente no encontrado.',
+				'mensajes' => array(),
+			), 404);
+		}
+
+		if (!class_exists('AppBundle\\Entity\\ExpedienteChatMensaje')) {
+			return new JsonResponse(array(
+				'ok' => true,
+				'mensaje' => 'La entidad de chat todavía no está disponible.',
+				'mensajes' => array(),
+			));
+		}
+
+		try {
+			$mensajesEntidad = $doctrine->getRepository('AppBundle:ExpedienteChatMensaje')->findBy(array(
+				'idExpediente' => $expediente,
+			), array(
+				'fechaMensaje' => 'ASC',
+				'id' => 'ASC',
+			));
+		} catch (\Throwable $e) {
+			return new JsonResponse(array(
+				'ok' => true,
+				'mensaje' => 'Aún no hay tabla o mensajes disponibles para este expediente.',
+				'mensajes' => array(),
+			));
+		}
+
+		$mensajes = array();
+		foreach ($mensajesEntidad as $mensajeEntidad) {
+			$fechaMensaje = method_exists($mensajeEntidad, 'getFechaMensaje') ? $mensajeEntidad->getFechaMensaje() : null;
+			$mensajes[] = array(
+				'id' => method_exists($mensajeEntidad, 'getId') ? $mensajeEntidad->getId() : null,
+				'autor' => method_exists($mensajeEntidad, 'getAutorNombre') ? (string) $mensajeEntidad->getAutorNombre() : '',
+				'autorTipo' => method_exists($mensajeEntidad, 'getAutorTipo') ? (string) $mensajeEntidad->getAutorTipo() : '',
+				'direccion' => method_exists($mensajeEntidad, 'getDireccion') ? (string) $mensajeEntidad->getDireccion() : 'entrante',
+				'texto' => method_exists($mensajeEntidad, 'getMensaje') ? (string) $mensajeEntidad->getMensaje() : '',
+				'estado' => method_exists($mensajeEntidad, 'getEstado') ? (string) $mensajeEntidad->getEstado() : '',
+				'fecha' => $fechaMensaje instanceof \DateTimeInterface ? $fechaMensaje->format('d/m/Y H:i') : '',
+			);
+		}
+
+		return new JsonResponse(array(
+			'ok' => true,
+			'expediente' => array(
+				'id' => $expediente->getIdExpediente(),
+				'vivienda' => method_exists($expediente, 'getVivienda') ? (string) $expediente->getVivienda() : '',
+			),
+			'total' => count($mensajes),
+			'mensajes' => $mensajes,
+		));
 	}
 
 	public function pageNotFoundAction(AuthenticationUtils $authenticationUtils)
@@ -15923,130 +15958,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			'pais' => $cliente->getPais(),
 		], 200);
 		
-	}
-
-	/**
-	 * Genera una referencia única para un expediente
-	 * Formato: NNNN/YY (ej: 0001/26, 0002/26, etc.)
-	 * 
-	 * @param int $anio El año de 2 dígitos para el que generar la referencia
-	 * @return string Referencia en formato NNNN/YY
-	 * @throws \Exception Si hay error al generar la referencia
-	 */
-	private function generarReferencia(int $anio): string
-	{
-		try {
-			$doctrine = $this->getDoctrine();
-			$conn = $doctrine->getConnection();
-			
-			// Query SQL para obtener el máximo número de referencia del año especificado
-			$sql = "
-				SELECT MAX(CAST(SUBSTRING_INDEX(referencia, '/', 1) AS UNSIGNED)) as max_numero
-				FROM expediente
-				WHERE referencia LIKE :patron
-			";
-			
-			$stmt = $conn->prepare($sql);
-			$patron = '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT);
-			$stmt->bindValue('patron', $patron);
-			$stmt->execute();
-			$result = $stmt->fetch();
-			
-			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero']) 
-				? (int)$result['max_numero'] 
-				: 0;
-			
-			$siguienteNumero = $maxNumero + 1;
-			
-			// Formatear: NNNN/YY (4 dígitos para número, 2 para año)
-			$referencia = sprintf('%04d/%02d', $siguienteNumero, $anio);
-			
-			return $referencia;
-		} catch (\Exception $e) {
-			throw new \Exception('Error al generar referencia de expediente: ' . $e->getMessage());
-		}
-	}
-
-	/**
-	 * Asigna una referencia a un expediente si no la tiene
-	 * 
-	 * @param ExpedienteEntidad $expediente
-	 * @return string La referencia asignada
-	 * @throws \Exception
-	 */
-	private function asignarReferenciaAExpediente(ExpedienteEntidad $expediente): string
-	{
-		// Si ya tiene referencia, no generar otra
-		if (!empty($expediente->getReferencia())) {
-			return $expediente->getReferencia();
-		}
-		
-		// Obtener el año desde la fecha de creación del expediente
-		$anio = (int)$expediente->getFechaCreacion()->format('y');
-		
-		// Generar y asignar la referencia
-		$referencia = $this->generarReferencia($anio);
-		$expediente->setReferencia($referencia);
-		
-		return $referencia;
-	}
-
-	/**
-	 * Notifica al jefe de inmobiliaria y jefe de oficina del colaborador asignado al expediente.
-	 * Se llama siempre que el colaborador recibe una notificación, para que su jerarquía también la reciba.
-	 */
-	private function notificarJerarquiaColaborador(
-		ExpedienteEntidad $expediente,
-		string $titulo,
-		string $texto,
-		$managerEntidad,
-		$doctrine
-	): void {
-		$colaborador = $expediente->getIdColaborador();
-		if (!$colaborador) {
-			return;
-		}
-
-		$jefes = array();
-
-		// Jefes de la inmobiliaria del colaborador
-		if ($colaborador->getIdInmobiliaria()) {
-			$jefesInmobiliaria = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-				'role' => 'ROLE_JEFE_INMOBILIARIA',
-				'idInmobiliaria' => $colaborador->getIdInmobiliaria(),
-				'estado' => 1
-			));
-			$jefes = array_merge($jefes, $jefesInmobiliaria);
-		}
-
-		// Jefes de la oficina del colaborador
-		if ($colaborador->getIdOficina()) {
-			$jefesOficina = $doctrine->getRepository(UsuarioEntidad::class)->findBy(array(
-				'role' => 'ROLE_JEFE_OFICINA',
-				'idOficina' => $colaborador->getIdOficina(),
-				'estado' => 1
-			));
-			$jefes = array_merge($jefes, $jefesOficina);
-		}
-
-		foreach ($jefes as $jefe) {
-			// No duplicar si el jefe coincide con el propio colaborador
-			if ($jefe->getIdUsuario() === $colaborador->getIdUsuario()) {
-				continue;
-			}
-			$notificacionJefe = (new NotificacionEntidad())
-				->setIdExpediente($expediente)
-				->setEstado(1)
-				->setFecha(new \DateTime())
-				->setIdUsuario($jefe)
-				->setTitulo($titulo)
-				->setTexto($texto);
-			$managerEntidad->persist($notificacionJefe);
-		}
-
-		if (!empty($jefes)) {
-			$managerEntidad->flush();
-		}
 	}
 
 }

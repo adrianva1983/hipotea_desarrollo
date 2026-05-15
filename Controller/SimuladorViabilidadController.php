@@ -17,8 +17,6 @@ use AppBundle\Form\SimuladorDatosClienteType;
 use AppBundle\Form\SimuladorPrecioMaximoType;
 use AppBundle\Form\SimuladorCuotaGastosType;
 use AppBundle\Form\SimuladorRiesgoType;
-use AppBundle\Entity\SimuladorUsoEmail;
-use AppBundle\Entity\FicheroCampo;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -250,55 +248,6 @@ class SimuladorViabilidadController extends Controller
             return new JsonResponse(['success' => false, 'mensaje' => 'Faltan los datos del cliente. Por favor, completa el Paso 1.'], 400);
         }
 
-        // ===== CHECK DE LÍMITE DE USOS POR EMAIL (idéntico a calculadoraAvanzadaTestAjaxAction) =====
-        $emailCliente = $datosCliente['email'] ?? null;
-        $maxUsos = $this->getParameter('simulador_max_usos');
-        $whatsappContacto = $this->getParameter('simulador_whatsapp_contacto');
-        $nombreCliente = $datosCliente['nombre'] ?? 'Usuario';
-
-        $body = json_decode($request->getContent(), true) ?? [];
-        $contaruso = isset($body['contaruso']) && ($body['contaruso'] === true || $body['contaruso'] === 'true');
-        $tipo = 'simulador_viabilidad';
-
-        if (!empty($emailCliente) && $contaruso) {
-            try {
-                $em = $this->getDoctrine()->getManager();
-                
-                // QueryBuilder idéntico a calculadoraAvanzadaTestAjaxAction
-                $qb = $em->createQueryBuilder();
-                $qb->select('u')
-                    ->from('AppBundle:SimuladorUsoEmail', 'u')
-                    ->where('u.email = :email')
-                    ->andWhere('u.tipo = :tipo')
-                    ->setParameter('email', $emailCliente)
-                    ->setParameter('tipo', $tipo);
-                $usoEmail = $qb->getQuery()->getOneOrNullResult();
-                
-                // Refresh explícito para garantizar que leemos el valor actual de la BD
-                if ($usoEmail) {
-                    $em->refresh($usoEmail);
-                    error_log('=== CHECK LÍMITE (enviarAHipotea): Email ' . $emailCliente . ' - Usos actuales: ' . $usoEmail->getUsos());
-                }
-                
-                // Bloquear si se alcanzó el límite
-                if ($usoEmail && $usoEmail->getUsos() >= $maxUsos) {
-                    error_log('=== LÍMITE ALCANZADO EN ENVIAR A HIPOTEA: ' . $emailCliente . ' (usos: ' . $usoEmail->getUsos() . '/' . $maxUsos . ')');
-                    return new JsonResponse([
-                        'success' => false,
-                        'limite' => true,
-                        'nombre' => $nombreCliente,
-                        'email' => $emailCliente,
-                        'whatsappContacto' => $whatsappContacto,
-                        'mensaje' => 'No ha sido posible procesar tu solicitud porque este simulador está limitado a ' . $maxUsos . ' usos. Si deseas realizar más simulaciones, puedes solicitarlo poniéndote en contacto con nosotros desde este enlace'
-                    ], 200);
-                }
-            } catch (\Exception $e) {
-                error_log('Error al verificar límite en enviarAHipotea: ' . $e->getMessage());
-                // Continuar sin bloquear si hay error
-            }
-        }
-
-
         try {
             $doctrine = $this->getDoctrine();
             $em = $doctrine->getManager();
@@ -460,9 +409,6 @@ class SimuladorViabilidadController extends Controller
                     }
                 }
             }
-
-            // Asignar referencia única para el nuevo expediente
-            $this->asignarReferenciaAExpediente($expediente);
 
             $em->persist($expediente);
 
@@ -740,7 +686,7 @@ class SimuladorViabilidadController extends Controller
             // Variables para la plantilla de correo (usar valores disponibles, con fallback)
             $variablesTwig = [
                 'resultado' => true,
-                'nombre' => $nombre,
+                'nombre' => $nombreCompleto,
                 'telefono' => $telefono,
                 'importe_fijo' => $precioInmueble ?? 0,
                 'gastos' => $gastosTotales ?? 0,
@@ -755,8 +701,8 @@ class SimuladorViabilidadController extends Controller
 
             $mensaje = (new Swift_Message('Aquí tienes el resultado de tu consulta hipotecaria!'))
                 ->setFrom($from)
-                ->setTo($clienteUsuario->getEmail())
-                //->setTo('adrianva1983@gmail.com')
+                //->setTo($clienteUsuario->getEmail())
+                ->setTo('adrianva1983@gmail.com')
                 ->setBody($this->renderView('@App/Backoffice/Correo/ResultadoSimuladorWebCliente.html.twig', $variablesTwig), 'text/html');
             
             // PROBANDO CON PDF ADJUNTO
@@ -827,42 +773,6 @@ class SimuladorViabilidadController extends Controller
             );
             
             $mensaje->attach(Swift_Attachment::fromPath($this->getParameter('files_directory') . DIRECTORY_SEPARATOR .'calculadora_' . $nombre_pdf . '.pdf')->setFilename('Hipotea: Tu resultado.pdf'));
-
-            // ── ADJUNTAR PDF AL CAMPO HITO 754 (Documentación adicional) DEL EXPEDIENTE ──
-            try {
-                $nombreFicheroPdf = 'calculadora_' . $nombre_pdf . '.pdf';
-                $campoHito754 = $doctrine->getRepository(CampoHito::class)->find(754);
-                if ($campoHito754) {
-                    $campoHitoExp754 = $doctrine->getRepository(CampoHitoExpediente::class)->findOneBy([
-                        'idExpediente' => $expediente,
-                        'idCampoHito'  => $campoHito754,
-                    ]);
-                    if ($campoHitoExp754) {
-                        // Eliminar fichero anterior si existe
-                        $ficheroPrevio = $doctrine->getRepository(FicheroCampo::class)->findOneBy([
-                            'idCampoHitoExpediente' => $campoHitoExp754,
-                        ]);
-                        if ($ficheroPrevio) {
-                            $em->remove($ficheroPrevio);
-                        }
-
-                        $campoHitoExp754->setValor('Informe_Simulador_Viabilidad')
-                                        ->setFechaModificacion(new DateTime());
-                        $em->persist($campoHitoExp754);
-
-                        $ficheroCampo = (new FicheroCampo())
-                            ->setNombreFichero($nombreFicheroPdf)
-                            ->setIdCampoHito($campoHito754)
-                            ->setIdCampoHitoExpediente($campoHitoExp754)
-                            ->setIdExpediente($expediente);
-                        $em->persist($ficheroCampo);
-                        $em->flush();
-                    }
-                }
-            } catch (\Throwable $eFichero) {
-                error_log('Error adjuntando PDF al campo hito 754: ' . $eFichero->getMessage());
-            }
-
             // Pasar variables adicionales a la plantilla y actualizar el body para cliente
             $variablesTwig['informe_html'] = $informeHtmlParaPdf;
             $variablesTwig['fecha'] = (new \DateTime())->format('d/m/Y');
@@ -921,8 +831,7 @@ class SimuladorViabilidadController extends Controller
 
             // Ahora enviar un segundo correo específico a Hipotea (copia separada)
             try {
-                $hipoteaEmail = 'info@hipotea.com';
-                //$hipoteaEmail = 'adrian.verdecia@semillaproyectos.com';
+                $hipoteaEmail = 'adrian.verdecia@semillaproyectos.com';
                 $variablesTwig['origen'] = 'hipotea';
                 $variablesTwig['email'] = $email;
                 $variablesTwig['telefono'] = $telefono;
@@ -955,87 +864,6 @@ class SimuladorViabilidadController extends Controller
             } catch (\Throwable $e) {
                 // Registrar pero no bloquear la respuesta al usuario
                 error_log('Error enviando correo a Hipotea: ' . $e->getMessage());
-            }
-            
-            // ===== INCREMENTAR CONTADOR DE USOS =====
-            // Solo se cuenta cuando se envía exitosamente a Hipotea
-            $emailCliente = $datosCliente['email'] ?? null;
-            $tipo = 'simulador_viabilidad'; // Redefinir para garantizar scope
-            if (!empty($emailCliente) && ($contaruso)) {
-                try {
-                    error_log('=== INCREMENTAR CONTADOR: Iniciando para ' . $emailCliente);
-                    error_log('Tipo a buscar/crear: ' . $tipo);
-                    
-                    // Obtener EntityManager fresco (importante si hay timeout o error previo)
-                    $emContador = $this->getDoctrine()->getManager();
-                    if (!$emContador->isOpen()) {
-                        error_log('EntityManager cerrado, reabriendo...');
-                        $emContador = $this->getDoctrine()->resetManager();
-                    }
-                    
-                    $qb = $emContador->createQueryBuilder();
-                    $qb->select('u')
-                        ->from('AppBundle:SimuladorUsoEmail', 'u')
-                        ->where('u.email = :email')
-                        ->andWhere('u.tipo = :tipo')
-                        ->setParameter('email', $emailCliente)
-                        ->setParameter('tipo', $tipo);
-                    $usoEmail = $qb->getQuery()->getOneOrNullResult();
-                    error_log('Búsqueda realizada para email=' . $emailCliente . ' tipo=' . $tipo . ': ' . ($usoEmail ? 'ENCONTRADO (ID: ' . $usoEmail->getId() . ', usos: ' . $usoEmail->getUsos() . ')' : 'NO ENCONTRADO'));
-                    
-                    if (!$usoEmail) {
-                        // Crear nuevo registro
-                        error_log('Creando nuevo registro para email=' . $emailCliente . ' tipo=' . $tipo);
-                        $usoEmail = new SimuladorUsoEmail();
-                        $usoEmail->setEmail($emailCliente);
-                        $usoEmail->setTipo($tipo);
-                        $usoEmail->setUsos(1);
-                        $usoEmail->setPrimerUso(new \DateTime());
-                        $usoEmail->setUltimoUso(new \DateTime());
-                        $emContador->persist($usoEmail);
-                    } else {
-                        // Incrementar existente
-                        error_log('Incrementando registro existente: usos actual=' . $usoEmail->getUsos());
-                        $usosAntes = $usoEmail->getUsos();
-                        $usoEmail->incrementarUsos();
-                        error_log('Usos después del incremento: ' . $usoEmail->getUsos());
-                        $emContador->persist($usoEmail);
-                    }
-                    error_log('Antes de flush...');
-                    $emContador->flush();
-                    error_log('Contador incrementado exitosamente para: ' . $emailCliente);
-                } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $eUnique) {
-                    // RACE CONDITION: Otro proceso insertó el registro justo ahora
-                    error_log('RACE CONDITION detectada: Registro duplicado. Reintentando búsqueda y actualización...');
-                    try {
-                        $emContador->clear(); // Limpiar Entity Manager corrupto
-                        $emContador = $this->getDoctrine()->resetManager();
-                        
-                        // Reintentar búsqueda del registro que ahora debe existir
-                        $qb = $emContador->createQueryBuilder();
-                        $qb->select('u')
-                            ->from('AppBundle:SimuladorUsoEmail', 'u')
-                            ->where('u.email = :email')
-                            ->andWhere('u.tipo = :tipo')
-                            ->setParameter('email', $emailCliente)
-                            ->setParameter('tipo', $tipo);
-                        $usoEmail = $qb->getQuery()->getOneOrNullResult();
-                        
-                        if ($usoEmail) {
-                            error_log('Reintentos exitoso: Registro encontrado. Incrementando usos de ' . $usoEmail->getUsos() . ' a ' . ($usoEmail->getUsos() + 1));
-                            $usoEmail->incrementarUsos();
-                            $emContador->persist($usoEmail);
-                            $emContador->flush();
-                            error_log('Contador incrementado correctamente (después de race condition)');
-                        }
-                    } catch (\Throwable $eReintento) {
-                        error_log('ERROR en reintento de race condition: ' . $eReintento->getMessage());
-                    }
-                } catch (\Throwable $eContador) {
-                    // NO bloquear la respuesta, solo registrar
-                    error_log('ERROR al incrementar contador: ' . $eContador->getMessage());
-                    error_log('Trace: ' . $eContador->getTraceAsString());
-                }
             }
             
             return new JsonResponse([
@@ -1785,87 +1613,17 @@ class SimuladorViabilidadController extends Controller
 	{
 		// Obtener datos JSON del request
 		$data = json_decode($request->getContent(), true);
-        
 		
-		// ===== SOPORTAR AMBAS ESTRUCTURAS JSON =====
-		// Paso 3 envía: { "datos": { ... } }
-		// Paso 2 envía: { "tipo_calculo": ..., "email": ..., ... }
-		if (isset($data['datos']) && is_array($data['datos'])) {
-			$datos = $data['datos'];
-		} elseif (isset($data['tipo_calculo'])) {
-			// Paso 2 envía todo en la raíz
-			$datos = $data;
-		} else {
+		if (!isset($data['datos']) || empty($data['datos'])) {
 			return new JsonResponse([
 				'error' => true,
 				'message' => 'No se recibieron datos para procesar',
 				'importe_fijo' => 0
 			], 400);
 		}
-        $contaruso = isset($datos['contaruso']) && ($datos['contaruso'] === true || $datos['contaruso'] === 'true');
-        $tipo = 'simulador_viabilidad';
-		// ===== CHECK DE LÍMITE DE USOS POR EMAIL =====
-		$email = $datos['email'] ?? null;
-		$nombre = $datos['nombre'] ?? null;
-		$maxUsos = $this->getParameter('simulador_max_usos');
-		$whatsappContacto = $this->getParameter('simulador_whatsapp_contacto');
 		
-		// DEBUG: Log de email y nombre recibidos
-		error_log('=== SIMULADOR LIMITE CHECK ===');
-        error_log('contaruso3: ' . ($contaruso));
-		error_log('Email recibido1: ' . ($email ? $email : 'VACÍO/NULL'));
-		error_log('Nombre recibido1: ' . ($nombre ? $nombre : 'VACÍO/NULL')); 
-		error_log('Datos completos del payload1: ' . json_encode($datos));
-		error_log('=== FIN DEBUG ===');
-		
-        if ($contaruso) {
-            error_log('Contar uso es verdadero, procediendo a verificacion de limite');
-            if (!empty($email)) {
-                error_log('Email recibido1 no vacío, entrando al bloque de verificación');
-                $em = $this->getDoctrine()->getManager();
-                error_log('EntityManager obtenido');
-                try {
-                    // Usar QueryBuilder en lugar de getRepository para evitar el repositorio personalizado
-                    $qb = $em->createQueryBuilder();
-                    $qb->select('u')
-                        ->from('AppBundle:SimuladorUsoEmail', 'u')
-                        ->where('u.email = :email')
-                        ->andWhere('u.tipo = :tipo')
-                        ->setParameter('email', $email)
-                        ->setParameter('tipo', $tipo);
-                    $usoEmail = $qb->getQuery()->getOneOrNullResult();
-                    error_log('QueryBuilder ejecutado, resultado: ' . ($usoEmail ? 'encontrado' : 'no encontrado'));
-                    
-                    // IMPORTANTE: Hacer refresh explícito para garantizar que leemos el valor actual de la BD
-                    // Esto evita problemas de caché cuando hay múltiples peticiones rápidas
-                    if ($usoEmail) {
-                        $em->refresh($usoEmail);
-                        error_log('Registro refrescado desde BD. Usos actuales: ' . $usoEmail->getUsos());
-                    }
-                } catch (\Exception $e) {
-                    error_log('Error al ejecutar QueryBuilder: ' . $e->getMessage());
-                    error_log('Continuando sin verificación de límite');
-                    $usoEmail = null;
-                }
-                
-                if ($usoEmail && $usoEmail->getUsos() >= $maxUsos) {
-                    error_log('Límite alcanzado para ' . $email);
-                    // Límite alcanzado
-                    return new JsonResponse([
-                        'error' => false,
-                        'limite' => true,
-                        'nombre' => $nombre,
-                        'email' => $email,
-                        'whatsappContacto' => $whatsappContacto,
-                        'mensaje' => 'No ha sido posible enviarte el resultado porque este simulador está limitado a ' . $maxUsos . ' usos.'
-                    ], 200);
-                }
-                error_log('No hay límite alcanzado, continuando');
-            }
-        }
-		
-		// DEBUG: Verificar que llegamos aquí
-		error_log('Iniciando cálculo de forma normal para email: ' . ($email ?: 'sin email'));
+		try {
+			$datos = $data['datos'];
 
             // ===== MISMA BASE DE CÁLCULO QUE CalculadorasController (precio máximo) =====
             $tipoCalculo = intval($datos['tipo_calculo'] ?? 2);
@@ -1903,9 +1661,8 @@ class SimuladorViabilidadController extends Controller
             } else {
                 $calculadora->setTipo(2);
             }
+
             
-            // Inicializar $producto para evitar undefined variable
-            $producto = null;
             $formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest');
 
             // ===== CONVERTIR PRODUCTO STRING A INT SI ES NECESARIO =====
@@ -1999,7 +1756,7 @@ class SimuladorViabilidadController extends Controller
 
             $resultado = $calculadora->calcularAvanzada($this->getDoctrine()->getManager());
 			
-            // ===== CALCULAR IMPORTE_PRESTAMO SI NO VIENE =====
+			// ===== CALCULAR IMPORTE_PRESTAMO SI NO VIENE =====
 			// Si tipo 1 (calcular cuota): importe_prestamo = valor_inmueble - aportacion
 			// Si tipo 2 (calcular máximo): importe_prestamo = importe_maximo - aportacion
 			$aportacion = floatval($datos['aportacion'] ?? 0);
@@ -2014,7 +1771,7 @@ class SimuladorViabilidadController extends Controller
 				}
 			}
 			
-			// ===== CALCULAR PORCENTAJE_FINANCIACION SI NO VIENE DE CalculadoraAvanzada =====
+            // ===== CALCULAR PORCENTAJE_FINANCIACION SI NO VIENE DE CalculadoraAvanzada =====
             if (empty($resultado['porcentaje_financiacion']) && !empty($resultado['importe_prestamo']) && !empty($valorInmueble)) {
                 // Caso estándar: porcentaje = importe_prestamo / valor_inmueble
                 $porc = ($resultado['importe_prestamo'] / $valorInmueble) * 100;
@@ -2070,7 +1827,7 @@ class SimuladorViabilidadController extends Controller
 				$importeFijo = round($resultado['importe_maximo'], 2);
 			}
 			
-			$responseData = [
+			return new JsonResponse([
 				'error' => false,
 				'importe_fijo' => $importeFijo,
 				'entrada' => round($resultado['entrada'] ?? 0, 2),
@@ -2115,74 +1872,15 @@ class SimuladorViabilidadController extends Controller
 				'escritura_compra_impuesto_transmisiones' => round($resultado['escritura_compra_impuesto_transmisiones'] ?? 0, 2),
 				'gastos_inmobiliaria' => round($resultado['gastos_inmobiliaria'] ?? $resultado['honorarios_inmobiliaria'] ?? $datos['gastos_inmobiliaria'] ?? $datos['honorarios'] ?? 0, 2),
                 'producto' => $producto ?? ''
-			];
+			], 200);
 			
-			return new JsonResponse($responseData, 200);
-	}
-
-	/**
-	 * Genera una referencia única para un expediente
-	 * Formato: NNNN/YY (ej: 0001/26, 0002/26, etc.)
-	 * 
-	 * @param int $anio El año de 2 dígitos para el que generar la referencia
-	 * @return string Referencia en formato NNNN/YY
-	 * @throws \Exception Si hay error al generar la referencia
-	 */
-	private function generarReferencia(int $anio): string
-	{
-		try {
-			$doctrine = $this->getDoctrine();
-			$conn = $doctrine->getConnection();
-			
-			// Query SQL para obtener el máximo número de referencia del año especificado
-			$sql = "
-				SELECT MAX(CAST(SUBSTRING_INDEX(referencia, '/', 1) AS UNSIGNED)) as max_numero
-				FROM expediente
-				WHERE referencia LIKE :patron
-			";
-			
-			$stmt = $conn->prepare($sql);
-			$patron = '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT);
-			$stmt->bindValue('patron', $patron);
-			$stmt->execute();
-			$result = $stmt->fetch();
-			
-			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero']) 
-				? (int)$result['max_numero'] 
-				: 0;
-			
-			$siguienteNumero = $maxNumero + 1;
-			
-			// Formatear: NNNN/YY (4 dígitos para número, 2 para año)
-			$referencia = sprintf('%04d/%02d', $siguienteNumero, $anio);
-			
-			return $referencia;
 		} catch (\Exception $e) {
-			throw new \Exception('Error al generar referencia de expediente: ' . $e->getMessage());
+			error_log('Error en calculadoraAvanzadaTestAjaxAction: ' . $e->getMessage());
+			return new JsonResponse([
+				'error' => true,
+				'message' => 'Error al calcular: ' . $e->getMessage(),
+				'importe_fijo' => 0
+			], 500);
 		}
-	}
-
-	/**
-	 * Asigna una referencia a un expediente si no la tiene
-	 * 
-	 * @param Expediente $expediente
-	 * @return string La referencia asignada
-	 * @throws \Exception
-	 */
-	private function asignarReferenciaAExpediente(Expediente $expediente): string
-	{
-		// Si ya tiene referencia, no generar otra
-		if (!empty($expediente->getReferencia())) {
-			return $expediente->getReferencia();
-		}
-		
-		// Obtener el año desde la fecha de creación del expediente
-		$anio = (int)$expediente->getFechaCreacion()->format('y');
-		
-		// Generar y asignar la referencia
-		$referencia = $this->generarReferencia($anio);
-		$expediente->setReferencia($referencia);
-		
-		return $referencia;
 	}
 }

@@ -1,0 +1,266 @@
+{% set crearnuevo = '#' %}
+{% set crearnuevo_texto = 'Crear nuevo lead' %}
+{% extends '@App/Backoffice/base.html.twig' %}
+{% block devstyles %}
+	{{ parent() }}
+	<link href="{{ asset('assets/node_modules/datatables/media/css/dataTables.bootstrap4.css') }}" rel="stylesheet">
+{% endblock %}
+{% block cloudstyles %}
+	{{ parent() }}
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+{% endblock %}
+{% block devscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/node_modules/datatables/datatables.min.js') }}"></script>
+{% endblock %}
+{% block cloudscripts %}
+	{{ parent() }}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+{% endblock %}
+{% block customscripts %}
+	{{ parent() }}
+	<script src="{{ asset('assets/js/custom/borrar-entidades.min.js') }}"></script>
+	<script src="{{ asset('assets/js/custom/tabla-usuarios-boton-borrar.min.js') }}"></script>
+	<script>
+		$(function () {
+			if ($.fn.DataTable) {
+				var tabla = $('#tabla-entidades').DataTable();
+				tabla.order([1, 'desc']).draw();
+			}
+
+			$(document).on('click', '.ver-detalle-kommo', function () {
+				var detallesRaw = $(this).attr('data-detalles') || '[]';
+				var kommoId = $(this).attr('data-kommo') || 'Sin Kommo ID';
+				var detalles = [];
+
+				try {
+					detalles = JSON.parse(detallesRaw);
+				} catch (e) {
+					detalles = [];
+				}
+
+				var html = '';
+				if (!detalles.length) {
+					html = '<tr><td colspan="7" class="text-center">No hay detalle disponible.</td></tr>';
+				} else {
+					detalles.forEach(function (item) {
+						html += '<tr>'
+							+ '<td>' + (item.fecha || '') + '</td>'
+							+ '<td>' + (item.webhook_type || '') + '</td>'
+							+ '<td>' + (item.nombre || '') + '</td>'
+							+ '<td>' + (item.telefono || '') + '</td>'
+								+ '<td>' + (item.email || '') + '</td>'
+								+ '<td>' + (item.autor_kommo || '') + '</td>'
+								+ '<td>' + (item.origen_kommo || '') + '</td>'
+								+ '<td style="white-space: normal; min-width: 220px;">' + (item.mensaje_kommo || '') + '</td>'
+								+ '<td style="white-space: normal; min-width: 280px;">' + (item.detalle_kommo || '') + '</td>'
+							+ '</tr>';
+					});
+				}
+
+				$('#detalle-kommo-label').text('Detalle de ' + kommoId);
+				$('#detalle-kommo-body').html(html);
+				$('#modal-detalle-kommo').modal('show');
+			});
+
+			$(document).on('click', '.procesar-lead-kommo', function () {
+				var kommoId = $(this).attr('data-kommo') || 'Sin Kommo ID';
+				var estadoTexto = $(this).attr('data-estado') || 'Sin estado';
+				var estadoLead = estadoTexto.toLowerCase();
+				var clienteId = $(this).attr('data-cliente-id') || '';
+				var clienteNombre = $(this).attr('data-cliente-nombre') || '';
+				var numExpedientes = parseInt($(this).attr('data-num-expedientes') || '0', 10);
+				var clienteUrl = $(this).attr('data-cliente-url') || '#';
+				var procesarUrl = $(this).attr('data-procesar-url') || '#';
+				var crearNuevoUrl = $(this).attr('data-crear-nuevo-url') || '#';
+				var expedientesRaw = $(this).attr('data-expedientes') || '[]';
+				var expedientes = [];
+
+				try {
+					expedientes = JSON.parse(expedientesRaw);
+				} catch (e) {
+					expedientes = [];
+				}
+
+				var badgeClass = 'secondary';
+				if (estadoLead === 'procesado') {
+					badgeClass = 'success';
+				} else if (estadoLead === 'recibido') {
+					badgeClass = 'warning';
+				}
+
+				var html = '<p class="mb-2"><strong>Lead:</strong> ' + kommoId + '</p>'
+					+ '<p class="mb-2"><strong>Estado:</strong> <span class="badge badge-' + badgeClass + '">' + estadoTexto + '</span></p>';
+
+				if (clienteId) {
+					html += '<p class="mb-2"><strong>Cliente localizado:</strong> ' + clienteNombre + '</p>';
+					html += '<p class="mb-2"><strong>Expedientes activos:</strong> ' + numExpedientes + '</p>';
+				} else {
+					html += '<div class="alert alert-info py-2">No existe cliente vinculado todavía. Se creará el cliente y el primer expediente.</div>';
+				}
+
+				if (expedientes.length) {
+					html += '<div class="mb-3"><strong>Expedientes activos del cliente:</strong><div class="list-group mt-2">';
+					expedientes.forEach(function (exp) {
+						var vivienda = exp.vivienda ? ' · ' + exp.vivienda : '';
+						var fecha = exp.fecha ? '<small class="text-muted d-block">' + exp.fecha + '</small>' : '';
+						html += '<a class="list-group-item list-group-item-action py-2" href="' + exp.url + '"><strong>Exp. ' + exp.id + '</strong>' + vivienda + fecha + '</a>';
+					});
+					html += '</div></div>';
+				}
+
+				if (clienteId && numExpedientes > 0) {
+					html += '<div class="alert alert-light border py-2">Este lead ya tiene expedientes activos. Puedes abrir cualquiera o crear uno nuevo.</div>';
+				}
+
+				var accionPrincipal = 'Crear cliente y expediente';
+				if (clienteId && numExpedientes === 0) {
+					accionPrincipal = 'Crear primer expediente';
+				} else if (clienteId && numExpedientes > 0) {
+					accionPrincipal = 'Abrir expediente más reciente';
+				}
+
+				var acciones = '<div class="mt-3 d-flex flex-wrap">';
+				if (clienteId && clienteUrl !== '#') {
+					acciones += '<a class="btn btn-sm btn-outline-primary mr-2 mb-2" href="' + clienteUrl + '">Ver cliente</a>';
+				}
+				acciones += '<a class="btn btn-sm btn-success mr-2 mb-2" href="' + procesarUrl + '">' + accionPrincipal + '</a>';
+				if (clienteId) {
+					acciones += '<a class="btn btn-sm btn-warning mb-2" href="' + crearNuevoUrl + '">Crear expediente nuevo</a>';
+				}
+				acciones += '</div>';
+
+				$('#procesar-kommo-label').text('Gestionar lead ' + kommoId);
+				$('#procesar-kommo-body').html(html + acciones);
+				$('#modal-procesar-kommo').modal('show');
+			});
+		});
+	</script>
+{% endblock %}
+{% block body %}
+<div class="card">
+	<div class="card-body">
+		{% include '@App/Backoffice/MensajeAlerta.html.twig' %}
+		<h4 class="card-title">Leads Kommo</h4>
+		{% if leads is defined %}
+			{% if leads is empty %}
+				<div class="alert alert-info" role="alert">
+					<span>No hay leads registrados.</span>
+				</div>
+			{% else %}
+				<form class="text-truncate mb-3" id="formulario-borrar-entidades" method="post" action="{{ path('borrar_leads_kommo') }}">
+					<table class="table table-striped table-sm full-color-table full-success-table hover-table" id="tabla-entidades">
+						<thead>
+						<tr>
+							<th scope="col">
+								<div class="custom-control custom-checkbox">
+									<input class="custom-control-input" id="seleccionar-todas-entidades" type="checkbox">
+									<label class="custom-control-label" for="seleccionar-todas-entidades"></label>
+								</div>
+							</th>
+							<th>Fecha última</th>
+							<th>Kommo ID</th>
+							<th>Nombre</th>
+							<th>Teléfono</th>
+							<th>Email</th>
+							<th>Provincia</th>
+							<th>Canal</th>
+							<th>Estado</th>
+							<th>Entradas</th>
+							<th>Acciones</th>
+						</tr>
+						</thead>
+						<tbody>
+						{% for lead in leads %}
+							<tr>
+								<td>
+									<div class="custom-control custom-checkbox">
+										<input class="custom-control-input" id="entidad[{{ lead.group_key }}]" name="cliente[]" type="checkbox" value="{{ lead.group_key }}">
+										<label class="custom-control-label" for="entidad[{{ lead.group_key }}]"></label>
+									</div>
+								</td>
+								<td{% if lead.fecha is not empty %} data-order="{{ lead.fecha|date('U') }}"{% endif %}>{% if lead.fecha is not empty %}{{ lead.fecha|date('d/m/Y H:i') }}{% endif %}</td>
+								<td>{% if lead.kommo_id is not empty %}{{ lead.kommo_id }}{% else %}Sin ID{% endif %}</td>
+								<td>{{ lead.nombre }}</td>
+								<td>{{ lead.telefono }}</td>
+								<td>{{ lead.email }}</td>
+								<td>{{ lead.provincia }}</td>
+								<td>{{ lead.canal }}</td>
+								<td>{{ lead.estado }}</td>
+								<td>{{ lead.total_entradas }}</td>
+								<td>
+									<button class="btn btn-sm btn-info ver-detalle-kommo mb-1" type="button" data-kommo="{% if lead.kommo_id is not empty %}{{ lead.kommo_id }}{% else %}Sin Kommo ID{% endif %}" data-detalles="{{ lead.detalles|json_encode|e('html_attr') }}">Ver detalle</button>
+									<button class="btn btn-sm btn-primary procesar-lead-kommo mb-1" type="button"
+										data-kommo="{% if lead.kommo_id is not empty %}{{ lead.kommo_id }}{% else %}Sin Kommo ID{% endif %}"
+										data-estado="{{ lead.estado|default('') }}"
+										data-cliente-id="{{ lead.cliente_existente_id|default('') }}"
+										data-cliente-nombre="{{ lead.cliente_existente_nombre|default('') }}"
+										data-num-expedientes="{{ lead.num_expedientes|default(0) }}"
+										data-expedientes="{{ lead.expedientes_info|default([])|json_encode|e('html_attr') }}"
+										data-cliente-url="{% if lead.cliente_existente_id %}{{ path('agregar_modificar_cliente', {'id': lead.cliente_existente_id}) }}{% else %}#{% endif %}"
+										data-procesar-url="{{ path('procesar_lead_kommo', {'groupKey': lead.group_key}) }}"
+										data-crear-nuevo-url="{{ path('procesar_lead_kommo', {'groupKey': lead.group_key}) }}?forceNew=1">Gestionar</button>
+								</td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+					<div>
+						<button class="btn btn-success waves-effect" id="boton-borrar-entidades">Borrar marcados</button>
+					</div>
+				</form>
+			{% endif %}
+		{% endif %}
+	</div>
+</div>
+{% endblock %}
+{% block modals %}
+	{{ parent() }}
+	{% include '@App/Backoffice/Modal/ConfirmarBorrar.html' %}
+	<div aria-hidden="true" aria-labelledby="procesar-kommo-label" class="modal fade" id="modal-procesar-kommo" role="dialog" tabindex="-1">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="procesar-kommo-label">Gestionar lead</h5>
+					<button aria-label="Close" class="close" data-dismiss="modal" type="button">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body" id="procesar-kommo-body"></div>
+			</div>
+		</div>
+	</div>
+	<div aria-hidden="true" aria-labelledby="detalle-kommo-label" class="modal fade" id="modal-detalle-kommo" role="dialog" tabindex="-1">
+		<div class="modal-dialog modal-xl" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="detalle-kommo-label">Detalle</h5>
+					<button aria-label="Close" class="close" data-dismiss="modal" type="button">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="table-responsive">
+						<table class="table table-striped table-sm">
+							<thead>
+								<tr>
+									<th>Fecha</th>
+									<th>Tipo</th>
+									<th>Nombre</th>
+									<th>Teléfono</th>
+									<th>Email</th>
+									<th>Autor</th>
+									<th>Origen</th>
+									<th>Mensaje</th>
+									<th>Detalle Kommo</th>
+								</tr>
+							</thead>
+							<tbody id="detalle-kommo-body"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
