@@ -5432,7 +5432,11 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 		$formularioExpedienteOpciones['responsablesZona'] = $responsablesZona;
 		
 		$formularioExpediente = $this->createForm(ExpedienteFormulario::class, $expediente, $formularioExpedienteOpciones);
-		$formularioExpediente->handleRequest($request);
+		
+		// Solo procesar formulario de expediente si NO es una solicitud de documentos
+		if (!$irADocumentos) {
+			$formularioExpediente->handleRequest($request);
+		}
 
 		if ($this->getUser()->getRole() == 'ROLE_COLABORADOR' 
 			|| $this->getUser()->getRole() == 'ROLE_CLIENTE'
