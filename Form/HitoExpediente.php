@@ -12,7 +12,7 @@ class HitoExpediente extends AbstractType
 {
 	public function buildForm(FormBuilderInterface $builder, array $options)
 	{
-		$builder->add('estado', ChoiceType::class, array(
+		/*$builder->add('estado', ChoiceType::class, array(
 			'choices' => array(
 				'Pendiente' => 0,
 				'Completado' => 1
@@ -20,6 +20,13 @@ class HitoExpediente extends AbstractType
 			'label' => 'Estado',
 			'required' => true,
 			'empty_data' => 0
+		));*/
+		$builder->add('estado', ChoiceType::class, array(
+			'choices' => array(
+				'Pendiente' => false,
+				'Completado' => true
+			),
+			'label' => 'Estado'
 		));
 	}
 
