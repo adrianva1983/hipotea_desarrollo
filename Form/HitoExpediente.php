@@ -14,12 +14,10 @@ class HitoExpediente extends AbstractType
 	{
 		$builder->add('estado', ChoiceType::class, array(
 			'choices' => array(
-				'Pendiente' => 0,
-				'Completado' => 1
+				'Pendiente' => false,
+				'Completado' => true
 			),
-			'label' => 'Estado',
-			'required' => true,
-			'empty_data' => 0
+			'label' => 'Estado'
 		));
 	}
 
