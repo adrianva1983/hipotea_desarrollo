@@ -7441,6 +7441,10 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			}*/
 			$this->addFlash('success', 'El expediente ha sido agregado/modificado correctamente.');
 			//return $this->redirectToRoute('lista_expedientes');
+			
+			// Flush final de todos los cambios pendientes ANTES de redirigir
+			$managerEntidad->flush();
+			
 			if (($this->getUser()->getRoles()[0] === 'ROLE_CLIENTE' || $this->getUser()->getRoles()[0] === 'ROLE_COLABORADOR') && !$irADocumentos) {
 				return $this->redirectToRoute('modificar_expediente', array(
 					'id' => $expediente->getIdExpediente()
@@ -7455,9 +7459,6 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				));//Recarga forzada para poder ver la imagen en el plugin Dropify
 			}
 		}
-
-		// Flush final de todos los cambios pendientes
-		$managerEntidad->flush();
 
 		// Obtener valor del campo 707 (Activar Belender) para clientes
 		$valores_campo_707 = [];
