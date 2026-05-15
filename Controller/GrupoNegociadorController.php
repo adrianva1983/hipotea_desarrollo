@@ -6001,7 +6001,13 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 					));
 					if ($request->isMethod('POST')/* && $faseActual === $hitoExpediente->getIdHito()->getIdFase()*/) {
 						if (!end($formulariosHitoExpediente[$hito->getIdHito()])->isSubmitted()) {
+							// Guardar el estado original antes del submit para preservarlo si no viene en el POST (ej: vista de cliente)
+							$estadoOriginalHitoExp = $hitoExpediente->getEstado();
 							end($formulariosHitoExpediente[$hito->getIdHito()])->submit($request->request->get(end($formulariosHitoExpediente[$hito->getIdHito()])->getName()));
+							// Si el estado quedó null (datos no presentes en el POST), restaurar el valor original como haría el admin
+							if ($hitoExpediente->getEstado() === null) {
+								$hitoExpediente->setEstado($estadoOriginalHitoExp);
+							}
 							if (!end($formulariosHitoExpediente[$hito->getIdHito()])->isValid() && $formulariosValidos) {
 								$formulariosValidos = false;
 							}
