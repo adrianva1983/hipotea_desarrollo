@@ -2715,12 +2715,19 @@ class WhatsappController extends Controller
             ];
         }
     }
+    public function webhookWhatsappAction(Request $request): JsonResponse
+    {
+        return new JsonResponse([
+            'success' => true,
+            'error' => 'todo bien'
+        ], 200);
+    }
 
     /**
      * Webhook para recibir eventos de WhatsApp
      * POST /API/webhook_whatsapp
      */
-    public function webhookWhatsappAction(Request $request): JsonResponse
+    public function webhookWhatsappAction1(Request $request): JsonResponse
     {
         // Verificar API key
         if (!$this->checkApiKey($request)) {
