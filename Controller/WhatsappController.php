@@ -2715,230 +2715,299 @@ class WhatsappController extends Controller
             ];
         }
     }
-    public function webhookWhatsappAction(Request $request): JsonResponse
-    {
-        return new JsonResponse([
-            'success' => true,
-            'error' => 'todo bien'
-        ], 200);
-    }
 
     /**
-     * Webhook para recibir eventos de WhatsApp
+     * Webhook para recibir eventos de WhatsApp (Baileys ↔ Symfony)
      * POST /API/webhook_whatsapp
+     * 
+     * Eventos soportados:
+     * - PHONE_CONNECTED: Validar teléfono y devolver GestorData
+     * - SESSION_CREATED: Guardar sesión activa
+     * - MESSAGE: Procesar mensaje entrante
+     * - DISCONNECTED: Marcar sesión como inactiva
      */
-    public function webhookWhatsappAction1(Request $request): JsonResponse
+    public function webhookWhatsappAction(Request $request): JsonResponse
     {
-        // Verificar API key
-        if (!$this->checkApiKey($request)) {
-            return new JsonResponse(['error' => 'Unauthorized'], 401);
-        }
-
         try {
             // Obtener datos del webhook
             $data = json_decode($request->getContent(), true);
             
             if (!$data) {
                 return new JsonResponse([
-                    'success' => false,
                     'error' => 'Invalid JSON'
                 ], 400);
             }
 
+            $status = $data['status'] ?? null;
+
             // Registrar webhook en log
-            $this->logear('🔔 WEBHOOK RECIBIDO: ' . json_encode($data));
+            $this->logear('🔔 WEBHOOK BAILEYS: ' . ($status ?? 'unknown') . ' | ' . json_encode($data));
 
-            // Validar campos requeridos
-            $evento = $data['evento'] ?? null;
-            $telefono = $data['telefono'] ?? null;
+            // Procesar diferentes tipos de eventos
+            switch ($status) {
+                case 'PHONE_CONNECTED':
+                    return $this->handlePhoneConnected($data);
+                    
+                case 'SESSION_CREATED':
+                    return $this->handleSessionCreated($data);
+                    
+                case 'MESSAGE':
+                    return $this->handleMessage($data);
+                    
+                case 'DISCONNECTED':
+                    return $this->handleDisconnected($data);
+                    
+                default:
+                    $this->logear('⚠️ Status desconocido: ' . ($status ?? 'null'));
+                    return new JsonResponse([
+                        'error' => 'Unknown status'
+                    ], 400);
+            }
 
-            if (!$evento || !$telefono) {
+        } catch (\Exception $e) {
+            $this->logear('❌ ERROR en webhook_whatsapp: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
+            return new JsonResponse([
+                'error' => 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * PHONE_CONNECTED: Validar teléfono y devolver datos del gestor
+     * 
+     * Request: {status: "PHONE_CONNECTED", sessionId, phone}
+     * Response: {IdGestor, IdAgencia, NivelAcceso, Nombre, Apellidos, ...}
+     */
+    private function handlePhoneConnected(array $data): JsonResponse
+    {
+        try {
+            $phone = $data['phone'] ?? null;
+            $sessionId = $data['sessionId'] ?? null;
+
+            if (!$phone) {
                 return new JsonResponse([
-                    'success' => false,
-                    'error' => 'Missing required fields: evento, telefono'
+                    'error' => 'phone field required'
                 ], 400);
             }
 
-            // Procesar diferentes tipos de eventos
-            switch ($evento) {
-                case 'mensaje_recibido':
-                    return $this->procesarMensajeRecibido($data);
-                    
-                case 'mensaje_enviado':
-                    return $this->procesarMensajeEnviado($data);
-                    
-                case 'conexion_establecida':
-                    return $this->procesarConexionEstablecida($data);
-                    
-                case 'conexion_perdida':
-                    return $this->procesarConexionPerdida($data);
-                    
-                default:
-                    $this->logear('⚠️ Evento desconocido: ' . $evento);
-                    return new JsonResponse([
-                        'success' => true,
-                        'message' => 'Event received but not processed',
-                        'evento' => $evento
-                    ], 200);
+            // Normalizar el teléfono y generar variantes
+            $digits = $this->normalizePhone($phone);
+            $variants = array_values(array_unique(array_filter([
+                $digits,                          // tal cual
+                ltrim($digits, '0'),              // sin ceros a la izquierda
+                (strlen($digits) > 9 ? substr($digits, -9) : null), // últimos 9 dígitos
+            ])));
+
+            if (!$variants) {
+                return new JsonResponse([
+                    'error' => 'Invalid phone format'
+                ], 400);
             }
 
-        } catch (\Exception $e) {
-            $this->logear('❌ ERROR en webhook_whatsapp: ' . $e->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Procesa un mensaje recibido
-     */
-    private function procesarMensajeRecibido(array $data): JsonResponse
-    {
-        try {
-            $telefono = $data['telefono'];
-            $mensaje = $data['mensaje'] ?? '';
-            $timestamp = $data['timestamp'] ?? date('Y-m-d H:i:s');
-            $idExpediente = $data['id_expediente'] ?? null;
-
-            // Normalizar teléfono
-            $telefonoNorm = $this->normalizePhone($telefono);
-            $telefonoLocal = (strlen($telefonoNorm) > 9) ? substr($telefonoNorm, -9) : $telefonoNorm;
-
-            // Guardar en chat_history
             $conn = $this->getDoctrine()->getConnection();
-            $conn->insert('chat_history', [
-                'id_expediente' => $idExpediente,
-                'phone_number' => $telefonoLocal,
-                'message' => $mensaje,
-                'role' => 'user',
-                'direction' => 'recibido',
-                'timestamp' => $timestamp
-            ]);
+            $placeholders = implode(',', array_fill(0, count($variants), '?'));
 
-            $this->logear('✓ Mensaje recibido almacenado: ' . $telefonoLocal . ' - ' . substr($mensaje, 0, 50));
+            // Consulta para obtener datos del gestor por teléfono
+            $sql = "SELECT
+                        u.id_usuario as IdGestor,
+                        u.id_inmobiliaria as IdAgencia,
+                        u.role as NivelAcceso,
+                        u.nombre as Nombre,
+                        u.apellidos as Apellidos,
+                        (SELECT ws.SyncConversaciones FROM WhatsappSenders ws WHERE ws.IdUsuario = u.id_usuario AND ws.IdAgencia <=> u.id_inmobiliaria ORDER BY ws.FechaUltimaInteraccion DESC LIMIT 1) AS SyncConversaciones,
+                        (SELECT ws.AutomatizacionesWhatsapp FROM WhatsappSenders ws WHERE ws.IdUsuario = u.id_usuario AND ws.IdAgencia <=> u.id_inmobiliaria ORDER BY ws.FechaUltimaInteraccion DESC LIMIT 1) AS AutomatizacionesWhatsapp,
+                        (SELECT ws.CrucesAutomaticos FROM WhatsappSenders ws WHERE ws.IdUsuario = u.id_usuario AND ws.IdAgencia <=> u.id_inmobiliaria ORDER BY ws.FechaUltimaInteraccion DESC LIMIT 1) AS CrucesAutomaticos,
+                        (SELECT ws.CrucesAutomaticosRGPDExterna FROM WhatsappSenders ws WHERE ws.IdUsuario = u.id_usuario AND ws.IdAgencia <=> u.id_inmobiliaria ORDER BY ws.FechaUltimaInteraccion DESC LIMIT 1) AS CrucesAutomaticosRGPDExterna,
+                        (SELECT ws.PilotoAutomatico FROM WhatsappSenders ws WHERE ws.IdUsuario = u.id_usuario AND ws.IdAgencia <=> u.id_inmobiliaria ORDER BY ws.FechaUltimaInteraccion DESC LIMIT 1) AS PilotoAutomatico,
+                        (SELECT ws.RecordatoriosVisitas FROM WhatsappSenders ws WHERE ws.IdUsuario = u.id_usuario AND ws.IdAgencia <=> u.id_inmobiliaria ORDER BY ws.FechaUltimaInteraccion DESC LIMIT 1) AS RecordatoriosVisitas
+                    FROM usuario u
+                    WHERE u.estado = 1
+                    AND u.telefono_movil IN ($placeholders)
+                    ORDER BY u.id_usuario ASC
+                    LIMIT 1";
 
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Mensaje almacenado correctamente'
-            ], 200);
+            $stmt = $conn->prepare($sql);
+
+            // Bind posicional (1-indexed)
+            foreach ($variants as $i => $v) {
+                $stmt->bindValue($i + 1, $v);
+            }
+
+            // Ejecutar consulta
+            $exec = $stmt->execute();
+            if ($exec instanceof \Doctrine\DBAL\Result) {
+                $gestor = $exec->fetchAssociative();
+            } else {
+                $gestor = $stmt->fetch(\PDO::FETCH_ASSOC);
+            }
+
+            if (!$gestor || !$gestor['IdGestor']) {
+                $this->logear('⚠️ PHONE_CONNECTED: Gestor no encontrado para: ' . $phone);
+                // Node.js espera IdGestor null para rechazar
+                return new JsonResponse([
+                    'IdGestor' => null
+                ], 200);
+            }
+
+            $this->logear('✓ PHONE_CONNECTED: Gestor encontrado - ' . $gestor['IdGestor'] . ' (' . $gestor['Nombre'] . ')');
+
+            return new JsonResponse($gestor, 200);
 
         } catch (\Exception $e) {
-            $this->logear('❌ Error procesando mensaje recibido: ' . $e->getMessage());
+            $this->logear('❌ Error en PHONE_CONNECTED: ' . $e->getMessage());
             return new JsonResponse([
-                'success' => false,
+                'IdGestor' => null,
                 'error' => $e->getMessage()
-            ], 500);
+            ], 200);
         }
     }
 
     /**
-     * Procesa un mensaje enviado
+     * SESSION_CREATED: Guardar sesión activa con datos del gestor
+     * 
+     * Request: {status: "SESSION_CREATED", sessionId, phone, IdGestor, IdAgencia, ...}
+     * Response: {}
      */
-    private function procesarMensajeEnviado(array $data): JsonResponse
+    private function handleSessionCreated(array $data): JsonResponse
     {
         try {
-            $telefono = $data['telefono'];
-            $mensaje = $data['mensaje'] ?? '';
-            $timestamp = $data['timestamp'] ?? date('Y-m-d H:i:s');
-            $idExpediente = $data['id_expediente'] ?? null;
+            $phone = $data['phone'] ?? null;
+            $sessionId = $data['sessionId'] ?? null;
+            $idGestor = $data['IdGestor'] ?? null;
 
-            $telefonoNorm = $this->normalizePhone($telefono);
-            $telefonoLocal = (strlen($telefonoNorm) > 9) ? substr($telefonoNorm, -9) : $telefonoNorm;
-
-            // Guardar en chat_history
-            $conn = $this->getDoctrine()->getConnection();
-            $conn->insert('chat_history', [
-                'id_expediente' => $idExpediente,
-                'phone_number' => $telefonoLocal,
-                'message' => $mensaje,
-                'role' => 'assistant',
-                'direction' => 'enviado',
-                'timestamp' => $timestamp
-            ]);
-
-            $this->logear('✓ Mensaje enviado almacenado: ' . $telefonoLocal);
-
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Mensaje enviado registrado'
-            ], 200);
-
-        } catch (\Exception $e) {
-            $this->logear('❌ Error procesando mensaje enviado: ' . $e->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Procesa una conexión establecida
-     */
-    private function procesarConexionEstablecida(array $data): JsonResponse
-    {
-        try {
-            $telefono = $data['telefono'];
-            $sessionId = $data['session_id'] ?? null;
-            $servidor = $data['servidor'] ?? null;
+            if (!$phone || !$sessionId) {
+                return new JsonResponse([], 400);
+            }
 
             $em = $this->getDoctrine()->getManager();
+            
+            // Normalizar teléfono
+            $phoneNorm = $this->normalizePhone($phone);
+
+            // Buscar o crear WhatsappSender
             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
-
-            $telefonoNorm = $this->normalizePhone($telefono);
-
-            // Buscar sender por teléfono
             $qb = $senderRepo->createQueryBuilder('ws');
             $sender = $qb->where('ws.telefono = :telefono')
-                ->setParameter('telefono', $telefonoNorm)
+                ->setParameter('telefono', $phoneNorm)
                 ->getQuery()
                 ->getOneOrNullResult();
 
-            if ($sender) {
-                $sender->setSessionId($sessionId);
-                $sender->setFechaUltimaInteraccion(new \DateTime());
-                if ($servidor) {
-                    $sender->setServidor($servidor);
-                }
-                $em->flush();
-
-                $this->logear('✓ Conexión establecida: ' . $telefono . ' [SessionID: ' . $sessionId . ']');
+            if (!$sender) {
+                // Crear nuevo sender si no existe
+                $senderClass = 'AppBundle\Entity\WhatsappSender';
+                $sender = new $senderClass();
+                $sender->setTelefono($phoneNorm);
+                $em->persist($sender);
             }
 
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Conexión registrada'
-            ], 200);
+            // Actualizar datos de sesión
+            $sender->setSessionId($sessionId);
+            $sender->setIdUsuario($idGestor);
+            $sender->setFechaUltimaInteraccion(new \DateTime());
+
+            // Guardar datos opcionales si vienen en la request
+            if (isset($data['IdAgencia'])) {
+                $sender->setIdAgencia($data['IdAgencia']);
+            }
+            if (isset($data['AutomatizacionesWhatsapp'])) {
+                $sender->setAutomatizacionesWhatsapp($data['AutomatizacionesWhatsapp']);
+            }
+            if (isset($data['SyncConversaciones'])) {
+                $sender->setSyncConversaciones($data['SyncConversaciones']);
+            }
+            if (isset($data['CrucesAutomaticos'])) {
+                $sender->setCrucesAutomaticos($data['CrucesAutomaticos']);
+            }
+            if (isset($data['RecordatoriosVisitas'])) {
+                $sender->setRecordatoriosVisitas($data['RecordatoriosVisitas']);
+            }
+            if (isset($data['PilotoAutomatico'])) {
+                $sender->setPilotoAutomatico($data['PilotoAutomatico']);
+            }
+
+            $em->flush();
+
+            $this->logear('✓ SESSION_CREATED: ' . $phone . ' [SID: ' . $sessionId . ']');
+
+            return new JsonResponse([], 200);
 
         } catch (\Exception $e) {
-            $this->logear('❌ Error procesando conexión establecida: ' . $e->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 500);
+            $this->logear('❌ Error en SESSION_CREATED: ' . $e->getMessage());
+            return new JsonResponse([], 500);
         }
     }
 
     /**
-     * Procesa una conexión perdida
+     * MESSAGE: Procesar mensaje entrante desde WhatsApp
+     * 
+     * Request: {status: "MESSAGE", sessionId, from, body, type}
+     * Response: {}
+     * 
+     * Tipos: text, image, document, audio, video, other
      */
-    private function procesarConexionPerdida(array $data): JsonResponse
+    private function handleMessage(array $data): JsonResponse
     {
         try {
-            $telefono = $data['telefono'];
-            $razon = $data['razon'] ?? 'Unknown';
+            $sessionId = $data['sessionId'] ?? null;
+            $from = $data['from'] ?? null;
+            $body = $data['body'] ?? '';
+            $type = $data['type'] ?? 'text';
+
+            if (!$sessionId || !$from) {
+                return new JsonResponse([], 400);
+            }
+
+            $conn = $this->getDoctrine()->getConnection();
+
+            // Normalizar teléfono del remitente
+            $fromNorm = $this->normalizePhone($from);
+            $fromLocal = (strlen($fromNorm) > 9) ? substr($fromNorm, -9) : $fromNorm;
+
+            // Guardar mensaje en tabla de mensajes
+            $now = new \DateTime();
+            $conn->insert('chat_history', [
+                'phone_number' => $fromLocal,
+                'message' => $body,
+                'role' => 'user',
+                'direction' => 'recibido',
+                'message_type' => $type,
+                'timestamp' => $now->format('Y-m-d H:i:s')
+            ], [
+                'timestamp' => 'datetime'
+            ]);
+
+            $this->logear('✓ MESSAGE: ' . $fromLocal . ' (' . $type . ') - ' . substr($body, 0, 50));
+
+            return new JsonResponse([], 200);
+
+        } catch (\Exception $e) {
+            $this->logear('❌ Error en MESSAGE: ' . $e->getMessage());
+            return new JsonResponse([], 500);
+        }
+    }
+
+    /**
+     * DISCONNECTED: Marcar sesión como inactiva
+     * 
+     * Request: {status: "DISCONNECTED", sessionId}
+     * Response: {}
+     */
+    private function handleDisconnected(array $data): JsonResponse
+    {
+        try {
+            $sessionId = $data['sessionId'] ?? null;
+
+            if (!$sessionId) {
+                return new JsonResponse([], 400);
+            }
 
             $em = $this->getDoctrine()->getManager();
             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
 
-            $telefonoNorm = $this->normalizePhone($telefono);
-
-            // Buscar sender por teléfono
+            // Buscar sender por sessionId
             $qb = $senderRepo->createQueryBuilder('ws');
-            $sender = $qb->where('ws.telefono = :telefono')
-                ->setParameter('telefono', $telefonoNorm)
+            $sender = $qb->where('ws.sessionId = :sessionId')
+                ->setParameter('sessionId', $sessionId)
                 ->getQuery()
                 ->getOneOrNullResult();
 
@@ -2947,20 +3016,63 @@ class WhatsappController extends Controller
                 $sender->setFechaUltimaInteraccion(new \DateTime());
                 $em->flush();
 
-                $this->logear('⚠️ Conexión perdida: ' . $telefono . ' | Razón: ' . $razon);
+                $this->logear('⚠️ DISCONNECTED: ' . $sender->getTelefono() . ' [SID: ' . $sessionId . ']');
             }
 
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Desconexión registrada'
-            ], 200);
+            return new JsonResponse([], 200);
 
         } catch (\Exception $e) {
-            $this->logear('❌ Error procesando conexión perdida: ' . $e->getMessage());
-            return new JsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 500);
+            $this->logear('❌ Error en DISCONNECTED: ' . $e->getMessage());
+            return new JsonResponse([], 500);
+        }
+    }
+
+    /**
+     * Enviar mensaje a WhatsApp via Node.js Baileys
+     * 
+     * POST http://localhost:3000/api/messages/send
+     * Body: {sessionId, to, body}
+     * Headers: x-api-key, Content-Type
+     */
+    private function sendToWhatsApp(string $sessionId, string $to, string $body): bool
+    {
+        try {
+            $nodeUrl = 'http://localhost:3000/api/messages/send';
+            $nodeApiKey = getenv('NODE_API_KEY') ?: '1234567890';
+
+            // Usar cURL para enviar
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $nodeUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 5,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'x-api-key: ' . $nodeApiKey
+                ],
+                CURLOPT_POSTFIELDS => json_encode([
+                    'sessionId' => $sessionId,
+                    'to' => $to,
+                    'body' => $body
+                ])
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200 || $httpCode === 201) {
+                $this->logear('✓ sendToWhatsApp: Mensaje enviado a ' . $to);
+                return true;
+            } else {
+                $this->logear('⚠️ sendToWhatsApp: HTTP ' . $httpCode . ' - ' . $response);
+                return false;
+            }
+
+        } catch (\Exception $e) {
+            $this->logear('❌ sendToWhatsApp error: ' . $e->getMessage());
+            return false;
         }
     }
     
