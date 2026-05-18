@@ -633,6 +633,11 @@ api_chat_create:
   controller: AppBundle:Whatsapp:create
   methods: [POST]
 
+api_webhook_whatsapp:
+  path: /API/webhook_whatsapp
+  controller: AppBundle:Whatsapp:webhookWhatsapp
+  methods: [POST]
+
 api_get_whatsapp_messages:
   path: /admin/WhatsApp/messages/{id}
   controller: AppBundle:Whatsapp:getMessages

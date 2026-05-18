@@ -2715,6 +2715,247 @@ class WhatsappController extends Controller
             ];
         }
     }
+
+    /**
+     * Webhook para recibir eventos de WhatsApp
+     * POST /API/webhook_whatsapp
+     */
+    public function webhookWhatsappAction(Request $request): JsonResponse
+    {
+        // Verificar API key
+        if (!$this->checkApiKey($request)) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        try {
+            // Obtener datos del webhook
+            $data = json_decode($request->getContent(), true);
+            
+            if (!$data) {
+                return new JsonResponse([
+                    'success' => false,
+                    'error' => 'Invalid JSON'
+                ], 400);
+            }
+
+            // Registrar webhook en log
+            $this->logear('🔔 WEBHOOK RECIBIDO: ' . json_encode($data));
+
+            // Validar campos requeridos
+            $evento = $data['evento'] ?? null;
+            $telefono = $data['telefono'] ?? null;
+
+            if (!$evento || !$telefono) {
+                return new JsonResponse([
+                    'success' => false,
+                    'error' => 'Missing required fields: evento, telefono'
+                ], 400);
+            }
+
+            // Procesar diferentes tipos de eventos
+            switch ($evento) {
+                case 'mensaje_recibido':
+                    return $this->procesarMensajeRecibido($data);
+                    
+                case 'mensaje_enviado':
+                    return $this->procesarMensajeEnviado($data);
+                    
+                case 'conexion_establecida':
+                    return $this->procesarConexionEstablecida($data);
+                    
+                case 'conexion_perdida':
+                    return $this->procesarConexionPerdida($data);
+                    
+                default:
+                    $this->logear('⚠️ Evento desconocido: ' . $evento);
+                    return new JsonResponse([
+                        'success' => true,
+                        'message' => 'Event received but not processed',
+                        'evento' => $evento
+                    ], 200);
+            }
+
+        } catch (\Exception $e) {
+            $this->logear('❌ ERROR en webhook_whatsapp: ' . $e->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Procesa un mensaje recibido
+     */
+    private function procesarMensajeRecibido(array $data): JsonResponse
+    {
+        try {
+            $telefono = $data['telefono'];
+            $mensaje = $data['mensaje'] ?? '';
+            $timestamp = $data['timestamp'] ?? date('Y-m-d H:i:s');
+            $idExpediente = $data['id_expediente'] ?? null;
+
+            // Normalizar teléfono
+            $telefonoNorm = $this->normalizePhone($telefono);
+            $telefonoLocal = (strlen($telefonoNorm) > 9) ? substr($telefonoNorm, -9) : $telefonoNorm;
+
+            // Guardar en chat_history
+            $conn = $this->getDoctrine()->getConnection();
+            $conn->insert('chat_history', [
+                'id_expediente' => $idExpediente,
+                'phone_number' => $telefonoLocal,
+                'message' => $mensaje,
+                'role' => 'user',
+                'direction' => 'recibido',
+                'timestamp' => $timestamp
+            ]);
+
+            $this->logear('✓ Mensaje recibido almacenado: ' . $telefonoLocal . ' - ' . substr($mensaje, 0, 50));
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Mensaje almacenado correctamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            $this->logear('❌ Error procesando mensaje recibido: ' . $e->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Procesa un mensaje enviado
+     */
+    private function procesarMensajeEnviado(array $data): JsonResponse
+    {
+        try {
+            $telefono = $data['telefono'];
+            $mensaje = $data['mensaje'] ?? '';
+            $timestamp = $data['timestamp'] ?? date('Y-m-d H:i:s');
+            $idExpediente = $data['id_expediente'] ?? null;
+
+            $telefonoNorm = $this->normalizePhone($telefono);
+            $telefonoLocal = (strlen($telefonoNorm) > 9) ? substr($telefonoNorm, -9) : $telefonoNorm;
+
+            // Guardar en chat_history
+            $conn = $this->getDoctrine()->getConnection();
+            $conn->insert('chat_history', [
+                'id_expediente' => $idExpediente,
+                'phone_number' => $telefonoLocal,
+                'message' => $mensaje,
+                'role' => 'assistant',
+                'direction' => 'enviado',
+                'timestamp' => $timestamp
+            ]);
+
+            $this->logear('✓ Mensaje enviado almacenado: ' . $telefonoLocal);
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Mensaje enviado registrado'
+            ], 200);
+
+        } catch (\Exception $e) {
+            $this->logear('❌ Error procesando mensaje enviado: ' . $e->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Procesa una conexión establecida
+     */
+    private function procesarConexionEstablecida(array $data): JsonResponse
+    {
+        try {
+            $telefono = $data['telefono'];
+            $sessionId = $data['session_id'] ?? null;
+            $servidor = $data['servidor'] ?? null;
+
+            $em = $this->getDoctrine()->getManager();
+            $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+
+            $telefonoNorm = $this->normalizePhone($telefono);
+
+            // Buscar sender por teléfono
+            $qb = $senderRepo->createQueryBuilder('ws');
+            $sender = $qb->where('ws.telefono = :telefono')
+                ->setParameter('telefono', $telefonoNorm)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            if ($sender) {
+                $sender->setSessionId($sessionId);
+                $sender->setFechaUltimaInteraccion(new \DateTime());
+                if ($servidor) {
+                    $sender->setServidor($servidor);
+                }
+                $em->flush();
+
+                $this->logear('✓ Conexión establecida: ' . $telefono . ' [SessionID: ' . $sessionId . ']');
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Conexión registrada'
+            ], 200);
+
+        } catch (\Exception $e) {
+            $this->logear('❌ Error procesando conexión establecida: ' . $e->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Procesa una conexión perdida
+     */
+    private function procesarConexionPerdida(array $data): JsonResponse
+    {
+        try {
+            $telefono = $data['telefono'];
+            $razon = $data['razon'] ?? 'Unknown';
+
+            $em = $this->getDoctrine()->getManager();
+            $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+
+            $telefonoNorm = $this->normalizePhone($telefono);
+
+            // Buscar sender por teléfono
+            $qb = $senderRepo->createQueryBuilder('ws');
+            $sender = $qb->where('ws.telefono = :telefono')
+                ->setParameter('telefono', $telefonoNorm)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            if ($sender) {
+                $sender->setSessionId(null);
+                $sender->setFechaUltimaInteraccion(new \DateTime());
+                $em->flush();
+
+                $this->logear('⚠️ Conexión perdida: ' . $telefono . ' | Razón: ' . $razon);
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => 'Desconexión registrada'
+            ], 200);
+
+        } catch (\Exception $e) {
+            $this->logear('❌ Error procesando conexión perdida: ' . $e->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     
 }
 
