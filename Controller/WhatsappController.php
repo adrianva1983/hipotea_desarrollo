@@ -2951,6 +2951,7 @@ class WhatsappController extends Controller
         try {
             $sessionId = $data['sessionId'] ?? null;
             $from = $data['from'] ?? null;
+            $to = $data['to'] ?? null;  // Puede venir del webhook o ser deducido
             $body = $data['body'] ?? '';
             $type = $data['type'] ?? 'text';
 
@@ -2984,30 +2985,37 @@ class WhatsappController extends Controller
                 $telefonoComercial = $sender->getTelefono();
                 $telefonoComercialLocal = (strlen($telefonoComercial) > 9) ? substr($telefonoComercial, -9) : $telefonoComercial;
 
-                // Obtener teléfono del cliente desde el expediente
-                $telefonoCliente = null;
-                if ($sender->getIdUsuario()) {
-                    // Buscar expediente donde este usuario es comercial o técnico
-                    $sqlExp = 'SELECT e.id_cliente FROM expediente e 
-                              WHERE (e.id_comercial = :idUsuario OR e.id_tecnico = :idUsuario) 
-                              AND e.estado > 0 
-                              ORDER BY e.id_expediente DESC LIMIT 1';
-                    $stmtExp = $conn->prepare($sqlExp);
-                    $stmtExp->bindValue('idUsuario', $sender->getIdUsuario());
-                    $stmtExp->execute();
-                    $expResult = $stmtExp->fetch();
+                // Si viene el campo 'to' en el webhook, usarlo directamente
+                if ($to) {
+                    $toNorm = $this->normalizePhone($to);
+                    $toPhone = (strlen($toNorm) > 9) ? substr($toNorm, -9) : $toNorm;
+                } else {
+                    // Si no, deducir el teléfono del cliente desde el expediente
+                    $telefonoCliente = null;
+                    if ($sender->getIdUsuario()) {
+                        // Buscar expediente donde este usuario es comercial o técnico
+                        $sqlExp = 'SELECT e.id_cliente FROM expediente e 
+                                  WHERE (e.id_comercial = :idUsuario OR e.id_tecnico = :idUsuario) 
+                                  AND e.estado > 0 
+                                  ORDER BY e.id_expediente DESC LIMIT 1';
+                        $stmtExp = $conn->prepare($sqlExp);
+                        $stmtExp->bindValue('idUsuario', $sender->getIdUsuario());
+                        $stmtExp->execute();
+                        $expResult = $stmtExp->fetch();
 
-                    if ($expResult && $expResult['id_cliente']) {
-                        // Obtener teléfono del cliente
-                        $sqlUsu = 'SELECT telefono_movil FROM usuario WHERE id_usuario = :idCliente LIMIT 1';
-                        $stmtUsu = $conn->prepare($sqlUsu);
-                        $stmtUsu->bindValue('idCliente', $expResult['id_cliente']);
-                        $stmtUsu->execute();
-                        $usuResult = $stmtUsu->fetch();
-                        
-                        if ($usuResult && $usuResult['telefono_movil']) {
-                            $telefonoClienteNorm = $this->normalizePhone($usuResult['telefono_movil']);
-                            $telefonoCliente = (strlen($telefonoClienteNorm) > 9) ? substr($telefonoClienteNorm, -9) : $telefonoClienteNorm;
+                        if ($expResult && $expResult['id_cliente']) {
+                            // Obtener teléfono del cliente
+                            $sqlUsu = 'SELECT telefono_movil FROM usuario WHERE id_usuario = :idCliente LIMIT 1';
+                            $stmtUsu = $conn->prepare($sqlUsu);
+                            $stmtUsu->bindValue('idCliente', $expResult['id_cliente']);
+                            $stmtUsu->execute();
+                            $usuResult = $stmtUsu->fetch();
+                            
+                            if ($usuResult && $usuResult['telefono_movil']) {
+                                $telefonoClienteNorm = $this->normalizePhone($usuResult['telefono_movil']);
+                                $telefonoCliente = (strlen($telefonoClienteNorm) > 9) ? substr($telefonoClienteNorm, -9) : $telefonoClienteNorm;
+                                $toPhone = $telefonoCliente;
+                            }
                         }
                     }
                 }
@@ -3017,18 +3025,18 @@ class WhatsappController extends Controller
                     $direction = 'enviado';   // Mensaje enviado por el comercial
                     $role = 'assistant';      // El comercial es asistente
                     $fromPhone = $telefonoComercialLocal;
-                    $toPhone = $telefonoCliente;
                 } else {
                     // Mensaje del cliente al comercial
                     $fromPhone = $fromLocal;
-                    $toPhone = $telefonoComercialLocal;
+                    if (!$toPhone) {
+                        $toPhone = $telefonoComercialLocal;
+                    }
                 }
             }
 
             // Guardar mensaje en tabla de mensajes
             $now = new \DateTime();
             $conn->insert('chat_history', [
-                'phone_number' => $fromLocal,
                 'from_phone' => $fromPhone,      // ✅ Quién envía
                 'to_phone' => $toPhone,          // ✅ Quién recibe
                 'message' => $body,
