@@ -2972,7 +2972,7 @@ class WhatsappController extends Controller
                 'role' => 'user',
                 'direction' => 'recibido',
                 'message_type' => $type,
-                'timestamp' => $now->format('Y-m-d H:i:s')
+                'timestamp' => $now
             ], [
                 'timestamp' => 'datetime'
             ]);
