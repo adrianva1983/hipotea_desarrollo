@@ -3039,6 +3039,47 @@ class WhatsappController extends Controller
                     $direction = 'enviado';   // Mensaje enviado por el comercial
                     $role = 'assistant';      // El comercial es asistente
                     $fromPhone = $telefonoComercialLocal;
+                    
+                    // MENSAJE ENVIADO: Buscar expediente por to_phone (cliente receptor)
+                    if (!$idExpediente && $toPhone) {
+                        // Paso 1: Buscar por to_phone como cliente
+                        $sqlBuscaToCliente = 'SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :toPhone LIMIT 1';
+                        $stmtBuscaToCliente = $conn->prepare($sqlBuscaToCliente);
+                        $stmtBuscaToCliente->bindValue('toPhone', '%' . $toPhone . '%');
+                        $stmtBuscaToCliente->execute();
+                        $usuToClienteResult = $stmtBuscaToCliente->fetch();
+                        
+                        if ($usuToClienteResult && $usuToClienteResult['id_usuario']) {
+                            // Buscar expediente donde este usuario es id_cliente
+                            $sqlBuscaExpTo = 'SELECT id_expediente FROM expediente 
+                                            WHERE id_cliente = :idClienteTo AND estado > 0 
+                                            ORDER BY id_expediente DESC LIMIT 1';
+                            $stmtBuscaExpTo = $conn->prepare($sqlBuscaExpTo);
+                            $stmtBuscaExpTo->bindValue('idClienteTo', $usuToClienteResult['id_usuario']);
+                            $stmtBuscaExpTo->execute();
+                            $expToResult = $stmtBuscaExpTo->fetch();
+                            
+                            if ($expToResult && $expToResult['id_expediente']) {
+                                $idExpediente = $expToResult['id_expediente'];
+                            }
+                        }
+                    }
+                    
+                    // Paso 2: Si no encontró, buscar por to_phone como comercial/técnico
+                    if (!$idExpediente && $toPhone) {
+                        $sqlBuscaToComercial = 'SELECT e.id_expediente FROM expediente e 
+                                              WHERE (e.id_comercial = (SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :toPhone LIMIT 1) 
+                                              OR e.id_tecnico = (SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :toPhone LIMIT 1)) 
+                                              AND e.estado > 0 LIMIT 1';
+                        $stmtBuscaToComercial = $conn->prepare($sqlBuscaToComercial);
+                        $stmtBuscaToComercial->bindValue('toPhone', '%' . $toPhone . '%');
+                        $stmtBuscaToComercial->execute();
+                        $expToComercialResult = $stmtBuscaToComercial->fetch();
+                        
+                        if ($expToComercialResult && $expToComercialResult['id_expediente']) {
+                            $idExpediente = $expToComercialResult['id_expediente'];
+                        }
+                    }
                 } else {
                     // Mensaje del cliente al comercial
                     $fromPhone = $fromLocal;
@@ -3046,7 +3087,7 @@ class WhatsappController extends Controller
                         $toPhone = $telefonoComercialLocal;
                     }
                     
-                    // Si el mensaje viene del cliente, buscar el expediente por su teléfono
+                    // MENSAJE RECIBIDO: Buscar expediente por from_phone (cliente remitente)
                     if (!$idExpediente) {
                         // Paso 1: Buscar por from_phone como comercial/técnico
                         $sqlBuscaComercial = 'SELECT e.id_expediente FROM expediente e 
