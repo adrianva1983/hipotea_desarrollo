@@ -136,6 +136,15 @@
 			font-size: 18px;
 		}
 
+		a.whatsapp {
+			border: 2px solid #25d366;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: #25d366;
+			background: white;
+			font-size: 18px;
+		}
+
 		a.editar span,
 		a.documentos span,
 		a.notificar span,
@@ -146,7 +155,8 @@
 		a.duplicar span,
 		a.firmas span,
 		a.seguimiento span,
-		a.cancelar span {
+		a.cancelar span,
+		a.whatsapp span {
 			display: none;
 		}
 
@@ -790,6 +800,12 @@
 												<i class="far fa-file-alt"></i>
 												<span>Documentos</span>
 											</a>
+											{% if (expediente.idComercial and expediente.idComercial.idUsuario == usuarioLogueado.idUsuario) or (expediente.idTecnico and expediente.idTecnico.idUsuario == usuarioLogueado.idUsuario) %}
+											<a class="mr-2 whatsapp" href="{{ path('api_get_whatsapp_messages',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Mensajes WhatsApp" data-trigger="hover">
+												<i class="fab fa-whatsapp"></i>
+												<span>WhatsApp</span>
+											</a>
+											{% endif %}
 											<a class="mr-2 notificar" data-notificacion-expediente="{{ expediente.idExpediente }}" {% if expediente.idCliente is null %} data-sin-cliente {% endif %} href="javascript:void(0)" data-toggle="popover" data-content="Notificar" data-trigger="hover">
 												<i class="fab fa-telegram-plane"></i>
 												<span>Notificar</span>
