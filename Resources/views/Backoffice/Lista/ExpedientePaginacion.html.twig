@@ -140,7 +140,7 @@
 			border: 2px solid #25d366;
 			padding: 2px 5px;
 			border-radius: 5px;
-			color: #25d366;
+			color: #25d366 !important;
 			background: white;
 			font-size: 18px;
 		}
@@ -800,12 +800,6 @@
 												<i class="far fa-file-alt"></i>
 												<span>Documentos</span>
 											</a>
-											{% if (expediente.idComercial and expediente.idComercial.idUsuario == usuarioLogueado.idUsuario) or (expediente.idTecnico and expediente.idTecnico.idUsuario == usuarioLogueado.idUsuario) %}
-											<a class="mr-2 whatsapp" href="{{ path('api_get_whatsapp_messages',{'id':expediente.idExpediente}) }}" data-toggle="popover" data-content="Mensajes WhatsApp" data-trigger="hover">
-												<i class="fab fa-whatsapp"></i>
-												<span>WhatsApp</span>
-											</a>
-											{% endif %}
 											<a class="mr-2 notificar" data-notificacion-expediente="{{ expediente.idExpediente }}" {% if expediente.idCliente is null %} data-sin-cliente {% endif %} href="javascript:void(0)" data-toggle="popover" data-content="Notificar" data-trigger="hover">
 												<i class="fab fa-telegram-plane"></i>
 												<span>Notificar</span>
@@ -830,6 +824,12 @@
 												<i class="far fa-copy"></i>
 												<span>Duplicar</span>
 											</a>
+											{% if (expediente.idComercial and expediente.idComercial.idUsuario == usuarioLogueado.idUsuario) or (expediente.idTecnico and expediente.idTecnico.idUsuario == usuarioLogueado.idUsuario) %}
+										<a class="mr-2 whatsapp" href="javascript:void(0)" data-toggle="modal" data-target="#modal-whatsapp-messages" data-expediente-id="{{ expediente.idExpediente }}">
+												<i class="fab fa-whatsapp"></i>
+												<span>WhatsApp</span>
+											</a>
+											{% endif %}
 											<a class="mr-2 cancelar" data-cancelar-expediente="{{ expediente.idExpediente }}" {% if expediente.idCliente is null %} data-sin-cliente {% endif %} href="javascript:void(0)" data-toggle="popover" data-content="Cancelar" data-trigger="hover">
 												<i class="far fa-trash-alt"></i>
 												<span>Cancelar</span>
@@ -982,4 +982,121 @@
 	{% include '@App/Backoffice/Modal/ConfirmarDuplicar.html' %}
 	{% include '@App/Backoffice/Modal/NotificacionExpediente.html.twig' %}
 	{% include '@App/Backoffice/Modal/CancelarExpediente.html.twig' %}
+	
+	<!-- Modal WhatsApp Messages -->
+	<div aria-modal="true" aria-labelledby="modal-whatsapp-titulo" class="modal fade" id="modal-whatsapp-messages" role="dialog" tabindex="-1">
+		<div class="modal-dialog modal-lg" role="document" style="max-width: 600px;">
+			<div class="modal-content">
+				<div class="modal-header" style="background-color: #25d366; color: white;">
+					<h5 class="modal-title" id="modal-whatsapp-titulo">
+						<i class="fab fa-whatsapp"></i> Mensajes WhatsApp
+					</h5>
+					<button aria-label="Cerrar" class="close" data-dismiss="modal" style="color: white;" type="button">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body" id="whatsapp-messages-container" style="height: 500px; overflow-y: auto; background-color: #f5f5f5;">
+					<div class="text-center text-muted mt-5">
+						<i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<style>
+		#whatsapp-messages-container {
+			display: flex;
+			flex-direction: column;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+		}
+		
+		.whatsapp-message-group {
+			margin-bottom: 10px;
+			display: flex;
+			flex-direction: column;
+		}
+		
+		.whatsapp-message {
+			max-width: 70%;
+			padding: 8px 12px;
+			border-radius: 8px;
+			margin-bottom: 4px;
+			word-wrap: break-word;
+			font-size: 14px;
+			line-height: 1.4;
+		}
+		
+		.whatsapp-message.enviado {
+			align-self: flex-end;
+			background-color: #dcf8c6;
+			color: #000;
+		}
+		
+		.whatsapp-message.recibido {
+			align-self: flex-start;
+			background-color: #fff;
+			color: #000;
+			border: 1px solid #e0e0e0;
+		}
+		
+		.whatsapp-timestamp {
+			font-size: 12px;
+			color: #999;
+			margin-top: 4px;
+		}
+	</style>
+{% endblock %}
+
+{% block devscripts %}
+	{{ parent() }}
+	<script>
+		$(document).ready(function() {
+			$('#modal-whatsapp-messages').on('show.bs.modal', function (e) {
+				var expedienteId = $(e.relatedTarget).data('expediente-id');
+				var container = $('#whatsapp-messages-container');
+				
+				// Cargar conversaciones vía AJAX
+				$.ajax({
+					url: '{{ path('api_get_whatsapp_messages', {'id': 'EXPEDIENTE_ID'}) }}'.replace('EXPEDIENTE_ID', expedienteId),
+					type: 'GET',
+					dataType: 'json',
+					success: function(data) {
+						container.empty();
+						
+						if (!data.messages || data.messages.length === 0) {
+							container.html('<div class="alert alert-info">No hay mensajes WhatsApp para este expediente.</div>');
+							return;
+						}
+						
+						var messagesHtml = '';
+						data.messages.forEach(function(msg) {
+							var direction = msg.direction || 'recibido';
+							var messageClass = direction === 'enviado' ? 'enviado' : 'recibido';
+							var timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+							var messageText = msg.message || '';
+							
+							messagesHtml += '<div class="whatsapp-message-group">' +
+								'<div class="whatsapp-message ' + messageClass + '">' +
+									messageText +
+								'</div>';
+							
+							if (timestamp) {
+								messagesHtml += '<div class="whatsapp-timestamp">' + timestamp + '</div>';
+							}
+							
+							messagesHtml += '</div>';
+						});
+						
+						container.html(messagesHtml);
+						// Auto-scroll al final
+						container.scrollTop(container[0].scrollHeight);
+					},
+					error: function() {
+						container.html('<div class="alert alert-danger">Error al cargar los mensajes WhatsApp.</div>');
+					}
+				});
+			});
+		});
+	</script>
 {% endblock %}
