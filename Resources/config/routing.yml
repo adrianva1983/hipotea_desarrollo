@@ -654,13 +654,6 @@ api_send_whatsapp_message:
   controller: AppBundle:Whatsapp:sendMessage
   methods: [POST]
 
-api_whatsapp_listen:
-  path: /api/whatsapp/listen/{expedienteId}
-  controller: AppBundle:Whatsapp:listenForMessages
-  methods: [GET]
-  requirements:
-    expedienteId: '\d+'
-
 api_get_expediente_datos:
   path: /admin/WhatsApp/expediente-datos
   controller: AppBundle:Whatsapp:getExpedienteDatos
