@@ -2291,31 +2291,39 @@ class WhatsappController extends Controller
      */
     public function misLogsAction()
     {
-        if (empty($datosFase1['fase']['hitos'])) {
-            return null;
-        }
-
-        foreach ($datosFase1['fase']['hitos'] as $hito) {
-            if (empty($hito['grupos'])) {
-                continue;
+        try {
+            $logDir = dirname(dirname(dirname(__DIR__))) . '/var/logs/';
+            $logFile = $logDir . 'whatsapp_' . date('Y-m-d') . '.log';
+            
+            if (!file_exists($logFile)) {
+                return new JsonResponse([
+                    'success' => true,
+                    'message' => 'No hay logs para hoy',
+                    'logs' => []
+                ], 200);
             }
-
-            foreach ($hito['grupos'] as $grupo) {
-                if (empty($grupo['campos'])) {
-                    continue;
-                }
-
-                foreach ($grupo['campos'] as $campo) {
-                    if ($campo['id_campo_hito'] == $idCampo) {
-                        // Agregar nombre del hito al campo encontrado
-                        $campo['hito'] = $hito['nombre'];
-                        return $campo;
-                    }
-                }
-            }
+            
+            $contenido = file_get_contents($logFile);
+            $lineas = explode("\n", trim($contenido));
+            
+            $logs = array_map(function($linea) {
+                return trim($linea);
+            }, array_filter($lineas));
+            
+            return new JsonResponse([
+                'success' => true,
+                'fecha' => date('Y-m-d'),
+                'archivo' => basename($logFile),
+                'cantidad' => count($logs),
+                'logs' => $logs
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Error al obtener logs: ' . $e->getMessage()
+            ], 500);
         }
-
-        return null;
     }
 
     /**
