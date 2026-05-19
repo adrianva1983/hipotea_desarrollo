@@ -2974,18 +2974,54 @@ class WhatsappController extends Controller
                 ->getOneOrNullResult();
 
             // Determinar si el mensaje es enviado o recibido
-            $direction = 'recibido';  // Default (mensaje del cliente)
-            $role = 'user';           // Default
+            $direction = 'recibido';      // Default (mensaje del cliente)
+            $role = 'user';               // Default
+            $fromPhone = $fromLocal;      // Quién envía
+            $toPhone = null;              // Quién recibe (a obtener)
 
             if ($sender) {
-                // Normalizar teléfono del comercial (del WhatsappSender)
+                // Obtener teléfono del comercial
                 $telefonoComercial = $sender->getTelefono();
                 $telefonoComercialLocal = (strlen($telefonoComercial) > 9) ? substr($telefonoComercial, -9) : $telefonoComercial;
+
+                // Obtener teléfono del cliente desde el expediente
+                $telefonoCliente = null;
+                if ($sender->getIdUsuario()) {
+                    // Buscar expediente donde este usuario es comercial o técnico
+                    $sqlExp = 'SELECT e.id_cliente FROM expediente e 
+                              WHERE (e.id_comercial = :idUsuario OR e.id_tecnico = :idUsuario) 
+                              AND e.estado > 0 
+                              ORDER BY e.id_expediente DESC LIMIT 1';
+                    $stmtExp = $conn->prepare($sqlExp);
+                    $stmtExp->bindValue('idUsuario', $sender->getIdUsuario());
+                    $stmtExp->execute();
+                    $expResult = $stmtExp->fetch();
+
+                    if ($expResult && $expResult['id_cliente']) {
+                        // Obtener teléfono del cliente
+                        $sqlUsu = 'SELECT telefono_movil FROM usuario WHERE id_usuario = :idCliente LIMIT 1';
+                        $stmtUsu = $conn->prepare($sqlUsu);
+                        $stmtUsu->bindValue('idCliente', $expResult['id_cliente']);
+                        $stmtUsu->execute();
+                        $usuResult = $stmtUsu->fetch();
+                        
+                        if ($usuResult && $usuResult['telefono_movil']) {
+                            $telefonoClienteNorm = $this->normalizePhone($usuResult['telefono_movil']);
+                            $telefonoCliente = (strlen($telefonoClienteNorm) > 9) ? substr($telefonoClienteNorm, -9) : $telefonoClienteNorm;
+                        }
+                    }
+                }
 
                 // Si el mensaje viene del teléfono del comercial, es enviado
                 if ($fromLocal === $telefonoComercialLocal) {
                     $direction = 'enviado';   // Mensaje enviado por el comercial
                     $role = 'assistant';      // El comercial es asistente
+                    $fromPhone = $telefonoComercialLocal;
+                    $toPhone = $telefonoCliente;
+                } else {
+                    // Mensaje del cliente al comercial
+                    $fromPhone = $fromLocal;
+                    $toPhone = $telefonoComercialLocal;
                 }
             }
 
@@ -2993,6 +3029,8 @@ class WhatsappController extends Controller
             $now = new \DateTime();
             $conn->insert('chat_history', [
                 'phone_number' => $fromLocal,
+                'from_phone' => $fromPhone,      // ✅ Quién envía
+                'to_phone' => $toPhone,          // ✅ Quién recibe
                 'message' => $body,
                 'role' => $role,
                 'direction' => $direction,
@@ -3002,7 +3040,7 @@ class WhatsappController extends Controller
                 'timestamp' => 'datetime'
             ]);
 
-            $this->logear('✓ MESSAGE: ' . $fromLocal . ' (' . $type . ') [' . $direction . '] - ' . substr($body, 0, 50));
+            $this->logear('✓ MESSAGE: ' . $fromPhone . ' → ' . $toPhone . ' (' . $type . ') [' . $direction . '] - ' . substr($body, 0, 50));
 
             return new JsonResponse([], 200);
 
