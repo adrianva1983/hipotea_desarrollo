@@ -189,10 +189,16 @@
 	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
 	<script>
 		$(document).ready(function() {
-			$('#modal-whatsapp-messages').on('show.bs.modal', function (e) {
+			// Escuchar click en el botón WhatsApp
+			$(document).on('click', 'a.whatsapp', function(e) {
+				e.preventDefault();
 				console.log('abriendo modal WhatsApp');
-				var expedienteId = $(e.relatedTarget).data('expediente-id');
+				
+				var expedienteId = $(this).data('expediente-id');
 				var container = $('#whatsapp-messages-container');
+				
+				// Mostrar el modal
+				$('#modal-whatsapp-messages').modal('show');
 				
 				// Construir URL correctamente
 				var baseUrl = '{{ path('api_get_whatsapp_messages', {'id': '0'}) }}';
