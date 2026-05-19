@@ -193,12 +193,20 @@
 				var expedienteId = $(e.relatedTarget).data('expediente-id');
 				var container = $('#whatsapp-messages-container');
 				
+				// Construir URL correctamente
+				var baseUrl = '{{ path('api_get_whatsapp_messages', {'id': '0'}) }}';
+				var url = baseUrl.replace('/0', '/' + expedienteId);
+				
+				console.log('URL de AJAX:', url);
+				console.log('Expediente ID:', expedienteId);
+				
 				// Cargar conversaciones vía AJAX
 				$.ajax({
-					url: '{{ path('api_get_whatsapp_messages', {'id': 'EXPEDIENTE_ID'}) }}'.replace('EXPEDIENTE_ID', expedienteId),
+					url: url,
 					type: 'GET',
 					dataType: 'json',
 					success: function(data) {
+						console.log('Datos recibidos:', data);
 						container.empty();
 						
 						// El endpoint devuelve un array directo de mensajes
@@ -246,6 +254,7 @@
 					},
 					error: function(xhr, status, error) {
 						console.error('Error AJAX:', status, error);
+						console.error('Response:', xhr.responseText);
 						var errorMsg = 'Error al cargar los mensajes WhatsApp.';
 						if (xhr.status === 404) {
 							errorMsg = 'Expediente no encontrado.';

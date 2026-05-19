@@ -1568,6 +1568,7 @@ class WhatsappController extends Controller
     public function getMessagesAction($id)
     {
         $conn = $this->getDoctrine()->getConnection();
+        error_log("getMessagesAction called with id: " . $id);
 
         try {
             // Validar que el id_expediente existe
