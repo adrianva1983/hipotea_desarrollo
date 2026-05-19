@@ -2958,26 +2958,51 @@ class WhatsappController extends Controller
                 return new JsonResponse([], 400);
             }
 
-            $conn = $this->getDoctrine()->getConnection();
+            $em = $this->getDoctrine()->getManager();
+            $conn = $em->getConnection();
 
             // Normalizar teléfono del remitente
             $fromNorm = $this->normalizePhone($from);
             $fromLocal = (strlen($fromNorm) > 9) ? substr($fromNorm, -9) : $fromNorm;
+
+            // Buscar la sesión por sessionId para obtener el teléfono del comercial
+            $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+            $qb = $senderRepo->createQueryBuilder('ws');
+            $sender = $qb->where('ws.sessionId = :sessionId')
+                ->setParameter('sessionId', $sessionId)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            // Determinar si el mensaje es enviado o recibido
+            $direction = 'recibido';  // Default (mensaje del cliente)
+            $role = 'user';           // Default
+
+            if ($sender) {
+                // Normalizar teléfono del comercial (del WhatsappSender)
+                $telefonoComercial = $sender->getTelefono();
+                $telefonoComercialLocal = (strlen($telefonoComercial) > 9) ? substr($telefonoComercial, -9) : $telefonoComercial;
+
+                // Si el mensaje viene del teléfono del comercial, es enviado
+                if ($fromLocal === $telefonoComercialLocal) {
+                    $direction = 'enviado';   // Mensaje enviado por el comercial
+                    $role = 'assistant';      // El comercial es asistente
+                }
+            }
 
             // Guardar mensaje en tabla de mensajes
             $now = new \DateTime();
             $conn->insert('chat_history', [
                 'phone_number' => $fromLocal,
                 'message' => $body,
-                'role' => 'user',
-                'direction' => 'recibido',
+                'role' => $role,
+                'direction' => $direction,
                 'message_type' => $type,
                 'timestamp' => $now
             ], [
                 'timestamp' => 'datetime'
             ]);
 
-            $this->logear('✓ MESSAGE: ' . $fromLocal . ' (' . $type . ') - ' . substr($body, 0, 50));
+            $this->logear('✓ MESSAGE: ' . $fromLocal . ' (' . $type . ') [' . $direction . '] - ' . substr($body, 0, 50));
 
             return new JsonResponse([], 200);
 
