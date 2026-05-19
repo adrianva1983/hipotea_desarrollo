@@ -189,7 +189,7 @@
 	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
 	<script>
 		// Función para abrir el modal de WhatsApp y cargar mensajes
-		window.abrirModalWhatsApp = function(expedienteId) {
+		function abrirModalWhatsApp(expedienteId) {
 			console.log('abriendo modal WhatsApp para expediente:', expedienteId);
 			
 			var container = $('#whatsapp-messages-container');
