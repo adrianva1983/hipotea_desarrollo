@@ -201,17 +201,32 @@
 					success: function(data) {
 						container.empty();
 						
-						if (!data.messages || data.messages.length === 0) {
+						// El endpoint devuelve un array directo de mensajes
+						var messages = Array.isArray(data) ? data : (data.messages || []);
+						
+						if (!messages || messages.length === 0) {
 							container.html('<div class="alert alert-info">No hay mensajes WhatsApp para este expediente.</div>');
 							return;
 						}
 						
 						var messagesHtml = '';
-						data.messages.forEach(function(msg) {
-							var direction = msg.direction || 'recibido';
+						messages.forEach(function(msg) {
+							// Determinar dirección basado en el role
+							var direction = msg.role === 'assistant' ? 'enviado' : 'recibido';
 							var messageClass = direction === 'enviado' ? 'enviado' : 'recibido';
-							var timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
-							var messageText = msg.message || '';
+							
+							// Formatear timestamp
+							var timestamp = '';
+							if (msg.timestamp) {
+								try {
+									var date = new Date(msg.timestamp);
+									timestamp = date.toLocaleTimeString('es-ES');
+								} catch(e) {
+									timestamp = msg.timestamp;
+								}
+							}
+							
+							var messageText = msg.text || msg.message || '(sin contenido)';
 							
 							messagesHtml += '<div class="whatsapp-message-group">' +
 								'<div class="whatsapp-message ' + messageClass + '">' +
@@ -229,8 +244,15 @@
 						// Auto-scroll al final
 						container.scrollTop(container[0].scrollHeight);
 					},
-					error: function() {
-						container.html('<div class="alert alert-danger">Error al cargar los mensajes WhatsApp.</div>');
+					error: function(xhr, status, error) {
+						console.error('Error AJAX:', status, error);
+						var errorMsg = 'Error al cargar los mensajes WhatsApp.';
+						if (xhr.status === 404) {
+							errorMsg = 'Expediente no encontrado.';
+						} else if (xhr.responseJSON && xhr.responseJSON.error) {
+							errorMsg = xhr.responseJSON.error;
+						}
+						container.html('<div class="alert alert-danger">' + errorMsg + '</div>');
 					}
 				});
 			});
@@ -874,7 +896,7 @@
 												<span>Duplicar</span>
 											</a>
 											{% if (expediente.idComercial and expediente.idComercial.idUsuario == usuarioLogueado.idUsuario) or (expediente.idTecnico and expediente.idTecnico.idUsuario == usuarioLogueado.idUsuario) %}
-										<a class="mr-2 whatsapp" href="javascript:void(0)" data-toggle="modal" data-target="#modal-whatsapp-messages" data-expediente-id="{{ expediente.idExpediente }}">
+												<a class="mr-2 whatsapp" href="javascript:void(0)" data-toggle="modal" data-target="#modal-whatsapp-messages" data-expediente-id="{{ expediente.idExpediente }}">
 												<i class="fab fa-whatsapp"></i>
 												<span>WhatsApp</span>
 											</a>
