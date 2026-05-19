@@ -447,6 +447,9 @@
 					setTimeout(function() {
 						outerContainer.scrollTop(outerContainer[0].scrollHeight);
 					}, 100);
+					
+					// Iniciar polling para nuevos mensajes cada 10 segundos
+					iniciarPollingMensajesWhatsApp(expedienteId);
 				},
 				error: function(xhr) {
 					innerContainer.html('<div class="alert alert-danger">Error al cargar los mensajes.</div>');
@@ -512,6 +515,112 @@
 			if (e.which === 13) {
 				enviarMensajeWhatsApp();
 				return false;
+			}
+		});
+
+		// Variable global para mantener el intervalo de polling
+		var whatsappPollingInterval = null;
+		var ultimosHashMensajes = null;
+		
+		// Función para iniciar polling cada 10 segundos
+		function iniciarPollingMensajesWhatsApp(expedienteId) {
+			// Detener polling anterior si existe
+			if (whatsappPollingInterval) {
+				clearInterval(whatsappPollingInterval);
+			}
+			
+			// Iniciar nuevo polling
+			whatsappPollingInterval = setInterval(function() {
+				// Solo continuar si el modal está visible
+				if (!$('#modal-whatsapp-messages').is(':visible')) {
+					clearInterval(whatsappPollingInterval);
+					whatsappPollingInterval = null;
+					return;
+				}
+				
+				var baseUrl = '{{ path('api_get_whatsapp_messages', {'id': '0'}) }}';
+				var url = baseUrl.replace('/0', '/' + expedienteId);
+				
+				$.ajax({
+					url: url,
+					type: 'GET',
+					dataType: 'json',
+					success: function(data) {
+						var innerContainer = $('#whatsapp-messages-inner');
+						var outerContainer = $('#whatsapp-messages-container');
+						
+						var messages = Array.isArray(data) ? data : (data.messages || []);
+						
+						if (!messages || messages.length === 0) {
+							return;
+						}
+						
+						// Crear hash de mensajes para detectar cambios
+						var hashActual = JSON.stringify(messages);
+						
+						// Si hay cambios, actualizar el listado
+						if (hashActual !== ultimosHashMensajes) {
+							ultimosHashMensajes = hashActual;
+							
+							var messagesHtml = '';
+							var lastDirection = null;
+
+							messages.forEach(function(msg) {
+								var direction = msg.direction === 'enviado' ? 'enviado' : 'recibido';
+								var hasTail = (direction !== lastDirection);
+								
+								// Formatear timestamp
+								var timeStr = '';
+								if (msg.timestamp) {
+									var date = new Date(msg.timestamp);
+									var hh = String(date.getHours()).padStart(2, '0');
+									var mm = String(date.getMinutes()).padStart(2, '0');
+									timeStr = hh + ':' + mm;
+								}
+								
+								var text = msg.message || '';
+								
+								// Escapar HTML básico
+								var textEscaped = $('<div/>').text(text).html();
+
+								messagesHtml += '<div class="whatsapp-message-row ' + direction + (hasTail ? '' : ' no-tail') + '">' +
+									'<div class="whatsapp-bubble ' + direction + '">' +
+										'<div class="whatsapp-text">' + textEscaped + '</div>' +
+										'<div class="whatsapp-meta">' +
+											'<span class="whatsapp-time">' + timeStr + '</span>';
+								
+								if (direction === 'enviado') {
+									messagesHtml += '<span class="whatsapp-check"><i class="fas fa-check-double"></i></span>';
+								}
+								
+								messagesHtml += '</div>' + // meta
+									'</div>' + // bubble
+								'</div>'; // row
+								
+								lastDirection = direction;
+							});
+							
+							innerContainer.html(messagesHtml);
+							
+							// Scroll al final
+							setTimeout(function() {
+								outerContainer.scrollTop(outerContainer[0].scrollHeight);
+							}, 100);
+						}
+					},
+					error: function(xhr) {
+						// Silenciosamente ignorar errores de polling
+					}
+				});
+			}, 10000); // Cada 10 segundos
+		}
+		
+		// Detener polling al cerrar el modal
+		$('#modal-whatsapp-messages').on('hidden.bs.modal', function() {
+			if (whatsappPollingInterval) {
+				clearInterval(whatsappPollingInterval);
+				whatsappPollingInterval = null;
+				ultimosHashMensajes = null;
 			}
 		});
 
