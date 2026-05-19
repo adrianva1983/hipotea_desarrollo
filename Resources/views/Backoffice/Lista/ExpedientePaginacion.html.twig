@@ -190,6 +190,7 @@
 	<script>
 		$(document).ready(function() {
 			$('#modal-whatsapp-messages').on('show.bs.modal', function (e) {
+				console.log('abriendo modal WhatsApp');
 				var expedienteId = $(e.relatedTarget).data('expediente-id');
 				var container = $('#whatsapp-messages-container');
 				
