@@ -477,6 +477,9 @@
 				type: 'POST',
 				dataType: 'json',
 				contentType: 'application/json',
+				headers: {
+					'X-API-KEY': '123456'
+				},
 				data: JSON.stringify({
 					id_expediente: parseInt(expedienteId),
 					text: texto
