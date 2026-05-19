@@ -1719,7 +1719,14 @@ class WhatsappController extends Controller
             
             // Usar el nombre de usuario logueado como sessionName, o valor por defecto
             $usuario = $this->getUser();
-            $sessionName = ($usuario && $usuario->getUsername()) ? str_replace(' ', '', $usuario->getUsername()) : 'ComercialPrueba';
+            $username = ($usuario && $usuario->getUsername()) ? $usuario->getUsername() : 'ComercialPrueba';
+            // Limpiar caracteres especiales: solo alfanuméricos y guiones
+            $sessionName = preg_replace('/[^a-zA-Z0-9\-_]/', '', $username);
+            if (empty($sessionName)) {
+                $sessionName = 'ComercialPrueba';
+            }
+
+            $this->logear("SessionName generado: {$sessionName} (from: {$username})");
 
             $botResponse = $this->llamarBotWhatsApp(
                 $sessionName,
@@ -1777,7 +1784,11 @@ class WhatsappController extends Controller
      */
     private function llamarBotWhatsApp($sessionName, $telefono, $mensaje)
     {
-        $this->logear("Llamando al bot de WhatsApp - sesión: {$sessionName}, destino: {$telefono}, mensaje: {$mensaje}");
+        $this->logear("=== ENVÍO A BOT WHATSAPP ===");
+        $this->logear("sessionName: {$sessionName}");
+        $this->logear("to (telefono): {$telefono}");
+        $this->logear("body (mensaje): {$mensaje}");
+        
         try {
             $url = "https://punchiest-irremediably-suzette.ngrok-free.dev/api/messages/send";
 
@@ -1786,6 +1797,8 @@ class WhatsappController extends Controller
                 'to' => $telefono,
                 'body' => $mensaje
             ]);
+            
+            $this->logear("Payload JSON: {$payload}");
 
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -1808,6 +1821,9 @@ class WhatsappController extends Controller
             }
 
             $responseData = json_decode($response, true);
+            
+            $this->logear("HTTP Code: {$httpCode}");
+            $this->logear("Response: " . json_encode($responseData));
 
             if ($httpCode >= 200 && $httpCode < 300) {
                 return [
@@ -1825,6 +1841,7 @@ class WhatsappController extends Controller
                 ];
             }
         } catch (\Exception $e) {
+            $this->logear("EXCEPCIÓN: " . $e->getMessage());
             return [
                 'success' => false,
                 'message' => $e->getMessage()
