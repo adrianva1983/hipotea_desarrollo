@@ -1717,9 +1717,9 @@ class WhatsappController extends Controller
             // 4. Llamar al bot de WhatsApp con la sesión correcta
             $phoneDestinoFull = $this->normalizePhonenWithPrefix($phoneDestino);
             
-            // Usar el nombre del usuario logueado como sessionName, o valor por defecto
+            // Usar el nombre de usuario logueado como sessionName, o valor por defecto
             $usuario = $this->getUser();
-            $sessionName = ($usuario && $usuario->getNombre()) ? str_replace(' ', '', $usuario->getNombre()) : 'ComercialPrueba';
+            $sessionName = ($usuario && $usuario->getUsername()) ? str_replace(' ', '', $usuario->getUsername()) : 'ComercialPrueba';
 
             $botResponse = $this->llamarBotWhatsApp(
                 $sessionName,
