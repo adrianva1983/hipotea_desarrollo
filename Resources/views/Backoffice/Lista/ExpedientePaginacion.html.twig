@@ -398,12 +398,14 @@
 						// Determinar dirección basado en el campo direction
 						var messageClass = msg.direction === 'enviado' ? 'enviado' : 'recibido';
 						
-						// Formatear timestamp
+						// Formatear timestamp con hora y minuto
 						var timestamp = '';
 						if (msg.timestamp) {
 							try {
 								var date = new Date(msg.timestamp);
-								timestamp = date.toLocaleTimeString('es-ES');
+								var horas = String(date.getHours()).padStart(2, '0');
+								var minutos = String(date.getMinutes()).padStart(2, '0');
+								timestamp = horas + ':' + minutos;
 							} catch(e) {
 								timestamp = msg.timestamp;
 							}
@@ -411,7 +413,7 @@
 						
 						var messageText = msg.message || '(sin contenido)';
 						
-						messagesHtml += '<div class="whatsapp-message-group">' +
+						messagesHtml += '<div class="whatsapp-message-group ' + messageClass + '">' +
 							'<div class="whatsapp-message ' + messageClass + '">' +
 								messageText +
 							'</div>';
@@ -1074,16 +1076,22 @@
 	<!-- Modal WhatsApp Messages -->
 	<div aria-modal="true" aria-labelledby="modal-whatsapp-titulo" class="modal fade" id="modal-whatsapp-messages" role="dialog" tabindex="-1">
 		<div class="modal-dialog modal-lg" role="document" style="max-width: 600px;">
-			<div class="modal-content">
-				<div class="modal-header" style="background-color: #25d366; color: white;">
-					<h5 class="modal-title" id="modal-whatsapp-titulo">
-						<i class="fab fa-whatsapp"></i> Mensajes WhatsApp
-					</h5>
-					<button aria-label="Cerrar" class="close" data-dismiss="modal" style="color: white;" type="button">
-						<span aria-hidden="true">&times;</span>
+			<div class="modal-content" style="border-radius: 12px; overflow: hidden;">
+				<div class="modal-header" style="background: linear-gradient(135deg, #25d366 0%, #20c55e 100%); color: white; border: none; padding: 15px 20px;">
+					<div style="display: flex; align-items: center; width: 100%;">
+						<i class="fab fa-whatsapp" style="font-size: 24px; margin-right: 10px;"></i>
+						<div>
+							<h5 class="modal-title" id="modal-whatsapp-titulo" style="margin: 0; font-size: 16px; font-weight: 600;">
+								Conversación WhatsApp
+							</h5>
+							<small style="opacity: 0.8; font-size: 12px; display: block; margin-top: 2px;">Mensajes recientes</small>
+						</div>
+					</div>
+					<button aria-label="Cerrar" class="close" data-dismiss="modal" style="color: white; opacity: 0.8; margin-left: auto;" type="button">
+						<span aria-hidden="true" style="font-size: 24px;">&times;</span>
 					</button>
 				</div>
-				<div class="modal-body" id="whatsapp-messages-container" style="height: 500px; overflow-y: auto; background-color: #f5f5f5;">
+				<div class="modal-body" id="whatsapp-messages-container" style="height: 500px; overflow-y: auto; background-color: #f5f5f5; padding: 0;">
 					<div class="text-center text-muted mt-5">
 						<i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...
 					</div>
@@ -1097,41 +1105,110 @@
 			display: flex;
 			flex-direction: column;
 			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+			background: linear-gradient(135deg, #ECE5DD 0%, #F5F5F5 100%);
+			padding: 15px;
+			gap: 3px;
+		}
+
+		/* Scroll personalizado */
+		#whatsapp-messages-container::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		#whatsapp-messages-container::-webkit-scrollbar-track {
+			background: transparent;
+		}
+
+		#whatsapp-messages-container::-webkit-scrollbar-thumb {
+			background: #ccc;
+			border-radius: 3px;
+		}
+
+		#whatsapp-messages-container::-webkit-scrollbar-thumb:hover {
+			background: #999;
 		}
 		
 		.whatsapp-message-group {
-			margin-bottom: 10px;
+			margin-bottom: 6px;
 			display: flex;
 			flex-direction: column;
+			align-items: flex-start;
+			animation: slideIn 0.3s ease-in-out;
+		}
+		
+		.whatsapp-message-group.enviado {
+			align-items: flex-end;
+		}
+		
+		@keyframes slideIn {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
 		}
 		
 		.whatsapp-message {
-			max-width: 70%;
+			max-width: 75%;
 			padding: 8px 12px;
-			border-radius: 8px;
-			margin-bottom: 4px;
+			border-radius: 18px;
 			word-wrap: break-word;
-			font-size: 14px;
-			line-height: 1.4;
+			font-size: 13px;
+			line-height: 1.5;
+			box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 		}
 		
 		.whatsapp-message.enviado {
-			align-self: flex-end;
 			background-color: #dcf8c6;
 			color: #000;
+			border-bottom-right-radius: 4px;
 		}
 		
 		.whatsapp-message.recibido {
-			align-self: flex-start;
 			background-color: #fff;
 			color: #000;
-			border: 1px solid #e0e0e0;
+			border-bottom-left-radius: 4px;
 		}
 		
 		.whatsapp-timestamp {
-			font-size: 12px;
+			font-size: 11px;
 			color: #999;
 			margin-top: 4px;
+			padding: 0 12px;
+		}
+
+		/* Estilos para el contenedor vacío */
+		#whatsapp-messages-container .alert {
+			margin: auto;
+			align-self: center;
+		}
+
+		/* Spinner personalizado */
+		#whatsapp-messages-container .text-center {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 40px 20px;
+			color: #999;
+		}
+
+		#whatsapp-messages-container .fa-spinner {
+			font-size: 24px;
+			margin-bottom: 10px;
+			color: #25d366;
+		}
+
+		/* Modal personalizado */
+		#modal-whatsapp-messages .modal-content {
+			box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+		}
+
+		#modal-whatsapp-messages .modal-header {
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 		}
 	</style>
 {% endblock %}
