@@ -375,6 +375,12 @@
 			// Mostrar el modal
 			$('#modal-whatsapp-messages').modal('show');
 			
+			// Guardar el expedienteId en el input oculto
+			$('#whatsapp-expediente-id').val(expedienteId);
+			
+			// Limpiar input de mensaje
+			$('#whatsapp-message-input').val('').focus();
+			
 			// Mostrar spinner
 			innerContainer.html('<div class="text-center text-muted mt-5"><i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...</div>');
 			
@@ -446,7 +452,66 @@
 					innerContainer.html('<div class="alert alert-danger">Error al cargar los mensajes.</div>');
 				}
 			});
-		};
+		}
+		
+		// Función para enviar mensaje
+		function enviarMensajeWhatsApp() {
+			var expedienteId = $('#whatsapp-expediente-id').val();
+			var texto = $('#whatsapp-message-input').val().trim();
+			
+			if (!texto) {
+				alert('Por favor escribe un mensaje');
+				return;
+			}
+			
+			if (!expedienteId) {
+				alert('Error: expediente no identificado');
+				return;
+			}
+			
+			var btn = $('#whatsapp-send-btn');
+			btn.prop('disabled', true).css('opacity', '0.5');
+			
+			$.ajax({
+				url: '{{ path('api_send_whatsapp_message') }}',
+				type: 'POST',
+				dataType: 'json',
+				contentType: 'application/json',
+				data: JSON.stringify({
+					id_expediente: parseInt(expedienteId),
+					text: texto,
+					api_key: '123456'
+				}),
+				success: function(data) {
+					console.log('Mensaje enviado:', data);
+					$('#whatsapp-message-input').val('');
+					var clientName = $('#modal-whatsapp-titulo').text();
+					abrirModalWhatsApp(expedienteId, clientName);
+				},
+				error: function(xhr) {
+					console.error('Error al enviar:', xhr);
+					var errorMsg = 'Error desconocido';
+					if (xhr.responseJSON && xhr.responseJSON.error) {
+						errorMsg = xhr.responseJSON.error;
+					}
+					alert('Error al enviar el mensaje: ' + errorMsg);
+				},
+				complete: function() {
+					btn.prop('disabled', false).css('opacity', '1');
+				}
+			});
+		}
+		
+		$(document).on('click', '#whatsapp-send-btn', function() {
+			enviarMensajeWhatsApp();
+		});
+		
+		$(document).on('keypress', '#whatsapp-message-input', function(e) {
+			if (e.which === 13) {
+				enviarMensajeWhatsApp();
+				return false;
+			}
+		});
 
 		$(document).ready(function() {
 			// Código que necesita DOM listo
@@ -1081,8 +1146,8 @@
 	<!-- Modal WhatsApp Messages -->
 	<div aria-modal="true" aria-labelledby="modal-whatsapp-titulo" class="modal fade" id="modal-whatsapp-messages" role="dialog" tabindex="-1">
 		<div class="modal-dialog modal-lg" role="document" style="max-width: 600px;">
-			<div class="modal-content" style="border-radius: 0; border: none; overflow: hidden; height: 80vh;">
-				<div class="modal-header" style="background: #075e54; color: white; border: none; padding: 10px 15px; height: 60px; display: flex; align-items: center; border-radius: 0;">
+			<div class="modal-content" style="border-radius: 0; border: none; overflow: hidden; height: 80vh; display: flex; flex-direction: column;">
+				<div class="modal-header" style="background: #075e54; color: white; border: none; padding: 10px 15px; height: 60px; display: flex; align-items: center; border-radius: 0; flex-shrink: 0;">
 					<div style="display: flex; align-items: center; width: 100%;">
 						<div style="width: 40px; height: 40px; background: #eee; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
 							<i class="fas fa-user" style="color: #bbb; font-size: 20px;"></i>
@@ -1097,13 +1162,20 @@
 						<span aria-hidden="true" style="font-size: 24px;">&times;</span>
 					</button>
 				</div>
-				<div class="modal-body" id="whatsapp-messages-container" style="height: calc(90vh - 60px); overflow-y: auto; background-color: #e5ddd5; padding: 0; position: relative;">
+				<div class="modal-body" id="whatsapp-messages-container" style="flex: 1; overflow-y: auto; background-color: #e5ddd5; padding: 0; position: relative;">
 					<div class="whatsapp-doodle-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0.06; pointer-events: none; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');"></div>
 					<div id="whatsapp-messages-inner" style="position: relative; z-index: 1; padding: 20px 7% 10px;">
 						<div class="text-center text-muted mt-5">
 							<i class="fas fa-spinner fa-spin"></i> Cargando...
 						</div>
 					</div>
+				</div>
+				<div class="modal-footer" style="background: #fff; border: none; padding: 10px 15px; height: auto; flex-shrink: 0; display: flex; gap: 10px; align-items: flex-end;">
+					<input type="hidden" id="whatsapp-expediente-id" value="0">
+					<input type="text" id="whatsapp-message-input" class="form-control" placeholder="Escribe un mensaje..." style="border-radius: 20px; padding: 8px 15px; font-size: 14px; flex: 1;">
+					<button id="whatsapp-send-btn" type="button" class="btn btn-sm" style="background: #075e54; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;">
+						<i class="fas fa-paper-plane"></i>
+					</button>
 				</div>
 			</div>
 		</div>
