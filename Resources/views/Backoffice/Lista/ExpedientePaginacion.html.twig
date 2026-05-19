@@ -447,12 +447,126 @@
 					setTimeout(function() {
 						outerContainer.scrollTop(outerContainer[0].scrollHeight);
 					}, 100);
+					
+					// Conectar a SSE para escuchar nuevos mensajes
+					conectarSSEWhatsApp(expedienteId);
 				},
 				error: function(xhr) {
 					innerContainer.html('<div class="alert alert-danger">Error al cargar los mensajes.</div>');
 				}
 			});
 		}
+		
+		// Variable global para mantener la conexión SSE
+		var whatsappEventSource = null;
+		
+		// Función para conectar a SSE y escuchar nuevos mensajes
+		function conectarSSEWhatsApp(expedienteId) {
+			// Cerrar conexión anterior si existe
+			if (whatsappEventSource) {
+				whatsappEventSource.close();
+			}
+			
+			// Crear nueva conexión SSE
+			var sseUrl = '{{ path('api_whatsapp_listen', {'expedienteId': '0'}) }}'.replace('/0', '/' + expedienteId);
+			whatsappEventSource = new EventSource(sseUrl);
+			
+			whatsappEventSource.onmessage = function(event) {
+				if (event.data === 'refresh' || event.data === 'connected') {
+					console.log('SSE: Mensaje nuevo o reconexión para expediente', expedienteId);
+					if (event.data === 'refresh') {
+						// Recargar mensajes
+						recargarMensajesWhatsApp(expedienteId);
+					}
+				}
+			};
+			
+			whatsappEventSource.onerror = function(event) {
+				console.error('SSE Error:', event);
+				whatsappEventSource.close();
+			};
+		}
+		
+		// Función para recargar mensajes sin cerrar el modal
+		function recargarMensajesWhatsApp(expedienteId) {
+			var innerContainer = $('#whatsapp-messages-inner');
+			var outerContainer = $('#whatsapp-messages-container');
+			
+			var baseUrl = '{{ path('api_get_whatsapp_messages', {'id': '0'}) }}';
+			var url = baseUrl.replace('/0', '/' + expedienteId);
+			
+			$.ajax({
+				url: url,
+				type: 'GET',
+				dataType: 'json',
+				success: function(data) {
+					innerContainer.empty();
+					
+					var messages = Array.isArray(data) ? data : (data.messages || []);
+					
+					if (!messages || messages.length === 0) {
+						innerContainer.html('<div class="alert alert-info" style="background: #fff; border:none; border-radius: 7.5px; box-shadow: 0 1px 0.5px rgba(0,0,0,.13);">No hay mensajes WhatsApp para este expediente.</div>');
+						return;
+					}
+					
+					var messagesHtml = '';
+					var lastDirection = null;
+
+					messages.forEach(function(msg) {
+						var direction = msg.direction === 'enviado' ? 'enviado' : 'recibido';
+						var hasTail = (direction !== lastDirection);
+						
+						// Formatear timestamp
+						var timeStr = '';
+						if (msg.timestamp) {
+							var date = new Date(msg.timestamp);
+							var hh = String(date.getHours()).padStart(2, '0');
+							var mm = String(date.getMinutes()).padStart(2, '0');
+							timeStr = hh + ':' + mm;
+						}
+						
+						var text = msg.message || '';
+						
+						// Escapar HTML básico
+						var textEscaped = $('<div/>').text(text).html();
+
+						messagesHtml += '<div class="whatsapp-message-row ' + direction + (hasTail ? '' : ' no-tail') + '">' +
+							'<div class="whatsapp-bubble ' + direction + '">' +
+								'<div class="whatsapp-text">' + textEscaped + '</div>' +
+								'<div class="whatsapp-meta">' +
+									'<span class="whatsapp-time">' + timeStr + '</span>';
+						
+						if (direction === 'enviado') {
+							messagesHtml += '<span class="whatsapp-check"><i class="fas fa-check-double"></i></span>';
+						}
+						
+						messagesHtml += '</div>' + // meta
+							'</div>' + // bubble
+						'</div>'; // row
+						
+						lastDirection = direction;
+					});
+					
+					innerContainer.html(messagesHtml);
+					
+					// Scroll al final
+					setTimeout(function() {
+						outerContainer.scrollTop(outerContainer[0].scrollHeight);
+					}, 100);
+				},
+				error: function(xhr) {
+					console.error('Error al recargar mensajes:', xhr);
+				}
+			});
+		}
+		
+		// Cerrar conexión SSE al cerrar el modal
+		$('#modal-whatsapp-messages').on('hidden.bs.modal', function() {
+			if (whatsappEventSource) {
+				whatsappEventSource.close();
+				whatsappEventSource = null;
+			}
+		});
 		
 		// Función para enviar mensaje
 		function enviarMensajeWhatsApp() {

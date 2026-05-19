@@ -3228,6 +3228,12 @@ class WhatsappController extends Controller
 
             $this->logear('✓ MESSAGE: ' . $fromPhone . ' → ' . $toPhone . ' (' . $type . ') [' . $direction . '] - ' . substr($body, 0, 50));
 
+            // Notificar a los listeners SSE que hay un nuevo mensaje si hay expediente asociado
+            if ($idExpediente) {
+                $this->notifyListeners($idExpediente);
+                $this->logear("Notificación enviada a listeners del expediente {$idExpediente}");
+            }
+
             return new JsonResponse([], 200);
 
         } catch (\Exception $e) {
@@ -3323,6 +3329,161 @@ class WhatsappController extends Controller
         } catch (\Exception $e) {
             $this->logear('❌ sendToWhatsApp error: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Endpoint SSE para escuchar nuevos mensajes de un expediente
+     * GET /api/whatsapp/listen/{expedienteId}
+     * 
+     * Mantiene una conexión abierta y notifica al cliente cuando hay mensajes nuevos
+     */
+    public function listenForMessagesAction($expedienteId, Request $request)
+    {
+        // Validar que el usuario esté autenticado y tenga acceso
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        // Registrar que este usuario está escuchando este expediente
+        $this->registerListener($expedienteId, $usuario->getIdUsuario());
+
+        // Headers para SSE
+        $response = new Response();
+        $response->headers->set('Content-Type', 'text/event-stream');
+        $response->headers->set('Cache-Control', 'no-cache');
+        $response->headers->set('Connection', 'keep-alive');
+        $response->headers->set('X-Accel-Buffering', 'no');
+        $response->setContent('');
+
+        // Comenzar con datos vacíos para confirmar conexión
+        $response->sendHeaders();
+        echo "data: connected\n\n";
+        flush();
+        ob_flush();
+
+        // Mantener conexión abierta
+        $startTime = time();
+        $timeout = 300; // 5 minutos
+        $checkInterval = 2; // Revisar cada 2 segundos
+
+        while ((time() - $startTime) < $timeout) {
+            // Revisar si hay nuevos mensajes
+            if ($this->hasNewMessages($expedienteId)) {
+                echo "data: refresh\n\n";
+                flush();
+                ob_flush();
+                
+                // Limpiar el flag
+                $this->clearNewMessagesFlag($expedienteId);
+            }
+
+            sleep($checkInterval);
+        }
+
+        // Limpiar listener al desconectar
+        $this->unregisterListener($expedienteId, $usuario->getIdUsuario());
+
+        return $response;
+    }
+
+    /**
+     * Registra que un usuario está escuchando un expediente
+     */
+    private function registerListener($expedienteId, $idUsuario)
+    {
+        $listenersFile = sys_get_temp_dir() . '/whatsapp_listeners.json';
+        $listeners = [];
+
+        if (file_exists($listenersFile)) {
+            $content = file_get_contents($listenersFile);
+            $listeners = json_decode($content, true) ?: [];
+        }
+
+        $key = "exp_{$expedienteId}";
+        if (!isset($listeners[$key])) {
+            $listeners[$key] = [];
+        }
+
+        if (!in_array($idUsuario, $listeners[$key])) {
+            $listeners[$key][] = $idUsuario;
+        }
+
+        file_put_contents($listenersFile, json_encode($listeners));
+    }
+
+    /**
+     * Desregistra un listener
+     */
+    private function unregisterListener($expedienteId, $idUsuario)
+    {
+        $listenersFile = sys_get_temp_dir() . '/whatsapp_listeners.json';
+
+        if (file_exists($listenersFile)) {
+            $content = file_get_contents($listenersFile);
+            $listeners = json_decode($content, true) ?: [];
+
+            $key = "exp_{$expedienteId}";
+            if (isset($listeners[$key])) {
+                $listeners[$key] = array_filter(
+                    $listeners[$key],
+                    fn($uid) => $uid !== $idUsuario
+                );
+
+                if (empty($listeners[$key])) {
+                    unset($listeners[$key]);
+                }
+
+                file_put_contents($listenersFile, json_encode($listeners));
+            }
+        }
+    }
+
+    /**
+     * Obtiene lista de usuarios escuchando un expediente
+     */
+    private function getListenersForExpediente($expedienteId): array
+    {
+        $listenersFile = sys_get_temp_dir() . '/whatsapp_listeners.json';
+
+        if (!file_exists($listenersFile)) {
+            return [];
+        }
+
+        $content = file_get_contents($listenersFile);
+        $listeners = json_decode($content, true) ?: [];
+
+        $key = "exp_{$expedienteId}";
+        return $listeners[$key] ?? [];
+    }
+
+    /**
+     * Notifica a los listeners de un expediente que hay un nuevo mensaje
+     */
+    private function notifyListeners($expedienteId)
+    {
+        $flagFile = sys_get_temp_dir() . "/whatsapp_new_{$expedienteId}.flag";
+        touch($flagFile);
+    }
+
+    /**
+     * Verifica si hay flag de nuevo mensaje
+     */
+    private function hasNewMessages($expedienteId): bool
+    {
+        $flagFile = sys_get_temp_dir() . "/whatsapp_new_{$expedienteId}.flag";
+        return file_exists($flagFile);
+    }
+
+    /**
+     * Limpia el flag de nuevo mensaje
+     */
+    private function clearNewMessagesFlag($expedienteId)
+    {
+        $flagFile = sys_get_temp_dir() . "/whatsapp_new_{$expedienteId}.flag";
+        if (file_exists($flagFile)) {
+            unlink($flagFile);
         }
     }
     
