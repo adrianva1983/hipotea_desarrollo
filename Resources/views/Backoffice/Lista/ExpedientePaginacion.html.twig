@@ -188,90 +188,92 @@
 	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
 	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
 	<script>
-		$(document).ready(function() {
-			// Función para abrir el modal de WhatsApp y cargar mensajes
-			window.abrirModalWhatsApp = function(expedienteId) {
-				console.log('abriendo modal WhatsApp para expediente:', expedienteId);
-				
-				var container = $('#whatsapp-messages-container');
-				
-				// Mostrar el modal
-				$('#modal-whatsapp-messages').modal('show');
-				
-				// Mostrar spinner
-				container.html('<div class="text-center text-muted mt-5"><i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...</div>');
-				
-				// Construir URL correctamente
-				var baseUrl = '{{ path('api_get_whatsapp_messages', {'id': '0'}) }}';
-				var url = baseUrl.replace('/0', '/' + expedienteId);
-				
-				console.log('URL de AJAX:', url);
-				
-				// Cargar conversaciones vía AJAX
-				$.ajax({
-					url: url,
-					type: 'GET',
-					dataType: 'json',
-					success: function(data) {
-						console.log('Datos recibidos:', data);
-						container.empty();
-						
-						// El endpoint devuelve un array directo de mensajes
-						var messages = Array.isArray(data) ? data : (data.messages || []);
-						
-						if (!messages || messages.length === 0) {
-							container.html('<div class="alert alert-info">No hay mensajes WhatsApp para este expediente.</div>');
-							return;
-						}
-						
-						var messagesHtml = '';
-						messages.forEach(function(msg) {
-							// Determinar dirección basado en el role
-							var direction = msg.role === 'assistant' ? 'enviado' : 'recibido';
-							var messageClass = direction === 'enviado' ? 'enviado' : 'recibido';
-							
-							// Formatear timestamp
-							var timestamp = '';
-							if (msg.timestamp) {
-								try {
-									var date = new Date(msg.timestamp);
-									timestamp = date.toLocaleTimeString('es-ES');
-								} catch(e) {
-									timestamp = msg.timestamp;
-								}
-							}
-							
-							var messageText = msg.text || msg.message || '(sin contenido)';
-							
-							messagesHtml += '<div class="whatsapp-message-group">' +
-								'<div class="whatsapp-message ' + messageClass + '">' +
-									messageText +
-								'</div>';
-							
-							if (timestamp) {
-								messagesHtml += '<div class="whatsapp-timestamp">' + timestamp + '</div>';
-							}
-							
-							messagesHtml += '</div>';
-						});
-						
-						container.html(messagesHtml);
-						// Auto-scroll al final
-						container.scrollTop(container[0].scrollHeight);
-					},
-					error: function(xhr, status, error) {
-						console.error('Error AJAX:', status, error);
-						console.error('Response:', xhr.responseText);
-						var errorMsg = 'Error al cargar los mensajes WhatsApp.';
-						if (xhr.status === 404) {
-							errorMsg = 'Expediente no encontrado.';
-						} else if (xhr.responseJSON && xhr.responseJSON.error) {
-							errorMsg = xhr.responseJSON.error;
-						}
-						container.html('<div class="alert alert-danger">' + errorMsg + '</div>');
+		// Función para abrir el modal de WhatsApp y cargar mensajes
+		window.abrirModalWhatsApp = function(expedienteId) {
+			console.log('abriendo modal WhatsApp para expediente:', expedienteId);
+			
+			var container = $('#whatsapp-messages-container');
+			
+			// Mostrar el modal
+			$('#modal-whatsapp-messages').modal('show');
+			
+			// Mostrar spinner
+			container.html('<div class="text-center text-muted mt-5"><i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...</div>');
+			
+			// Construir URL correctamente
+			var baseUrl = '{{ path('api_get_whatsapp_messages', {'id': '0'}) }}';
+			var url = baseUrl.replace('/0', '/' + expedienteId);
+			
+			console.log('URL de AJAX:', url);
+			
+			// Cargar conversaciones vía AJAX
+			$.ajax({
+				url: url,
+				type: 'GET',
+				dataType: 'json',
+				success: function(data) {
+					console.log('Datos recibidos:', data);
+					container.empty();
+					
+					// El endpoint devuelve un array directo de mensajes
+					var messages = Array.isArray(data) ? data : (data.messages || []);
+					
+					if (!messages || messages.length === 0) {
+						container.html('<div class="alert alert-info">No hay mensajes WhatsApp para este expediente.</div>');
+						return;
 					}
-				});
-			};
+					
+					var messagesHtml = '';
+					messages.forEach(function(msg) {
+						// Determinar dirección basado en el role
+						var direction = msg.role === 'assistant' ? 'enviado' : 'recibido';
+						var messageClass = direction === 'enviado' ? 'enviado' : 'recibido';
+						
+						// Formatear timestamp
+						var timestamp = '';
+						if (msg.timestamp) {
+							try {
+								var date = new Date(msg.timestamp);
+								timestamp = date.toLocaleTimeString('es-ES');
+							} catch(e) {
+								timestamp = msg.timestamp;
+							}
+						}
+						
+						var messageText = msg.text || msg.message || '(sin contenido)';
+						
+						messagesHtml += '<div class="whatsapp-message-group">' +
+							'<div class="whatsapp-message ' + messageClass + '">' +
+								messageText +
+							'</div>';
+						
+						if (timestamp) {
+							messagesHtml += '<div class="whatsapp-timestamp">' + timestamp + '</div>';
+						}
+						
+						messagesHtml += '</div>';
+					});
+					
+					container.html(messagesHtml);
+					// Auto-scroll al final
+					container.scrollTop(container[0].scrollHeight);
+				},
+				error: function(xhr, status, error) {
+					console.error('Error AJAX:', status, error);
+					console.error('Response:', xhr.responseText);
+					var errorMsg = 'Error al cargar los mensajes WhatsApp.';
+					if (xhr.status === 404) {
+						errorMsg = 'Expediente no encontrado.';
+					} else if (xhr.responseJSON && xhr.responseJSON.error) {
+						errorMsg = xhr.responseJSON.error;
+					}
+					container.html('<div class="alert alert-danger">' + errorMsg + '</div>');
+				}
+			});
+		};
+
+		$(document).ready(function() {
+			// Código que necesita DOM listo
 		});
 	</script>
 {% endblock %}
