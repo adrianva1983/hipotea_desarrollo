@@ -189,23 +189,23 @@
 	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
 	<script>
 		$(document).ready(function() {
-			// Escuchar click en el botón WhatsApp
-			$(document).on('click', 'a.whatsapp', function(e) {
-				e.preventDefault();
-				console.log('abriendo modal WhatsApp');
+			// Función para abrir el modal de WhatsApp y cargar mensajes
+			window.abrirModalWhatsApp = function(expedienteId) {
+				console.log('abriendo modal WhatsApp para expediente:', expedienteId);
 				
-				var expedienteId = $(this).data('expediente-id');
 				var container = $('#whatsapp-messages-container');
 				
 				// Mostrar el modal
 				$('#modal-whatsapp-messages').modal('show');
+				
+				// Mostrar spinner
+				container.html('<div class="text-center text-muted mt-5"><i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...</div>');
 				
 				// Construir URL correctamente
 				var baseUrl = '{{ path('api_get_whatsapp_messages', {'id': '0'}) }}';
 				var url = baseUrl.replace('/0', '/' + expedienteId);
 				
 				console.log('URL de AJAX:', url);
-				console.log('Expediente ID:', expedienteId);
 				
 				// Cargar conversaciones vía AJAX
 				$.ajax({
@@ -271,7 +271,7 @@
 						container.html('<div class="alert alert-danger">' + errorMsg + '</div>');
 					}
 				});
-			});
+			};
 		});
 	</script>
 {% endblock %}
@@ -912,10 +912,10 @@
 												<span>Duplicar</span>
 											</a>
 											{% if (expediente.idComercial and expediente.idComercial.idUsuario == usuarioLogueado.idUsuario) or (expediente.idTecnico and expediente.idTecnico.idUsuario == usuarioLogueado.idUsuario) %}
-												<a class="mr-2 whatsapp" href="javascript:void(0)" data-toggle="modal" data-target="#modal-whatsapp-messages" data-expediente-id="{{ expediente.idExpediente }}">
-												<i class="fab fa-whatsapp"></i>
-												<span>WhatsApp</span>
-											</a>
+												<a class="mr-2 whatsapp" href="javascript:void(0)" onclick="abrirModalWhatsApp({{ expediente.idExpediente }})">
+													<i class="fab fa-whatsapp"></i>
+													<span>WhatsApp</span>
+												</a>
 											{% endif %}
 											<a class="mr-2 cancelar" data-cancelar-expediente="{{ expediente.idExpediente }}" {% if expediente.idCliente is null %} data-sin-cliente {% endif %} href="javascript:void(0)" data-toggle="popover" data-content="Cancelar" data-trigger="hover">
 												<i class="far fa-trash-alt"></i>
