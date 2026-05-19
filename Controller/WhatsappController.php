@@ -1664,6 +1664,7 @@ class WhatsappController extends Controller
         }
 
         $conn = $this->getDoctrine()->getConnection();
+        $em = $this->getDoctrine()->getManager();
 
         try {
             // 1. Validar que el expediente existe
@@ -1714,23 +1715,46 @@ class WhatsappController extends Controller
                 ], 400);
             }
 
-            // 4. Llamar al bot de WhatsApp con la sesión correcta
-            $phoneDestinoFull = $this->normalizePhonenWithPrefix($phoneDestino);
-            
-            // Usar el nombre de usuario logueado como sessionName, o valor por defecto
+            // 4. Obtener la sesión activa del usuario logueado
             $usuario = $this->getUser();
-            $username = ($usuario && $usuario->getUsername()) ? $usuario->getUsername() : 'ComercialPrueba';
-            // Limpiar caracteres especiales: solo alfanuméricos y guiones
-            $sessionName = preg_replace('/[^a-zA-Z0-9\-_]/', '', $username);
-            if (empty($sessionName)) {
-                $sessionName = 'ComercialPrueba';
+            if (!$usuario) {
+                return new JsonResponse([
+                    'success' => false,
+                    'error' => 'Usuario no autenticado'
+                ], 401);
             }
 
-            $this->logear("SessionName generado: {$sessionName} (from: {$username})");
+            $idUsuarioLogueado = $usuario->getIdUsuario();
+            
+            // Buscar en WhatsappSender la sesión activa del usuario
+            $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+            $senderQuery = $senderRepo->createQueryBuilder('ws')
+                ->where('ws.idUsuario = :idUsuario')
+                ->andWhere('ws.imagenQR IS NULL')  // Sesión activa (no necesita escanear QR)
+                ->setParameter('idUsuario', $idUsuarioLogueado)
+                ->getQuery();
+            
+            $sender = $senderQuery->getOneOrNullResult();
+            
+            if (!$sender) {
+                return new JsonResponse([
+                    'success' => false,
+                    'error' => 'No tienes una sesión de WhatsApp activa. Por favor, conecta tu WhatsApp primero.'
+                ], 400);
+            }
+
+            // 5. Usar sessionId de WhatsappSender (es el nombre de la sesión en el bot)
+            $sessionName = $sender->getSessionId() ?: 'ComercialPrueba';
+            
+            $this->logear("=== CONFIGURACIÓN DE ENVÍO ===");
+            $this->logear("Usuario: {$idUsuarioLogueado}");
+            $this->logear("SessionId: {$sessionName}");
+            $this->logear("Teléfono destino: {$phoneDestino}");
+            $this->logear("Expediente: {$idExpediente}");
 
             $botResponse = $this->llamarBotWhatsApp(
                 $sessionName,
-                $phoneDestinoFull,
+                $phoneDestino,
                 $texto
             );
 
