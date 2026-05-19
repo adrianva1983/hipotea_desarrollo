@@ -1743,17 +1743,17 @@ class WhatsappController extends Controller
                 ], 400);
             }
 
-            // 5. Usar sessionId de WhatsappSender (es el nombre de la sesión en el bot)
-            $sessionName = $sender->getSessionId() ?: 'ComercialPrueba';
+            // 5. Usar sessionId de WhatsappSender (es el UUID correcto de la sesión en el bot)
+            $sessionId = $sender->getSessionId() ?: 'ComercialPrueba';
             
             $this->logear("=== CONFIGURACIÓN DE ENVÍO ===");
             $this->logear("Usuario: {$idUsuarioLogueado}");
-            $this->logear("SessionId: {$sessionName}");
+            $this->logear("SessionId: {$sessionId}");
             $this->logear("Teléfono destino: {$phoneDestino}");
             $this->logear("Expediente: {$idExpediente}");
 
             $botResponse = $this->llamarBotWhatsApp(
-                $sessionName,
+                $sessionId,
                 $phoneDestino,
                 $texto
             );
@@ -1806,10 +1806,10 @@ class WhatsappController extends Controller
      * Llama al bot de WhatsApp para enviar un mensaje
      * Usa la API correcta: POST /api/messages/send
      */
-    private function llamarBotWhatsApp($sessionName, $telefono, $mensaje)
+    private function llamarBotWhatsApp($sessionId, $telefono, $mensaje)
     {
         $this->logear("=== ENVÍO A BOT WHATSAPP ===");
-        $this->logear("sessionName: {$sessionName}");
+        $this->logear("sessionId: {$sessionId}");
         $this->logear("to (telefono): {$telefono}");
         $this->logear("body (mensaje): {$mensaje}");
         
@@ -1817,7 +1817,7 @@ class WhatsappController extends Controller
             $url = "https://punchiest-irremediably-suzette.ngrok-free.dev/api/messages/send";
 
             $payload = json_encode([
-                'sessionName' => $sessionName,
+                'sessionId' => $sessionId,
                 'to' => $telefono,
                 'body' => $mensaje
             ]);
