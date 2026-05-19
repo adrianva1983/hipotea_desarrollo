@@ -30,6 +30,8 @@ AppBundle\Entity\WhatsappSender:
       column: Version
       type: integer
       nullable: false
+      options:
+        default: 1
     imagenQR:
       column: ImagenQR
       type: text

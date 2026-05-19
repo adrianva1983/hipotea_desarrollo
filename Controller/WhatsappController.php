@@ -2897,6 +2897,7 @@ class WhatsappController extends Controller
                 $senderClass = 'AppBundle\Entity\WhatsappSender';
                 $sender = new $senderClass();
                 $sender->setTelefono($phoneNorm);
+                $sender->setVersion(1); // Campo obligatorio
                 $em->persist($sender);
             }
 
