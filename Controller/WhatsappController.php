@@ -2979,6 +2979,8 @@ class WhatsappController extends Controller
             $role = 'user';               // Default
             $fromPhone = $fromLocal;      // Quién envía
             $toPhone = null;              // Quién recibe (a obtener)
+            $idExpediente = null;         // Id del expediente asociado
+            $idCliente = null;            // Id del cliente
 
             if ($sender) {
                 // Obtener teléfono del comercial
@@ -2994,7 +2996,7 @@ class WhatsappController extends Controller
                     $telefonoCliente = null;
                     if ($sender->getIdUsuario()) {
                         // Buscar expediente donde este usuario es comercial o técnico
-                        $sqlExp = 'SELECT e.id_cliente FROM expediente e 
+                        $sqlExp = 'SELECT e.id_expediente, e.id_cliente FROM expediente e 
                                   WHERE (e.id_comercial = :idUsuario OR e.id_tecnico = :idUsuario) 
                                   AND e.estado > 0 
                                   ORDER BY e.id_expediente DESC LIMIT 1';
@@ -3004,10 +3006,13 @@ class WhatsappController extends Controller
                         $expResult = $stmtExp->fetch();
 
                         if ($expResult && $expResult['id_cliente']) {
+                            $idExpediente = $expResult['id_expediente'];
+                            $idCliente = $expResult['id_cliente'];
+                            
                             // Obtener teléfono del cliente
                             $sqlUsu = 'SELECT telefono_movil FROM usuario WHERE id_usuario = :idCliente LIMIT 1';
                             $stmtUsu = $conn->prepare($sqlUsu);
-                            $stmtUsu->bindValue('idCliente', $expResult['id_cliente']);
+                            $stmtUsu->bindValue('idCliente', $idCliente);
                             $stmtUsu->execute();
                             $usuResult = $stmtUsu->fetch();
                             
@@ -3031,14 +3036,40 @@ class WhatsappController extends Controller
                     if (!$toPhone) {
                         $toPhone = $telefonoComercialLocal;
                     }
+                    
+                    // Si el mensaje viene del cliente, buscar el expediente por su teléfono
+                    if (!$idExpediente) {
+                        $sqlBuscaCliente = 'SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :telefono LIMIT 1';
+                        $stmtBuscaCliente = $conn->prepare($sqlBuscaCliente);
+                        $stmtBuscaCliente->bindValue('telefono', '%' . $fromLocal . '%');
+                        $stmtBuscaCliente->execute();
+                        $usuClienteResult = $stmtBuscaCliente->fetch();
+                        
+                        if ($usuClienteResult && $usuClienteResult['id_usuario']) {
+                            $idCliente = $usuClienteResult['id_usuario'];
+                            // Buscar expediente donde este cliente es id_cliente
+                            $sqlBuscaExp = 'SELECT id_expediente FROM expediente 
+                                           WHERE id_cliente = :idCliente AND estado > 0 
+                                           ORDER BY id_expediente DESC LIMIT 1';
+                            $stmtBuscaExp = $conn->prepare($sqlBuscaExp);
+                            $stmtBuscaExp->bindValue('idCliente', $idCliente);
+                            $stmtBuscaExp->execute();
+                            $expClienteResult = $stmtBuscaExp->fetch();
+                            
+                            if ($expClienteResult && $expClienteResult['id_expediente']) {
+                                $idExpediente = $expClienteResult['id_expediente'];
+                            }
+                        }
+                    }
                 }
             }
 
             // Guardar mensaje en tabla de mensajes
             $now = new \DateTime();
             $conn->insert('chat_history', [
-                'from_phone' => $fromPhone,      // ✅ Quién envía
-                'to_phone' => $toPhone,          // ✅ Quién recibe
+                'id_expediente' => $idExpediente,   // ✅ Id del expediente (si se encuentra)
+                'from_phone' => $fromPhone,         // ✅ Quién envía
+                'to_phone' => $toPhone,             // ✅ Quién recibe
                 'message' => $body,
                 'role' => $role,
                 'direction' => $direction,
