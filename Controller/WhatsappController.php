@@ -29,7 +29,6 @@ class WhatsappController extends Controller
     {
         if ($this->iaController === null) {
             $this->iaController = new IArtificalController();
-            $this->iaController->setContainer($this->container);
         }
         return $this->iaController;
     }
@@ -123,6 +122,8 @@ class WhatsappController extends Controller
      */
     public function agregarModificarConexionAction(Request $request)
     {
+        $id_sender = $request->get('id');
+        
         $fecha = date('Y-m-d');
         $hash  = $this->generarHashWhatsapp($fecha);
         $ip    = $this->obtenerServidorParaSender($id_sender);
