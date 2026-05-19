@@ -187,6 +187,55 @@
 	{{ parent() }}
 	<script src="{{ asset('assets/node_modules/select2/dist/js/select2.full.min.js') }}"></script>
 	<script src="{{ asset('assets/node_modules/select2/dist/js/i18n/es.js') }}"></script>
+	<script>
+		$(document).ready(function() {
+			$('#modal-whatsapp-messages').on('show.bs.modal', function (e) {
+				var expedienteId = $(e.relatedTarget).data('expediente-id');
+				var container = $('#whatsapp-messages-container');
+				
+				// Cargar conversaciones vía AJAX
+				$.ajax({
+					url: '{{ path('api_get_whatsapp_messages', {'id': 'EXPEDIENTE_ID'}) }}'.replace('EXPEDIENTE_ID', expedienteId),
+					type: 'GET',
+					dataType: 'json',
+					success: function(data) {
+						container.empty();
+						
+						if (!data.messages || data.messages.length === 0) {
+							container.html('<div class="alert alert-info">No hay mensajes WhatsApp para este expediente.</div>');
+							return;
+						}
+						
+						var messagesHtml = '';
+						data.messages.forEach(function(msg) {
+							var direction = msg.direction || 'recibido';
+							var messageClass = direction === 'enviado' ? 'enviado' : 'recibido';
+							var timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+							var messageText = msg.message || '';
+							
+							messagesHtml += '<div class="whatsapp-message-group">' +
+								'<div class="whatsapp-message ' + messageClass + '">' +
+									messageText +
+								'</div>';
+							
+							if (timestamp) {
+								messagesHtml += '<div class="whatsapp-timestamp">' + timestamp + '</div>';
+							}
+							
+							messagesHtml += '</div>';
+						});
+						
+						container.html(messagesHtml);
+						// Auto-scroll al final
+						container.scrollTop(container[0].scrollHeight);
+					},
+					error: function() {
+						container.html('<div class="alert alert-danger">Error al cargar los mensajes WhatsApp.</div>');
+					}
+				});
+			});
+		});
+	</script>
 {% endblock %}
 {% block cloudscripts %}
 	{{ parent() }}
@@ -1046,57 +1095,4 @@
 			margin-top: 4px;
 		}
 	</style>
-{% endblock %}
-
-{% block devscripts %}
-	{{ parent() }}
-	<script>
-		$(document).ready(function() {
-			$('#modal-whatsapp-messages').on('show.bs.modal', function (e) {
-				var expedienteId = $(e.relatedTarget).data('expediente-id');
-				var container = $('#whatsapp-messages-container');
-				
-				// Cargar conversaciones vía AJAX
-				$.ajax({
-					url: '{{ path('api_get_whatsapp_messages', {'id': 'EXPEDIENTE_ID'}) }}'.replace('EXPEDIENTE_ID', expedienteId),
-					type: 'GET',
-					dataType: 'json',
-					success: function(data) {
-						container.empty();
-						
-						if (!data.messages || data.messages.length === 0) {
-							container.html('<div class="alert alert-info">No hay mensajes WhatsApp para este expediente.</div>');
-							return;
-						}
-						
-						var messagesHtml = '';
-						data.messages.forEach(function(msg) {
-							var direction = msg.direction || 'recibido';
-							var messageClass = direction === 'enviado' ? 'enviado' : 'recibido';
-							var timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
-							var messageText = msg.message || '';
-							
-							messagesHtml += '<div class="whatsapp-message-group">' +
-								'<div class="whatsapp-message ' + messageClass + '">' +
-									messageText +
-								'</div>';
-							
-							if (timestamp) {
-								messagesHtml += '<div class="whatsapp-timestamp">' + timestamp + '</div>';
-							}
-							
-							messagesHtml += '</div>';
-						});
-						
-						container.html(messagesHtml);
-						// Auto-scroll al final
-						container.scrollTop(container[0].scrollHeight);
-					},
-					error: function() {
-						container.html('<div class="alert alert-danger">Error al cargar los mensajes WhatsApp.</div>');
-					}
-				});
-			});
-		});
-	</script>
 {% endblock %}
