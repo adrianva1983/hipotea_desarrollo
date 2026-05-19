@@ -395,9 +395,8 @@
 					
 					var messagesHtml = '';
 					messages.forEach(function(msg) {
-						// Determinar dirección basado en el role
-						var direction = msg.role === 'assistant' ? 'enviado' : 'recibido';
-						var messageClass = direction === 'enviado' ? 'enviado' : 'recibido';
+						// Determinar dirección basado en el campo direction
+						var messageClass = msg.direction === 'enviado' ? 'enviado' : 'recibido';
 						
 						// Formatear timestamp
 						var timestamp = '';
@@ -410,7 +409,7 @@
 							}
 						}
 						
-						var messageText = msg.text || msg.message || '(sin contenido)';
+						var messageText = msg.message || '(sin contenido)';
 						
 						messagesHtml += '<div class="whatsapp-message-group">' +
 							'<div class="whatsapp-message ' + messageClass + '">' +
