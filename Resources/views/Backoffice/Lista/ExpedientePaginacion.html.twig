@@ -459,32 +459,61 @@
 		
 		// Variable global para mantener la conexión SSE
 		var whatsappEventSource = null;
+		var whatsappSSERetries = 0;
+		var whatsappSSEMaxRetries = 3;
 		
 		// Función para conectar a SSE y escuchar nuevos mensajes
 		function conectarSSEWhatsApp(expedienteId) {
 			// Cerrar conexión anterior si existe
 			if (whatsappEventSource) {
-				whatsappEventSource.close();
+				try {
+					whatsappEventSource.close();
+				} catch (e) {}
+				whatsappEventSource = null;
 			}
 			
 			// Crear nueva conexión SSE
 			var sseUrl = '{{ path('api_whatsapp_listen', {'expedienteId': '0'}) }}'.replace('/0', '/' + expedienteId);
-			whatsappEventSource = new EventSource(sseUrl);
+			console.log('Conectando SSE a:', sseUrl);
 			
-			whatsappEventSource.onmessage = function(event) {
-				if (event.data === 'refresh' || event.data === 'connected') {
-					console.log('SSE: Mensaje nuevo o reconexión para expediente', expedienteId);
-					if (event.data === 'refresh') {
+			try {
+				whatsappEventSource = new EventSource(sseUrl);
+				whatsappSSERetries = 0; // Reset retry counter on successful connection
+				
+				whatsappEventSource.addEventListener('open', function() {
+					console.log('SSE conectado para expediente', expedienteId);
+				}, false);
+				
+				whatsappEventSource.onmessage = function(event) {
+					console.log('SSE Mensaje:', event.data);
+					if (event.data === 'connected') {
+						console.log('SSE: Conexión confirmada');
+					} else if (event.data === 'refresh') {
+						console.log('SSE: Nuevo mensaje recibido, refrescando...');
 						// Recargar mensajes
 						recargarMensajesWhatsApp(expedienteId);
 					}
-				}
-			};
-			
-			whatsappEventSource.onerror = function(event) {
-				console.error('SSE Error:', event);
-				whatsappEventSource.close();
-			};
+				};
+				
+				whatsappEventSource.onerror = function(event) {
+					console.error('SSE Error:', event);
+					try {
+						whatsappEventSource.close();
+					} catch (e) {}
+					whatsappEventSource = null;
+					
+					// Reintentar después de 3 segundos si el modal sigue abierto
+					if ($('#modal-whatsapp-messages').is(':visible') && whatsappSSERetries < whatsappSSEMaxRetries) {
+						whatsappSSERetries++;
+						console.log('Reintentando SSE... (' + whatsappSSERetries + '/' + whatsappSSEMaxRetries + ')');
+						setTimeout(function() {
+							conectarSSEWhatsApp(expedienteId);
+						}, 3000);
+					}
+				};
+			} catch (e) {
+				console.error('Error al crear EventSource:', e);
+			}
 		}
 		
 		// Función para recargar mensajes sin cerrar el modal
@@ -563,7 +592,9 @@
 		// Cerrar conexión SSE al cerrar el modal
 		$('#modal-whatsapp-messages').on('hidden.bs.modal', function() {
 			if (whatsappEventSource) {
-				whatsappEventSource.close();
+				try {
+					whatsappEventSource.close();
+				} catch (e) {}
 				whatsappEventSource = null;
 			}
 		});

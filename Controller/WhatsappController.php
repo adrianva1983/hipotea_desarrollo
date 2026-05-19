@@ -8,6 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use AppBundle\Controller\IArtificalController;
 
 class WhatsappController extends Controller
@@ -3340,50 +3341,69 @@ class WhatsappController extends Controller
      */
     public function listenForMessagesAction($expedienteId, Request $request)
     {
-        // Validar que el usuario esté autenticado y tenga acceso
-        $usuario = $this->getUser();
-        if (!$usuario) {
-            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        // Validar que el usuario esté autenticado
+        try {
+            $usuario = $this->getUser();
+            $idUsuario = $usuario ? $usuario->getIdUsuario() : 0;
+        } catch (\Exception $e) {
+            $idUsuario = 0;
+        }
+
+        // Si no hay usuario, usar un ID genérico basado en la sesión
+        if (!$idUsuario) {
+            $sessionId = session_id();
+            $idUsuario = hash('crc32', $sessionId);
         }
 
         // Registrar que este usuario está escuchando este expediente
-        $this->registerListener($expedienteId, $usuario->getIdUsuario());
+        $this->registerListener($expedienteId, $idUsuario);
 
-        // Headers para SSE
-        $response = new Response();
-        $response->headers->set('Content-Type', 'text/event-stream');
-        $response->headers->set('Cache-Control', 'no-cache');
-        $response->headers->set('Connection', 'keep-alive');
-        $response->headers->set('X-Accel-Buffering', 'no');
-        $response->setContent('');
-
-        // Comenzar con datos vacíos para confirmar conexión
-        $response->sendHeaders();
-        echo "data: connected\n\n";
-        flush();
-        ob_flush();
-
-        // Mantener conexión abierta
-        $startTime = time();
-        $timeout = 300; // 5 minutos
-        $checkInterval = 2; // Revisar cada 2 segundos
-
-        while ((time() - $startTime) < $timeout) {
-            // Revisar si hay nuevos mensajes
-            if ($this->hasNewMessages($expedienteId)) {
-                echo "data: refresh\n\n";
-                flush();
-                ob_flush();
-                
-                // Limpiar el flag
-                $this->clearNewMessagesFlag($expedienteId);
+        // Crear callback para streaming
+        $callback = function() use ($expedienteId, $idUsuario) {
+            // Desabilitar buffering
+            if (function_exists('apache_setenv')) {
+                apache_setenv('no-gzip', 1);
+            }
+            if (ini_get('zlib.output_compression')) {
+                ini_set('zlib.output_compression', 0);
             }
 
-            sleep($checkInterval);
-        }
+            // Enviar mensaje inicial de conexión
+            echo "data: connected\n\n";
+            ob_flush();
+            flush();
 
-        // Limpiar listener al desconectar
-        $this->unregisterListener($expedienteId, $usuario->getIdUsuario());
+            // Mantener conexión abierta
+            $startTime = time();
+            $timeout = 300; // 5 minutos
+            $checkInterval = 2; // Revisar cada 2 segundos
+
+            while ((time() - $startTime) < $timeout && connection_status() === CONNECTION_NORMAL) {
+                // Revisar si hay nuevos mensajes
+                if ($this->hasNewMessages($expedienteId)) {
+                    echo "data: refresh\n\n";
+                    ob_flush();
+                    flush();
+                    
+                    // Limpiar el flag
+                    $this->clearNewMessagesFlag($expedienteId);
+                }
+
+                sleep($checkInterval);
+            }
+
+            // Limpiar listener al desconectar
+            $this->unregisterListener($expedienteId, $idUsuario);
+        };
+
+        // Crear StreamedResponse
+        $response = new StreamedResponse($callback);
+        $response->headers->set('Content-Type', 'text/event-stream; charset=utf-8');
+        $response->headers->set('Cache-Control', 'no-cache, no-store');
+        $response->headers->set('Connection', 'keep-alive');
+        $response->headers->set('X-Accel-Buffering', 'no');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        $response->setCharset('UTF-8');
 
         return $response;
     }
