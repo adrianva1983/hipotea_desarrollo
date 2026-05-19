@@ -3048,6 +3048,23 @@ class WhatsappController extends Controller
                     
                     // Si el mensaje viene del cliente, buscar el expediente por su teléfono
                     if (!$idExpediente) {
+                        // Paso 1: Buscar por from_phone como comercial/técnico
+                        $sqlBuscaComercial = 'SELECT e.id_expediente FROM expediente e 
+                                            WHERE (e.id_comercial = (SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :fromPhone LIMIT 1) 
+                                            OR e.id_tecnico = (SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :fromPhone LIMIT 1)) 
+                                            AND e.estado > 0 LIMIT 1';
+                        $stmtBuscaComercial = $conn->prepare($sqlBuscaComercial);
+                        $stmtBuscaComercial->bindValue('fromPhone', '%' . $fromLocal . '%');
+                        $stmtBuscaComercial->execute();
+                        $expComercialResult = $stmtBuscaComercial->fetch();
+                        
+                        if ($expComercialResult && $expComercialResult['id_expediente']) {
+                            $idExpediente = $expComercialResult['id_expediente'];
+                        }
+                    }
+                    
+                    // Paso 2: Si no encontró, buscar por from_phone como cliente
+                    if (!$idExpediente) {
                         $sqlBuscaCliente = 'SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :telefono LIMIT 1';
                         $stmtBuscaCliente = $conn->prepare($sqlBuscaCliente);
                         $stmtBuscaCliente->bindValue('telefono', '%' . $fromLocal . '%');
@@ -3068,6 +3085,46 @@ class WhatsappController extends Controller
                             if ($expClienteResult && $expClienteResult['id_expediente']) {
                                 $idExpediente = $expClienteResult['id_expediente'];
                             }
+                        }
+                    }
+                    
+                    // Paso 3: Si no encontró, buscar por to_phone como cliente
+                    if (!$idExpediente && $toPhone) {
+                        $sqlBuscaToCliente = 'SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :toPhone LIMIT 1';
+                        $stmtBuscaToCliente = $conn->prepare($sqlBuscaToCliente);
+                        $stmtBuscaToCliente->bindValue('toPhone', '%' . $toPhone . '%');
+                        $stmtBuscaToCliente->execute();
+                        $usuToClienteResult = $stmtBuscaToCliente->fetch();
+                        
+                        if ($usuToClienteResult && $usuToClienteResult['id_usuario']) {
+                            // Buscar expediente donde este usuario es id_cliente
+                            $sqlBuscaExpTo = 'SELECT id_expediente FROM expediente 
+                                            WHERE id_cliente = :idClienteTo AND estado > 0 
+                                            ORDER BY id_expediente DESC LIMIT 1';
+                            $stmtBuscaExpTo = $conn->prepare($sqlBuscaExpTo);
+                            $stmtBuscaExpTo->bindValue('idClienteTo', $usuToClienteResult['id_usuario']);
+                            $stmtBuscaExpTo->execute();
+                            $expToResult = $stmtBuscaExpTo->fetch();
+                            
+                            if ($expToResult && $expToResult['id_expediente']) {
+                                $idExpediente = $expToResult['id_expediente'];
+                            }
+                        }
+                    }
+                    
+                    // Paso 4: Si no encontró, buscar por to_phone como comercial/técnico
+                    if (!$idExpediente && $toPhone) {
+                        $sqlBuscaToComercial = 'SELECT e.id_expediente FROM expediente e 
+                                              WHERE (e.id_comercial = (SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :toPhone LIMIT 1) 
+                                              OR e.id_tecnico = (SELECT u.id_usuario FROM usuario u WHERE u.telefono_movil LIKE :toPhone LIMIT 1)) 
+                                              AND e.estado > 0 LIMIT 1';
+                        $stmtBuscaToComercial = $conn->prepare($sqlBuscaToComercial);
+                        $stmtBuscaToComercial->bindValue('toPhone', '%' . $toPhone . '%');
+                        $stmtBuscaToComercial->execute();
+                        $expToComercialResult = $stmtBuscaToComercial->fetch();
+                        
+                        if ($expToComercialResult && $expToComercialResult['id_expediente']) {
+                            $idExpediente = $expToComercialResult['id_expediente'];
                         }
                     }
                 }
