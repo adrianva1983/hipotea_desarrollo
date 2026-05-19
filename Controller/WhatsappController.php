@@ -1654,12 +1654,12 @@ class WhatsappController extends Controller
         }
 
         $idExpediente = $data['id_expediente'] ?? null;
-        $phoneOrigen = $data['phone_number'] ?? null;
+        $phoneOrigen = $data['phone_number'] ?? null; // Opcional
         $texto = $data['text'] ?? null;
 
-        if (!$idExpediente || !$phoneOrigen || !$texto) {
+        if (!$idExpediente || !$texto) {
             return new JsonResponse([
-                'error' => 'id_expediente, phone_number and text are required'
+                'error' => 'id_expediente and text are required'
             ], 400);
         }
 
@@ -1714,20 +1714,17 @@ class WhatsappController extends Controller
                 ], 400);
             }
 
-            // 4. Generar hash y date para el bot
-            $fecha = date('Y-m-d');
-            $hash = $this->generarHashWhatsapp($fecha);
-
-            // 5. Llamar al bot de WhatsApp
-            $phoneOrigenFull = $this->normalizePhonenWithPrefix($phoneOrigen);
+            // 4. Llamar al bot de WhatsApp con la sesión correcta
             $phoneDestinoFull = $this->normalizePhonenWithPrefix($phoneDestino);
+            
+            // Usar el nombre del usuario logueado como sessionName, o valor por defecto
+            $usuario = $this->getUser();
+            $sessionName = ($usuario && $usuario->getNombre()) ? str_replace(' ', '', $usuario->getNombre()) : 'ComercialPrueba';
 
             $botResponse = $this->llamarBotWhatsApp(
-                $phoneOrigenFull,
+                $sessionName,
                 $phoneDestinoFull,
-                $texto,
-                $hash,
-                $fecha
+                $texto
             );
 
             if (!$botResponse['success']) {
@@ -1737,7 +1734,7 @@ class WhatsappController extends Controller
                 ], 500);
             }
 
-            // 6. Guardar el mensaje en chat_history si se envió correctamente al bot
+            // 5. Guardar el mensaje en chat_history si se envió correctamente al bot
             /*try {
                 // Obtener el nombre del usuario que envía
                 $usuarioEnvia = $this->findUserByPhone($phoneOrigen);
@@ -1776,24 +1773,25 @@ class WhatsappController extends Controller
 
     /**
      * Llama al bot de WhatsApp para enviar un mensaje
+     * Usa la API correcta: POST /api/messages/send
      */
-    private function llamarBotWhatsApp($telefonoOrigen, $telefonoDestino, $mensaje, $hash, $fecha)
+    private function llamarBotWhatsApp($sessionName, $telefono, $mensaje)
     {
-        $this->logear("Llamando al bot de WhatsApp con hash: {$hash} y fecha: {$fecha}, mensaje: {$mensaje}, desde: {$telefonoOrigen} hacia: {$telefonoDestino}");
+        $this->logear("Llamando al bot de WhatsApp - sesión: {$sessionName}, destino: {$telefono}, mensaje: {$mensaje}");
         try {
-            $url = "https://crabbedly-unpersonalized-angelique.ngrok-free.dev/api/send-message?hash={$hash}&date={$fecha}";
-            //$url = seleccionarServidorDisponible();
+            $url = "https://punchiest-irremediably-suzette.ngrok-free.dev/api/messages/send";
 
             $payload = json_encode([
-                'telefono_origen' => $telefonoOrigen,
-                'telefono_destino' => $telefonoDestino,
-                'mensaje' => $mensaje
+                'sessionName' => $sessionName,
+                'to' => $telefono,
+                'body' => $mensaje
             ]);
 
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/json',
+                'x-api-key: 1234567890',
                 'Content-Length: ' . strlen($payload)
             ]);
             curl_setopt($ch, CURLOPT_POST, true);
