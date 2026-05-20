@@ -3951,6 +3951,15 @@ class WhatsappController extends Controller
             $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             
             $this->logear("✓ Mensajes encontrados en expediente: " . count($mensajes));
+            
+            // Debug: Ver dirección de mensajes
+            $directionCount = ['sent' => 0, 'received' => 0];
+            foreach ($mensajes as $msg) {
+                $dir = $msg['direction'] ?? 'undefined';
+                $directionCount[$dir] = ($directionCount[$dir] ?? 0) + 1;
+                $this->logear("  📨 {$dir} | from: " . substr($msg['from_phone'], -10) . " | to: " . substr($msg['to_phone'], -10) . " | msg: " . substr($msg['message'], 0, 30));
+            }
+            $this->logear("📊 Resumen: sent=" . $directionCount['sent'] . ", received=" . $directionCount['received']);
         }
 
         return new JsonResponse([
