@@ -212,6 +212,35 @@
     </div>
 </div>
 
+<!-- Modal de Confirmación para Desconectar -->
+<div class="modal fade" id="modal-confirmar-desconectar" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Desconexión
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-desconectar-msg">¿Estás seguro de que deseas desconectar tu sesión de WhatsApp?</p>
+                <p class="text-muted small mb-0">
+                    <i class="fas fa-info-circle"></i> 
+                    Deberás escanear un nuevo código QR para reconectarte.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="modal-desconectar-ok">
+                    <i class="fas fa-sign-out-alt"></i> Desconectar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para mostrar QR -->
 <div class="modal fade" id="modal-qr-whatsapp" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
@@ -251,30 +280,34 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script>
 $(document).ready(function() {
-    // Desconectar WhatsApp
+    // Desconectar WhatsApp - Abrir modal de confirmación
     $('#btn-desconectar').on('click', function() {
-        if (confirm('¿Estás seguro de que deseas desconectar tu sesión de WhatsApp?')) {
-            $.ajax({
-                url: '{{ path('api_desconectar_whatsapp') }}',
-                type: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    if (response.success) {
-                        toastr.success('Sesión desconectada. Recarga la página.');
-                        setTimeout(function() {
-                            location.reload();
-                        }, 2000);
-                    } else {
-                        toastr.error(response.error || 'Error al desconectar');
-                    }
-                },
-                error: function() {
-                    toastr.error('Error de comunicación con el servidor');
+        $('#modal-confirmar-desconectar').modal('show');
+    });
+
+    // Ejecutar desconexión cuando se confirma en el modal
+    $('#modal-desconectar-ok').on('click', function() {
+        $.ajax({
+            url: '{{ path('api_desconectar_whatsapp') }}',
+            type: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#modal-confirmar-desconectar').modal('hide');
+                    toastr.success('Sesión desconectada. Recarga la página.');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    toastr.error(response.error || 'Error al desconectar');
                 }
-            });
-        }
+            },
+            error: function() {
+                toastr.error('Error de comunicación con el servidor');
+            }
+        });
     });
 
     // Conectar WhatsApp (solicitar QR)
