@@ -3488,7 +3488,10 @@ class WhatsappController extends Controller
             $conexion->setImagenQR('ESPERANDO_NUEVO_QR');
             $conexion->setFechaUltimaInteraccion(new \DateTime());
             
+            $em->persist($conexion);
             $em->flush();
+            $em->detach($conexion);
+            $em->clear();
             
             $this->logear("✓ Sesión desconectada para usuario {$usuario->getIdUsuario()} teléfono {$conexion->getTelefono()}");
             

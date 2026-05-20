@@ -287,6 +287,8 @@ $(document).ready(function() {
 
     // Ejecutar desconexión cuando se confirma en el modal
     $('#modal-desconectar-ok').on('click', function() {
+        $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Desconectando...');
+        
         $.ajax({
             url: '{{ path('api_desconectar_whatsapp') }}',
             type: 'POST',
@@ -296,16 +298,19 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     $('#modal-confirmar-desconectar').modal('hide');
-                    toastr.success('Sesión desconectada. Recarga la página.');
+                    toastr.success('Sesión desconectada. Recargando página...');
+                    // Esperar 3 segundos para asegurar que BD esté actualizada
                     setTimeout(function() {
                         location.reload();
-                    }, 2000);
+                    }, 3000);
                 } else {
                     toastr.error(response.error || 'Error al desconectar');
+                    $('#modal-desconectar-ok').prop('disabled', false).html('<i class="fas fa-sign-out-alt"></i> Desconectar');
                 }
             },
             error: function() {
                 toastr.error('Error de comunicación con el servidor');
+                $('#modal-desconectar-ok').prop('disabled', false).html('<i class="fas fa-sign-out-alt"></i> Desconectar');
             }
         });
     });
