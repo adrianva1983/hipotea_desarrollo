@@ -4070,7 +4070,7 @@ class GrupoNegociadorController extends Controller
 		if ($usuario->getIdUsuario() === 1656) {
 			$inmobiliariasFiltradas = $request->query->get('inmobiliarias', []);
 		}
-		
+		error_log('usuarioTieneConexion: ' . $usuarioTieneConexion);
 		return $this->render('@App/Backoffice/Lista/ExpedientePaginacion.html.twig', [
 			'titulo' => 'Lista de expedientes',
 			'expedientes' => $expedientes,
