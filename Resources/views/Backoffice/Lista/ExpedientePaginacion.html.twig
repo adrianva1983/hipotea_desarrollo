@@ -1107,7 +1107,7 @@
 											</a>
 											{% if (expediente.idComercial and expediente.idComercial.idUsuario == usuarioLogueado.idUsuario) or (expediente.idTecnico and expediente.idTecnico.idUsuario == usuarioLogueado.idUsuario) %}
 												{% set wa_no_messages = (
-													(usuarioTieneConexion|default(false))
+													(expediente.hasActiveSession|default(hasActiveWhatsappByExp[expediente.idExpediente]|default(false)))
 													and
 													(expediente.messages_count|default(messagesCountByExp[expediente.idExpediente]|default(0)) == 0)
 												) %}

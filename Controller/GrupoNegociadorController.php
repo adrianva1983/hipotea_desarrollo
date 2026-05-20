@@ -4111,6 +4111,64 @@ class GrupoNegociadorController extends Controller
 		error_log('usuarioTieneConexion: ' . var_export($usuarioTieneConexion, true));
 		error_log('messagesCountByExp[21059]: ' . var_export(isset($messagesCountByExp[21059]) ? $messagesCountByExp[21059] : null, true));
 		error_log('hasActiveWhatsappByExp[21059]: ' . var_export(isset($hasActiveWhatsappByExp[21059]) ? $hasActiveWhatsappByExp[21059] : null, true));
+
+		// Normalizar arrays: asegurar que messagesCountByExp y hasActiveWhatsappByExp estén definidos
+		$messagesCountByExp = is_array($messagesCountByExp ?? null) ? $messagesCountByExp : [];
+		$hasActiveWhatsappByExp = is_array($hasActiveWhatsappByExp ?? null) ? $hasActiveWhatsappByExp : [];
+
+		// Si hay expedientes en la página, completar contadores y sesiones activas
+		if (!empty($expedientes)) {
+			$idsExpedientes = array_map(function($e){ return (int)$e->getIdExpediente(); }, $expedientes);
+
+			// Inicializar defaults a 0/false
+			foreach ($idsExpedientes as $idExp) {
+				if (!isset($messagesCountByExp[$idExp])) { $messagesCountByExp[$idExp] = 0; }
+				if (!isset($hasActiveWhatsappByExp[$idExp])) { $hasActiveWhatsappByExp[$idExp] = false; }
+			}
+
+			// Consultar counts reales desde chat_history para los expedientes de la página
+			try {
+				$conn = $em->getConnection();
+				$placeholders = implode(',', array_fill(0, count($idsExpedientes), '?'));
+				$sql = 'SELECT id_expediente, COUNT(*) AS total FROM chat_history WHERE id_expediente IN (' . $placeholders . ') GROUP BY id_expediente';
+				$stmt = $conn->executeQuery($sql, $idsExpedientes);
+				while ($row = $stmt->fetchAssociative()) {
+					$id = (int)$row['id_expediente'];
+					$messagesCountByExp[$id] = (int)$row['total'];
+				}
+			} catch (\Exception $e) {
+				// Si falla la consulta, dejamos los defaults
+			}
+
+			// Construir mapeo de técnicos por expediente y buscar sesiones activas en WhatsappSenders
+			$tecnicoIds = [];
+			$expedienteTecnicoMap = [];
+			foreach ($expedientes as $exp) {
+				$idExp = (int)$exp->getIdExpediente();
+				$tec = $exp->getIdTecnico();
+				$tecId = $tec ? (int)$tec->getIdUsuario() : null;
+				$expedienteTecnicoMap[$idExp] = $tecId;
+				if ($tecId) { $tecnicoIds[$tecId] = $tecId; }
+			}
+
+			if (!empty($tecnicoIds)) {
+				try {
+					$conn = $em->getConnection();
+					$placeholders = implode(',', array_fill(0, count($tecnicoIds), '?'));
+					$sql = 'SELECT id_usuario FROM WhatsappSenders WHERE id_usuario IN (' . $placeholders . ') AND sessionId IS NOT NULL AND imagenQR IS NULL GROUP BY id_usuario';
+					$stmt = $conn->executeQuery($sql, array_values($tecnicoIds));
+					$activeUsers = [];
+					while ($row = $stmt->fetchAssociative()) { $activeUsers[(int)$row['id_usuario']] = true; }
+					foreach ($expedienteTecnicoMap as $idExp => $tecId) {
+						if ($tecId && isset($activeUsers[$tecId])) {
+							$hasActiveWhatsappByExp[$idExp] = true;
+						}
+					}
+				} catch (\Exception $e) {
+					// dejar defaults
+				}
+			}
+		}
 		return $this->render('@App/Backoffice/Lista/ExpedientePaginacion.html.twig', [
 			'titulo' => 'Lista de expedientes',
 			'expedientes' => $expedientes,
