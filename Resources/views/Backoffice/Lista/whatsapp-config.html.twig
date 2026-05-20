@@ -328,16 +328,20 @@ $(document).ready(function() {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
+                console.log('solicitarQR response:', response);
                 if (response.success && response.sessionName) {
                     var sessionName = response.sessionName;
+                    console.log('sessionName obtenido:', sessionName);
                     
                     // 2. Crear sesión en Node.js
                     crearSesionYPolling(sessionName);
                 } else {
-                    toastr.error(response.error || 'Error al solicitar QR');
+                    console.error('Error en respuesta:', response);
+                    toastr.error(response.error || 'Error al generar QR');
                 }
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.error('Error AJAX solicitar-qr:', status, error, xhr.responseText);
                 toastr.error('Error de comunicación con el servidor');
             }
         });
