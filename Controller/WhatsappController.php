@@ -3845,9 +3845,9 @@ class WhatsappController extends Controller
                 LIMIT 100";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bindValue('phone', $sender->getTelefono());
-        $result = $stmt->execute();
-        $mensajes = $result->fetchAll();
+        $stmt->bindParam('phone', $sender->getTelefono());
+        $stmt->execute();
+        $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         return $this->render('@App/Admin/WhatsApp/conversaciones-admin.html.twig', [
             'sender' => $sender,
