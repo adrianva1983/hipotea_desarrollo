@@ -4088,7 +4088,29 @@ class GrupoNegociadorController extends Controller
 		if ($usuario->getIdUsuario() === 1656) {
 			$inmobiliariasFiltradas = $request->query->get('inmobiliarias', []);
 		}
+
+		// Asegurar que $usuarioTieneConexion esté definido en esta acción
+		$usuarioTieneConexion = false;
+		try {
+			$senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+			$conexion = $senderRepo->createQueryBuilder('ws')
+				->where('ws.idUsuario = :idUsuario')
+				->setParameter('idUsuario', $this->getUser()->getIdUsuario())
+				->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+				->setMaxResults(1)
+				->getQuery()
+				->getOneOrNullResult();
+			if ($conexion && $conexion->getSessionId() && !$conexion->getImagenQR()) {
+				$usuarioTieneConexion = true;
+			}
+		} catch (\Exception $e) {
+			$usuarioTieneConexion = false;
+		}
+
+		// Logs diagnósticos para expediente específico (21059)
 		error_log('usuarioTieneConexion: ' . var_export($usuarioTieneConexion, true));
+		error_log('messagesCountByExp[21059]: ' . var_export(isset($messagesCountByExp[21059]) ? $messagesCountByExp[21059] : null, true));
+		error_log('hasActiveWhatsappByExp[21059]: ' . var_export(isset($hasActiveWhatsappByExp[21059]) ? $hasActiveWhatsappByExp[21059] : null, true));
 		return $this->render('@App/Backoffice/Lista/ExpedientePaginacion.html.twig', [
 			'titulo' => 'Lista de expedientes',
 			'expedientes' => $expedientes,
