@@ -3235,6 +3235,24 @@ class GrupoNegociadorController extends Controller
 			$expedientesPorId[$expediente->getIdExpediente()] = $expediente->getIdsExpedientesRelacionados();
 		}
 		
+		// Calcular si el usuario autenticado tiene una sesión WhatsApp activa
+		$usuarioTieneConexion = false;
+		try {
+			$senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+			$conexion = $senderRepo->createQueryBuilder('ws')
+				->where('ws.idUsuario = :idUsuario')
+				->setParameter('idUsuario', $this->getUser()->getIdUsuario())
+				->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+				->setMaxResults(1)
+				->getQuery()
+				->getOneOrNullResult();
+			if ($conexion && $conexion->getSessionId() && !$conexion->getImagenQR()) {
+				$usuarioTieneConexion = true;
+			}
+		} catch (\Exception $e) {
+			$usuarioTieneConexion = false;
+		}
+
 		return $this->render('@App/Backoffice/Lista/ExpedientePaginacion.html.twig', [
 			'titulo' => 'Lista de expedientes',
 			'expedientes' => $expedientes,
@@ -4077,9 +4095,10 @@ class GrupoNegociadorController extends Controller
 			'oficinaPreseleccionada' => $oficinaPreseleccionada,
 			'usuarioLogueado' => $this->getUser(),
 			'telefonoUsuario' => $this->getUser()->getTelefonoMovil(),
-			'rolUsuario' => $this->getUser()->getRoles()[0]
-			,'messagesCountByExp' => $messagesCountByExp
-			,'hasActiveWhatsappByExp' => $hasActiveWhatsappByExp
+			'rolUsuario' => $this->getUser()->getRoles()[0],
+			'messagesCountByExp' => $messagesCountByExp,
+			'hasActiveWhatsappByExp' => $hasActiveWhatsappByExp,
+			'usuarioTieneConexion' => $usuarioTieneConexion
 		]);
 	}
 
