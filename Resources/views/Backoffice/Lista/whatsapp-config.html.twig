@@ -404,6 +404,7 @@ $(document).ready(function() {
         var pollingInterval = null;
         var intentos = 0;
         var maxIntentos = 40; // 40 × 3s = 2 minutos máximo
+        var intentos404 = 0; // Contar 404 consecutivos
 
         pollingInterval = setInterval(function() {
             intentos++;
@@ -423,6 +424,8 @@ $(document).ready(function() {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(data) {
+                    intentos404 = 0; // Reset contador de 404
+                    
                     if (data.status === 'qr_ready' && data.qr) {
                         // Mostrar QR
                         $('#qr-spinner').hide();
@@ -447,12 +450,20 @@ $(document).ready(function() {
                 },
                 error: function(xhr) {
                     if (xhr.status === 404) {
-                        // Sesión no existe
-                        clearInterval(pollingInterval);
-                        $('#qr-status-text').text('Sesión no encontrada. Inténtalo de nuevo.');
-                        toastr.error('Sesión no encontrada');
+                        intentos404++;
+                        // Si hay 3 o más 404 consecutivos, significa que la sesión no existe
+                        if (intentos404 >= 3) {
+                            clearInterval(pollingInterval);
+                            $('#qr-status-text').text('Sesión no encontrada. Inténtalo de nuevo.');
+                            toastr.error('Sesión no encontrada');
+                        } else {
+                            // Continuar reintentando (la sesión puede estar creándose)
+                            $('#qr-status-text').text('Generando QR, espera un momento...');
+                        }
+                    } else {
+                        intentos404 = 0; // Reset en otros errores
+                        // En otros errores, continuar reintentando
                     }
-                    // En otros errores, continuar reintentando
                 }
             });
 
