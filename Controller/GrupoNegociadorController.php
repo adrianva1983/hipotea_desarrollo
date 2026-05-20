@@ -524,11 +524,15 @@ class GrupoNegociadorController extends Controller
 					' y '
 				)));
 			}
+
+			return $this->render('@App/Backoffice/Lista/AgenteColaborador.html.twig', array(
+				'titulo' => 'Lista de agentes colaboradores',
+				'agentes_colaboradores' => $repositorio->findAll()
+			));
 		}
-		return $this->render('@App/Backoffice/Lista/AgenteColaborador.html.twig', array(
-			'titulo' => 'Lista de agentes colaboradores',
-			'agentes_colaboradores' => $repositorio->findAll()
-		));
+
+
+
 	}
 
 	public function agregarModificarAgenteColaboradorAction(Request $request, RouterInterface $router, $id)
@@ -4074,6 +4078,8 @@ class GrupoNegociadorController extends Controller
 			'usuarioLogueado' => $this->getUser(),
 			'telefonoUsuario' => $this->getUser()->getTelefonoMovil(),
 			'rolUsuario' => $this->getUser()->getRoles()[0]
+			,'messagesCountByExp' => $messagesCountByExp
+			,'hasActiveWhatsappByExp' => $hasActiveWhatsappByExp
 		]);
 	}
 

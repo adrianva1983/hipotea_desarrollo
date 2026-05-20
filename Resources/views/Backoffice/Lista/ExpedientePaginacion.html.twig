@@ -145,6 +145,16 @@
 			font-size: 18px;
 		}
 
+		/* Icono WhatsApp: sesión activa pero sin mensajes */
+		a.whatsapp.wa-session-no-messages {
+			border: 2px solid #f2b01e;
+			padding: 2px 5px;
+			border-radius: 5px;
+			color: #f2b01e !important;
+			background: white;
+			font-size: 18px;
+		}
+
 		a.editar span,
 		a.documentos span,
 		a.notificar span,
@@ -1096,7 +1106,15 @@
 												<span>Duplicar</span>
 											</a>
 											{% if (expediente.idComercial and expediente.idComercial.idUsuario == usuarioLogueado.idUsuario) or (expediente.idTecnico and expediente.idTecnico.idUsuario == usuarioLogueado.idUsuario) %}
-												<a class="mr-2 whatsapp" href="javascript:void(0)" onclick="abrirModalWhatsApp({{ expediente.idExpediente }}, '{{ nombreCompleto|default('Cliente')|e('js') }}')">
+												{% set wa_no_messages = (
+													(expediente.hasActiveSession|default(hasActiveWhatsappByExp[expediente.idExpediente]|default(false)))
+													and
+													(expediente.messages_count|default(messagesCountByExp[expediente.idExpediente]|default(0)) == 0)
+												) %}
+												<a class="mr-2 whatsapp {% if wa_no_messages %}wa-session-no-messages{% endif %}"
+												   href="javascript:void(0)"
+												   onclick="abrirModalWhatsApp({{ expediente.idExpediente }}, '{{ nombreCompleto|default('Cliente')|e('js') }}')"
+												   {% if wa_no_messages %}title="Sesión activa — sin mensajes" aria-label="Sesión activa — sin mensajes"{% endif %}>
 													<i class="fab fa-whatsapp"></i>
 													<span>WhatsApp</span>
 												</a>
