@@ -4108,11 +4108,13 @@ class GrupoNegociadorController extends Controller
 		}
 
 		// Inicializar arrays para datos de WhatsApp
+		error_log('=== INICIANDO LÓGICA DE WHATSAPP ===');
 		$messagesCountByExp = [];
 		$hasActiveWhatsappByExp = [];
 
 		// Si hay expedientes, completar los contadores
 		if (!empty($expedientes)) {
+			error_log('Total expedientes: ' . count($expedientes));
 			$idsExpedientes = array_map(function($e){ return (int)$e->getIdExpediente(); }, $expedientes);
 
 			// Contar mensajes por expediente desde chat_history
@@ -4120,12 +4122,14 @@ class GrupoNegociadorController extends Controller
 				$conn = $em->getConnection();
 				$placeholders = implode(',', array_fill(0, count($idsExpedientes), '?'));
 				$sql = 'SELECT id_expediente, COUNT(*) AS total FROM chat_history WHERE id_expediente IN (' . $placeholders . ') GROUP BY id_expediente';
+				error_log('SQL Message Count: ' . $sql);
 				$stmt = $conn->executeQuery($sql, $idsExpedientes);
 				while ($row = $stmt->fetch()) {
 					$messagesCountByExp[(int)$row['id_expediente']] = (int)$row['total'];
 				}
+				error_log('messagesCountByExp populated: ' . json_encode($messagesCountByExp));
 			} catch (\Exception $e) {
-				// Silencioso si falla
+				error_log('ERROR chat_history: ' . $e->getMessage());
 			}
 
 			// Inicializar todos los expedientes con 0 mensajes si no aparecen en el query
@@ -4150,29 +4154,42 @@ class GrupoNegociadorController extends Controller
 				$hasActiveWhatsappByExp[$idExp] = false;
 			}
 
+			error_log('TecnicoIds: ' . json_encode($tecnicoIds));
+
 			// Si hay técnicos, buscar cuáles tienen sesión activa
 			if (!empty($tecnicoIds)) {
 				try {
 					$conn = $em->getConnection();
 					$placeholders = implode(',', array_fill(0, count($tecnicoIds), '?'));
 					$sql = 'SELECT id_usuario FROM WhatsappSenders WHERE id_usuario IN (' . $placeholders . ') AND sessionId IS NOT NULL AND imagenQR IS NULL GROUP BY id_usuario';
+					error_log('SQL Active Sessions: ' . $sql);
 					$stmt = $conn->executeQuery($sql, array_values($tecnicoIds));
 					$activeUsers = [];
 					while ($row = $stmt->fetch()) {
 						$activeUsers[(int)$row['id_usuario']] = true;
 					}
 
+					error_log('Active Users: ' . json_encode(array_keys($activeUsers)));
+
 					// Marcar expedientes cuyos técnicos tienen sesión activa
 					foreach ($expedienteTecnicoMap as $idExp => $tecId) {
 						if (isset($activeUsers[$tecId])) {
 							$hasActiveWhatsappByExp[$idExp] = true;
+							error_log('Expediente ' . $idExp . ' marked active (tech ' . $tecId . ')');
 						}
 					}
 				} catch (\Exception $e) {
-					// Silencioso si falla
+					error_log('ERROR WhatsappSenders: ' . $e->getMessage());
 				}
 			}
+		} else {
+			error_log('NO EXPEDIENTES FOUND');
 		}
+
+		error_log('Final messagesCountByExp: ' . json_encode($messagesCountByExp));
+		error_log('Final hasActiveWhatsappByExp: ' . json_encode($hasActiveWhatsappByExp));
+		error_log('=== FIN LÓGICA DE WHATSAPP ===');
+		
 		return $this->render('@App/Backoffice/Lista/ExpedientePaginacion.html.twig', [
 			'titulo' => 'Lista de expedientes',
 			'expedientes' => $expedientes,
