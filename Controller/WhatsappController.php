@@ -3816,7 +3816,7 @@ class WhatsappController extends Controller
     }
 
     /**
-     * Ver conversaciones de una conexión específica
+     * Ver conversaciones de una conexión específica (agrupadas por expediente)
      * GET /Admin/WhatsApp/conversaciones/{idSender}
      */
     public function conversacionesAdminAction($idSender)
@@ -3844,44 +3844,41 @@ class WhatsappController extends Controller
         $usuarioPropietario = $em->getRepository('AppBundle:Usuario')->find($sender->getIdUsuario());
         $this->logear("✓ Usuario propietario: " . ($usuarioPropietario ? $usuarioPropietario->getUsername() : 'NO ENCONTRADO'));
 
-        // Obtener conversaciones desde chat_history
+        // Obtener expedientes con conversaciones agrupadas
         $conn = $em->getConnection();
         $phone = $sender->getTelefono();
         
         $this->logear("📞 Teléfono sin procesar: " . ($phone ?? 'NULL'));
         
-        if (!$phone) {
-            $this->logear("⚠️ El sender NO tiene teléfono asignado");
-            $mensajes = [];
-        } else {
+        $expedientes = [];
+        if ($phone) {
             // Normalizar el teléfono: remover + y espacios
             $phoneNorm = preg_replace('/[^0-9]/', '', $phone);
             
-            // También crear versión sin prefijo 34 (En BD muchos están sin prefijo)
+            // También crear versión sin prefijo 34
             $phoneWithout34 = $phoneNorm;
             if (strpos($phoneNorm, '34') === 0) {
                 $phoneWithout34 = substr($phoneNorm, 2);
-                $this->logear("📞 Teléfono con prefijo 34: {$phoneNorm}");
-                $this->logear("📞 Teléfono sin prefijo 34: {$phoneWithout34}");
             }
             
-            // Búsqueda múltiple: permitir ambos formatos
-            $sql = "SELECT * FROM chat_history 
-                    WHERE from_phone IN (:phone, :phoneWithout34) 
-                       OR to_phone IN (:phone, :phoneWithout34)
-                    ORDER BY timestamp DESC
-                    LIMIT 100";
+            $this->logear("📞 Buscando: {$phoneNorm} o {$phoneWithout34}");
             
-            $this->logear("🔎 Buscando: {$phoneNorm} o {$phoneWithout34}");
+            // Obtener expedientes con count y última fecha
+            $sql = "SELECT 
+                        id_expediente,
+                        COUNT(*) as count,
+                        MAX(timestamp) as ultima_fecha
+                    FROM chat_history 
+                    WHERE (from_phone IN (:phone, :phoneWithout34) 
+                           OR to_phone IN (:phone, :phoneWithout34))
+                    GROUP BY id_expediente
+                    ORDER BY ultima_fecha DESC";
             
             $stmt = $conn->prepare($sql);
             $stmt->execute([':phone' => $phoneNorm, ':phoneWithout34' => $phoneWithout34]);
-            $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $expedientes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             
-            $this->logear("✓ Conversaciones encontradas: " . count($mensajes));
-            if (count($mensajes) > 0) {
-                $this->logear("   Primera: " . $mensajes[0]['message']);
-            }
+            $this->logear("✓ Expedientes encontrados: " . count($expedientes));
         }
 
         $this->logear("=== FIN conversacionesAdminAction - Renderizando vista ===");
@@ -3889,6 +3886,68 @@ class WhatsappController extends Controller
         return $this->render('@App/Backoffice/Lista/conversaciones-admin.html.twig', [
             'sender' => $sender,
             'usuarioPropietario' => $usuarioPropietario,
+            'expedientes' => $expedientes
+        ]);
+    }
+
+    /**
+     * API: Obtener conversaciones de un expediente específico
+     * POST /AJAX/whatsapp/conversaciones-expediente/{idSender}
+     */
+    public function conversacionesExpedienteAction(Request $request, $idSender)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario || !$this->isGranted('ROLE_ADMIN')) {
+            return new JsonResponse(['success' => false, 'error' => 'No autorizado'], 403);
+        }
+
+        $data = json_decode($request->getContent(), true) ?? $request->request->all();
+        $idExpediente = $data['expediente'] ?? null;
+
+        if (!$idExpediente) {
+            return new JsonResponse(['success' => false, 'error' => 'Expediente requerido'], 400);
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        
+        // Obtener el sender
+        $sender = $em->getRepository('AppBundle:WhatsappSender')->find($idSender);
+        if (!$sender) {
+            return new JsonResponse(['success' => false, 'error' => 'Sender no encontrado'], 404);
+        }
+
+        $phone = $sender->getTelefono();
+        $mensajes = [];
+        
+        if ($phone) {
+            // Normalizar el teléfono
+            $phoneNorm = preg_replace('/[^0-9]/', '', $phone);
+            $phoneWithout34 = $phoneNorm;
+            if (strpos($phoneNorm, '34') === 0) {
+                $phoneWithout34 = substr($phoneNorm, 2);
+            }
+            
+            $conn = $em->getConnection();
+            
+            // Obtener conversaciones del expediente
+            $sql = "SELECT * FROM chat_history 
+                    WHERE id_expediente = :expediente
+                      AND (from_phone IN (:phone, :phoneWithout34) 
+                           OR to_phone IN (:phone, :phoneWithout34))
+                    ORDER BY timestamp ASC
+                    LIMIT 200";
+            
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([
+                ':expediente' => $idExpediente,
+                ':phone' => $phoneNorm,
+                ':phoneWithout34' => $phoneWithout34
+            ]);
+            $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
+
+        return new JsonResponse([
+            'success' => true,
             'mensajes' => $mensajes
         ]);
     }

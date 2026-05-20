@@ -888,6 +888,13 @@ admin_conversaciones_whatsapp:
   requirements:
     idSender: '\d+'
 
+api_conversaciones_expediente:
+  path: /AJAX/whatsapp/conversaciones-expediente/{idSender}
+  controller: AppBundle:Whatsapp:conversacionesExpediente
+  methods: [POST]
+  requirements:
+    idSender: '\d+'
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }

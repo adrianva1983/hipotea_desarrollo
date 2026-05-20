@@ -5,11 +5,45 @@
 {% block customstyles %}
     {{ parent() }}
     <style>
+        .expediente-card {
+            cursor: pointer;
+            border-left: 4px solid #075e54;
+            transition: all 0.3s;
+            padding: 15px;
+            background: white;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .expediente-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(5px);
+        }
+        .expediente-title {
+            font-weight: bold;
+            color: #075e54;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .expediente-info {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            gap: 20px;
+        }
+        .badge-count {
+            background-color: #25D366;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
         .chat-container {
             background-color: #e5ddd5;
             border-radius: 4px;
             padding: 15px;
-            height: 600px;
+            height: 450px;
             overflow-y: auto;
         }
         .message-wrapper {
@@ -58,112 +92,102 @@
             color: #075e54;
             margin-bottom: 2px;
         }
-        .header-info {
+        .page-header {
             border-bottom: 2px solid #075e54;
             padding-bottom: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
-        .badge-custom {
-            background-color: #075e54;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-right: 5px;
+        .modal-header {
+            border-bottom: 2px solid #075e54;
         }
         .no-messages {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            background-color: #e5ddd5;
+            text-align: center;
             color: #999;
+            padding: 40px;
         }
     </style>
 {% endblock %}
 
 {% block body %}
 <div class="container-fluid">
-    <div class="header-info">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1>
                     <i class="fas fa-comments"></i> Conversaciones WhatsApp
                 </h1>
                 <p class="text-muted mb-0">
-                    <i class="fas fa-mobile-alt"></i> 
-                    <strong>Teléfono:</strong> 
-                    <span class="badge-custom">{{ sender.telefono }}</span>
+                    <strong>Usuario:</strong> {{ usuarioPropietario.username }} 
+                    | <strong>Teléfono:</strong> <span class="badge badge-info">{{ sender.telefono }}</span>
                 </p>
             </div>
-            <div class="text-right">
-                <h5>
-                    <i class="fas fa-user"></i> 
-                    {% if usuarioPropietario %}
-                        {{ usuarioPropietario.username }} {{ usuarioPropietario.apellidos }}
-                    {% else %}
-                        Usuario no encontrado
-                    {% endif %}
-                </h5>
-                <small class="text-muted">
-                    {% if usuarioPropietario %}
-                        {{ usuarioPropietario.role }}
-                    {% endif %}
-                </small>
-            </div>
+            <a href="{{ path('admin_conexiones_whatsapp') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-light">
-            <i class="fas fa-history"></i> 
-            Últimas 100 conversaciones
-        </div>
-        <div class="card-body p-0">
-            <div class="chat-container">
-                {% if mensajes|length > 0 %}
-                    {% for mensaje in mensajes|reverse %}
-                        <div class="message-wrapper {% if mensaje.direction == 'sent' %}message-sent{% else %}message-received{% endif %}">
-                            <div>
-                                <div class="message-role">
-                                    {% if mensaje.direction == 'sent' %}
-                                        ? Enviado
-                                    {% else %}
-                                        {% if mensaje.role == 'comercial' or mensaje.role == 'tecnico' %}
-                                            {{ mensaje.role|upper }}
-                                        {% else %}
-                                            CLIENTE
-                                        {% endif %}
-                                    {% endif %}
-                                </div>
-                                <div class="message-bubble">
-                                    {{ mensaje.message }}
-                                    <div class="message-meta">
-                                        {{ mensaje.timestamp|date('d/m/Y H:i:s') }}
-                                    </div>
-                                </div>
-                            </div>
+    {% if expedientes|length > 0 %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <i class="fas fa-list"></i> 
+                Expedientes con conversaciones - 
+                <strong>{{ expedientes|length }} total</strong>
+            </div>
+            <div class="card-body p-3">
+                {% for expediente in expedientes %}
+                    <div class="expediente-card" onclick="abrirModalConversaciones({{ expediente.id_expediente }}, '{{ expediente.id_expediente }}')">
+                        <div class="expediente-title">
+                            📋 Expediente #{{ expediente.id_expediente }}
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="no-messages">
-                        <div class="text-center">
-                            <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
-                            <p class="mt-3">No hay conversaciones registradas</p>
+                        <div class="expediente-info">
+                            <span>
+                                <i class="fas fa-envelope"></i> 
+                                Mensajes: <strong class="badge-count">{{ expediente.count }}</strong>
+                            </span>
+                            <span>
+                                <i class="fas fa-clock"></i> 
+                                Última actividad: <strong>{{ expediente.ultima_fecha|date('d/m/Y H:i') }}</strong>
+                            </span>
                         </div>
                     </div>
-                {% endif %}
+                {% endfor %}
             </div>
         </div>
-    </div>
+    {% else %}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-inbox"></i> 
+            <strong>Sin conversaciones</strong> - No hay conversaciones registradas para este usuario.
+        </div>
+    {% endif %}
+</div>
 
-    <div class="mt-4 d-flex justify-content-between">
-        <a href="{{ path('admin_conexiones_whatsapp') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Volver a Conexiones
-        </a>
-        <small class="text-muted align-self-center">
-            Total de mensajes mostrados: {{ mensajes|length }}
-        </small>
+<!-- Modal para ver conversaciones del expediente -->
+<div class="modal fade" id="modalConversaciones" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-comments"></i> Conversaciones - Expediente <span id="expedienteNum"></span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="chat-container" id="chatContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted">Total mensajes mostrados: <span id="totalMensajes">0</span></small>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -171,10 +195,85 @@
 {% block customscripts %}
     {{ parent() }}
     <script>
-    // Auto-scroll al final del chat
-    $(document).ready(function() {
-        var chatContainer = $('.chat-container');
-        chatContainer.scrollTop(chatContainer.prop('scrollHeight'));
-    });
+    function abrirModalConversaciones(idExpediente, numExpediente) {
+        $('#expedienteNum').text(numExpediente);
+        $('#chatContainer').html('<div class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div>');
+        
+        $.ajax({
+            url: '{{ path("api_conversaciones_expediente", {idSender: sender.id}) }}',
+            type: 'POST',
+            data: {
+                expediente: idExpediente,
+                _token: '{{ csrf_token("conversaciones") }}'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    renderizarChat(response.mensajes);
+                    $('#totalMensajes').text(response.mensajes.length);
+                } else {
+                    $('#chatContainer').html('<div class="no-messages">Error: ' + response.error + '</div>');
+                }
+            },
+            error: function() {
+                $('#chatContainer').html('<div class="no-messages">Error al cargar las conversaciones</div>');
+            }
+        });
+        
+        $('#modalConversaciones').modal('show');
+    }
+    
+    function renderizarChat(mensajes) {
+        let html = '';
+        
+        if (mensajes.length === 0) {
+            html = '<div class="no-messages">No hay mensajes</div>';
+        } else {
+            // NO invertir - mostrar en orden cronológico
+            mensajes.forEach(function(msg) {
+                let direction = msg.direction === 'sent' ? 'message-sent' : 'message-received';
+                let role = msg.direction === 'sent' ? '✓ Enviado' : (msg.role || 'CLIENTE').toUpperCase();
+                
+                html += `
+                    <div class="message-wrapper ${direction}">
+                        <div>
+                            <div class="message-role">${role}</div>
+                            <div class="message-bubble">
+                                ${escapeHtml(msg.message)}
+                                <div class="message-meta">${formatDate(msg.timestamp)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        $('#chatContainer').html(html);
+        // Auto-scroll al final
+        setTimeout(function() {
+            $('.chat-container').scrollTop($('.chat-container')[0].scrollHeight);
+        }, 100);
+    }
+    
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    
+    function formatDate(timestamp) {
+        let date = new Date(timestamp);
+        return date.toLocaleString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
     </script>
 {% endblock %}
