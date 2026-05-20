@@ -294,6 +294,7 @@ $(document).ready(function() {
 
     // Cambiar opciones (toggles)
     $('.toggle-opcion').on('change', function() {
+        console.log('Toggle cambiado: ', $(this).data('opcion'), $(this).is(':checked'));
         var opcion = $(this).data('opcion');
         var estado = $(this).is(':checked');
         
