@@ -3483,7 +3483,15 @@ class WhatsappController extends Controller
         }
 
         try {
-            // Marcar como desconectado: sessionId = NULL, imagenQR = placeholder (para re-escaneo)
+            $sessionId = $conexion->getSessionId();
+            $telefono = $conexion->getTelefono();
+
+            // 1. Notificar al servidor Node.js para desconectar la sesión
+            if ($sessionId) {
+                $this->desconectarEnServidorWhatsApp($sessionId);
+            }
+
+            // 2. Marcar como desconectado en BD: sessionId = NULL, imagenQR = placeholder (para re-escaneo)
             $conexion->setSessionId(null);
             $conexion->setImagenQR('ESPERANDO_NUEVO_QR');
             $conexion->setFechaUltimaInteraccion(new \DateTime());
@@ -3493,7 +3501,7 @@ class WhatsappController extends Controller
             $em->detach($conexion);
             $em->clear();
             
-            $this->logear("✓ Sesión desconectada para usuario {$usuario->getIdUsuario()} teléfono {$conexion->getTelefono()}");
+            $this->logear("✓ Sesión desconectada para usuario {$usuario->getIdUsuario()} teléfono {$telefono}");
             
             return new JsonResponse([
                 'success' => true,
@@ -3504,6 +3512,55 @@ class WhatsappController extends Controller
                 'success' => false,
                 'error' => 'Error al desconectar: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Notifica al servidor Node.js para desconectar una sesión de WhatsApp
+     * POST https://punchiest-irremediably-suzette.ngrok-free.dev/api/sessions/disconnect
+     * 
+     * @param string $sessionId UUID de la sesión
+     * @return bool True si se desconectó exitosamente
+     */
+    private function desconectarEnServidorWhatsApp(string $sessionId): bool
+    {
+        try {
+            $url = 'https://punchiest-irremediably-suzette.ngrok-free.dev/api/sessions/disconnect';
+            $apiKey = '1234567890';
+
+            $payload = json_encode(['sessionId' => $sessionId]);
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'x-api-key: ' . $apiKey
+                ],
+                CURLOPT_POSTFIELDS => $payload
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($httpCode === 200 || $httpCode === 204) {
+                $this->logear("✓ Sesión desconectada en servidor WhatsApp: {$sessionId}");
+                return true;
+            } else {
+                $this->logear("⚠️ Error al desconectar en servidor WhatsApp (HTTP {$httpCode}): {$response}");
+                return false;
+            }
+
+        } catch (\Exception $e) {
+            $this->logear("❌ Error en desconectarEnServidorWhatsApp: " . $e->getMessage());
+            return false;
         }
     }
 
