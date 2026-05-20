@@ -272,8 +272,8 @@
             html = '<div class="messages-list">';
             
             mensajes.forEach(function(msg) {
-                let direction = msg.direction === 'sent' ? 'sent' : 'received';
-                let sender = msg.direction === 'sent' ? '✓ Técnico/Comercial' : 'Cliente';
+                let direction = msg.direction === 'enviado' ? 'sent' : 'received';
+                let sender = msg.direction === 'enviado' ? '✓ Técnico/Comercial' : 'Cliente';
                 
                 html += `
                     <div class="message-wrapper ${direction}">
