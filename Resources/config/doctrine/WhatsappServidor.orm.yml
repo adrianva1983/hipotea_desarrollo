@@ -14,6 +14,10 @@ AppBundle\Entity\WhatsappServidor:
       type: string
       length: 20
       nullable: false
+    url:
+      column: URL
+      type: text
+      nullable: false
     maxConectados:
       column: MaxConectados
       type: integer

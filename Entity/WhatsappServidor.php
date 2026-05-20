@@ -32,6 +32,13 @@ class WhatsappServidor
     private $ip;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="URL", type="text", nullable=false)
+     */
+    private $url;
+
+    /**
      * @var int
      *
      * @ORM\Column(name="MaxConectados", type="integer", nullable=false, options={"default"=10})
@@ -60,6 +67,17 @@ class WhatsappServidor
     public function setIp(string $ip): self
     {
         $this->ip = $ip;
+        return $this;
+    }
+
+    public function getUrl(): ?string
+    {
+        return $this->url;
+    }
+
+    public function setUrl(string $url): self
+    {
+        $this->url = $url;
         return $this;
     }
 

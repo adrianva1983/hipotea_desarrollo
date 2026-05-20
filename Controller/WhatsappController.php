@@ -3525,7 +3525,17 @@ class WhatsappController extends Controller
     private function desconectarEnServidorWhatsApp(string $sessionId): bool
     {
         try {
-            $url = 'https://punchiest-irremediably-suzette.ngrok-free.dev/api/sessions/disconnect';
+            // Obtener URL del servidor desde BD
+            $em = $this->getDoctrine()->getManager();
+            $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
+            $servidor = $servidorRepo->findOneBy(['estado' => true]);
+            
+            if (!$servidor) {
+                $this->logear('❌ No hay servidor WhatsApp configurado');
+                return false;
+            }
+
+            $url = rtrim($servidor->getUrl(), '/') . '/api/sessions/disconnect';
             $apiKey = '1234567890';
 
             $payload = json_encode(['sessionId' => $sessionId]);
@@ -3619,7 +3629,17 @@ class WhatsappController extends Controller
         }
 
         try {
-            $nodeUrl = 'https://punchiest-irremediably-suzette.ngrok-free.dev/api/sessions/create';
+            // Obtener URL del servidor desde BD
+            $em = $this->getDoctrine()->getManager();
+            $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
+            $servidor = $servidorRepo->findOneBy(['estado' => true]);
+            
+            if (!$servidor) {
+                $this->logear('❌ No hay servidor WhatsApp configurado');
+                return new JsonResponse(['error' => 'Servidor no configurado'], 503);
+            }
+
+            $nodeUrl = rtrim($servidor->getUrl(), '/') . '/api/sessions/create';
             $nodeApiKey = '1234567890';
 
             $payload = json_encode(['sessionName' => $sessionName]);
@@ -3682,7 +3702,17 @@ class WhatsappController extends Controller
         }
 
         try {
-            $nodeUrl = 'https://punchiest-irremediably-suzette.ngrok-free.dev/api/sessions/qr/' . urlencode($sessionName);
+            // Obtener URL del servidor desde BD
+            $em = $this->getDoctrine()->getManager();
+            $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
+            $servidor = $servidorRepo->findOneBy(['estado' => true]);
+            
+            if (!$servidor) {
+                $this->logear('❌ No hay servidor WhatsApp configurado');
+                return new JsonResponse(['error' => 'Servidor no configurado'], 503);
+            }
+
+            $nodeUrl = rtrim($servidor->getUrl(), '/') . '/api/sessions/qr/' . urlencode($sessionName);
             $nodeApiKey = '1234567890';
 
             $ch = curl_init();
