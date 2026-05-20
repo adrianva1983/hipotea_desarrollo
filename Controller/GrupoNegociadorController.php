@@ -4161,12 +4161,12 @@ class GrupoNegociadorController extends Controller
 				try {
 					$conn = $em->getConnection();
 					$placeholders = implode(',', array_fill(0, count($tecnicoIds), '?'));
-					$sql = 'SELECT id_usuario FROM WhatsappSenders WHERE id_usuario IN (' . $placeholders . ') AND sessionId IS NOT NULL AND imagenQR IS NULL GROUP BY id_usuario';
+					$sql = 'SELECT idUsuario FROM WhatsappSenders WHERE idUsuario IN (' . $placeholders . ') AND sessionId IS NOT NULL AND imagenQR IS NULL GROUP BY idUsuario';
 					error_log('SQL Active Sessions: ' . $sql);
 					$stmt = $conn->executeQuery($sql, array_values($tecnicoIds));
 					$activeUsers = [];
 					while ($row = $stmt->fetch()) {
-						$activeUsers[(int)$row['id_usuario']] = true;
+						$activeUsers[(int)$row['idUsuario']] = true;
 					}
 
 					error_log('Active Users: ' . json_encode(array_keys($activeUsers)));
