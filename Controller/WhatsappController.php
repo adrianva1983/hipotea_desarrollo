@@ -3810,7 +3810,7 @@ class WhatsappController extends Controller
             ];
         }
 
-        return $this->render('@App/Admin/WhatsApp/conexiones-admin.html.twig', [
+        return $this->render('@App/Backoffice/Lista/conexiones-admin.html.twig', [
             'conexiones' => $datosConexiones
         ]);
     }
@@ -3849,7 +3849,7 @@ class WhatsappController extends Controller
         $stmt->execute();
         $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        return $this->render('@App/Admin/WhatsApp/conversaciones-admin.html.twig', [
+        return $this->render('@App/Backoffice/Lista/conversaciones-admin.html.twig', [
             'sender' => $sender,
             'usuarioPropietario' => $usuarioPropietario,
             'mensajes' => $mensajes
