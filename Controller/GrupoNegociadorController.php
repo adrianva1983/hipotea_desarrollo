@@ -4107,50 +4107,50 @@ class GrupoNegociadorController extends Controller
 			$usuarioTieneConexion = false;
 		}
 
-		// Logs diagnósticos para expediente específico (21059)
-		error_log('usuarioTieneConexion: ' . var_export($usuarioTieneConexion, true));
-		error_log('messagesCountByExp[21059]: ' . var_export(isset($messagesCountByExp[21059]) ? $messagesCountByExp[21059] : null, true));
-		error_log('hasActiveWhatsappByExp[21059]: ' . var_export(isset($hasActiveWhatsappByExp[21059]) ? $hasActiveWhatsappByExp[21059] : null, true));
+		// Inicializar arrays para datos de WhatsApp
+		$messagesCountByExp = [];
+		$hasActiveWhatsappByExp = [];
 
-		// Normalizar arrays: asegurar que messagesCountByExp y hasActiveWhatsappByExp estén definidos
-		$messagesCountByExp = is_array($messagesCountByExp ?? null) ? $messagesCountByExp : [];
-		$hasActiveWhatsappByExp = is_array($hasActiveWhatsappByExp ?? null) ? $hasActiveWhatsappByExp : [];
-
-		// Si hay expedientes en la página, completar contadores y sesiones activas
+		// Si hay expedientes, completar los contadores
 		if (!empty($expedientes)) {
 			$idsExpedientes = array_map(function($e){ return (int)$e->getIdExpediente(); }, $expedientes);
 
-			// Inicializar defaults a 0/false
-			foreach ($idsExpedientes as $idExp) {
-				if (!isset($messagesCountByExp[$idExp])) { $messagesCountByExp[$idExp] = 0; }
-				if (!isset($hasActiveWhatsappByExp[$idExp])) { $hasActiveWhatsappByExp[$idExp] = false; }
-			}
-
-			// Consultar counts reales desde chat_history para los expedientes de la página
+			// Contar mensajes por expediente desde chat_history
 			try {
 				$conn = $em->getConnection();
 				$placeholders = implode(',', array_fill(0, count($idsExpedientes), '?'));
 				$sql = 'SELECT id_expediente, COUNT(*) AS total FROM chat_history WHERE id_expediente IN (' . $placeholders . ') GROUP BY id_expediente';
 				$stmt = $conn->executeQuery($sql, $idsExpedientes);
 				while ($row = $stmt->fetch()) {
-					$id = (int)$row['id_expediente'];
-					$messagesCountByExp[$id] = (int)$row['total'];
+					$messagesCountByExp[(int)$row['id_expediente']] = (int)$row['total'];
 				}
 			} catch (\Exception $e) {
-				// Si falla la consulta, dejamos los defaults
+				// Silencioso si falla
 			}
 
-			// Construir mapeo de técnicos por expediente y buscar sesiones activas en WhatsappSenders
+			// Inicializar todos los expedientes con 0 mensajes si no aparecen en el query
+			foreach ($idsExpedientes as $idExp) {
+				if (!isset($messagesCountByExp[$idExp])) {
+					$messagesCountByExp[$idExp] = 0;
+				}
+			}
+
+			// Buscar técnicos asignados a estos expedientes
 			$tecnicoIds = [];
 			$expedienteTecnicoMap = [];
 			foreach ($expedientes as $exp) {
 				$idExp = (int)$exp->getIdExpediente();
 				$tec = $exp->getIdTecnico();
-				$tecId = $tec ? (int)$tec->getIdUsuario() : null;
-				$expedienteTecnicoMap[$idExp] = $tecId;
-				if ($tecId) { $tecnicoIds[$tecId] = $tecId; }
+				if ($tec) {
+					$tecId = (int)$tec->getIdUsuario();
+					$tecnicoIds[$tecId] = $tecId;
+					$expedienteTecnicoMap[$idExp] = $tecId;
+				}
+				// Inicializar todas las entradas con false
+				$hasActiveWhatsappByExp[$idExp] = false;
 			}
 
+			// Si hay técnicos, buscar cuáles tienen sesión activa
 			if (!empty($tecnicoIds)) {
 				try {
 					$conn = $em->getConnection();
@@ -4158,14 +4158,18 @@ class GrupoNegociadorController extends Controller
 					$sql = 'SELECT id_usuario FROM WhatsappSenders WHERE id_usuario IN (' . $placeholders . ') AND sessionId IS NOT NULL AND imagenQR IS NULL GROUP BY id_usuario';
 					$stmt = $conn->executeQuery($sql, array_values($tecnicoIds));
 					$activeUsers = [];
-					while ($row = $stmt->fetch()) { $activeUsers[(int)$row['id_usuario']] = true; }
+					while ($row = $stmt->fetch()) {
+						$activeUsers[(int)$row['id_usuario']] = true;
+					}
+
+					// Marcar expedientes cuyos técnicos tienen sesión activa
 					foreach ($expedienteTecnicoMap as $idExp => $tecId) {
-						if ($tecId && isset($activeUsers[$tecId])) {
+						if (isset($activeUsers[$tecId])) {
 							$hasActiveWhatsappByExp[$idExp] = true;
 						}
 					}
 				} catch (\Exception $e) {
-					// dejar defaults
+					// Silencioso si falla
 				}
 			}
 		}
