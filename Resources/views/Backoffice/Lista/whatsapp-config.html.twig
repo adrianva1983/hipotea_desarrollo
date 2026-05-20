@@ -1,0 +1,327 @@
+{% extends '@App/Backoffice/LayoutBase.html.twig' %}
+
+{% block titulo %}Configuración de WhatsApp{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">
+                <i class="fab fa-whatsapp" style="color: #25D366; font-size: 1.8em;"></i> 
+                Mi Configuración de WhatsApp
+            </h1>
+        </div>
+    </div>
+
+    <!-- Card de Estado de Conexión -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card border-top-verde" id="card-estado">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="card-title mb-3">Estado de Conexión</h5>
+                            
+                            <!-- Badge de estado -->
+                            <div class="mb-3">
+                                {% if datosConexion.tieneConexion %}
+                                    <span class="badge badge-success" style="font-size: 1.2em; padding: 0.5rem 1rem;">
+                                        <i class="fas fa-check-circle"></i> Conectado
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-danger" style="font-size: 1.2em; padding: 0.5rem 1rem;">
+                                        <i class="fas fa-times-circle"></i> Desconectado
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Información de teléfono y última conexión -->
+                            {% if datosConexion.tieneConexion %}
+                                <p class="mb-2">
+                                    <strong>Teléfono:</strong> 
+                                    <span id="telefono-whatsapp">{{ datosConexion.telefono }}</span>
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Última interacción:</strong> 
+                                    <span id="ultima-interaccion">
+                                        {{ datosConexion.ultimaInteraccion ? datosConexion.ultimaInteraccion|date('d/m/Y H:i') : 'N/A' }}
+                                    </span>
+                                </p>
+                            {% else %}
+                                <p class="text-muted mb-0">No tienes una sesión de WhatsApp activa. Escanea el código QR para conectarte.</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 text-center">
+                            <i class="fab fa-whatsapp" style="font-size: 4rem; color: #25D366; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card de Acciones -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="card-title mb-3">Acciones</h6>
+                    
+                    {% if datosConexion.tieneConexion %}
+                        <button class="btn btn-danger btn-block mb-2" id="btn-desconectar" title="Desconectar sesión">
+                            <i class="fas fa-sign-out-alt"></i> Desconectar
+                        </button>
+                        <button class="btn btn-info btn-block" id="btn-solicitar-qr" title="Generar nuevo QR">
+                            <i class="fas fa-qrcode"></i> Renovar QR
+                        </button>
+                    {% else %}
+                        <button class="btn btn-success btn-block" id="btn-conectar" title="Conectar WhatsApp">
+                            <i class="fas fa-link"></i> Conectar
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de Configuración de Opciones -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card border-top-verde">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sliders-h"></i> Opciones de WhatsApp
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if datosConexion.tieneConexion %}
+                        <!-- Opción 1: Sincronizar Conversaciones -->
+                        <div class="row mb-4 pb-3 border-bottom">
+                            <div class="col-md-8">
+                                <h6 class="mb-2">Sincronizar Conversaciones</h6>
+                                <small class="text-muted">
+                                    Los mensajes de WhatsApp se sincronizarán automáticamente en el expediente.
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-right">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input toggle-opcion" id="sync-conversaciones" 
+                                           data-opcion="SyncConversaciones" 
+                                           {% if datosConexion.opciones.syncConversaciones %}checked{% endif %}>
+                                    <label class="custom-control-label" for="sync-conversaciones"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opción 2: Automatizaciones WhatsApp -->
+                        <div class="row mb-4 pb-3 border-bottom">
+                            <div class="col-md-8">
+                                <h6 class="mb-2">Automatizaciones WhatsApp</h6>
+                                <small class="text-muted">
+                                    Activa respuestas automáticas basadas en palabras clave y patrones.
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-right">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input toggle-opcion" id="automatizaciones-whatsapp" 
+                                           data-opcion="AutomatizacionesWhatsapp" 
+                                           {% if datosConexion.opciones.automatizacionesWhatsapp %}checked{% endif %}>
+                                    <label class="custom-control-label" for="automatizaciones-whatsapp"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opción 3: Piloto Automático (IA) -->
+                        <div class="row mb-0">
+                            <div class="col-md-8">
+                                <h6 class="mb-2">Piloto Automático (IA)</h6>
+                                <small class="text-muted">
+                                    Usa IA para generar respuestas inteligentes automáticamente.
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-right">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input toggle-opcion" id="piloto-automatico" 
+                                           data-opcion="PilotoAutomatico" 
+                                           {% if datosConexion.opciones.pilotoAutomatico %}checked{% endif %}>
+                                    <label class="custom-control-label" for="piloto-automatico"></label>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle"></i> 
+                            Primero conecta tu WhatsApp para acceder a las opciones de configuración.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar QR -->
+<div class="modal fade" id="modal-qr-whatsapp" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fab fa-whatsapp"></i> Conectar WhatsApp
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="mb-4">Escanea este código QR con tu teléfono WhatsApp</p>
+                <div id="qr-container" class="mb-3">
+                    <img id="qr-image" src="" alt="Código QR" class="img-fluid" style="max-width: 300px;">
+                </div>
+                <p class="text-muted small">
+                    <i class="fas fa-info-circle"></i> 
+                    El código QR vencerá en 30 segundos. Si no aparece, solicita uno nuevo.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" id="btn-solicitar-qr-modal">
+                    <i class="fas fa-sync-alt"></i> Solicitar Nuevo QR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-top-verde {
+        border-top: 4px solid #075e54 !important;
+    }
+
+    .custom-switch .custom-control-label {
+        padding-top: 0.25rem;
+    }
+
+    .custom-control-input:checked ~ .custom-control-label {
+        color: #075e54;
+    }
+
+    .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: #25D366;
+        border-color: #25D366;
+    }
+
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .badge-success {
+        background-color: #25D366 !important;
+    }
+
+    .btn-success {
+        background-color: #25D366;
+        border-color: #25D366;
+    }
+
+    .btn-success:hover {
+        background-color: #1ca152;
+        border-color: #1ca152;
+    }
+
+    .bg-success {
+        background-color: #25D366 !important;
+    }
+
+    .modal-header.bg-success {
+        background-color: #25D366 !important;
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    // Desconectar WhatsApp
+    $('#btn-desconectar').on('click', function() {
+        if (confirm('¿Estás seguro de que deseas desconectar tu sesión de WhatsApp?')) {
+            $.ajax({
+                url: '{{ path('api_desconectar_whatsapp') }}',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('Sesión desconectada. Recarga la página.');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        toastr.error(response.error || 'Error al desconectar');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error de comunicación con el servidor');
+                }
+            });
+        }
+    });
+
+    // Conectar WhatsApp (solicitar QR)
+    $('#btn-conectar, #btn-solicitar-qr, #btn-solicitar-qr-modal').on('click', function() {
+        $.ajax({
+            url: '{{ path('api_solicitar_qr_whatsapp') }}',
+            type: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success && response.qrUrl) {
+                    $('#qr-image').attr('src', response.qrUrl);
+                    $('#modal-qr-whatsapp').modal('show');
+                    toastr.info(response.mensaje);
+                } else {
+                    toastr.error(response.error || 'Error al generar QR');
+                }
+            },
+            error: function() {
+                toastr.error('Error de comunicación con el servidor');
+            }
+        });
+    });
+
+    // Cambiar opciones (toggles)
+    $('.toggle-opcion').on('change', function() {
+        var opcion = $(this).data('opcion');
+        var estado = $(this).is(':checked');
+        
+        $.ajax({
+            url: '{{ path('api_toggle_opcion_whatsapp') }}',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: JSON.stringify({
+                opcion: opcion,
+                estado: estado
+            }),
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('Opción actualizada: ' + opcion);
+                } else {
+                    toastr.error(response.error || 'Error al actualizar opción');
+                }
+            },
+            error: function() {
+                toastr.error('Error de comunicación con el servidor');
+                // Revertir el toggle en caso de error
+                $(this).prop('checked', !estado);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

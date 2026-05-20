@@ -683,6 +683,26 @@ api_datos_expediente_fase1:
   requirements:
     id: '\d+'
 
+mi_configuracion_whatsapp:
+  path: /Mi/Configuracion/WhatsApp
+  controller: AppBundle:Whatsapp:miConfiguracionWhatsapp
+  methods: [GET]
+
+api_toggle_opcion_whatsapp:
+  path: /API/whatsapp/toggle-opcion
+  controller: AppBundle:Whatsapp:toggleOpcionWhatsapp
+  methods: [POST]
+
+api_desconectar_whatsapp:
+  path: /API/whatsapp/desconectar
+  controller: AppBundle:Whatsapp:desconectarWhatsapp
+  methods: [POST]
+
+api_solicitar_qr_whatsapp:
+  path: /API/whatsapp/solicitar-qr
+  controller: AppBundle:Whatsapp:solicitarQRWhatsapp
+  methods: [POST]
+
 api_prueba:
   path: /AJAX/prueba/{id}
   controller: AppBundle:LectorDocumentos:analizarDocumentosFase4

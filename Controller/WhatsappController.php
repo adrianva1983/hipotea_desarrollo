@@ -3332,6 +3332,254 @@ class WhatsappController extends Controller
      * 
      * Mantiene una conexión abierta y notifica al cliente cuando hay mensajes nuevos
      */
+
+    /**
+     * Muestra la configuración personal de WhatsApp del usuario logueado
+     * GET /Mi/Configuracion/WhatsApp
+     */
+    public function miConfiguracionWhatsappAction(Request $request)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            return $this->redirectToRoute('login');
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+
+        // Obtener la conexión del usuario actual
+        $conexion = $senderRepo->createQueryBuilder('ws')
+            ->where('ws.idUsuario = :idUsuario')
+            ->setParameter('idUsuario', $usuario->getIdUsuario())
+            ->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        // Determinar si tiene sesión activa
+        $tieneConexion = $conexion && $conexion->getSessionId() && !$conexion->getImagenQR();
+
+        // Preparar datos para la vista
+        $datosConexion = [];
+        if ($conexion) {
+            $datosConexion = [
+                'id' => $conexion->getId(),
+                'telefono' => $conexion->getTelefono(),
+                'tieneConexion' => $tieneConexion,
+                'ultimaInteraccion' => $conexion->getFechaUltimaInteraccion(),
+                'opciones' => [
+                    'syncConversaciones' => $conexion->getSyncConversaciones(),
+                    'automatizacionesWhatsapp' => $conexion->getAutomatizacionesWhatsapp(),
+                    'pilotoAutomatico' => $conexion->getPilotoAutomatico(),
+                ],
+            ];
+        }
+
+        return $this->render('@App/Backoffice/Lista/whatsapp-config.html.twig', [
+            'titulo' => 'Configuración de WhatsApp',
+            'usuario' => $usuario,
+            'datosConexion' => $datosConexion,
+            'tieneConexion' => $tieneConexion,
+        ]);
+    }
+
+    /**
+     * Cambia el estado de una opción de WhatsApp
+     * POST /API/whatsapp/toggle-opcion
+     * Body: {opcion: 'SyncConversaciones', estado: true}
+     */
+    public function toggleOpcionWhatsappAction(Request $request)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!$data) {
+            return new JsonResponse(['error' => 'Invalid JSON'], 400);
+        }
+
+        $opcion = $data['opcion'] ?? null;
+        $estado = $data['estado'] ?? null;
+
+        if (!$opcion || $estado === null) {
+            return new JsonResponse(['error' => 'Opción y estado requeridos'], 400);
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+
+        // Obtener la conexión del usuario
+        $conexion = $senderRepo->createQueryBuilder('ws')
+            ->where('ws.idUsuario = :idUsuario')
+            ->setParameter('idUsuario', $usuario->getIdUsuario())
+            ->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$conexion) {
+            return new JsonResponse(['error' => 'No hay sesión WhatsApp'], 404);
+        }
+
+        // Cambiar opción según el parámetro
+        switch ($opcion) {
+            case 'SyncConversaciones':
+                $conexion->setSyncConversaciones((bool)$estado);
+                break;
+            case 'AutomatizacionesWhatsapp':
+                $conexion->setAutomatizacionesWhatsapp((bool)$estado);
+                break;
+            case 'PilotoAutomatico':
+                $conexion->setPilotoAutomatico((bool)$estado);
+                break;
+            default:
+                return new JsonResponse(['error' => 'Opción desconocida'], 400);
+        }
+
+        try {
+            $em->flush();
+            $this->logear("✓ Opción {$opcion} cambiada a " . ($estado ? 'ON' : 'OFF') . " para usuario {$usuario->getIdUsuario()}");
+            return new JsonResponse([
+                'success' => true,
+                'opcion' => $opcion,
+                'estado' => $estado,
+                'mensaje' => 'Opción actualizada correctamente'
+            ], 200);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Error al guardar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Desconecta la sesión actual de WhatsApp del usuario
+     * POST /API/whatsapp/desconectar
+     */
+    public function desconectarWhatsappAction(Request $request)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+
+        // Obtener la conexión del usuario
+        $conexion = $senderRepo->createQueryBuilder('ws')
+            ->where('ws.idUsuario = :idUsuario')
+            ->setParameter('idUsuario', $usuario->getIdUsuario())
+            ->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$conexion) {
+            return new JsonResponse(['error' => 'No hay sesión WhatsApp'], 404);
+        }
+
+        try {
+            // Marcar como desconectado: sessionId = NULL, imagenQR = placeholder (para re-escaneo)
+            $conexion->setSessionId(null);
+            $conexion->setImagenQR('ESPERANDO_NUEVO_QR');
+            $conexion->setFechaUltimaInteraccion(new \DateTime());
+            
+            $em->flush();
+            
+            $this->logear("✓ Sesión desconectada para usuario {$usuario->getIdUsuario()} teléfono {$conexion->getTelefono()}");
+            
+            return new JsonResponse([
+                'success' => true,
+                'mensaje' => 'Sesión desconectada correctamente'
+            ], 200);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Error al desconectar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Solicita un nuevo QR para conectar WhatsApp
+     * POST /API/whatsapp/solicitar-qr
+     */
+    public function solicitarQRWhatsappAction(Request $request)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+
+        // Verificar si ya existe una conexión en proceso
+        $conexionExistente = $senderRepo->createQueryBuilder('ws')
+            ->where('ws.idUsuario = :idUsuario')
+            ->setParameter('idUsuario', $usuario->getIdUsuario())
+            ->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($conexionExistente && $conexionExistente->getImagenQR() && $conexionExistente->getImagenQR() !== 'ESPERANDO_NUEVO_QR') {
+            // Ya hay un QR en proceso, devolver la URL del redirect
+            $fecha = date('Y-m-d');
+            $hash = $this->generarHashWhatsapp($fecha);
+            $ip = $this->obtenerServidorParaSender($conexionExistente->getId());
+            $base = $this->baseHostWhatsapp($ip);
+            $externalUrl = $base . "/?new=true&hash={$hash}&date={$fecha}";
+
+            return new JsonResponse([
+                'success' => true,
+                'qrUrl' => $externalUrl,
+                'mensaje' => 'QR generado'
+            ], 200);
+        }
+
+        try {
+            // Si no existe conexión, crear una nueva
+            if (!$conexionExistente) {
+                $conexionExistente = new WhatsappSender();
+                $conexionExistente->setIdUsuario($usuario->getIdUsuario());
+                $conexionExistente->setTelefono('PENDIENTE');
+                $conexionExistente->setVersion(1);
+                $em->persist($conexionExistente);
+            }
+
+            // Preparar para escaneo de QR
+            $conexionExistente->setSessionId(null);
+            $conexionExistente->setImagenQR('ESCANEAR_QR');
+            $conexionExistente->setFechaUltimaInteraccion(new \DateTime());
+
+            $em->flush();
+
+            // Generar URL de escaneo
+            $fecha = date('Y-m-d');
+            $hash = $this->generarHashWhatsapp($fecha);
+            $ip = $this->obtenerServidorParaSender($conexionExistente->getId());
+            $base = $this->baseHostWhatsapp($ip);
+            $externalUrl = $base . "/?new=true&hash={$hash}&date={$fecha}";
+
+            $this->logear("✓ QR solicitado para usuario {$usuario->getIdUsuario()}");
+
+            return new JsonResponse([
+                'success' => true,
+                'qrUrl' => $externalUrl,
+                'mensaje' => 'QR generado. Escanea con tu teléfono WhatsApp'
+            ], 200);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Error al generar QR: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     
 }
 

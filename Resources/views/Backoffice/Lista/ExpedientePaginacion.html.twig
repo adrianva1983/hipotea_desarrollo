@@ -463,12 +463,12 @@
 			var texto = $('#whatsapp-message-input').val().trim();
 			
 			if (!texto) {
-				alert('Por favor escribe un mensaje');
+				console.log('Por favor escribe un mensaje');
 				return;
 			}
 			
 			if (!expedienteId) {
-				alert('Error: expediente no identificado');
+				console.log('Error: expediente no identificado');
 				return;
 			}
 			
@@ -499,7 +499,7 @@
 					if (xhr.responseJSON && xhr.responseJSON.error) {
 						errorMsg = xhr.responseJSON.error;
 					}
-					alert('Error al enviar el mensaje: ' + errorMsg);
+					console.log('Error al enviar el mensaje: ' + errorMsg);
 				},
 				complete: function() {
 					btn.prop('disabled', false).css('opacity', '1');
