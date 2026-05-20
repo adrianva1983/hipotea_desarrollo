@@ -876,6 +876,18 @@ whatsapp_session_qr:
   controller: AppBundle:Whatsapp:getQr
   methods: [GET]
 
+admin_conexiones_whatsapp:
+  path: /Admin/Lista/ConexionesWhatsApp
+  controller: AppBundle:Whatsapp:listaConexionesAdmin
+  methods: [GET]
+
+admin_conversaciones_whatsapp:
+  path: /Admin/WhatsApp/conversaciones/{idSender}
+  controller: AppBundle:Whatsapp:conversacionesAdmin
+  methods: [GET]
+  requirements:
+    idSender: '\d+'
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }

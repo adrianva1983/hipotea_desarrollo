@@ -1,0 +1,156 @@
+{% extends "@App/Backoffice/base.html.twig" %}
+
+{% block titulo %}Conexiones WhatsApp Activas{% endblock %}
+
+{% block customstyles %}
+    {{ parent() }}
+    <style>
+        .badge-online { 
+            background-color: #25D366; 
+            color: white; 
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .connection-card { 
+            border-left: 4px solid #075e54;
+            transition: box-shadow 0.3s;
+        }
+        .connection-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .phone-info {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .session-id {
+            font-family: monospace;
+            font-size: 11px;
+            color: #666;
+            word-break: break-all;
+        }
+        .page-header {
+            border-bottom: 2px solid #075e54;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="page-header">
+        <h1>
+            <i class="fab fa-whatsapp" style="color: #25D366; font-size: 28px;"></i> 
+            Conexiones WhatsApp Activas
+        </h1>
+        <p class="text-muted">Gestiona y monitorea todas las conexiones de WhatsApp del equipo. Total: <strong>{{ conexiones|length }}</strong></p>
+    </div>
+
+    {% if conexiones|length > 0 %}
+        <div class="row">
+            {% for item in conexiones %}
+                {% set conexion = item.conexion %}
+                {% set usuarioProp = item.usuario %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card connection-card h-100 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <span class="badge badge-online">
+                                <i class="fas fa-circle" style="color: #25D366;"></i> Activo
+                            </span>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> 
+                                {{ conexion.fechaUltimaInteraccion|date('d/m/Y H:i') }}
+                            </small>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-mobile-alt"></i> 
+                                <span class="phone-info">{{ conexion.telefono|default('Sin teléfono') }}</span>
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <p class="mb-2">
+                                    <strong><i class="fas fa-user"></i> Usuario:</strong>
+                                </p>
+                                <p class="text-muted mb-0">
+                                    {% if usuarioProp %}
+                                        {{ usuarioProp.nombre }} {{ usuarioProp.apellidos }}<br>
+                                        <small style="color: #999;">{{ usuarioProp.role }}</small>
+                                    {% else %}
+                                        <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> No asignado</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="mb-3">
+                                <p class="mb-2">
+                                    <strong><i class="fas fa-key"></i> Session ID:</strong>
+                                </p>
+                                <p class="session-id mb-0">
+                                    <code>{{ conexion.sessionId }}</code>
+                                </p>
+                            </div>
+
+                            <div class="mb-3">
+                                <p class="mb-2">
+                                    <strong><i class="fas fa-cog"></i> Opciones:</strong>
+                                </p>
+                                <div class="small">
+                                    <span class="badge {% if conexion.syncConversaciones %}badge-success{% else %}badge-secondary{% endif %}">
+                                        <i class="fas fa-sync"></i> Sincronizar
+                                    </span>
+                                    <span class="badge {% if conexion.automatizacionesWhatsapp %}badge-success{% else %}badge-secondary{% endif %}">
+                                        <i class="fas fa-magic"></i> Automatizaciones
+                                    </span>
+                                    <span class="badge {% if conexion.pilotoAutomatico %}badge-success{% else %}badge-secondary{% endif %}">
+                                        <i class="fas fa-robot"></i> Piloto
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="{{ path('admin_conversaciones_whatsapp', {idSender: conexion.id}) }}" 
+                                   class="btn btn-sm btn-info flex-grow-1">
+                                    <i class="fas fa-comments"></i> Conversaciones
+                                </a>
+                                <button class="btn btn-sm btn-danger" 
+                                        onclick="desconectarSesion({{ conexion.id }}, '{{ conexion.telefono|default('') }}')">
+                                    <i class="fas fa-times"></i> Desconectar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle"></i> 
+            <strong>Sin conexiones activas</strong> - No hay conexiones WhatsApp activas en este momento.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block customscripts %}
+    {{ parent() }}
+    <script>
+    function desconectarSesion(idSender, telefono) {
+        if (confirm('¿Desconectar sesión de ' + telefono + '? El usuario tendrá que escanear un nuevo QR.')) {
+            $.post('{{ path("api_desconectar_whatsapp") }}', function(response) {
+                if (response.success) {
+                    toastr.success('Sesión desconectada correctamente');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    toastr.error('Error: ' + (response.error || 'Error desconocido'));
+                }
+            });
+        }
+    }
+    </script>
+{% endblock %}

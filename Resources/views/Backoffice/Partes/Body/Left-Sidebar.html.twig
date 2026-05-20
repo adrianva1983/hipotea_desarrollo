@@ -171,6 +171,13 @@
 								<li>
 									<a href="{{ path('admin_kommo_webhooks') }}">Webhooks de Kommo</a>
 								</li>
+								{% if is_granted('ROLE_ADMIN') %}
+									<li>
+										<a href="{{ path('admin_conexiones_whatsapp') }}">
+											<i class="fab fa-whatsapp" style="color: #25D366;"></i> Conexiones WhatsApp
+										</a>
+									</li>
+								{% endif %}
 								{% if is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') or is_granted('ROLE_ADMIN') %}
 									<li>
 										<a href="{{ path('mi_configuracion_whatsapp') }}">

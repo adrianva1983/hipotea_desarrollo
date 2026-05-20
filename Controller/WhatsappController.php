@@ -3778,5 +3778,83 @@ class WhatsappController extends Controller
         }
     }
     
+    /**
+     * Lista todas las conexiones WhatsApp activas (solo para ADMIN)
+     * GET /Admin/Lista/ConexionesWhatsApp
+     */
+    public function listaConexionesAdminAction(Request $request)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario || !$this->isGranted('ROLE_ADMIN')) {
+            throw $this->createAccessDeniedException('Solo admins pueden acceder');
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+        $usuarioRepo = $em->getRepository('AppBundle:Usuario');
+        
+        // Obtener todas las conexiones con sessionId (activas)
+        $conexiones = $senderRepo->createQueryBuilder('ws')
+            ->where('ws.sessionId IS NOT NULL')
+            ->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        // Mapear datos con información del usuario
+        $datosConexiones = [];
+        foreach ($conexiones as $conexion) {
+            $usuarioProp = $usuarioRepo->find($conexion->getIdUsuario());
+            $datosConexiones[] = [
+                'conexion' => $conexion,
+                'usuario' => $usuarioProp
+            ];
+        }
+
+        return $this->render('@App/Admin/WhatsApp/conexiones-admin.html.twig', [
+            'conexiones' => $datosConexiones
+        ]);
+    }
+
+    /**
+     * Ver conversaciones de una conexión específica
+     * GET /Admin/WhatsApp/conversaciones/{idSender}
+     */
+    public function conversacionesAdminAction($idSender)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario || !$this->isGranted('ROLE_ADMIN')) {
+            throw $this->createAccessDeniedException('Solo admins pueden acceder');
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        
+        // Obtener el sender
+        $sender = $em->getRepository('AppBundle:WhatsappSender')->find($idSender);
+        if (!$sender) {
+            throw $this->createNotFoundException('Conexión no encontrada');
+        }
+
+        // Obtener el usuario propietario
+        $usuarioPropietario = $em->getRepository('AppBundle:Usuario')->find($sender->getIdUsuario());
+
+        // Obtener conversaciones desde chat_history
+        $conn = $em->getConnection();
+        $sql = "SELECT * FROM chat_history 
+                WHERE (from_phone = :phone OR to_phone = :phone)
+                ORDER BY timestamp DESC
+                LIMIT 100";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bindValue('phone', $sender->getTelefono());
+        $result = $stmt->executeQuery();
+        $mensajes = $result->fetchAllAssociative();
+
+        return $this->render('@App/Admin/WhatsApp/conversaciones-admin.html.twig', [
+            'sender' => $sender,
+            'usuarioPropietario' => $usuarioPropietario,
+            'mensajes' => $mensajes
+        ]);
+    }
+    
 }
 
