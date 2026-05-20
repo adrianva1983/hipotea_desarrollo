@@ -3854,26 +3854,33 @@ class WhatsappController extends Controller
             $this->logear("⚠️ El sender NO tiene teléfono asignado");
             $mensajes = [];
         } else {
-            // Normalizar el teléfono: remover + y espacios para búsqueda flexible
+            // Normalizar el teléfono: remover + y espacios
             $phoneNorm = preg_replace('/[^0-9]/', '', $phone);
-            $this->logear("📞 Teléfono normalizado: {$phoneNorm}");
             
+            // También crear versión sin prefijo 34 (En BD muchos están sin prefijo)
+            $phoneWithout34 = $phoneNorm;
+            if (strpos($phoneNorm, '34') === 0) {
+                $phoneWithout34 = substr($phoneNorm, 2);
+                $this->logear("📞 Teléfono con prefijo 34: {$phoneNorm}");
+                $this->logear("📞 Teléfono sin prefijo 34: {$phoneWithout34}");
+            }
+            
+            // Búsqueda múltiple: permitir ambos formatos
             $sql = "SELECT * FROM chat_history 
-                    WHERE REPLACE(REPLACE(from_phone, '+', ''), ' ', '') = :phone 
-                       OR REPLACE(REPLACE(to_phone, '+', ''), ' ', '') = :phone
+                    WHERE from_phone IN (:phone, :phoneWithout34) 
+                       OR to_phone IN (:phone, :phoneWithout34)
                     ORDER BY timestamp DESC
                     LIMIT 100";
             
-            $this->logear("🔎 SQL: " . $sql);
+            $this->logear("🔎 Buscando: {$phoneNorm} o {$phoneWithout34}");
             
             $stmt = $conn->prepare($sql);
-            $stmt->execute([':phone' => $phoneNorm]);
+            $stmt->execute([':phone' => $phoneNorm, ':phoneWithout34' => $phoneWithout34]);
             $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             
             $this->logear("✓ Conversaciones encontradas: " . count($mensajes));
             if (count($mensajes) > 0) {
                 $this->logear("   Primera: " . $mensajes[0]['message']);
-                $this->logear("   Última: " . $mensajes[count($mensajes)-1]['message']);
             }
         }
 
