@@ -271,8 +271,8 @@ class WhatsappController extends Controller
         $em = $this->getDoctrine()->getManager();
         $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
 
-        // Obtener servidor activo con menos conexiones
-        $servidor = $servidorRepo->findServidorConMenosConexiones();
+        // Obtener servidor activo
+        $servidor = $servidorRepo->findOneBy(['estado' => true]);
 
         if ($servidor) {
             return $servidor->getIp();
@@ -3846,8 +3846,8 @@ class WhatsappController extends Controller
         
         $stmt = $conn->prepare($sql);
         $stmt->bindValue('phone', $sender->getTelefono());
-        $result = $stmt->executeQuery();
-        $mensajes = $result->fetchAllAssociative();
+        $result = $stmt->execute();
+        $mensajes = $result->fetchAll();
 
         return $this->render('@App/Admin/WhatsApp/conversaciones-admin.html.twig', [
             'sender' => $sender,
