@@ -3844,14 +3844,21 @@ class WhatsappController extends Controller
         if (!$phone) {
             $mensajes = [];
         } else {
+            // Normalizar el teléfono: remover + y espacios para búsqueda flexible
+            $phoneNorm = preg_replace('/[^0-9]/', '', $phone);
+            
             $sql = "SELECT * FROM chat_history 
-                    WHERE (from_phone = :phone OR to_phone = :phone)
+                    WHERE REPLACE(REPLACE(from_phone, '+', ''), ' ', '') = :phone 
+                       OR REPLACE(REPLACE(to_phone, '+', ''), ' ', '') = :phone
                     ORDER BY timestamp DESC
                     LIMIT 100";
             
             $stmt = $conn->prepare($sql);
-            $stmt->execute([':phone' => $phone]);
+            $stmt->execute([':phone' => $phoneNorm]);
             $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            
+            // Log para debugging
+            $this->logear("🔍 Búsqueda de conversaciones - Teléfono: {$phone} (normalizado: {$phoneNorm}) - Encontrados: " . count($mensajes));
         }
 
         return $this->render('@App/Backoffice/Lista/conversaciones-admin.html.twig', [
