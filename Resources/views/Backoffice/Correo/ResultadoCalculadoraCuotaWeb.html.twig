@@ -420,6 +420,14 @@
 			margin-bottom: 0px !important;
 		}
 
+		@media print {
+			.fondo-casa {
+				-webkit-print-color-adjust: exact !important;
+				print-color-adjust: exact !important;
+				color-adjust: exact !important;
+			}
+		}
+
 		@media (max-width: 576px) {
 			.texto-resultado {
 				padding: 3px;
