@@ -69,7 +69,7 @@
                         <div class="card-body">
                             <h5 class="card-title">
                                 <i class="fas fa-mobile-alt"></i> 
-                                <span class="phone-info">{{ conexion.telefono|default('Sin teléfono') }}</span>
+                                <span class="phone-info">{{ conexion.telefono|default('Sin telÃ©fono') }}</span>
                             </h5>
                             
                             <div class="mb-3">
@@ -141,10 +141,10 @@
     {{ parent() }}
     <script>
     function desconectarSesion(idSender, telefono) {
-        if (confirm('¿Desconectar sesión de ' + telefono + '? El usuario tendrá que escanear un nuevo QR.')) {
+        if (confirm('Â¿Desconectar sesiÃ³n de ' + telefono + '? El usuario tendrÃ¡ que escanear un nuevo QR.')) {
             $.post('{{ path("api_desconectar_whatsapp") }}', function(response) {
                 if (response.success) {
-                    toastr.success('Sesión desconectada correctamente');
+                    toastr.success('SesiÃ³n desconectada correctamente');
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     toastr.error('Error: ' + (response.error || 'Error desconocido'));
