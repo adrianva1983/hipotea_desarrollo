@@ -1,6 +1,6 @@
 {% extends '@App/Backoffice/base.html.twig' %}
 
-{% block titulo %}ConfiguraciÛn de WhatsApp{% endblock %}
+{% block titulo %}Configuraci√≥n de WhatsApp{% endblock %}
 
 {% block body %}
 <div class="container-fluid mt-4">
@@ -8,19 +8,19 @@
         <div class="col-md-12">
             <h1 class="mb-4">
                 <i class="fab fa-whatsapp" style="color: #25D366; font-size: 1.8em;"></i> 
-                Mi ConfiguraciÛn de WhatsApp
+                Mi Configuraci√≥n de WhatsApp
             </h1>
         </div>
     </div>
 
-    <!-- Card de Estado de ConexiÛn -->
+    <!-- Card de Estado de Conexi√≥n -->
     <div class="row mb-4">
         <div class="col-md-8">
             <div class="card border-top-verde" id="card-estado">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-md-8">
-                            <h5 class="card-title mb-3">Estado de ConexiÛn</h5>
+                            <h5 class="card-title mb-3">Estado de Conexi√≥n</h5>
                             
                             <!-- Badge de estado -->
                             <div class="mb-3">
@@ -35,20 +35,20 @@
                                 {% endif %}
                             </div>
 
-                            <!-- InformaciÛn de telÈfono y ˙ltima conexiÛn -->
+                            <!-- Informaci√≥n de tel√©fono y √∫ltima conexi√≥n -->
                             {% if datosConexion.tieneConexion %}
                                 <p class="mb-2">
-                                    <strong>TelÈfono:</strong> 
+                                    <strong>Tel√©fono:</strong> 
                                     <span id="telefono-whatsapp">{{ datosConexion.telefono }}</span>
                                 </p>
                                 <p class="mb-0">
-                                    <strong>⁄ltima interacciÛn:</strong> 
+                                    <strong>√öltima interacci√≥n:</strong> 
                                     <span id="ultima-interaccion">
                                         {{ datosConexion.ultimaInteraccion ? datosConexion.ultimaInteraccion|date('d/m/Y H:i') : 'N/A' }}
                                     </span>
                                 </p>
                             {% else %}
-                                <p class="text-muted mb-0">No tienes una sesiÛn de WhatsApp activa. Escanea el cÛdigo QR para conectarte.</p>
+                                <p class="text-muted mb-0">No tienes una sesi√≥n de WhatsApp activa. Escanea el c√≥digo QR para conectarte.</p>
                             {% endif %}
                         </div>
                         
@@ -67,7 +67,7 @@
                     <h6 class="card-title mb-3">Acciones</h6>
                     
                     {% if datosConexion.tieneConexion %}
-                        <button class="btn btn-danger btn-block mb-2" id="btn-desconectar" title="Desconectar sesiÛn">
+                        <button class="btn btn-danger btn-block mb-2" id="btn-desconectar" title="Desconectar sesi√≥n">
                             <i class="fas fa-sign-out-alt"></i> Desconectar
                         </button>
                         <button class="btn btn-info btn-block" id="btn-solicitar-qr" title="Generar nuevo QR">
@@ -83,7 +83,7 @@
         </div>
     </div>
 
-    <!-- Card de ConfiguraciÛn de Opciones -->
+    <!-- Card de Configuraci√≥n de Opciones -->
     <div class="row">
         <div class="col-md-12">
             <div class="card border-top-verde">
@@ -94,12 +94,12 @@
                 </div>
                 <div class="card-body">
                     {% if datosConexion.tieneConexion %}
-                        <!-- OpciÛn 1: Sincronizar Conversaciones -->
+                        <!-- Opci√≥n 1: Sincronizar Conversaciones -->
                         <div class="row mb-4 pb-3 border-bottom">
                             <div class="col-md-8">
                                 <h6 class="mb-2">Sincronizar Conversaciones</h6>
                                 <small class="text-muted">
-                                    Los mensajes de WhatsApp se sincronizar·n autom·ticamente en el expediente.
+                                    Los mensajes de WhatsApp se sincronizar√°n autom√°ticamente en el expediente.
                                 </small>
                             </div>
                             <div class="col-md-4 text-right">
@@ -112,12 +112,12 @@
                             </div>
                         </div>
 
-                        <!-- OpciÛn 2: Automatizaciones WhatsApp -->
+                        <!-- Opci√≥n 2: Automatizaciones WhatsApp -->
                         <div class="row mb-4 pb-3 border-bottom">
                             <div class="col-md-8">
                                 <h6 class="mb-2">Automatizaciones WhatsApp</h6>
                                 <small class="text-muted">
-                                    Activa respuestas autom·ticas basadas en palabras clave y patrones.
+                                    Activa respuestas autom√°ticas basadas en palabras clave y patrones.
                                 </small>
                             </div>
                             <div class="col-md-4 text-right">
@@ -130,12 +130,12 @@
                             </div>
                         </div>
 
-                        <!-- OpciÛn 3: Piloto Autom·tico (IA) -->
+                        <!-- Opci√≥n 3: Piloto Autom√°tico (IA) -->
                         <div class="row mb-0">
                             <div class="col-md-8">
-                                <h6 class="mb-2">Piloto Autom·tico (IA)</h6>
+                                <h6 class="mb-2">Piloto Autom√°tico (IA)</h6>
                                 <small class="text-muted">
-                                    Usa IA para generar respuestas inteligentes autom·ticamente.
+                                    Usa IA para generar respuestas inteligentes autom√°ticamente.
                                 </small>
                             </div>
                             <div class="col-md-4 text-right">
@@ -150,7 +150,7 @@
                     {% else %}
                         <div class="alert alert-info" role="alert">
                             <i class="fas fa-info-circle"></i> 
-                            Primero conecta tu WhatsApp para acceder a las opciones de configuraciÛn.
+                            Primero conecta tu WhatsApp para acceder a las opciones de configuraci√≥n.
                         </div>
                     {% endif %}
                 </div>
@@ -172,13 +172,13 @@
                 </button>
             </div>
             <div class="modal-body text-center">
-                <p class="mb-4">Escanea este cÛdigo QR con tu telÈfono WhatsApp</p>
+                <p class="mb-4">Escanea este c√≥digo QR con tu tel√©fono WhatsApp</p>
                 <div id="qr-container" class="mb-3">
-                    <img id="qr-image" src="" alt="CÛdigo QR" class="img-fluid" style="max-width: 300px;">
+                    <img id="qr-image" src="" alt="C√≥digo QR" class="img-fluid" style="max-width: 300px;">
                 </div>
                 <p class="text-muted small">
                     <i class="fas fa-info-circle"></i> 
-                    El cÛdigo QR vencer· en 30 segundos. Si no aparece, solicita uno nuevo.
+                    El c√≥digo QR vencer√° en 30 segundos. Si no aparece, solicita uno nuevo.
                 </p>
             </div>
             <div class="modal-footer">
@@ -245,7 +245,7 @@
 $(document).ready(function() {
     // Desconectar WhatsApp
     $('#btn-desconectar').on('click', function() {
-        if (confirm('øEst·s seguro de que deseas desconectar tu sesiÛn de WhatsApp?')) {
+        if (confirm('¬øEst√°s seguro de que deseas desconectar tu sesi√≥n de WhatsApp?')) {
             $.ajax({
                 url: '{{ path('api_desconectar_whatsapp') }}',
                 type: 'POST',
@@ -254,7 +254,7 @@ $(document).ready(function() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        toastr.success('SesiÛn desconectada. Recarga la p·gina.');
+                        toastr.success('Sesi√≥n desconectada. Recarga la p√°gina.');
                         setTimeout(function() {
                             location.reload();
                         }, 2000);
@@ -263,7 +263,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function() {
-                    toastr.error('Error de comunicaciÛn con el servidor');
+                    toastr.error('Error de comunicaci√≥n con el servidor');
                 }
             });
         }
@@ -287,7 +287,7 @@ $(document).ready(function() {
                 }
             },
             error: function() {
-                toastr.error('Error de comunicaciÛn con el servidor');
+                toastr.error('Error de comunicaci√≥n con el servidor');
             }
         });
     });
@@ -310,13 +310,13 @@ $(document).ready(function() {
             }),
             success: function(response) {
                 if (response.success) {
-                    toastr.success('OpciÛn actualizada: ' + opcion);
+                    toastr.success('Opci√≥n actualizada: ' + opcion);
                 } else {
-                    toastr.error(response.error || 'Error al actualizar opciÛn');
+                    toastr.error(response.error || 'Error al actualizar opci√≥n');
                 }
             },
             error: function() {
-                toastr.error('Error de comunicaciÛn con el servidor');
+                toastr.error('Error de comunicaci√≥n con el servidor');
                 // Revertir el toggle en caso de error
                 $(this).prop('checked', !estado);
             }
