@@ -3839,15 +3839,20 @@ class WhatsappController extends Controller
 
         // Obtener conversaciones desde chat_history
         $conn = $em->getConnection();
-        $sql = "SELECT * FROM chat_history 
-                WHERE (from_phone = :phone OR to_phone = :phone)
-                ORDER BY timestamp DESC
-                LIMIT 100";
+        $phone = $sender->getTelefono();
         
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam('phone', $sender->getTelefono());
-        $stmt->execute();
-        $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        if (!$phone) {
+            $mensajes = [];
+        } else {
+            $sql = "SELECT * FROM chat_history 
+                    WHERE (from_phone = :phone OR to_phone = :phone)
+                    ORDER BY timestamp DESC
+                    LIMIT 100";
+            
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([':phone' => $phone]);
+            $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
 
         return $this->render('@App/Backoffice/Lista/conversaciones-admin.html.twig', [
             'sender' => $sender,
