@@ -3619,7 +3619,7 @@ class WhatsappController extends Controller
         }
 
         try {
-            $nodeUrl = 'http://localhost:3000/api/sessions/create';
+            $nodeUrl = 'https://punchiest-irremediably-suzette.ngrok-free.dev/api/sessions/create';
             $nodeApiKey = '1234567890';
 
             $payload = json_encode(['sessionName' => $sessionName]);
@@ -3630,6 +3630,8 @@ class WhatsappController extends Controller
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => 10,
                 CURLOPT_POST => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_HTTPHEADER => [
                     'Content-Type: application/json',
                     'x-api-key: ' . $nodeApiKey
@@ -3680,7 +3682,7 @@ class WhatsappController extends Controller
         }
 
         try {
-            $nodeUrl = 'http://localhost:3000/api/sessions/qr/' . urlencode($sessionName);
+            $nodeUrl = 'https://punchiest-irremediably-suzette.ngrok-free.dev/api/sessions/qr/' . urlencode($sessionName);
             $nodeApiKey = '1234567890';
 
             $ch = curl_init();
@@ -3688,6 +3690,8 @@ class WhatsappController extends Controller
                 CURLOPT_URL => $nodeUrl,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => 5,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_HTTPHEADER => [
                     'x-api-key: ' . $nodeApiKey
                 ]
