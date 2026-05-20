@@ -3087,46 +3087,68 @@ class WhatsappController extends Controller
 
             // Buscar expediente asociado al mensaje
             if (!$idExpediente && $sender) {
-                $this->logear("🔍 Buscando expediente para from={$fromLocal}, to={$toLocal}, técnico={$sender->getIdUsuario()}");
-                
-                // Buscar expediente donde:
-                // 1. El cliente coincida con from_phone
-                // 2. El comercial/técnico coincida con quien tiene esta sesión
-                $sqlBuscaExp = "SELECT e.id_expediente FROM expediente e 
-                               INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
-                               WHERE u_cliente.telefono_movil LIKE :fromPhone
-                               AND (e.id_comercial = :tecnicoId OR e.id_tecnico = :tecnicoId)
-                               AND e.estado > 0
-                               ORDER BY e.id_expediente DESC LIMIT 1";
-                
-                $stmtBuscaExp = $conn->prepare($sqlBuscaExp);
-                $stmtBuscaExp->execute([
-                    ':fromPhone' => '%' . $fromLocal . '%',
-                    ':tecnicoId' => $sender->getIdUsuario()
-                ]);
-                $expResult = $stmtBuscaExp->fetch();
-                
-                if ($expResult && $expResult['id_expediente']) {
-                    $idExpediente = $expResult['id_expediente'];
-                    $this->logear("✓ Expediente encontrado (cliente+técnico): {$idExpediente}");
-                } else {
-                    // Si no encuentra con técnico, buscar solo por cliente
-                    $this->logear("⚠️ No encontrado con técnico, buscando solo por cliente...");
-                    $sqlBuscaExp2 = "SELECT e.id_expediente FROM expediente e 
+                if ($direction === 'enviado') {
+                    // MENSAJE ENVIADO: Buscar por to_phone (cliente destino)
+                    $this->logear("🔍 Buscando expediente ENVIADO para to={$toLocal}, técnico={$sender->getIdUsuario()}");
+                    
+                    $sqlBuscaExp = "SELECT e.id_expediente FROM expediente e 
                                    INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
-                                   WHERE u_cliente.telefono_movil LIKE :fromPhone
+                                   WHERE u_cliente.telefono_movil LIKE :toPhone
+                                   AND (e.id_comercial = :tecnicoId OR e.id_tecnico = :tecnicoId)
                                    AND e.estado > 0
                                    ORDER BY e.id_expediente DESC LIMIT 1";
                     
-                    $stmtBuscaExp2 = $conn->prepare($sqlBuscaExp2);
-                    $stmtBuscaExp2->execute([
-                        ':fromPhone' => '%' . $fromLocal . '%'
+                    $stmtBuscaExp = $conn->prepare($sqlBuscaExp);
+                    $stmtBuscaExp->execute([
+                        ':toPhone' => '%' . $toLocal . '%',
+                        ':tecnicoId' => $sender->getIdUsuario()
                     ]);
-                    $expResult2 = $stmtBuscaExp2->fetch();
+                    $expResult = $stmtBuscaExp->fetch();
                     
-                    if ($expResult2 && $expResult2['id_expediente']) {
-                        $idExpediente = $expResult2['id_expediente'];
-                        $this->logear("✓ Expediente encontrado (solo cliente): {$idExpediente}");
+                    if ($expResult && $expResult['id_expediente']) {
+                        $idExpediente = $expResult['id_expediente'];
+                        $this->logear("✓ Expediente encontrado (ENVIADO): {$idExpediente}");
+                    }
+                } else {
+                    // MENSAJE RECIBIDO: Buscar por from_phone (cliente remitente)
+                    $this->logear("🔍 Buscando expediente RECIBIDO para from={$fromLocal}, técnico={$sender->getIdUsuario()}");
+                    
+                    $sqlBuscaExp = "SELECT e.id_expediente FROM expediente e 
+                                   INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
+                                   WHERE u_cliente.telefono_movil LIKE :fromPhone
+                                   AND (e.id_comercial = :tecnicoId OR e.id_tecnico = :tecnicoId)
+                                   AND e.estado > 0
+                                   ORDER BY e.id_expediente DESC LIMIT 1";
+                    
+                    $stmtBuscaExp = $conn->prepare($sqlBuscaExp);
+                    $stmtBuscaExp->execute([
+                        ':fromPhone' => '%' . $fromLocal . '%',
+                        ':tecnicoId' => $sender->getIdUsuario()
+                    ]);
+                    $expResult = $stmtBuscaExp->fetch();
+                    
+                    if ($expResult && $expResult['id_expediente']) {
+                        $idExpediente = $expResult['id_expediente'];
+                        $this->logear("✓ Expediente encontrado (RECIBIDO): {$idExpediente}");
+                    } else {
+                        // Si no encuentra con técnico, buscar solo por cliente
+                        $this->logear("⚠️ No encontrado con técnico, buscando solo por cliente...");
+                        $sqlBuscaExp2 = "SELECT e.id_expediente FROM expediente e 
+                                       INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
+                                       WHERE u_cliente.telefono_movil LIKE :fromPhone
+                                       AND e.estado > 0
+                                       ORDER BY e.id_expediente DESC LIMIT 1";
+                        
+                        $stmtBuscaExp2 = $conn->prepare($sqlBuscaExp2);
+                        $stmtBuscaExp2->execute([
+                            ':fromPhone' => '%' . $fromLocal . '%'
+                        ]);
+                        $expResult2 = $stmtBuscaExp2->fetch();
+                        
+                        if ($expResult2 && $expResult2['id_expediente']) {
+                            $idExpediente = $expResult2['id_expediente'];
+                            $this->logear("✓ Expediente encontrado (solo cliente): {$idExpediente}");
+                        }
                     }
                 }
             }
