@@ -43,12 +43,19 @@
             background-color: #e5ddd5;
             border-radius: 4px;
             padding: 15px;
-            height: 450px;
+            height: 500px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         .message-wrapper {
-            margin-bottom: 12px;
             display: flex;
+            margin-bottom: 4px;
             animation: slideIn 0.3s ease-in;
         }
         @keyframes slideIn {
@@ -61,36 +68,50 @@
                 transform: translateY(0);
             }
         }
-        .message-sent {
+        .message-wrapper.sent {
             justify-content: flex-end;
         }
-        .message-received {
+        .message-wrapper.received {
             justify-content: flex-start;
         }
+        .message-content {
+            display: flex;
+            flex-direction: column;
+            max-width: 65%;
+        }
+        .message-wrapper.sent .message-content {
+            align-items: flex-end;
+        }
+        .message-wrapper.received .message-content {
+            align-items: flex-start;
+        }
         .message-bubble {
-            max-width: 70%;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 18px;
             word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.4;
         }
-        .message-sent .message-bubble {
+        .message-wrapper.sent .message-bubble {
             background-color: #dcf8c6;
-            border-bottom-right-radius: 0;
+            border-bottom-right-radius: 4px;
         }
-        .message-received .message-bubble {
+        .message-wrapper.received .message-bubble {
             background-color: #ffffff;
-            border-bottom-left-radius: 0;
+            border-bottom-left-radius: 4px;
         }
         .message-meta {
             font-size: 11px;
             color: #999;
-            margin-top: 3px;
+            margin-top: 4px;
+            padding: 0 8px;
         }
-        .message-role {
-            font-weight: bold;
+        .message-sender {
+            font-weight: 600;
             font-size: 12px;
             color: #075e54;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
+            padding: 0 8px;
         }
         .page-header {
             border-bottom: 2px solid #075e54;
@@ -99,11 +120,30 @@
         }
         .modal-header {
             border-bottom: 2px solid #075e54;
+            background-color: #f8f9fa;
+        }
+        .modal-body {
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
+            background-color: #f8f9fa;
         }
         .no-messages {
             text-align: center;
             color: #999;
-            padding: 40px;
+            padding: 60px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        .no-messages i {
+            font-size: 48px;
+            color: #ccc;
+            display: block;
+            margin-bottom: 20px;
         }
     </style>
 {% endblock %}
@@ -174,10 +214,10 @@
                     <span>&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-0">
                 <div class="chat-container" id="chatContainer">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status">
+                    <div class="text-center" style="margin: auto;">
+                        <div class="spinner-border text-primary" role="status">
                             <span class="sr-only">Cargando...</span>
                         </div>
                     </div>
@@ -197,7 +237,7 @@
     <script>
     function abrirModalConversaciones(idExpediente, numExpediente) {
         $('#expedienteNum').text(numExpediente);
-        $('#chatContainer').html('<div class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div>');
+        $('#chatContainer').html('<div class="text-center m-auto"><div class="spinner-border text-primary" role="status"><span class="sr-only">Cargando...</span></div></div>');
         
         $.ajax({
             url: '{{ path("api_conversaciones_expediente", {idSender: sender.id}) }}',
@@ -212,11 +252,11 @@
                     renderizarChat(response.mensajes);
                     $('#totalMensajes').text(response.mensajes.length);
                 } else {
-                    $('#chatContainer').html('<div class="no-messages">Error: ' + response.error + '</div>');
+                    $('#chatContainer').html('<div class="no-messages"><div><i class="fas fa-exclamation-circle"></i><p>Error: ' + response.error + '</p></div></div>');
                 }
             },
             error: function() {
-                $('#chatContainer').html('<div class="no-messages">Error al cargar las conversaciones</div>');
+                $('#chatContainer').html('<div class="no-messages"><div><i class="fas fa-exclamation-circle"></i><p>Error al cargar las conversaciones</p></div></div>');
             }
         });
         
@@ -227,31 +267,35 @@
         let html = '';
         
         if (mensajes.length === 0) {
-            html = '<div class="no-messages">No hay mensajes</div>';
+            html = '<div class="no-messages"><div><i class="fas fa-inbox"></i><p>No hay mensajes</p></div></div>';
         } else {
-            // NO invertir - mostrar en orden cronológico
+            html = '<div class="messages-list">';
+            
             mensajes.forEach(function(msg) {
-                let direction = msg.direction === 'sent' ? 'message-sent' : 'message-received';
-                let role = msg.direction === 'sent' ? '✓ Enviado' : (msg.role || 'CLIENTE').toUpperCase();
+                let direction = msg.direction === 'sent' ? 'sent' : 'received';
+                let sender = msg.direction === 'sent' ? '✓ Técnico/Comercial' : 'Cliente';
                 
                 html += `
                     <div class="message-wrapper ${direction}">
-                        <div>
-                            <div class="message-role">${role}</div>
+                        <div class="message-content">
+                            <div class="message-sender">${sender}</div>
                             <div class="message-bubble">
                                 ${escapeHtml(msg.message)}
-                                <div class="message-meta">${formatDate(msg.timestamp)}</div>
                             </div>
+                            <div class="message-meta">${formatDate(msg.timestamp)}</div>
                         </div>
                     </div>
                 `;
             });
+            
+            html += '</div>';
         }
         
         $('#chatContainer').html(html);
         // Auto-scroll al final
         setTimeout(function() {
-            $('.chat-container').scrollTop($('.chat-container')[0].scrollHeight);
+            let container = $('#chatContainer')[0];
+            container.scrollTop = container.scrollHeight;
         }, 100);
     }
     
@@ -265,15 +309,19 @@
     }
     
     function formatDate(timestamp) {
-        let date = new Date(timestamp);
-        return date.toLocaleString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
+        try {
+            let date = new Date(timestamp);
+            return date.toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        } catch(e) {
+            return timestamp;
+        }
     }
     </script>
 {% endblock %}
