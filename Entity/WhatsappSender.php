@@ -189,6 +189,13 @@ class WhatsappSender
     /**
      * @var string|null
      *
+     * @ORM\Column(name="SessionName", type="string", length=100, nullable=true)
+     */
+    private $sessionName;
+
+    /**
+     * @var string|null
+     *
      * @ORM\Column(name="Configuracion", type="text", nullable=true)
      */
     private $configuracion;
@@ -450,6 +457,17 @@ class WhatsappSender
     public function setSessionId(?string $sessionId): self
     {
         $this->sessionId = $sessionId;
+        return $this;
+    }
+
+    public function getSessionName(): ?string
+    {
+        return $this->sessionName;
+    }
+
+    public function setSessionName(?string $sessionName): self
+    {
+        $this->sessionName = $sessionName;
         return $this;
     }
 

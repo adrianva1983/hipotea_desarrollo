@@ -2922,6 +2922,7 @@ class WhatsappController extends Controller
         try {
             $phone = $data['phone'] ?? null;
             $sessionId = $data['sessionId'] ?? null;
+            $sessionName = $data['sessionName'] ?? null;
             $idGestor = $data['IdGestor'] ?? null;
 
             if (!$phone || !$sessionId) {
@@ -2929,29 +2930,35 @@ class WhatsappController extends Controller
             }
 
             $em = $this->getDoctrine()->getManager();
-            
-            // Normalizar teléfono
-            $phoneNorm = $this->normalizePhone($phone);
-
-            // Buscar o crear WhatsappSender
             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
-            $qb = $senderRepo->createQueryBuilder('ws');
-            $sender = $qb->where('ws.telefono = :telefono')
-                ->setParameter('telefono', $phoneNorm)
-                ->getQuery()
-                ->getOneOrNullResult();
+            
+            $sender = null;
+            
+            // Primero intentar buscar por sessionName (nuevo flujo)
+            if ($sessionName) {
+                $sender = $senderRepo->findOneBy(['sessionName' => $sessionName]);
+            }
+            
+            // Si no lo encuentra por sessionName, buscar por teléfono (flujo antiguo)
+            if (!$sender) {
+                $phoneNorm = $this->normalizePhone($phone);
+                $sender = $senderRepo->findOneBy(['telefono' => $phoneNorm]);
+            }
 
             if (!$sender) {
                 // Crear nuevo sender si no existe
                 $senderClass = 'AppBundle\Entity\WhatsappSender';
                 $sender = new $senderClass();
-                $sender->setTelefono($phoneNorm);
-                $sender->setVersion(1); // Campo obligatorio
+                $sender->setTelefono($this->normalizePhone($phone));
+                $sender->setVersion(1);
                 $em->persist($sender);
             }
 
             // Actualizar datos de sesión
             $sender->setSessionId($sessionId);
+            $sender->setSessionName($sessionName);
+            $sender->setTelefono($this->normalizePhone($phone));
+            $sender->setImagenQR(null); // Conexión exitosa
             $sender->setIdUsuario($idGestor);
             $sender->setFechaUltimaInteraccion(new \DateTime());
 
@@ -2977,7 +2984,7 @@ class WhatsappController extends Controller
 
             $em->flush();
 
-            $this->logear('✓ SESSION_CREATED: ' . $phone . ' [SID: ' . $sessionId . ']');
+            $this->logear('✓ SESSION_CREATED: ' . $phone . ' [SID: ' . $sessionId . '] [SessionName: ' . ($sessionName ?? 'N/A') . ']');
 
             return new JsonResponse([], 200);
 
@@ -3638,6 +3645,23 @@ class WhatsappController extends Controller
                 $this->logear('❌ No hay servidor WhatsApp configurado');
                 return new JsonResponse(['error' => 'Servidor no configurado'], 503);
             }
+
+            // Guardar sessionName en WhatsappSender para este usuario
+            $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+            $sender = $senderRepo->findOneBy(['idUsuario' => $usuario->getIdUsuario()]);
+            
+            if (!$sender) {
+                $sender = new \AppBundle\Entity\WhatsappSender();
+                $sender->setIdUsuario($usuario->getIdUsuario());
+                $sender->setVersion(1);
+                $em->persist($sender);
+            }
+            
+            $sender->setSessionName($sessionName);
+            $sender->setSessionId(null);
+            $sender->setImagenQR('ESCANEAR_QR');
+            $sender->setFechaUltimaInteraccion(new \DateTime());
+            $em->flush();
 
             $nodeUrl = rtrim($servidor->getUrl(), '/') . '/api/sessions/create';
             $nodeApiKey = '1234567890';
