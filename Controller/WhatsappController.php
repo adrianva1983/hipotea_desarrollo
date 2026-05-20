@@ -3566,7 +3566,9 @@ class WhatsappController extends Controller
 
     /**
      * Solicita un nuevo QR para conectar WhatsApp
-     * POST /API/whatsapp/solicitar-qr
+     * POST /AJAX/whatsapp/solicitar-qr
+     * 
+     * Devuelve el sessionName a usar para polling en Node.js
      */
     public function solicitarQRWhatsappAction(Request $request)
     {
@@ -3575,69 +3577,146 @@ class WhatsappController extends Controller
             return new JsonResponse(['error' => 'Unauthorized'], 401);
         }
 
-        $em = $this->getDoctrine()->getManager();
-        $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
-
-        // Verificar si ya existe una conexión en proceso
-        $conexionExistente = $senderRepo->createQueryBuilder('ws')
-            ->where('ws.idUsuario = :idUsuario')
-            ->setParameter('idUsuario', $usuario->getIdUsuario())
-            ->orderBy('ws.fechaUltimaInteraccion', 'DESC')
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-
-        if ($conexionExistente && $conexionExistente->getImagenQR() && $conexionExistente->getImagenQR() !== 'ESPERANDO_NUEVO_QR') {
-            // Ya hay un QR en proceso, devolver la URL del redirect
-            $fecha = date('Y-m-d');
-            $hash = $this->generarHashWhatsapp($fecha);
-            $ip = $this->obtenerServidorParaSender($conexionExistente->getId());
-            $base = $this->baseHostWhatsapp($ip);
-            $externalUrl = $base . "/?new=true&hash={$hash}&date={$fecha}";
-
-            return new JsonResponse([
-                'success' => true,
-                'qrUrl' => $externalUrl,
-                'mensaje' => 'QR generado'
-            ], 200);
-        }
-
         try {
-            // Si no existe conexión, crear una nueva
-            if (!$conexionExistente) {
-                $conexionExistente = new WhatsappSender();
-                $conexionExistente->setIdUsuario($usuario->getIdUsuario());
-                $conexionExistente->setTelefono('PENDIENTE');
-                $conexionExistente->setVersion(1);
-                $em->persist($conexionExistente);
-            }
+            // Generar sessionName único: comercial_{idUsuario}
+            $sessionName = 'comercial_' . $usuario->getIdUsuario();
 
-            // Preparar para escaneo de QR
-            $conexionExistente->setSessionId(null);
-            $conexionExistente->setImagenQR('ESCANEAR_QR');
-            $conexionExistente->setFechaUltimaInteraccion(new \DateTime());
-
-            $em->flush();
-
-            // Generar URL de escaneo
-            $fecha = date('Y-m-d');
-            $hash = $this->generarHashWhatsapp($fecha);
-            $ip = $this->obtenerServidorParaSender($conexionExistente->getId());
-            $base = $this->baseHostWhatsapp($ip);
-            $externalUrl = $base . "/?new=true&hash={$hash}&date={$fecha}";
-
-            $this->logear("✓ QR solicitado para usuario {$usuario->getIdUsuario()}");
+            $this->logear("✓ Sesión solicitada: {$sessionName}");
 
             return new JsonResponse([
                 'success' => true,
-                'qrUrl' => $externalUrl,
-                'mensaje' => 'QR generado. Escanea con tu teléfono WhatsApp'
+                'sessionName' => $sessionName,
+                'mensaje' => 'Abre el modal para escanear el QR'
             ], 200);
+
         } catch (\Exception $e) {
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Error al generar QR: ' . $e->getMessage()
+                'error' => 'Error al solicitar QR: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Proxy: Crea una sesión en Node.js Baileys
+     * POST /whatsapp/session/create
+     * 
+     * Body: { sessionName: "comercial_2282" }
+     * Response: { success: true, message: "..." } o { error: "..." }
+     */
+    public function createSessionAction(Request $request)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $sessionName = $data['sessionName'] ?? null;
+
+        if (!$sessionName) {
+            return new JsonResponse(['error' => 'sessionName requerido'], 400);
+        }
+
+        try {
+            $nodeUrl = 'http://localhost:3000/api/sessions/create';
+            $nodeApiKey = '1234567890';
+
+            $payload = json_encode(['sessionName' => $sessionName]);
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $nodeUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'x-api-key: ' . $nodeApiKey
+                ],
+                CURLOPT_POSTFIELDS => $payload
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if (!$response) {
+                $this->logear("❌ Error curl en createSession: {$curlError}");
+                return new JsonResponse(['error' => 'Node.js no disponible'], 503);
+            }
+
+            $result = json_decode($response, true);
+
+            if ($httpCode === 200) {
+                $this->logear("✓ Sesión creada: {$sessionName}");
+                return new JsonResponse($result, 200);
+            } elseif ($httpCode === 400) {
+                // Sesión ya existe
+                return new JsonResponse($result, 400);
+            } else {
+                $this->logear("⚠️ createSession HTTP {$httpCode}: {$response}");
+                return new JsonResponse(['error' => 'Error del servidor Node.js'], $httpCode);
+            }
+
+        } catch (\Exception $e) {
+            $this->logear("❌ Exception en createSession: " . $e->getMessage());
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Proxy: Obtiene el QR actual de una sesión (para polling)
+     * GET /whatsapp/session/qr/{sessionName}
+     * 
+     * Response: { status: "waiting|qr_ready|connected", qr: "data:image/png;base64,..." }
+     */
+    public function getQrAction($sessionName)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        try {
+            $nodeUrl = 'http://localhost:3000/api/sessions/qr/' . urlencode($sessionName);
+            $nodeApiKey = '1234567890';
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $nodeUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 5,
+                CURLOPT_HTTPHEADER => [
+                    'x-api-key: ' . $nodeApiKey
+                ]
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if (!$response) {
+                $this->logear("❌ Error curl en getQr: {$curlError}");
+                return new JsonResponse(['error' => 'Node.js no disponible'], 503);
+            }
+
+            $result = json_decode($response, true);
+
+            if ($httpCode === 200) {
+                return new JsonResponse($result, 200);
+            } elseif ($httpCode === 404) {
+                return new JsonResponse(['error' => 'Sesión no encontrada'], 404);
+            } else {
+                $this->logear("⚠️ getQr HTTP {$httpCode}: {$response}");
+                return new JsonResponse(['error' => 'Error del servidor Node.js'], $httpCode);
+            }
+
+        } catch (\Exception $e) {
+            $this->logear("❌ Exception en getQr: " . $e->getMessage());
+            return new JsonResponse(['error' => $e->getMessage()], 500);
         }
     }
     

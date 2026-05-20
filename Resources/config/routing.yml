@@ -865,6 +865,17 @@ procesar_texto_expediente:
   controller: AppBundle:InteligenciaArtificial:procesarTextoExpediente
   methods: [POST]
 
+# ===== WHATSAPP PROXY ROUTES (Node.js Integration) =====
+whatsapp_session_create:
+  path: /whatsapp/session/create
+  controller: AppBundle:Whatsapp:createSession
+  methods: [POST]
+
+whatsapp_session_qr:
+  path: /whatsapp/session/qr/{sessionName}
+  controller: AppBundle:Whatsapp:getQr
+  methods: [GET]
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }

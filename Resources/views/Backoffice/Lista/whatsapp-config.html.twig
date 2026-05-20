@@ -254,13 +254,16 @@
                 </button>
             </div>
             <div class="modal-body text-center">
-                <p class="mb-4">Escanea este código QR con tu teléfono WhatsApp</p>
+                <p id="qr-status-text" class="mb-4">Generando QR, espera un momento...</p>
                 <div id="qr-container" class="mb-3">
-                    <img id="qr-image" src="" alt="Código QR" class="img-fluid" style="max-width: 300px;">
+                    <div id="qr-spinner" style="font-size: 2em; color: #25D366;">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando...
+                    </div>
+                    <img id="qr-image" src="" alt="Código QR" class="img-fluid" style="max-width: 300px; display: none;">
                 </div>
                 <p class="text-muted small">
                     <i class="fas fa-info-circle"></i> 
-                    El código QR vencerá en 30 segundos. Si no aparece, solicita uno nuevo.
+                    El código QR se actualiza automáticamente. Si no aparece, espera unos segundos.
                 </p>
             </div>
             <div class="modal-footer">
@@ -315,8 +318,9 @@ $(document).ready(function() {
         });
     });
 
-    // Conectar WhatsApp (solicitar QR)
+    // Conectar WhatsApp (flujo: solicitar-crear sesión-polling QR)
     $('#btn-conectar, #btn-solicitar-qr, #btn-solicitar-qr-modal').on('click', function() {
+        // 1. Solicitar sessionName al backend
         $.ajax({
             url: '{{ path('api_solicitar_qr_whatsapp') }}',
             type: 'POST',
@@ -324,12 +328,13 @@ $(document).ready(function() {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
-                if (response.success && response.qrUrl) {
-                    $('#qr-image').attr('src', response.qrUrl);
-                    $('#modal-qr-whatsapp').modal('show');
-                    toastr.info(response.mensaje);
+                if (response.success && response.sessionName) {
+                    var sessionName = response.sessionName;
+                    
+                    // 2. Crear sesión en Node.js
+                    crearSesionYPolling(sessionName);
                 } else {
-                    toastr.error(response.error || 'Error al generar QR');
+                    toastr.error(response.error || 'Error al solicitar QR');
                 }
             },
             error: function() {
@@ -337,6 +342,118 @@ $(document).ready(function() {
             }
         });
     });
+
+    /**
+     * Crea la sesión en Node.js y inicia polling para obtener el QR
+     */
+    function crearSesionYPolling(sessionName) {
+        // POST /whatsapp/session/create
+        $.ajax({
+            url: '/whatsapp/session/create',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: JSON.stringify({ sessionName: sessionName }),
+            success: function(response) {
+                if (response.success) {
+                    // Sesión creada, abrir modal y empezar polling
+                    $('#modal-qr-whatsapp').modal('show');
+                    $('#qr-image').hide();
+                    $('#qr-spinner').show();
+                    $('#qr-status-text').text('Generando QR, espera un momento...');
+                    
+                    iniciarPollingQR(sessionName);
+                } else if (response.error && response.error.includes('ya existe')) {
+                    // Sesión ya existe, solo hacer polling
+                    $('#modal-qr-whatsapp').modal('show');
+                    $('#qr-image').hide();
+                    $('#qr-spinner').show();
+                    $('#qr-status-text').text('Generando QR, espera un momento...');
+                    
+                    iniciarPollingQR(sessionName);
+                } else {
+                    toastr.error(response.error || 'Error al crear sesión');
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 400) {
+                    // Sesión ya existe, hacer polling de todas formas
+                    $('#modal-qr-whatsapp').modal('show');
+                    $('#qr-image').hide();
+                    $('#qr-spinner').show();
+                    $('#qr-status-text').text('Generando QR, espera un momento...');
+                    
+                    iniciarPollingQR(sessionName);
+                } else {
+                    toastr.error('Error de comunicación con el servidor');
+                }
+            }
+        });
+    }
+
+    /**
+     * Polling continuo para obtener el estado del QR
+     */
+    function iniciarPollingQR(sessionName) {
+        var pollingInterval = null;
+        var intentos = 0;
+        var maxIntentos = 40; // 40 × 3s = 2 minutos máximo
+
+        pollingInterval = setInterval(function() {
+            intentos++;
+
+            if (intentos > maxIntentos) {
+                clearInterval(pollingInterval);
+                $('#qr-status-text').text('Tiempo de espera agotado. Inténtalo de nuevo.');
+                toastr.warning('El QR expiró. Solicita uno nuevo.');
+                return;
+            }
+
+            // GET /whatsapp/session/qr/{sessionName}
+            $.ajax({
+                url: '/whatsapp/session/qr/' + encodeURIComponent(sessionName),
+                type: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(data) {
+                    if (data.status === 'qr_ready' && data.qr) {
+                        // Mostrar QR
+                        $('#qr-spinner').hide();
+                        $('#qr-image').attr('src', data.qr).show();
+                        $('#qr-status-text').text('Escanea con tu WhatsApp');
+                    } else if (data.status === 'waiting') {
+                        // Aún cargando
+                        $('#qr-spinner').show();
+                        $('#qr-image').hide();
+                        $('#qr-status-text').text('Generando QR, espera un momento...');
+                    } else if (data.status === 'connected') {
+                        // Usuario escaneó exitosamente
+                        clearInterval(pollingInterval);
+                        $('#qr-status-text').text('¡Conectado correctamente!');
+                        toastr.success('WhatsApp conectado. Recargando...');
+                        
+                        // Esperar 2 segundos y recargar
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 404) {
+                        // Sesión no existe
+                        clearInterval(pollingInterval);
+                        $('#qr-status-text').text('Sesión no encontrada. Inténtalo de nuevo.');
+                        toastr.error('Sesión no encontrada');
+                    }
+                    // En otros errores, continuar reintentando
+                }
+            });
+
+        }, 3000); // Polling cada 3 segundos
+    }
 
     // Cambiar opciones (toggles)
     $('.toggle-opcion').on('change', function() {
