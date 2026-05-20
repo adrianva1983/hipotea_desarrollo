@@ -3842,7 +3842,7 @@ class WhatsappController extends Controller
 
         // Obtener el usuario propietario
         $usuarioPropietario = $em->getRepository('AppBundle:Usuario')->find($sender->getIdUsuario());
-        $this->logear("✓ Usuario propietario: " . ($usuarioPropietario ? $usuarioPropietario->getNombre() : 'NO ENCONTRADO'));
+        $this->logear("✓ Usuario propietario: " . ($usuarioPropietario ? $usuarioPropietario->getUsername() : 'NO ENCONTRADO'));
 
         // Obtener conversaciones desde chat_history
         $conn = $em->getConnection();

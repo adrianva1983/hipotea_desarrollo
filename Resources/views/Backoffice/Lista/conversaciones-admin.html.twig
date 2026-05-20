@@ -1,6 +1,6 @@
 {% extends "@App/Backoffice/base.html.twig" %}
 
-{% block titulo %}Conversaciones WhatsApp - {{ usuarioPropietario.nombre }}{% endblock %}
+{% block titulo %}Conversaciones WhatsApp - {{ usuarioPropietario.username }}{% endblock %}
 
 {% block customstyles %}
     {{ parent() }}
@@ -100,7 +100,7 @@
                 <h5>
                     <i class="fas fa-user"></i> 
                     {% if usuarioPropietario %}
-                        {{ usuarioPropietario.nombre }} {{ usuarioPropietario.apellidos }}
+                        {{ usuarioPropietario.username }} {{ usuarioPropietario.apellidos }}
                     {% else %}
                         Usuario no encontrado
                     {% endif %}
