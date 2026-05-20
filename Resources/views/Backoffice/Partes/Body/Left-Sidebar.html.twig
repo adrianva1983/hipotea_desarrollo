@@ -20,6 +20,7 @@
 								<i class="ti-user"></i>
 								<span> Mi Perfil</span>
 							</a>
+
 							<div class="dropdown-divider"></div>
 							<a class="dropdown-item" href="{{ path('cerrar_sesion') }}">
 								<i class="fa fa-power-off"></i>
@@ -170,6 +171,13 @@
 								<li>
 									<a href="{{ path('admin_kommo_webhooks') }}">Webhooks de Kommo</a>
 								</li>
+								{% if is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO') or is_granted('ROLE_ADMIN') %}
+									<li>
+										<a href="{{ path('mi_configuracion_whatsapp') }}">
+											<i class="fab fa-whatsapp"></i> Configuración WhatsApp
+										</a>
+									</li>
+								{% endif %}
 							</ul>
 						</li>
 					{% endif %}
