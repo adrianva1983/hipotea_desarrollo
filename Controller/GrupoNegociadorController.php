@@ -4132,7 +4132,7 @@ class GrupoNegociadorController extends Controller
 				$placeholders = implode(',', array_fill(0, count($idsExpedientes), '?'));
 				$sql = 'SELECT id_expediente, COUNT(*) AS total FROM chat_history WHERE id_expediente IN (' . $placeholders . ') GROUP BY id_expediente';
 				$stmt = $conn->executeQuery($sql, $idsExpedientes);
-				while ($row = $stmt->fetchAssociative()) {
+				while ($row = $stmt->fetch()) {
 					$id = (int)$row['id_expediente'];
 					$messagesCountByExp[$id] = (int)$row['total'];
 				}
@@ -4158,7 +4158,7 @@ class GrupoNegociadorController extends Controller
 					$sql = 'SELECT id_usuario FROM WhatsappSenders WHERE id_usuario IN (' . $placeholders . ') AND sessionId IS NOT NULL AND imagenQR IS NULL GROUP BY id_usuario';
 					$stmt = $conn->executeQuery($sql, array_values($tecnicoIds));
 					$activeUsers = [];
-					while ($row = $stmt->fetchAssociative()) { $activeUsers[(int)$row['id_usuario']] = true; }
+					while ($row = $stmt->fetch()) { $activeUsers[(int)$row['id_usuario']] = true; }
 					foreach ($expedienteTecnicoMap as $idExp => $tecId) {
 						if ($tecId && isset($activeUsers[$tecId])) {
 							$hasActiveWhatsappByExp[$idExp] = true;
