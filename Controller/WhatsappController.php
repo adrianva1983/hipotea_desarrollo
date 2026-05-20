@@ -3086,26 +3086,48 @@ class WhatsappController extends Controller
             }
 
             // Buscar expediente asociado al mensaje
-            if (!$idExpediente && ($fromLocal || $toLocal)) {
-                $this->logear("🔍 Buscando expediente para from={$fromLocal}, to={$toLocal}");
+            if (!$idExpediente && $sender) {
+                $this->logear("🔍 Buscando expediente para from={$fromLocal}, to={$toLocal}, técnico={$sender->getIdUsuario()}");
                 
-                // Buscar expediente por teléfono del cliente (from_phone si es recibido)
+                // Buscar expediente donde:
+                // 1. El cliente coincida con from_phone
+                // 2. El comercial/técnico coincida con quien tiene esta sesión
                 $sqlBuscaExp = "SELECT e.id_expediente FROM expediente e 
-                               INNER JOIN usuario u ON e.id_cliente = u.id_usuario
-                               WHERE (u.telefono_movil LIKE :phone1 OR u.telefono_movil LIKE :phone2)
+                               INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
+                               WHERE u_cliente.telefono_movil LIKE :fromPhone
+                               AND (e.id_comercial = :tecnicoId OR e.id_tecnico = :tecnicoId)
                                AND e.estado > 0
                                ORDER BY e.id_expediente DESC LIMIT 1";
                 
                 $stmtBuscaExp = $conn->prepare($sqlBuscaExp);
                 $stmtBuscaExp->execute([
-                    ':phone1' => '%' . $fromLocal . '%',
-                    ':phone2' => '%' . $toLocal . '%'
+                    ':fromPhone' => '%' . $fromLocal . '%',
+                    ':tecnicoId' => $sender->getIdUsuario()
                 ]);
                 $expResult = $stmtBuscaExp->fetch();
                 
                 if ($expResult && $expResult['id_expediente']) {
                     $idExpediente = $expResult['id_expediente'];
-                    $this->logear("✓ Expediente encontrado: {$idExpediente}");
+                    $this->logear("✓ Expediente encontrado (cliente+técnico): {$idExpediente}");
+                } else {
+                    // Si no encuentra con técnico, buscar solo por cliente
+                    $this->logear("⚠️ No encontrado con técnico, buscando solo por cliente...");
+                    $sqlBuscaExp2 = "SELECT e.id_expediente FROM expediente e 
+                                   INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
+                                   WHERE u_cliente.telefono_movil LIKE :fromPhone
+                                   AND e.estado > 0
+                                   ORDER BY e.id_expediente DESC LIMIT 1";
+                    
+                    $stmtBuscaExp2 = $conn->prepare($sqlBuscaExp2);
+                    $stmtBuscaExp2->execute([
+                        ':fromPhone' => '%' . $fromLocal . '%'
+                    ]);
+                    $expResult2 = $stmtBuscaExp2->fetch();
+                    
+                    if ($expResult2 && $expResult2['id_expediente']) {
+                        $idExpediente = $expResult2['id_expediente'];
+                        $this->logear("✓ Expediente encontrado (solo cliente): {$idExpediente}");
+                    }
                 }
             }
 
