@@ -40,9 +40,9 @@ class WhatsappSender
     private $idUsuario;
 
     /**
-     * @var string
+     * @var string|null
      *
-     * @ORM\Column(name="Telefono", type="string", length=20, nullable=false)
+     * @ORM\Column(name="Telefono", type="string", length=20, nullable=true)
      */
     private $telefono;
 

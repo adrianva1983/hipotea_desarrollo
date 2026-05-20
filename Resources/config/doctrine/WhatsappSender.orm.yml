@@ -21,7 +21,7 @@ AppBundle\Entity\WhatsappSender:
       column: Telefono
       type: string
       length: 20
-      nullable: false
+      nullable: true
     fechaUltimaInteraccion:
       column: FechaUltimaInteraccion
       type: datetime
