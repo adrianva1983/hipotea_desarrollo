@@ -2480,6 +2480,24 @@ class GrupoNegociadorController extends Controller
 		$roles = $usuario->getRoles();
 		$userRole = $roles[0] ?? null;
 
+		// Calcular si el usuario autenticado tiene una sesión WhatsApp activa (para esta acción)
+		$usuarioTieneConexion = false;
+		try {
+			$senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+			$conexion = $senderRepo->createQueryBuilder('ws')
+				->where('ws.idUsuario = :idUsuario')
+				->setParameter('idUsuario', $this->getUser()->getIdUsuario())
+				->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+				->setMaxResults(1)
+				->getQuery()
+				->getOneOrNullResult();
+			if ($conexion && $conexion->getSessionId() && !$conexion->getImagenQR()) {
+				$usuarioTieneConexion = true;
+			}
+		} catch (\Exception $e) {
+			$usuarioTieneConexion = false;
+		}
+
 		$hayParametrosEnUrl = count($request->query->all()) > 0;
 
 		// Aplicar filtro automático para DIRECTORA TÉCNICA (ID 768 = Fátima)
@@ -4070,7 +4088,7 @@ class GrupoNegociadorController extends Controller
 		if ($usuario->getIdUsuario() === 1656) {
 			$inmobiliariasFiltradas = $request->query->get('inmobiliarias', []);
 		}
-		error_log('usuarioTieneConexion: ' . $usuarioTieneConexion);
+		error_log('usuarioTieneConexion: ' . var_export($usuarioTieneConexion, true));
 		return $this->render('@App/Backoffice/Lista/ExpedientePaginacion.html.twig', [
 			'titulo' => 'Lista de expedientes',
 			'expedientes' => $expedientes,
