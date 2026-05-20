@@ -3821,8 +3821,11 @@ class WhatsappController extends Controller
      */
     public function conversacionesAdminAction($idSender)
     {
+        $this->logear("=== INICIO conversacionesAdminAction, idSender: {$idSender} ===");
+        
         $usuario = $this->getUser();
         if (!$usuario || !$this->isGranted('ROLE_ADMIN')) {
+            $this->logear("❌ No autorizado o no es admin");
             throw $this->createAccessDeniedException('Solo admins pueden acceder');
         }
 
@@ -3831,21 +3834,29 @@ class WhatsappController extends Controller
         // Obtener el sender
         $sender = $em->getRepository('AppBundle:WhatsappSender')->find($idSender);
         if (!$sender) {
+            $this->logear("❌ Sender no encontrado: {$idSender}");
             throw $this->createNotFoundException('Conexión no encontrada');
         }
+        
+        $this->logear("✓ Sender encontrado - ID: {$idSender}, Teléfono: " . ($sender->getTelefono() ?? 'NULL'));
 
         // Obtener el usuario propietario
         $usuarioPropietario = $em->getRepository('AppBundle:Usuario')->find($sender->getIdUsuario());
+        $this->logear("✓ Usuario propietario: " . ($usuarioPropietario ? $usuarioPropietario->getNombre() : 'NO ENCONTRADO'));
 
         // Obtener conversaciones desde chat_history
         $conn = $em->getConnection();
         $phone = $sender->getTelefono();
         
+        $this->logear("📞 Teléfono sin procesar: " . ($phone ?? 'NULL'));
+        
         if (!$phone) {
+            $this->logear("⚠️ El sender NO tiene teléfono asignado");
             $mensajes = [];
         } else {
             // Normalizar el teléfono: remover + y espacios para búsqueda flexible
             $phoneNorm = preg_replace('/[^0-9]/', '', $phone);
+            $this->logear("📞 Teléfono normalizado: {$phoneNorm}");
             
             $sql = "SELECT * FROM chat_history 
                     WHERE REPLACE(REPLACE(from_phone, '+', ''), ' ', '') = :phone 
@@ -3853,14 +3864,21 @@ class WhatsappController extends Controller
                     ORDER BY timestamp DESC
                     LIMIT 100";
             
+            $this->logear("🔎 SQL: " . $sql);
+            
             $stmt = $conn->prepare($sql);
             $stmt->execute([':phone' => $phoneNorm]);
             $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             
-            // Log para debugging
-            $this->logear("🔍 Búsqueda de conversaciones - Teléfono: {$phone} (normalizado: {$phoneNorm}) - Encontrados: " . count($mensajes));
+            $this->logear("✓ Conversaciones encontradas: " . count($mensajes));
+            if (count($mensajes) > 0) {
+                $this->logear("   Primera: " . $mensajes[0]['message']);
+                $this->logear("   Última: " . $mensajes[count($mensajes)-1]['message']);
+            }
         }
 
+        $this->logear("=== FIN conversacionesAdminAction - Renderizando vista ===");
+        
         return $this->render('@App/Backoffice/Lista/conversaciones-admin.html.twig', [
             'sender' => $sender,
             'usuarioPropietario' => $usuarioPropietario,
