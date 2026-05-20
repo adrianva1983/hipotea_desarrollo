@@ -3863,19 +3863,22 @@ class WhatsappController extends Controller
             
             $this->logear("📞 Buscando: {$phoneNorm} o {$phoneWithout34}");
             
-            // Obtener expedientes con count y última fecha
+            // Obtener expedientes con count y última fecha (búsqueda flexible)
             $sql = "SELECT 
                         id_expediente,
                         COUNT(*) as count,
                         MAX(timestamp) as ultima_fecha
                     FROM chat_history 
-                    WHERE (from_phone IN (:phone, :phoneWithout34) 
-                           OR to_phone IN (:phone, :phoneWithout34))
+                    WHERE (from_phone LIKE :phone1 OR from_phone LIKE :phone2
+                           OR to_phone LIKE :phone1 OR to_phone LIKE :phone2)
                     GROUP BY id_expediente
                     ORDER BY ultima_fecha DESC";
             
             $stmt = $conn->prepare($sql);
-            $stmt->execute([':phone' => $phoneNorm, ':phoneWithout34' => $phoneWithout34]);
+            $stmt->execute([
+                ':phone1' => '%' . $phoneNorm . '%',
+                ':phone2' => '%' . $phoneWithout34 . '%'
+            ]);
             $expedientes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             
             $this->logear("✓ Expedientes encontrados: " . count($expedientes));
@@ -3927,23 +3930,27 @@ class WhatsappController extends Controller
                 $phoneWithout34 = substr($phoneNorm, 2);
             }
             
+            $this->logear("🔍 Buscando en expediente {$idExpediente} - Teléfono: {$phoneNorm} o {$phoneWithout34}");
+            
             $conn = $em->getConnection();
             
-            // Obtener conversaciones del expediente
+            // Búsqueda flexible con LIKE para ambos campos (from_phone Y to_phone)
             $sql = "SELECT * FROM chat_history 
                     WHERE id_expediente = :expediente
-                      AND (from_phone IN (:phone, :phoneWithout34) 
-                           OR to_phone IN (:phone, :phoneWithout34))
+                      AND (from_phone LIKE :phone1 OR from_phone LIKE :phone2
+                           OR to_phone LIKE :phone1 OR to_phone LIKE :phone2)
                     ORDER BY timestamp ASC
                     LIMIT 200";
             
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 ':expediente' => $idExpediente,
-                ':phone' => $phoneNorm,
-                ':phoneWithout34' => $phoneWithout34
+                ':phone1' => '%' . $phoneNorm . '%',
+                ':phone2' => '%' . $phoneWithout34 . '%'
             ]);
             $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            
+            $this->logear("✓ Mensajes encontrados en expediente: " . count($mensajes));
         }
 
         return new JsonResponse([
