@@ -295,36 +295,48 @@ class WhatsappController extends Controller
         return $normalizedMessage;
     }
 
+    private function normalizeWhatsappPhoneForComparison(?string $phone): string
+    {
+        if (!is_string($phone) || trim($phone) === '') {
+            return '';
+        }
+
+        $normalizedPhone = preg_replace('/\D+/', '', $phone);
+        if ($normalizedPhone === '') {
+            return '';
+        }
+
+        return strlen($normalizedPhone) > 9 ? substr($normalizedPhone, -9) : $normalizedPhone;
+    }
+
     private function hasRecentOutgoingMessageDuplicate($conn, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $messageType, string $messageToCompare): bool
     {
         $normalizedCandidate = $this->normalizeWhatsappMessageForComparison($messageToCompare, $messageType);
-        if ($normalizedCandidate === '' || !$fromPhone) {
+        $normalizedFromPhone = $this->normalizeWhatsappPhoneForComparison($fromPhone);
+        $normalizedToPhone = $this->normalizeWhatsappPhoneForComparison($toPhone);
+
+        if ($normalizedCandidate === '' || $normalizedFromPhone === '') {
             return false;
         }
 
         $sql = 'SELECT message
+                     , from_phone
+                     , to_phone
                 FROM chat_history
                 WHERE direction = :direction
                   AND role = :role
-                  AND message_type = :messageType
-                  AND from_phone = :fromPhone';
+                  AND message_type = :messageType';
 
         $params = [
             'direction' => 'enviado',
             'role' => 'assistant',
             'messageType' => $messageType,
-            'fromPhone' => $fromPhone,
             'recentLimit' => date('Y-m-d H:i:s', time() - 120),
         ];
 
         if ($idExpediente !== null) {
             $sql .= ' AND id_expediente = :idExpediente';
             $params['idExpediente'] = $idExpediente;
-        }
-
-        if ($toPhone) {
-            $sql .= ' AND to_phone = :toPhone';
-            $params['toPhone'] = $toPhone;
         }
 
         $sql .= ' AND timestamp >= :recentLimit ORDER BY timestamp DESC LIMIT 5';
@@ -334,6 +346,17 @@ class WhatsappController extends Controller
         $recentMessages = $stmt->fetchAll();
 
         foreach ($recentMessages as $recentMessageRow) {
+            $recentFromPhone = $this->normalizeWhatsappPhoneForComparison($recentMessageRow['from_phone'] ?? null);
+            $recentToPhone = $this->normalizeWhatsappPhoneForComparison($recentMessageRow['to_phone'] ?? null);
+
+            if ($recentFromPhone !== $normalizedFromPhone) {
+                continue;
+            }
+
+            if ($normalizedToPhone !== '' && $recentToPhone !== '' && $recentToPhone !== $normalizedToPhone) {
+                continue;
+            }
+
             $recentNormalized = $this->normalizeWhatsappMessageForComparison((string) ($recentMessageRow['message'] ?? ''), $messageType);
             if ($recentNormalized !== '' && $recentNormalized === $normalizedCandidate) {
                 return true;
