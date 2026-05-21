@@ -223,6 +223,51 @@ class WhatsappController extends Controller
         return $this->saveWhatsappImageBinary($binaryContent, $preferredMimeType);
     }
 
+    private function extractIncomingWhatsappImagePayload(array $data): array
+    {
+        $mimeType = null;
+        foreach (['mime_type', 'mimetype', 'imageMimeType'] as $mimeKey) {
+            if (!empty($data[$mimeKey]) && is_string($data[$mimeKey]) && strpos($data[$mimeKey], 'image/') === 0) {
+                $mimeType = $data[$mimeKey];
+                break;
+            }
+        }
+
+        $base64Content = null;
+        foreach (['content', 'base64', 'imageBase64', 'fileData', 'data'] as $contentKey) {
+            if (!empty($data[$contentKey]) && is_string($data[$contentKey])) {
+                $normalizedBase64 = $this->normalizeWhatsappBase64($data[$contentKey]);
+                if ($normalizedBase64) {
+                    $base64Content = $normalizedBase64;
+                    break;
+                }
+            }
+        }
+
+        $url = null;
+        foreach (['url', 'mediaUrl', 'body'] as $urlKey) {
+            if (!empty($data[$urlKey]) && is_string($data[$urlKey]) && filter_var($data[$urlKey], FILTER_VALIDATE_URL)) {
+                $url = $data[$urlKey];
+                break;
+            }
+        }
+
+        $text = null;
+        foreach (['text', 'caption'] as $textKey) {
+            if (isset($data[$textKey]) && is_string($data[$textKey]) && trim($data[$textKey]) !== '') {
+                $text = trim($data[$textKey]);
+                break;
+            }
+        }
+
+        return [
+            'mime_type' => $mimeType,
+            'base64' => $base64Content,
+            'url' => $url,
+            'text' => $text,
+        ];
+    }
+
     private function downloadMediaToWhatsappUpload(string $url): ?array
     {
         try {
@@ -3257,7 +3302,7 @@ class WhatsappController extends Controller
             $sessionId = $data['sessionId'] ?? null;
             $from = $data['from'] ?? null;
             $to = $data['to'] ?? null;  // Puede venir del webhook o ser deducido
-            $body = $data['body'] ?? '';
+            $body = is_scalar($data['body'] ?? null) ? (string) $data['body'] : '';
             $type = $data['type'] ?? 'text';
 
             $this->logear("📨 WEBHOOK MESSAGE RAW: from={$from}, to={$to}, sessionId={$sessionId}, body=" . substr($body, 0, 30));
@@ -3416,15 +3461,27 @@ class WhatsappController extends Controller
 
             // Para mensajes de imagen recibidos: descargar y convertir a base64
             $messageToSave = $body;
-            if ($type === 'image' && filter_var($body, FILTER_VALIDATE_URL)) {
-                $this->logear("📥 Descargando imagen desde URL: " . substr($body, 0, 80) . "...");
-                $savedImage = $this->downloadMediaToWhatsappUpload($body);
+            if ($type === 'image') {
+                $imagePayload = $this->extractIncomingWhatsappImagePayload($data);
+                $imageMimeType = $imagePayload['mime_type'] ?? 'image/jpeg';
+                $savedImage = null;
+
+                if (!empty($imagePayload['base64'])) {
+                    $this->logear('📥 Guardando imagen recibida en base64 desde webhook WhatsApp');
+                    $savedImage = $this->saveWhatsappImageFromBase64($imagePayload['base64'], $imageMimeType);
+                }
+
+                if ($savedImage === null && !empty($imagePayload['url'])) {
+                    $this->logear("📥 Descargando imagen desde URL: " . substr($imagePayload['url'], 0, 80) . "...");
+                    $savedImage = $this->downloadMediaToWhatsappUpload($imagePayload['url']);
+                }
+
                 if ($savedImage !== null) {
                     $messageToSave = json_encode([
                         'type'      => 'image',
                         'filepath'  => $savedImage['filepath'],
                         'mime_type' => $savedImage['mime_type'],
-                        'text'      => null,
+                        'text'      => $imagePayload['text'],
                     ]);
                     $this->logear('✓ Imagen descargada y guardada en uploads: ' . $savedImage['filepath']);
                 } else {
@@ -3432,11 +3489,11 @@ class WhatsappController extends Controller
                     $messageToSave = json_encode([
                         'type'      => 'image',
                         'filepath'  => null,
-                        'mime_type' => 'image/jpeg',
-                        'url'       => $body,
-                        'text'      => null,
+                        'mime_type' => $imageMimeType,
+                        'url'       => $imagePayload['url'],
+                        'text'      => $imagePayload['text'],
                     ]);
-                    $this->logear("⚠️ No se pudo descargar la imagen, guardando URL de referencia");
+                    $this->logear('⚠️ No se pudo guardar la imagen en uploads; revisar si Baileys está enviando solo una URL temporal');
                 }
             }
 
