@@ -112,6 +112,31 @@ class WhatsappController extends Controller
         return null;
     }
 
+    private function getValidatedImageMimeType(string $binaryContent, ?string $preferredMimeType = null): ?string
+    {
+        if ($binaryContent === '') {
+            return null;
+        }
+
+        if (function_exists('getimagesizefromstring')) {
+            $imageInfo = @getimagesizefromstring($binaryContent);
+            if (is_array($imageInfo) && !empty($imageInfo['mime']) && strpos($imageInfo['mime'], 'image/') === 0) {
+                return $imageInfo['mime'];
+            }
+        }
+
+        $detectedMimeType = $this->detectMimeTypeFromBinary($binaryContent);
+        if ($detectedMimeType && strpos($detectedMimeType, 'image/') === 0) {
+            return $detectedMimeType;
+        }
+
+        if ($preferredMimeType && strpos($preferredMimeType, 'image/') === 0) {
+            return null;
+        }
+
+        return null;
+    }
+
     private function guessExtensionFromMimeType(?string $mimeType): string
     {
         $extensionMap = [
@@ -160,12 +185,10 @@ class WhatsappController extends Controller
             return null;
         }
 
-        $mimeType = $this->detectMimeTypeFromBinary($binaryContent);
-        if (!$mimeType && $preferredMimeType && strpos($preferredMimeType, 'image/') === 0) {
-            $mimeType = $preferredMimeType;
-        }
+        $mimeType = $this->getValidatedImageMimeType($binaryContent, $preferredMimeType);
         if (!$mimeType) {
-            $mimeType = 'image/jpeg';
+            $this->logear('⚠️ Se rechazó un binario de WhatsApp porque no es una imagen válida');
+            return null;
         }
 
         $fileName = 'img_' . md5(uniqid('', true)) . '.' . $this->guessExtensionFromMimeType($mimeType);
@@ -216,6 +239,7 @@ class WhatsappController extends Controller
 
             $rawBinary = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
             $curlError = curl_error($ch);
             curl_close($ch);
 
@@ -229,7 +253,11 @@ class WhatsappController extends Controller
                 return null;
             }
 
-            return $this->saveWhatsappImageBinary($rawBinary);
+            if ($contentType && strpos($contentType, 'image/') !== 0) {
+                $this->logear('⚠️ downloadMediaToWhatsappUpload: content-type no válido para imagen: ' . $contentType);
+            }
+
+            return $this->saveWhatsappImageBinary($rawBinary, $contentType ?: null);
         } catch (\Exception $e) {
             $this->logear('❌ downloadMediaToWhatsappUpload excepción: ' . $e->getMessage());
             return null;
