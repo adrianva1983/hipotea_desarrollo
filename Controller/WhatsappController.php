@@ -366,6 +366,63 @@ class WhatsappController extends Controller
         return false;
     }
 
+    private function areChatHistoryRowsEquivalent(array $leftRow, array $rightRow): bool
+    {
+        $leftDirection = (string) ($leftRow['direction'] ?? '');
+        $rightDirection = (string) ($rightRow['direction'] ?? '');
+        if ($leftDirection === '' || $leftDirection !== $rightDirection) {
+            return false;
+        }
+
+        $leftType = (string) ($leftRow['message_type'] ?? 'text');
+        $rightType = (string) ($rightRow['message_type'] ?? 'text');
+        if ($leftType !== $rightType) {
+            return false;
+        }
+
+        $leftFrom = $this->normalizeWhatsappPhoneForComparison($leftRow['from_phone'] ?? null);
+        $rightFrom = $this->normalizeWhatsappPhoneForComparison($rightRow['from_phone'] ?? null);
+        if ($leftFrom !== $rightFrom) {
+            return false;
+        }
+
+        $leftTo = $this->normalizeWhatsappPhoneForComparison($leftRow['to_phone'] ?? null);
+        $rightTo = $this->normalizeWhatsappPhoneForComparison($rightRow['to_phone'] ?? null);
+        if ($leftTo !== '' && $rightTo !== '' && $leftTo !== $rightTo) {
+            return false;
+        }
+
+        $leftMessage = $this->normalizeWhatsappMessageForComparison((string) ($leftRow['message'] ?? ''), $leftType);
+        $rightMessage = $this->normalizeWhatsappMessageForComparison((string) ($rightRow['message'] ?? ''), $rightType);
+        if ($leftMessage === '' || $leftMessage !== $rightMessage) {
+            return false;
+        }
+
+        $leftTimestamp = !empty($leftRow['timestamp']) ? strtotime((string) $leftRow['timestamp']) : false;
+        $rightTimestamp = !empty($rightRow['timestamp']) ? strtotime((string) $rightRow['timestamp']) : false;
+        if ($leftTimestamp === false || $rightTimestamp === false) {
+            return false;
+        }
+
+        return abs($rightTimestamp - $leftTimestamp) <= 120;
+    }
+
+    private function deduplicateChatHistoryRows(array $messages): array
+    {
+        $deduplicatedMessages = [];
+
+        foreach ($messages as $messageRow) {
+            $lastRow = !empty($deduplicatedMessages) ? $deduplicatedMessages[count($deduplicatedMessages) - 1] : null;
+            if ($lastRow && $this->areChatHistoryRowsEquivalent($lastRow, $messageRow)) {
+                continue;
+            }
+
+            $deduplicatedMessages[] = $messageRow;
+        }
+
+        return $deduplicatedMessages;
+    }
+
     private function downloadMediaToWhatsappUpload(string $url): ?array
     {
         try {
@@ -2058,6 +2115,8 @@ class WhatsappController extends Controller
             $stmt->bindValue('idExpediente', (int)$id);
             $stmt->execute();
             $messages = $stmt->fetchAll();
+
+            $messages = $this->deduplicateChatHistoryRows($messages);
 
             return new JsonResponse($messages, 200);
         } catch (\Exception $e) {
