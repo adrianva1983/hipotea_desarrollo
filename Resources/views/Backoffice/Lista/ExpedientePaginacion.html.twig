@@ -371,12 +371,20 @@
 		/**
 		 * Construye el HTML de contenido de un mensaje WhatsApp.
 		 * Soporta imágenes guardadas como JSON {type,content,mime_type} o URL pura.
+		 * Auto-detecta JSON de imagen aunque message_type no venga en la respuesta.
 		 */
 		function buildWhatsappMessageContent(msg) {
-			console.log('buildWhatsappMessageContent');
 			var rawMessage = msg.message || '';
 			var type = msg.message_type || 'text';
 			var IMG_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2213%22%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+
+			// Auto-detectar JSON de imagen aunque message_type no venga o sea 'text'
+			if (type !== 'image' && rawMessage.charAt(0) === '{') {
+				try {
+					var maybeImg = JSON.parse(rawMessage);
+					if (maybeImg && maybeImg.type === 'image') { type = 'image'; }
+				} catch(e) {}
+			}
 
 			if (type === 'image') {
 				var imgSrc = null;
@@ -391,7 +399,6 @@
 						}
 					}
 				} catch(e) {
-					// Si no es JSON, intentar usar el texto directamente como URL
 					if (rawMessage.indexOf('http') === 0) { imgSrc = rawMessage; }
 				}
 				return '<img src="' + (imgSrc || IMG_FALLBACK) + '" alt="Imagen" class="whatsapp-image" style="max-width:250px;max-height:250px;border-radius:8px;margin:4px 0;display:block;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" onerror="this.src=\''+IMG_FALLBACK+'\';this.onclick=null;">';

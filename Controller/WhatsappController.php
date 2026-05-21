@@ -1585,7 +1585,7 @@ class WhatsappController extends Controller
             }
 
             // Obtener los mensajes ordenados por timestamp
-            $sql = 'SELECT id, from_phone, to_phone, message, role, direction, timestamp, id_expediente
+            $sql = 'SELECT id, from_phone, to_phone, message, role, direction, message_type, timestamp, id_expediente
                     FROM chat_history
                     WHERE id_expediente = :idExpediente
                     ORDER BY timestamp ASC';
