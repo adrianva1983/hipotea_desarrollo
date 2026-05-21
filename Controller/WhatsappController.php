@@ -268,6 +268,81 @@ class WhatsappController extends Controller
         ];
     }
 
+    private function normalizeWhatsappMessageForComparison($message, string $messageType): string
+    {
+        if (!is_string($message)) {
+            return '';
+        }
+
+        $normalizedMessage = trim($message);
+        if ($normalizedMessage === '') {
+            return '';
+        }
+
+        $decodedMessage = json_decode($normalizedMessage, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decodedMessage)) {
+            if ($messageType === 'text') {
+                return trim((string) ($decodedMessage['content'] ?? $decodedMessage['text'] ?? ''));
+            }
+
+            if ($messageType === 'image') {
+                return trim((string) ($decodedMessage['filepath'] ?? $decodedMessage['url'] ?? $decodedMessage['content'] ?? ''));
+            }
+
+            return trim((string) ($decodedMessage['content'] ?? $decodedMessage['url'] ?? $decodedMessage['text'] ?? ''));
+        }
+
+        return $normalizedMessage;
+    }
+
+    private function hasRecentOutgoingMessageDuplicate($conn, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $messageType, string $messageToCompare): bool
+    {
+        $normalizedCandidate = $this->normalizeWhatsappMessageForComparison($messageToCompare, $messageType);
+        if ($normalizedCandidate === '' || !$fromPhone) {
+            return false;
+        }
+
+        $sql = 'SELECT message
+                FROM chat_history
+                WHERE direction = :direction
+                  AND role = :role
+                  AND message_type = :messageType
+                  AND from_phone = :fromPhone';
+
+        $params = [
+            'direction' => 'enviado',
+            'role' => 'assistant',
+            'messageType' => $messageType,
+            'fromPhone' => $fromPhone,
+            'recentLimit' => date('Y-m-d H:i:s', time() - 120),
+        ];
+
+        if ($idExpediente !== null) {
+            $sql .= ' AND id_expediente = :idExpediente';
+            $params['idExpediente'] = $idExpediente;
+        }
+
+        if ($toPhone) {
+            $sql .= ' AND to_phone = :toPhone';
+            $params['toPhone'] = $toPhone;
+        }
+
+        $sql .= ' AND timestamp >= :recentLimit ORDER BY timestamp DESC LIMIT 5';
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        $recentMessages = $stmt->fetchAll();
+
+        foreach ($recentMessages as $recentMessageRow) {
+            $recentNormalized = $this->normalizeWhatsappMessageForComparison((string) ($recentMessageRow['message'] ?? ''), $messageType);
+            if ($recentNormalized !== '' && $recentNormalized === $normalizedCandidate) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function downloadMediaToWhatsappUpload(string $url): ?array
     {
         try {
@@ -3578,6 +3653,11 @@ class WhatsappController extends Controller
                     ]);
                     $this->logear('⚠️ No se pudo guardar la imagen en uploads; revisar si Baileys está enviando solo una URL temporal');
                 }
+            }
+
+            if ($direction === 'enviado' && $this->hasRecentOutgoingMessageDuplicate($conn, $idExpediente, $fromPhone, $toPhone, $type, $messageToSave)) {
+                $this->logear('⚠️ Se omitió un eco duplicado del webhook para expediente ' . ($idExpediente ?? 'null') . ' y teléfono ' . $fromPhone);
+                return new JsonResponse([], 200);
             }
 
             $conn->insert('chat_history', [
