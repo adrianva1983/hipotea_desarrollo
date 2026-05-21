@@ -465,12 +465,6 @@
 											margin-left: 0 !important;
 											padding-top: 0 !important;
 										}
-
-										.fondo-casa {
-											-webkit-print-color-adjust: exact !important;
-											print-color-adjust: exact !important;
-											color-adjust: exact !important;
-										}
 									}
 								</style>
 								{% if cuota_fija_final and cuota_fija_final > 0 %}
@@ -1053,7 +1047,8 @@
 										<div class="mb-4">
 											<span style="color:grey;font-size:14px;">Con la información que nos has proporcionado, hemos aplicado un algoritmo que estima tu capacidad de pago, considerando los gastos y tu aportación inicial. El precio máximo de vivienda que te recomendamos buscar sería aproximadamente:</span>
 										</div>
-										<h1 class="text-center mb-4 fondo-casa">
+										<h1 class="text-center mb-4">
+											<img src="/assets/images/fondo-casa.png" style="max-width: 250px; display: block; margin: 0 auto 10px;">
 											<span data-pago-mensual>
 												{% if resultado is defined %}
 													{{ importe_fijo|number_format(0,',','.') }}
