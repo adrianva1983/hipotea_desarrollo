@@ -366,63 +366,6 @@ class WhatsappController extends Controller
         return false;
     }
 
-    private function areChatHistoryRowsEquivalent(array $leftRow, array $rightRow): bool
-    {
-        $leftDirection = (string) ($leftRow['direction'] ?? '');
-        $rightDirection = (string) ($rightRow['direction'] ?? '');
-        if ($leftDirection === '' || $leftDirection !== $rightDirection) {
-            return false;
-        }
-
-        $leftType = (string) ($leftRow['message_type'] ?? 'text');
-        $rightType = (string) ($rightRow['message_type'] ?? 'text');
-        if ($leftType !== $rightType) {
-            return false;
-        }
-
-        $leftFrom = $this->normalizeWhatsappPhoneForComparison($leftRow['from_phone'] ?? null);
-        $rightFrom = $this->normalizeWhatsappPhoneForComparison($rightRow['from_phone'] ?? null);
-        if ($leftFrom !== $rightFrom) {
-            return false;
-        }
-
-        $leftTo = $this->normalizeWhatsappPhoneForComparison($leftRow['to_phone'] ?? null);
-        $rightTo = $this->normalizeWhatsappPhoneForComparison($rightRow['to_phone'] ?? null);
-        if ($leftTo !== '' && $rightTo !== '' && $leftTo !== $rightTo) {
-            return false;
-        }
-
-        $leftMessage = $this->normalizeWhatsappMessageForComparison((string) ($leftRow['message'] ?? ''), $leftType);
-        $rightMessage = $this->normalizeWhatsappMessageForComparison((string) ($rightRow['message'] ?? ''), $rightType);
-        if ($leftMessage === '' || $leftMessage !== $rightMessage) {
-            return false;
-        }
-
-        $leftTimestamp = !empty($leftRow['timestamp']) ? strtotime((string) $leftRow['timestamp']) : false;
-        $rightTimestamp = !empty($rightRow['timestamp']) ? strtotime((string) $rightRow['timestamp']) : false;
-        if ($leftTimestamp === false || $rightTimestamp === false) {
-            return false;
-        }
-
-        return abs($rightTimestamp - $leftTimestamp) <= 120;
-    }
-
-    private function deduplicateChatHistoryRows(array $messages): array
-    {
-        $deduplicatedMessages = [];
-
-        foreach ($messages as $messageRow) {
-            $lastRow = !empty($deduplicatedMessages) ? $deduplicatedMessages[count($deduplicatedMessages) - 1] : null;
-            if ($lastRow && $this->areChatHistoryRowsEquivalent($lastRow, $messageRow)) {
-                continue;
-            }
-
-            $deduplicatedMessages[] = $messageRow;
-        }
-
-        return $deduplicatedMessages;
-    }
-
     private function downloadMediaToWhatsappUpload(string $url): ?array
     {
         try {
@@ -2116,8 +2059,6 @@ class WhatsappController extends Controller
             $stmt->execute();
             $messages = $stmt->fetchAll();
 
-            $messages = $this->deduplicateChatHistoryRows($messages);
-
             return new JsonResponse($messages, 200);
         } catch (\Exception $e) {
             return new JsonResponse([
@@ -2289,36 +2230,11 @@ class WhatsappController extends Controller
                 ], 500);
             }
 
-            // 5. Guardar el mensaje en chat_history si se envió correctamente al bot
-            try {
-                $fromPhone = $phoneOrigen ? $this->normalizePhone($phoneOrigen) : ($sender ? $this->normalizePhone($sender->getTelefono()) : null);
-                $messageData = [
-                    'type' => 'text',
-                    'content' => $texto
-                ];
-                
-                $conn->insert('chat_history', [
-                    'id_expediente' => $idExpediente,
-                    'from_phone' => $fromPhone,
-                    'to_phone' => $this->normalizePhone($phoneDestino),
-                    'message' => json_encode($messageData),
-                    'role' => 'assistant',
-                    'direction' => 'enviado',
-                    'message_type' => 'text',
-                    'timestamp' => date('Y-m-d H:i:s')
-                ]);
-            } catch (\Exception $e) {
-                // Log del error pero no bloquear la respuesta
-                if ($this->container->has('logger')) {
-                    $this->container->get('logger')->warning('Error al guardar mensaje en chat_history: ' . $e->getMessage());
-                }
-            }
-
             return new JsonResponse([
                 'success' => true,
                 'bot_response' => $botResponse,
                 'expediente_id' => $idExpediente,
-                'message' => 'Mensaje enviado y guardado correctamente'
+                'message' => 'Mensaje enviado correctamente. El historial se actualizará desde el webhook.'
             ], 201);
 
         } catch (\Exception $e) {
