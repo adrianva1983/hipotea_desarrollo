@@ -541,7 +541,7 @@ class WhatsappController extends Controller
         $idExpediente = $data['id_expediente'] ?? null;
         $role_label = $data['role_label'] ?? null;
         $text = $data['text'] ?? null;
-        $direction = $data['direccion'] ?? 'enviado11';
+        $direction = $data['direccion'] ?? 'enviado';
 
         if (!$phone || !$text) {
             return new JsonResponse(['error' => 'phone_origen and text are required'], 400);
@@ -809,11 +809,13 @@ class WhatsappController extends Controller
 
             
             $conn->insert('chat_history', [
-                'phone_number' => $phoneGuardar,
-                'role' => $finalRole,
-                'role_label' => $role_label,
-                'text' => json_encode($messageData),
                 'id_expediente' => $idExpediente,
+                'from_phone' => $phone,
+                'to_phone' => $phoneDestination ? $this->normalizePhone($phoneDestination) : null,
+                'message' => json_encode($messageData),
+                'role' => $finalRole,
+                'direction' => ($direction === 'recibido') ? 'recibido' : 'enviado',
+                'message_type' => $isImage ? 'image' : 'text',
                 'timestamp' => date('Y-m-d H:i:s')
             ]);
             $id = $conn->lastInsertId();
@@ -1766,17 +1768,21 @@ class WhatsappController extends Controller
             }
 
             // 5. Guardar el mensaje en chat_history si se envió correctamente al bot
-            /*try {
-                // Obtener el nombre del usuario que envía
-                $usuarioEnvia = $this->findUserByPhone($phoneOrigen);
-                $roleLabel = $usuarioEnvia ? trim(($usuarioEnvia['nombre'] ?? '') . ' ' . ($usuarioEnvia['apellidos'] ?? '')) : 'Técnico';
+            try {
+                $fromPhone = $phoneOrigen ? $this->normalizePhone($phoneOrigen) : ($sender ? $this->normalizePhone($sender->getTelefono()) : null);
+                $messageData = [
+                    'type' => 'text',
+                    'content' => $texto
+                ];
                 
                 $conn->insert('chat_history', [
-                    'phone_number' => $phoneOrigen,  // Guardar el teléfono normalizado sin prefijo
-                    'role' => 'assistant',  // El que envía es técnico/comercial (assistant)
-                    'role_label' => $roleLabel,
-                    'text' => $texto,
                     'id_expediente' => $idExpediente,
+                    'from_phone' => $fromPhone,
+                    'to_phone' => $this->normalizePhone($phoneDestino),
+                    'message' => json_encode($messageData),
+                    'role' => 'assistant',
+                    'direction' => 'enviado',
+                    'message_type' => 'text',
                     'timestamp' => date('Y-m-d H:i:s')
                 ]);
             } catch (\Exception $e) {
@@ -1784,7 +1790,7 @@ class WhatsappController extends Controller
                 if ($this->container->has('logger')) {
                     $this->container->get('logger')->warning('Error al guardar mensaje en chat_history: ' . $e->getMessage());
                 }
-            }*/
+            }
 
             return new JsonResponse([
                 'success' => true,
@@ -1977,7 +1983,7 @@ class WhatsappController extends Controller
                         c.apellidos AS cliente_apellidos,
                         c.telefono_movil AS cliente_telefono,
                         (SELECT MAX(timestamp) FROM chat_history WHERE id_expediente = e.id_expediente) AS ultimo_mensaje_fecha,
-                        (SELECT text FROM chat_history WHERE id_expediente = e.id_expediente ORDER BY timestamp DESC LIMIT 1) AS ultimo_mensaje_texto,
+                        (SELECT message FROM chat_history WHERE id_expediente = e.id_expediente ORDER BY timestamp DESC LIMIT 1) AS ultimo_mensaje_texto,
                         (SELECT COUNT(*) FROM chat_history WHERE id_expediente = e.id_expediente) AS total_mensajes
                     FROM expediente e
                     LEFT JOIN usuario c ON e.id_cliente = c.id_usuario
@@ -2209,12 +2215,18 @@ class WhatsappController extends Controller
                             
                             // ⭐️ GUARDAR MENSAJE EN chat_history PARA QUE FUTURAS LLAMADAS VEAN EL HISTORIAL
                             try {
+                                $messageData = [
+                                    'type' => 'text',
+                                    'content' => $mensajeUnificado
+                                ];
                                 $conn->insert('chat_history', [
-                                    'phone_number' => '614257727',  // Sistema
-                                    'role' => 'assistant',
-                                    'role_label' => 'Hipotea',
-                                    'text' => $mensajeUnificado,
                                     'id_expediente' => $idExpediente,
+                                    'from_phone' => $this->telefonoSistema,
+                                    'to_phone' => $this->normalizePhone($phoneDestino),
+                                    'message' => json_encode($messageData),
+                                    'role' => 'assistant',
+                                    'direction' => 'enviado',
+                                    'message_type' => 'text',
                                     'timestamp' => date('Y-m-d H:i:s')
                                 ]);
                                 $this->logear('✅ Mensaje guardado en chat_history para expediente ' . $idExpediente);

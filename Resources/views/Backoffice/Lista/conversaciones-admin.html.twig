@@ -263,6 +263,71 @@
         $('#modalConversaciones').modal('show');
     }
     
+    /**
+     * Detecta y obtiene la URI de imagen adecuada a partir del mensaje.
+     * Soporta URLs directas, data-URIs existentes y base64 puro (auto-detectando tipo mime).
+     */
+    function getWhatsappImageSrc(rawMessage) {
+        if (!rawMessage) return null;
+        rawMessage = rawMessage.trim();
+
+        // 1. Si empieza por { intentar parsear como JSON
+        if (rawMessage.charAt(0) === '{') {
+            try {
+                var parsed = JSON.parse(rawMessage);
+                if (parsed) {
+                    if (parsed.type === 'image') {
+                        if (parsed.content) {
+                            return getWhatsappImageSrc(parsed.content);
+                        } else if (parsed.url) {
+                            return parsed.url;
+                        }
+                    }
+                    if (parsed.content) {
+                        return getWhatsappImageSrc(parsed.content);
+                    }
+                    if (parsed.url) {
+                        return parsed.url;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // 2. Si empieza por http/https
+        if (/^https?:\/\//i.test(rawMessage)) {
+            return rawMessage;
+        }
+
+        // 3. Si ya es un Data URI con prefijo
+        if (/^data:image\/[a-zA-Z+.-]+;base64,/i.test(rawMessage)) {
+            return rawMessage;
+        }
+
+        // 4. Si es base64 puro, detectar cabeceras y añadir tipo mime
+        var cleanBase64 = rawMessage.replace(/\s/g, '');
+        var mime = null;
+        if (cleanBase64.indexOf('iVBORw0KGgo') === 0) {
+            mime = 'image/png';
+        } else if (cleanBase64.indexOf('/9j/') === 0) {
+            mime = 'image/jpeg';
+        } else if (cleanBase64.indexOf('R0lGOD') === 0) {
+            mime = 'image/gif';
+        } else if (cleanBase64.indexOf('UklGR') === 0) {
+            mime = 'image/webp';
+        }
+
+        if (mime) {
+            return 'data:' + mime + ';base64,' + cleanBase64;
+        }
+
+        // Si parece base64 largo, por defecto tratar como jpeg
+        if (cleanBase64.length > 50 && !cleanBase64.includes('<') && !cleanBase64.includes(' ')) {
+            return 'data:image/jpeg;base64,' + cleanBase64;
+        }
+
+        return null;
+    }
+
     function renderizarChat(mensajes) {
         let html = '';
         
@@ -275,32 +340,54 @@
                 let direction = msg.direction === 'enviado' ? 'sent' : 'received';
                 let sender = msg.direction === 'enviado' ? '✓ Técnico/Comercial' : 'Cliente';
                 
+                var rawMessage = msg.message || '';
+                var type = msg.message_type || 'text';
+                var IMG_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2213%22%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+
+                var parsedJSON = null;
+                if (rawMessage.charAt(0) === '{') {
+                    try {
+                        parsedJSON = JSON.parse(rawMessage);
+                    } catch(e) {}
+                }
+
+                if (parsedJSON) {
+                    if (parsedJSON.type) {
+                        type = parsedJSON.type;
+                    }
+                    if (type === 'image') {
+                        // handled below
+                    } else {
+                        rawMessage = parsedJSON.content || parsedJSON.text || rawMessage;
+                    }
+                } else {
+                    var cleanMsg = rawMessage.trim().replace(/\s/g, '');
+                    if (/^data:image\/[a-zA-Z+.-]+;base64,/i.test(cleanMsg) ||
+                        cleanMsg.indexOf('iVBORw0KGgo') === 0 ||
+                        cleanMsg.indexOf('/9j/') === 0 ||
+                        cleanMsg.indexOf('R0lGOD') === 0 ||
+                        cleanMsg.indexOf('UklGR') === 0) {
+                        type = 'image';
+                    }
+                }
+
                 // Renderizar contenido según el tipo de mensaje
                 let messageContent = '';
-                if (msg.message_type === 'image') {
-                    const IMG_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2213%22%3EImagen no disponible%3C/text%3E%3C/svg%3E';
-                    let imgSrc = null;
-                    try {
-                        const parsed = JSON.parse(msg.message);
-                        if (parsed && parsed.type === 'image') {
-                            if (parsed.content) {
-                                imgSrc = 'data:' + (parsed.mime_type || 'image/jpeg') + ';base64,' + parsed.content;
-                            } else if (parsed.url) {
-                                imgSrc = parsed.url;
-                            }
-                        }
-                    } catch(e) {
-                        if (msg.message && msg.message.indexOf('http') === 0) { imgSrc = msg.message; }
-                    }
-                    messageContent = `<img src="${imgSrc || IMG_FALLBACK}" alt="Imagen" class="message-image" style="max-width:250px;max-height:250px;border-radius:8px;margin:8px 0;cursor:pointer;" onclick="window.open(this.src,'_blank')" onerror="this.src='${IMG_FALLBACK}';this.onclick=null;">`;
-                } else if (msg.message_type === 'video') {
-                    messageContent = `<a href="${escapeHtml(msg.message)}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-video"></i> Ver Video</a>`;
-                } else if (msg.message_type === 'audio') {
-                    messageContent = `<audio controls style="width: 100%; max-width: 300px;"><source src="${escapeHtml(msg.message)}" type="audio/mpeg"></audio>`;
-                } else if (msg.message_type === 'document') {
-                    messageContent = `<a href="${escapeHtml(msg.message)}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-file"></i> Descargar Documento</a>`;
+                if (type === 'image') {
+                    var imgSrc = getWhatsappImageSrc(rawMessage);
+                    messageContent = `<img src="${imgSrc || IMG_FALLBACK}" alt="Imagen" class="message-image" style="max-width:250px;max-height:250px;border-radius:8px;margin:8px 0;cursor:pointer;" onclick="window.open(this.src,'_blank')" onerror="this.src='${IMG_FALLBACK}';this.onclick=null;">` +
+                                     (parsedJSON && parsedJSON.text ? `<div class="message-caption" style="margin-top:4px;font-size:13px;">${escapeHtml(parsedJSON.text)}</div>` : '');
+                } else if (type === 'video') {
+                    var mediaUrl = parsedJSON ? (parsedJSON.content || parsedJSON.url || rawMessage) : rawMessage;
+                    messageContent = `<a href="${escapeHtml(mediaUrl)}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-video"></i> Ver Video</a>`;
+                } else if (type === 'audio') {
+                    var mediaUrl = parsedJSON ? (parsedJSON.content || parsedJSON.url || rawMessage) : rawMessage;
+                    messageContent = `<audio controls style="width: 100%; max-width: 300px;"><source src="${escapeHtml(mediaUrl)}" type="audio/mpeg"></audio>`;
+                } else if (type === 'document') {
+                    var mediaUrl = parsedJSON ? (parsedJSON.content || parsedJSON.url || rawMessage) : rawMessage;
+                    messageContent = `<a href="${escapeHtml(mediaUrl)}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-file"></i> Descargar Documento</a>`;
                 } else {
-                    messageContent = escapeHtml(msg.message);
+                    messageContent = escapeHtml(rawMessage);
                 }
                 
                 html += `
@@ -323,7 +410,9 @@
         // Auto-scroll al final
         setTimeout(function() {
             let container = $('#chatContainer')[0];
-            container.scrollTop = container.scrollHeight;
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
         }, 100);
     }
     
