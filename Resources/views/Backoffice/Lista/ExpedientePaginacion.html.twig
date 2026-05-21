@@ -376,18 +376,17 @@
 			if (!rawMessage) return null;
 			rawMessage = rawMessage.trim();
 
-			// 1. Si empieza por { intentar parsear como JSON
+			// 1. Si empieza por { intentar parsear como JSON (imágenes desde webhook)
 			if (rawMessage.charAt(0) === '{') {
 				try {
 					var parsed = JSON.parse(rawMessage);
 					if (parsed) {
-						if (parsed.type === 'image') {
-							if (parsed.content) {
-								return getWhatsappImageSrc(parsed.content);
-							} else if (parsed.url) {
-								return parsed.url;
-							}
+						// Caso: {type: 'image', content: 'base64...', mime_type: 'image/png'}
+						if (parsed.type === 'image' && parsed.content) {
+							var mime = parsed.mime_type || 'image/jpeg';
+							return 'data:' + mime + ';base64,' + parsed.content;
 						}
+						// Intentar extraer contenido en otros formatos
 						if (parsed.content) {
 							return getWhatsappImageSrc(parsed.content);
 						}
@@ -411,6 +410,7 @@
 			// 4. Si es base64 puro, detectar cabeceras y añadir tipo mime
 			var cleanBase64 = rawMessage.replace(/\s/g, '');
 			var mime = null;
+			
 			if (cleanBase64.indexOf('iVBORw0KGgo') === 0) {
 				mime = 'image/png';
 			} else if (cleanBase64.indexOf('/9j/') === 0) {
@@ -450,6 +450,38 @@
 				} catch(e) {}
 			}
 
+			// Procesar JSON de imagen guardado desde el webhook
+			if (parsedJSON && parsedJSON.type === 'image') {
+				type = 'image';
+				
+				// Obtener el contenido base64
+				var imgContent = parsedJSON.content || null;
+				var mimeType = parsedJSON.mime_type || 'image/jpeg';
+				var caption = parsedJSON.text || null;
+				
+				// Si hay contenido base64, crear data URI
+				var imgSrc = IMG_FALLBACK;
+				if (imgContent && imgContent.length > 0) {
+					imgSrc = 'data:' + mimeType + ';base64,' + imgContent;
+				}
+				
+				// Retornar imagen con caption opcional
+				var html = '<img src="' + imgSrc + '" alt="Imagen" class="whatsapp-image" style="max-width:250px;max-height:300px;border-radius:12px;margin:4px 0;display:block;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" onerror="this.src=\''+IMG_FALLBACK+'\';this.onclick=null;">';
+				
+				if (caption) {
+					html += '<div class="whatsapp-caption" style="margin-top:4px;font-size:13px;color:rgba(0,0,0,0.7);">' + $('<div/>').text(caption).html() + '</div>';
+				}
+				
+				return html;
+			}
+
+			// Si no es JSON válido, procesar como antes
+			if (rawMessage.charAt(0) === '{') {
+				try {
+					parsedJSON = JSON.parse(rawMessage);
+				} catch(e) {}
+			}
+
 			if (parsedJSON) {
 				if (parsedJSON.type) {
 					type = parsedJSON.type;
@@ -472,8 +504,8 @@
 
 			if (type === 'image') {
 				var imgSrc = getWhatsappImageSrc(rawMessage);
-				return '<img src="' + (imgSrc || IMG_FALLBACK) + '" alt="Imagen" class="whatsapp-image" style="max-width:250px;max-height:250px;border-radius:8px;margin:4px 0;display:block;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" onerror="this.src=\''+IMG_FALLBACK+'\';this.onclick=null;">' + 
-				       (parsedJSON && parsedJSON.text ? '<div class="whatsapp-caption" style="margin-top:4px;font-size:13px;">' + $('<div/>').text(parsedJSON.text).html() + '</div>' : '');
+				return '<img src="' + (imgSrc || IMG_FALLBACK) + '" alt="Imagen" class="whatsapp-image" style="max-width:250px;max-height:300px;border-radius:12px;margin:4px 0;display:block;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" onerror="this.src=\''+IMG_FALLBACK+'\';this.onclick=null;">' + 
+				       (parsedJSON && parsedJSON.text ? '<div class="whatsapp-caption" style="margin-top:4px;font-size:13px;color:rgba(0,0,0,0.7);">' + $('<div/>').text(parsedJSON.text).html() + '</div>' : '');
 			}
 
 			if (type === 'video') {
@@ -532,6 +564,7 @@
 					innerContainer.empty();
 					
 					var messages = Array.isArray(data) ? data : (data.messages || []);
+					console.log('Mensajes recibidos:', messages);
 					
 					if (!messages || messages.length === 0) {
 						innerContainer.html('<div class="alert alert-info" style="background: #fff; border:none; border-radius: 7.5px; box-shadow: 0 1px 0.5px rgba(0,0,0,.13);">No hay mensajes WhatsApp para este expediente.</div>');
@@ -542,6 +575,8 @@
 					var lastDirection = null;
 
 					messages.forEach(function(msg) {
+						console.log('Procesando mensaje:', msg.message_type, '| message:', msg.message.substring(0, 100));
+						
 						var direction = msg.direction === 'enviado' ? 'enviado' : 'recibido';
 						var hasTail = (direction !== lastDirection);
 						
@@ -584,6 +619,7 @@
 					iniciarPollingMensajesWhatsApp(expedienteId);
 				},
 				error: function(xhr) {
+					console.error('Error al cargar mensajes:', xhr);
 					innerContainer.html('<div class="alert alert-danger">Error al cargar los mensajes.</div>');
 				}
 			});
