@@ -3164,12 +3164,39 @@ class WhatsappController extends Controller
                 $this->logear("⚠️ toPhone igual a fromPhone: {$fromPhone}, intentando corregir...");
                 $toPhone = null; // Dejar null si no se puede determinar
             }
-            
+
+            // Para mensajes de imagen recibidos: descargar y convertir a base64
+            $messageToSave = $body;
+            if ($type === 'image' && filter_var($body, FILTER_VALIDATE_URL)) {
+                $this->logear("📥 Descargando imagen desde URL: " . substr($body, 0, 80) . "...");
+                $imageBase64 = $this->downloadMediaAsBase64($body);
+                if ($imageBase64 !== null) {
+                    $mimeType = $this->detectMimeTypeFromBase64($imageBase64) ?? 'image/jpeg';
+                    $messageToSave = json_encode([
+                        'type'      => 'image',
+                        'content'   => $imageBase64,
+                        'mime_type' => $mimeType,
+                        'text'      => null,
+                    ]);
+                    $this->logear("✓ Imagen descargada y codificada en base64 (" . strlen($imageBase64) . " chars)");
+                } else {
+                    // Si falla la descarga, guardar la URL como referencia
+                    $messageToSave = json_encode([
+                        'type'      => 'image',
+                        'content'   => null,
+                        'mime_type' => 'image/jpeg',
+                        'url'       => $body,
+                        'text'      => null,
+                    ]);
+                    $this->logear("⚠️ No se pudo descargar la imagen, guardando URL de referencia");
+                }
+            }
+
             $conn->insert('chat_history', [
                 'id_expediente' => $idExpediente,   // ✅ Id del expediente (si se encuentra)
                 'from_phone' => $fromPhone,         // ✅ Quién envía
                 'to_phone' => $toPhone,             // ✅ Quién recibe
-                'message' => $body,
+                'message' => $messageToSave,
                 'role' => $role,
                 'direction' => $direction,
                 'message_type' => $type,
@@ -3186,6 +3213,77 @@ class WhatsappController extends Controller
             $this->logear('❌ Error en MESSAGE: ' . $e->getMessage());
             return new JsonResponse([], 500);
         }
+    }
+
+    /**
+     * Descarga un archivo multimedia desde una URL y lo devuelve en base64.
+     * Retorna null si la descarga falla o el archivo es demasiado grande.
+     */
+    private function downloadMediaAsBase64(string $url): ?string
+    {
+        try {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_TIMEOUT        => 30,
+                CURLOPT_MAXREDIRS      => 5,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
+                // Limitar a 10 MB
+                CURLOPT_BUFFERSIZE     => 1024 * 1024,
+            ]);
+
+            $raw = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError || $httpCode !== 200 || !$raw) {
+                $this->logear("⚠️ downloadMediaAsBase64: HTTP={$httpCode}, error={$curlError}");
+                return null;
+            }
+
+            // Rechazar archivos > 10 MB
+            if (strlen($raw) > 10 * 1024 * 1024) {
+                $this->logear("⚠️ downloadMediaAsBase64: archivo demasiado grande (" . strlen($raw) . " bytes)");
+                return null;
+            }
+
+            return base64_encode($raw);
+
+        } catch (\Exception $e) {
+            $this->logear("❌ downloadMediaAsBase64 excepción: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Detecta el MIME type a partir de los primeros bytes de un base64.
+     */
+    private function detectMimeTypeFromBase64(string $base64): ?string
+    {
+        $raw = base64_decode(substr($base64, 0, 16));
+        if ($raw === false) {
+            return null;
+        }
+
+        $signatures = [
+            "\xFF\xD8\xFF"       => 'image/jpeg',
+            "\x89PNG\r\n\x1A\n"  => 'image/png',
+            'GIF87a'             => 'image/gif',
+            'GIF89a'             => 'image/gif',
+            'RIFF'               => 'image/webp',
+            "\x00\x00\x00"       => 'image/mp4',  // mp4/mov genérico
+        ];
+
+        foreach ($signatures as $sig => $mime) {
+            if (substr($raw, 0, strlen($sig)) === $sig) {
+                return $mime;
+            }
+        }
+
+        return null;
     }
 
     /**
