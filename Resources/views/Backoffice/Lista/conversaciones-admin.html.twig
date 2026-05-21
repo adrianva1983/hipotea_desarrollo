@@ -267,7 +267,58 @@
      * Detecta y obtiene la URI de imagen adecuada a partir del mensaje.
      * Soporta URLs directas, data-URIs existentes y base64 puro (auto-detectando tipo mime).
      */
-    function getWhatsappImageSrc(rawMessage) {
+    function normalizeWhatsappBase64(rawValue) {
+        if (!rawValue || typeof rawValue !== 'string') {
+            return null;
+        }
+
+        var normalizedValue = rawValue.trim();
+        var dataUriMatch = normalizedValue.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/i);
+        if (dataUriMatch) {
+            normalizedValue = dataUriMatch[2];
+        }
+
+        normalizedValue = normalizedValue.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+
+        var padding = normalizedValue.length % 4;
+        if (padding) {
+            normalizedValue += '='.repeat(4 - padding);
+        }
+
+        if (!/^[A-Za-z0-9+/]+={0,2}$/.test(normalizedValue)) {
+            return null;
+        }
+
+        return normalizedValue;
+    }
+
+    function buildWhatsappImageDataUri(base64Content, preferredMime) {
+        var cleanBase64 = normalizeWhatsappBase64(base64Content);
+        if (!cleanBase64) {
+            return null;
+        }
+
+        var mime = preferredMime && /^image\//i.test(preferredMime) ? preferredMime : null;
+        if (!mime) {
+            if (cleanBase64.indexOf('iVBORw0KGgo') === 0) {
+                mime = 'image/png';
+            } else if (cleanBase64.indexOf('/9j/') === 0) {
+                mime = 'image/jpeg';
+            } else if (cleanBase64.indexOf('R0lGOD') === 0) {
+                mime = 'image/gif';
+            } else if (cleanBase64.indexOf('UklGR') === 0) {
+                mime = 'image/webp';
+            }
+        }
+
+        if (!mime && cleanBase64.length > 50) {
+            mime = 'image/jpeg';
+        }
+
+        return mime ? 'data:' + mime + ';base64,' + cleanBase64 : null;
+    }
+
+    function getWhatsappImageSrc(rawMessage, preferredMime) {
         if (!rawMessage) return null;
         rawMessage = rawMessage.trim();
 
@@ -277,14 +328,17 @@
                 var parsed = JSON.parse(rawMessage);
                 if (parsed) {
                     if (parsed.type === 'image') {
+                        if (parsed.filepath) {
+                            return parsed.filepath;
+                        }
                         if (parsed.content) {
-                            return getWhatsappImageSrc(parsed.content);
+                            return buildWhatsappImageDataUri(parsed.content, parsed.mime_type || preferredMime);
                         } else if (parsed.url) {
                             return parsed.url;
                         }
                     }
                     if (parsed.content) {
-                        return getWhatsappImageSrc(parsed.content);
+                        return getWhatsappImageSrc(parsed.content, parsed.mime_type || preferredMime);
                     }
                     if (parsed.url) {
                         return parsed.url;
@@ -298,34 +352,17 @@
             return rawMessage;
         }
 
+        if (/^\/uploads\//i.test(rawMessage)) {
+            return rawMessage;
+        }
+
         // 3. Si ya es un Data URI con prefijo
         if (/^data:image\/[a-zA-Z+.-]+;base64,/i.test(rawMessage)) {
             return rawMessage;
         }
 
         // 4. Si es base64 puro, detectar cabeceras y añadir tipo mime
-        var cleanBase64 = rawMessage.replace(/\s/g, '');
-        var mime = null;
-        if (cleanBase64.indexOf('iVBORw0KGgo') === 0) {
-            mime = 'image/png';
-        } else if (cleanBase64.indexOf('/9j/') === 0) {
-            mime = 'image/jpeg';
-        } else if (cleanBase64.indexOf('R0lGOD') === 0) {
-            mime = 'image/gif';
-        } else if (cleanBase64.indexOf('UklGR') === 0) {
-            mime = 'image/webp';
-        }
-
-        if (mime) {
-            return 'data:' + mime + ';base64,' + cleanBase64;
-        }
-
-        // Si parece base64 largo, por defecto tratar como jpeg
-        if (cleanBase64.length > 50 && !cleanBase64.includes('<') && !cleanBase64.includes(' ')) {
-            return 'data:image/jpeg;base64,' + cleanBase64;
-        }
-
-        return null;
+        return buildWhatsappImageDataUri(rawMessage, preferredMime);
     }
 
     function renderizarChat(mensajes) {
@@ -374,7 +411,7 @@
                 // Renderizar contenido según el tipo de mensaje
                 let messageContent = '';
                 if (type === 'image') {
-                    var imgSrc = getWhatsappImageSrc(rawMessage);
+                    var imgSrc = getWhatsappImageSrc(rawMessage, parsedJSON ? parsedJSON.mime_type : null);
                     messageContent = `<img src="${imgSrc || IMG_FALLBACK}" alt="Imagen" class="message-image" style="max-width:250px;max-height:250px;border-radius:8px;margin:8px 0;cursor:pointer;" onclick="window.open(this.src,'_blank')" onerror="this.src='${IMG_FALLBACK}';this.onclick=null;">` +
                                      (parsedJSON && parsedJSON.text ? `<div class="message-caption" style="margin-top:4px;font-size:13px;">${escapeHtml(parsedJSON.text)}</div>` : '');
                 } else if (type === 'video') {

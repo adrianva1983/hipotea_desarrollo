@@ -58,6 +58,184 @@ class WhatsappController extends Controller
         }
     }
 
+    private function normalizeWhatsappBase64(?string $base64): ?string
+    {
+        if (!$base64 || !is_string($base64)) {
+            return null;
+        }
+
+        $normalizedBase64 = trim($base64);
+        if (preg_match('/^data:image\/[a-zA-Z+.-]+;base64,(.+)$/i', $normalizedBase64, $matches)) {
+            $normalizedBase64 = $matches[1];
+        }
+
+        $normalizedBase64 = str_replace(["\r", "\n", "\t", ' '], '', $normalizedBase64);
+        $normalizedBase64 = strtr($normalizedBase64, '-_', '+/');
+
+        $padding = strlen($normalizedBase64) % 4;
+        if ($padding !== 0) {
+            $normalizedBase64 .= str_repeat('=', 4 - $padding);
+        }
+
+        if (!preg_match('/^[A-Za-z0-9+\/]+={0,2}$/', $normalizedBase64)) {
+            return null;
+        }
+
+        return $normalizedBase64;
+    }
+
+    private function detectMimeTypeFromBinary(string $binaryContent): ?string
+    {
+        $signatures = [
+            "\xFF\xD8\xFF"      => 'image/jpeg',
+            "\x89PNG\r\n\x1A\n" => 'image/png',
+            'GIF87a'            => 'image/gif',
+            'GIF89a'            => 'image/gif',
+            'RIFF'              => 'image/webp',
+            'BM'                => 'image/bmp',
+        ];
+
+        foreach ($signatures as $signature => $mimeType) {
+            if (substr($binaryContent, 0, strlen($signature)) === $signature) {
+                return $mimeType;
+            }
+        }
+
+        if (class_exists('finfo')) {
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $detectedMimeType = $finfo->buffer($binaryContent);
+            if ($detectedMimeType && strpos($detectedMimeType, 'image/') === 0) {
+                return $detectedMimeType;
+            }
+        }
+
+        return null;
+    }
+
+    private function guessExtensionFromMimeType(?string $mimeType): string
+    {
+        $extensionMap = [
+            'image/jpeg'    => 'jpg',
+            'image/jpg'     => 'jpg',
+            'image/png'     => 'png',
+            'image/gif'     => 'gif',
+            'image/webp'    => 'webp',
+            'image/bmp'     => 'bmp',
+            'image/svg+xml' => 'svg',
+        ];
+
+        return $extensionMap[strtolower((string) $mimeType)] ?? 'jpg';
+    }
+
+    private function getWhatsappImagesDirectory(): string
+    {
+        $imagesDirectory = rtrim($this->getParameter('files_directory'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'whatsapp_images';
+        if (!is_dir($imagesDirectory)) {
+            @mkdir($imagesDirectory, 0777, true);
+        }
+
+        return $imagesDirectory;
+    }
+
+    private function buildWhatsappPublicPath(string $absolutePath): string
+    {
+        $normalizedAbsolutePath = str_replace('\\', '/', $absolutePath);
+        $normalizedFilesDirectory = rtrim(str_replace('\\', '/', $this->getParameter('files_directory')), '/');
+
+        if (strpos($normalizedAbsolutePath, $normalizedFilesDirectory) === 0) {
+            return '/uploads/' . ltrim(substr($normalizedAbsolutePath, strlen($normalizedFilesDirectory)), '/');
+        }
+
+        $projectWebDirectory = rtrim(str_replace('\\', '/', $this->get('kernel')->getProjectDir() . '/web'), '/');
+        if (strpos($normalizedAbsolutePath, $projectWebDirectory) === 0) {
+            return substr($normalizedAbsolutePath, strlen($projectWebDirectory));
+        }
+
+        return '/uploads/whatsapp_images/' . basename($normalizedAbsolutePath);
+    }
+
+    private function saveWhatsappImageBinary(string $binaryContent, ?string $preferredMimeType = null): ?array
+    {
+        if ($binaryContent === '') {
+            return null;
+        }
+
+        $mimeType = $this->detectMimeTypeFromBinary($binaryContent);
+        if (!$mimeType && $preferredMimeType && strpos($preferredMimeType, 'image/') === 0) {
+            $mimeType = $preferredMimeType;
+        }
+        if (!$mimeType) {
+            $mimeType = 'image/jpeg';
+        }
+
+        $fileName = 'img_' . md5(uniqid('', true)) . '.' . $this->guessExtensionFromMimeType($mimeType);
+        $absolutePath = $this->getWhatsappImagesDirectory() . DIRECTORY_SEPARATOR . $fileName;
+
+        if (@file_put_contents($absolutePath, $binaryContent) === false) {
+            $this->logear('❌ No se pudo guardar la imagen de WhatsApp en disco: ' . $absolutePath);
+            return null;
+        }
+
+        return [
+            'filepath' => $this->buildWhatsappPublicPath($absolutePath),
+            'mime_type' => $mimeType,
+            'absolute_path' => $absolutePath,
+        ];
+    }
+
+    private function saveWhatsappImageFromBase64(string $base64Content, ?string $preferredMimeType = null): ?array
+    {
+        $normalizedBase64 = $this->normalizeWhatsappBase64($base64Content);
+        if (!$normalizedBase64) {
+            $this->logear('⚠️ Base64 de imagen WhatsApp inválido o corrupto');
+            return null;
+        }
+
+        $binaryContent = base64_decode($normalizedBase64, true);
+        if ($binaryContent === false) {
+            $this->logear('⚠️ No se pudo decodificar la imagen WhatsApp desde base64');
+            return null;
+        }
+
+        return $this->saveWhatsappImageBinary($binaryContent, $preferredMimeType);
+    }
+
+    private function downloadMediaToWhatsappUpload(string $url): ?array
+    {
+        try {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_TIMEOUT        => 30,
+                CURLOPT_MAXREDIRS      => 5,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
+                CURLOPT_BUFFERSIZE     => 1024 * 1024,
+            ]);
+
+            $rawBinary = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError || $httpCode !== 200 || !$rawBinary) {
+                $this->logear("⚠️ downloadMediaToWhatsappUpload: HTTP={$httpCode}, error={$curlError}");
+                return null;
+            }
+
+            if (strlen($rawBinary) > 10 * 1024 * 1024) {
+                $this->logear("⚠️ downloadMediaToWhatsappUpload: archivo demasiado grande (" . strlen($rawBinary) . " bytes)");
+                return null;
+            }
+
+            return $this->saveWhatsappImageBinary($rawBinary);
+        } catch (\Exception $e) {
+            $this->logear('❌ downloadMediaToWhatsappUpload excepción: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     /**
      * Muestra la página de Auto WhatsApp con conexiones activas
      */
@@ -550,32 +728,51 @@ class WhatsappController extends Controller
         // Parsear el texto: puede ser un JSON con estructura de imagen o texto plano
         $imageData = null;
         $imageType = null;
+        $storedImagePath = null;
         $textContent = $text;
         $isImage = false;
 
         // Intentar parsear como JSON (el campo text puede contener JSON serializado con imagen)
         $parsedText = json_decode($text, true);
         if ($parsedText && is_array($parsedText) && isset($parsedText['type'])) {
-            if ($parsedText['type'] === 'image' && isset($parsedText['content'])) {
-                // ✅ ES UNA IMAGEN EN BASE64
+            if ($parsedText['type'] === 'image') {
                 $isImage = true;
-                $imageData = $parsedText['content'];
                 $imageType = $parsedText['mime_type'] ?? 'image/jpeg';
                 $textContent = $parsedText['text'] ?? null; // Descripción de la imagen
 
-                // Validar tamaño máximo de imagen (5MB)
-                $imageSizeInBytes = strlen(base64_decode($imageData));
-                $maxSizeInBytes = 5 * 1024 * 1024; // 5MB
-                
-                if ($imageSizeInBytes > $maxSizeInBytes) {
-                    return new JsonResponse([
-                        'error' => 'Imagen demasiado grande. Máximo 5MB',
-                        'size' => $imageSizeInBytes,
-                        'max_size' => $maxSizeInBytes
-                    ], 400);
+                if (!empty($parsedText['filepath'])) {
+                    $storedImagePath = $parsedText['filepath'];
+                } elseif (!empty($parsedText['url'])) {
+                    $storedImagePath = $parsedText['url'];
+                } elseif (!empty($parsedText['content'])) {
+                    $imageData = $this->normalizeWhatsappBase64($parsedText['content']);
+                    if (!$imageData) {
+                        return new JsonResponse([
+                            'error' => 'Imagen en formato inválido'
+                        ], 400);
+                    }
+
+                    $decodedImage = base64_decode($imageData, true);
+                    if ($decodedImage === false) {
+                        return new JsonResponse([
+                            'error' => 'No se pudo decodificar la imagen'
+                        ], 400);
+                    }
+
+                    // Validar tamaño máximo de imagen (5MB)
+                    $imageSizeInBytes = strlen($decodedImage);
+                    $maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+
+                    if ($imageSizeInBytes > $maxSizeInBytes) {
+                        return new JsonResponse([
+                            'error' => 'Imagen demasiado grande. Máximo 5MB',
+                            'size' => $imageSizeInBytes,
+                            'max_size' => $maxSizeInBytes
+                        ], 400);
+                    }
+
+                    error_log("Imagen detectada: $imageType, tamaño: $imageSizeInBytes bytes\n");
                 }
-                
-                error_log("Imagen detectada: $imageType, tamaño: $imageSizeInBytes bytes\n");
             } else {
                 // JSON pero no es imagen, tratarlo como texto
                 $textContent = $text;
@@ -790,11 +987,23 @@ class WhatsappController extends Controller
 
             
             // Preparar JSON estructurado para guardar en BD
-            if ($isImage && $imageData) {
-                // Si hay imagen, guardar con metadatos
+            if ($isImage) {
+                if (!$storedImagePath && $imageData) {
+                    $savedImage = $this->saveWhatsappImageFromBase64($imageData, $imageType);
+                    if (!$savedImage) {
+                        return new JsonResponse([
+                            'success' => false,
+                            'error' => 'No se pudo guardar la imagen en uploads'
+                        ], 500);
+                    }
+
+                    $storedImagePath = $savedImage['filepath'];
+                    $imageType = $savedImage['mime_type'];
+                }
+
                 $messageData = [
                     'type' => 'image',
-                    'content' => $imageData,  // Base64 de la imagen
+                    'filepath' => $storedImagePath,
                     'mime_type' => $imageType ?: 'image/jpeg',
                     'text' => $textContent  // Descripción/caption opcional
                 ];
@@ -3181,21 +3390,20 @@ class WhatsappController extends Controller
             $messageToSave = $body;
             if ($type === 'image' && filter_var($body, FILTER_VALIDATE_URL)) {
                 $this->logear("📥 Descargando imagen desde URL: " . substr($body, 0, 80) . "...");
-                $imageBase64 = $this->downloadMediaAsBase64($body);
-                if ($imageBase64 !== null) {
-                    $mimeType = $this->detectMimeTypeFromBase64($imageBase64) ?? 'image/jpeg';
+                $savedImage = $this->downloadMediaToWhatsappUpload($body);
+                if ($savedImage !== null) {
                     $messageToSave = json_encode([
                         'type'      => 'image',
-                        'content'   => $imageBase64,
-                        'mime_type' => $mimeType,
+                        'filepath'  => $savedImage['filepath'],
+                        'mime_type' => $savedImage['mime_type'],
                         'text'      => null,
                     ]);
-                    $this->logear("✓ Imagen descargada y codificada en base64 (" . strlen($imageBase64) . " chars)");
+                    $this->logear('✓ Imagen descargada y guardada en uploads: ' . $savedImage['filepath']);
                 } else {
                     // Si falla la descarga, guardar la URL como referencia
                     $messageToSave = json_encode([
                         'type'      => 'image',
-                        'content'   => null,
+                        'filepath'  => null,
                         'mime_type' => 'image/jpeg',
                         'url'       => $body,
                         'text'      => null,

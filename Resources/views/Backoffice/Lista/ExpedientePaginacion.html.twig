@@ -432,6 +432,9 @@
 				try {
 					var parsed = JSON.parse(rawMessage);
 					if (parsed) {
+						if (parsed.type === 'image' && parsed.filepath) {
+							return parsed.filepath;
+						}
 						// Caso: {type: 'image', content: 'base64...', mime_type: 'image/png'}
 						if (parsed.type === 'image' && parsed.content) {
 							var parsedImageSrc = buildWhatsappImageDataUri(parsed.content, parsed.mime_type || preferredMime);
@@ -455,6 +458,10 @@
 
 			// 2. Si empieza por http/https
 			if (/^https?:\/\//i.test(rawMessage)) {
+				return rawMessage;
+			}
+
+			if (/^\/uploads\//i.test(rawMessage)) {
 				return rawMessage;
 			}
 
