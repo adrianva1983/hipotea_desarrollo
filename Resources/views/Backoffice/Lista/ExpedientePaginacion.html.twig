@@ -372,7 +372,58 @@
 		 * Detecta y obtiene la URI de imagen adecuada a partir del mensaje.
 		 * Soporta URLs directas, data-URIs existentes y base64 puro (auto-detectando tipo mime).
 		 */
-		function getWhatsappImageSrc(rawMessage) {
+		function normalizeWhatsappBase64(rawValue) {
+			if (!rawValue || typeof rawValue !== 'string') {
+				return null;
+			}
+
+			var normalizedValue = rawValue.trim();
+			var dataUriMatch = normalizedValue.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/i);
+			if (dataUriMatch) {
+				normalizedValue = dataUriMatch[2];
+			}
+
+			normalizedValue = normalizedValue.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+
+			var padding = normalizedValue.length % 4;
+			if (padding) {
+				normalizedValue += '='.repeat(4 - padding);
+			}
+
+			if (!/^[A-Za-z0-9+/]+={0,2}$/.test(normalizedValue)) {
+				return null;
+			}
+
+			return normalizedValue;
+		}
+
+		function buildWhatsappImageDataUri(base64Content, preferredMime) {
+			var cleanBase64 = normalizeWhatsappBase64(base64Content);
+			if (!cleanBase64) {
+				return null;
+			}
+
+			var mime = preferredMime && /^image\//i.test(preferredMime) ? preferredMime : null;
+			if (!mime) {
+				if (cleanBase64.indexOf('iVBORw0KGgo') === 0) {
+					mime = 'image/png';
+				} else if (cleanBase64.indexOf('/9j/') === 0) {
+					mime = 'image/jpeg';
+				} else if (cleanBase64.indexOf('R0lGOD') === 0) {
+					mime = 'image/gif';
+				} else if (cleanBase64.indexOf('UklGR') === 0) {
+					mime = 'image/webp';
+				}
+			}
+
+			if (!mime && cleanBase64.length > 50) {
+				mime = 'image/jpeg';
+			}
+
+			return mime ? 'data:' + mime + ';base64,' + cleanBase64 : null;
+		}
+
+		function getWhatsappImageSrc(rawMessage, preferredMime) {
 			if (!rawMessage) return null;
 			rawMessage = rawMessage.trim();
 
@@ -383,12 +434,17 @@
 					if (parsed) {
 						// Caso: {type: 'image', content: 'base64...', mime_type: 'image/png'}
 						if (parsed.type === 'image' && parsed.content) {
-							var mime = parsed.mime_type || 'image/jpeg';
-							return 'data:' + mime + ';base64,' + parsed.content;
+							var parsedImageSrc = buildWhatsappImageDataUri(parsed.content, parsed.mime_type || preferredMime);
+							if (parsedImageSrc) {
+								return parsedImageSrc;
+							}
+						}
+						if (parsed.type === 'image' && parsed.url) {
+							return parsed.url;
 						}
 						// Intentar extraer contenido en otros formatos
 						if (parsed.content) {
-							return getWhatsappImageSrc(parsed.content);
+							return getWhatsappImageSrc(parsed.content, parsed.mime_type || preferredMime);
 						}
 						if (parsed.url) {
 							return parsed.url;
@@ -408,29 +464,7 @@
 			}
 
 			// 4. Si es base64 puro, detectar cabeceras y añadir tipo mime
-			var cleanBase64 = rawMessage.replace(/\s/g, '');
-			var mime = null;
-			
-			if (cleanBase64.indexOf('iVBORw0KGgo') === 0) {
-				mime = 'image/png';
-			} else if (cleanBase64.indexOf('/9j/') === 0) {
-				mime = 'image/jpeg';
-			} else if (cleanBase64.indexOf('R0lGOD') === 0) {
-				mime = 'image/gif';
-			} else if (cleanBase64.indexOf('UklGR') === 0) {
-				mime = 'image/webp';
-			}
-
-			if (mime) {
-				return 'data:' + mime + ';base64,' + cleanBase64;
-			}
-
-			// Si parece base64 largo, por defecto tratar como jpeg
-			if (cleanBase64.length > 50 && !cleanBase64.includes('<') && !cleanBase64.includes(' ')) {
-				return 'data:image/jpeg;base64,' + cleanBase64;
-			}
-
-			return null;
+			return buildWhatsappImageDataUri(rawMessage, preferredMime);
 		}
 
 		/**
@@ -460,10 +494,7 @@
 				var caption = parsedJSON.text || null;
 				
 				// Si hay contenido base64, crear data URI
-				var imgSrc = IMG_FALLBACK;
-				if (imgContent && imgContent.length > 0) {
-					imgSrc = 'data:' + mimeType + ';base64,' + imgContent;
-				}
+				var imgSrc = getWhatsappImageSrc(rawMessage, mimeType) || IMG_FALLBACK;
 				
 				// Retornar imagen con caption opcional
 				var html = '<img src="' + imgSrc + '" alt="Imagen" class="whatsapp-image" style="max-width:250px;max-height:300px;border-radius:12px;margin:4px 0;display:block;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" onerror="this.src=\''+IMG_FALLBACK+'\';this.onclick=null;">';
