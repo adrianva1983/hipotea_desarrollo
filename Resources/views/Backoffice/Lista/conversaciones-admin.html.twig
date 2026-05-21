@@ -278,7 +278,21 @@
                 // Renderizar contenido según el tipo de mensaje
                 let messageContent = '';
                 if (msg.message_type === 'image') {
-                    messageContent = `<img src="${escapeHtml(msg.message)}" alt="Imagen" class="message-image" style="max-width: 250px; max-height: 250px; border-radius: 8px; margin: 8px 0;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2214%22%3EImagen no disponible%3C/text%3E%3C/svg%3E'">`;
+                    const IMG_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2213%22%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+                    let imgSrc = null;
+                    try {
+                        const parsed = JSON.parse(msg.message);
+                        if (parsed && parsed.type === 'image') {
+                            if (parsed.content) {
+                                imgSrc = 'data:' + (parsed.mime_type || 'image/jpeg') + ';base64,' + parsed.content;
+                            } else if (parsed.url) {
+                                imgSrc = parsed.url;
+                            }
+                        }
+                    } catch(e) {
+                        if (msg.message && msg.message.indexOf('http') === 0) { imgSrc = msg.message; }
+                    }
+                    messageContent = `<img src="${imgSrc || IMG_FALLBACK}" alt="Imagen" class="message-image" style="max-width:250px;max-height:250px;border-radius:8px;margin:8px 0;cursor:pointer;" onclick="window.open(this.src,'_blank')" onerror="this.src='${IMG_FALLBACK}';this.onclick=null;">`;
                 } else if (msg.message_type === 'video') {
                     messageContent = `<a href="${escapeHtml(msg.message)}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-video"></i> Ver Video</a>`;
                 } else if (msg.message_type === 'audio') {

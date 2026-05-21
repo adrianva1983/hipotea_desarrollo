@@ -368,6 +368,48 @@
 		});
 	</script>
 	<script>
+		/**
+		 * Construye el HTML de contenido de un mensaje WhatsApp.
+		 * Soporta imágenes guardadas como JSON {type,content,mime_type} o URL pura.
+		 */
+		function buildWhatsappMessageContent(msg) {
+			var rawMessage = msg.message || '';
+			var type = msg.message_type || 'text';
+			var IMG_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2213%22%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+
+			if (type === 'image') {
+				var imgSrc = null;
+				try {
+					var parsed = JSON.parse(rawMessage);
+					if (parsed && parsed.type === 'image') {
+						if (parsed.content) {
+							var mime = parsed.mime_type || 'image/jpeg';
+							imgSrc = 'data:' + mime + ';base64,' + parsed.content;
+						} else if (parsed.url) {
+							imgSrc = parsed.url;
+						}
+					}
+				} catch(e) {
+					// Si no es JSON, intentar usar el texto directamente como URL
+					if (rawMessage.indexOf('http') === 0) { imgSrc = rawMessage; }
+				}
+				return '<img src="' + (imgSrc || IMG_FALLBACK) + '" alt="Imagen" class="whatsapp-image" style="max-width:250px;max-height:250px;border-radius:8px;margin:4px 0;display:block;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" onerror="this.src=\''+IMG_FALLBACK+'\';this.onclick=null;">';
+			}
+
+			if (type === 'video') {
+				return '<a href="' + $('<div/>').text(rawMessage).html() + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-video"></i> Ver Video</a>';
+			}
+			if (type === 'audio') {
+				return '<audio controls style="width:100%;max-width:300px;"><source src="' + $('<div/>').text(rawMessage).html() + '" type="audio/mpeg"></audio>';
+			}
+			if (type === 'document') {
+				return '<a href="' + $('<div/>').text(rawMessage).html() + '" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-file"></i> Descargar</a>';
+			}
+
+			// Texto plano
+			return $('<div/>').text(rawMessage).html();
+		}
+
 		// Función para abrir el modal de WhatsApp y cargar mensajes
 		function abrirModalWhatsApp(expedienteId, clientName) {
 			console.log('abriendo modal WhatsApp para expediente:', expedienteId);
@@ -429,22 +471,7 @@
 							timeStr = hh + ':' + mm;
 						}
 						
-						var text = msg.message || '';
-						
-						// Renderizar contenido según el tipo de mensaje
-						var messageContent = '';
-						if (msg.message_type === 'image') {
-							messageContent = '<img src="' + $('<div/>').text(text).html() + '" alt="Imagen" class="whatsapp-image" style="max-width: 250px; max-height: 250px; border-radius: 8px; margin: 8px 0; display: block;" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2214%22%3EImagen no disponible%3C/text%3E%3C/svg%3E\'">';
-						} else if (msg.message_type === 'video') {
-							messageContent = '<a href="' + $('<div/>').text(text).html() + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-video"></i> Ver Video</a>';
-						} else if (msg.message_type === 'audio') {
-							messageContent = '<audio controls style="width: 100%; max-width: 300px;"><source src="' + $('<div/>').text(text).html() + '" type="audio/mpeg"></audio>';
-						} else if (msg.message_type === 'document') {
-							messageContent = '<a href="' + $('<div/>').text(text).html() + '" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-file"></i> Descargar</a>';
-						} else {
-							// Escapar HTML básico para texto
-							messageContent = $('<div/>').text(text).html();
-						}
+						var messageContent = buildWhatsappMessageContent(msg);
 
 						messagesHtml += '<div class="whatsapp-message-row ' + direction + (hasTail ? '' : ' no-tail') + '">' +
 							'<div class="whatsapp-bubble ' + direction + '">' +
@@ -600,14 +627,11 @@
 									timeStr = hh + ':' + mm;
 								}
 								
-								var text = msg.message || '';
-								
-								// Escapar HTML básico
-								var textEscaped = $('<div/>').text(text).html();
+								var messageContent = buildWhatsappMessageContent(msg);
 
 								messagesHtml += '<div class="whatsapp-message-row ' + direction + (hasTail ? '' : ' no-tail') + '">' +
 									'<div class="whatsapp-bubble ' + direction + '">' +
-										'<div class="whatsapp-text">' + textEscaped + '</div>' +
+										'<div class="whatsapp-text">' + messageContent + '</div>' +
 										'<div class="whatsapp-meta">' +
 											'<span class="whatsapp-time">' + timeStr + '</span>';
 								
