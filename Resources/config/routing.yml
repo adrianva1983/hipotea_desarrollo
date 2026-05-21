@@ -645,6 +645,11 @@ api_get_whatsapp_messages:
   requirements:
     id: '\d+'
 
+api_proxy_whatsapp_media:
+  path: /admin/WhatsApp/media-proxy
+  controller: AppBundle:Whatsapp:proxyWhatsappMedia
+  methods: [GET]
+
 api_get_expedientes_con_mensajes:
   path: /admin/WhatsApp/expedientes-con-mensajes
   controller: AppBundle:Whatsapp:getExpedientesConMensajes

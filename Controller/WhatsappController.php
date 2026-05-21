@@ -279,6 +279,10 @@ class WhatsappController extends Controller
                 CURLOPT_MAXREDIRS      => 5,
                 CURLOPT_SSL_VERIFYPEER => true,
                 CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
+                CURLOPT_HTTPHEADER     => [
+                    'Accept: image/*,*/*;q=0.8',
+                    'ngrok-skip-browser-warning: true',
+                ],
                 CURLOPT_BUFFERSIZE     => 1024 * 1024,
             ]);
 
@@ -306,6 +310,85 @@ class WhatsappController extends Controller
         } catch (\Exception $e) {
             $this->logear('❌ downloadMediaToWhatsappUpload excepción: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    private function isTrustedWhatsappMediaUrl(string $url): bool
+    {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $parts = parse_url($url);
+        if (!$parts || empty($parts['scheme']) || empty($parts['host'])) {
+            return false;
+        }
+
+        if (!in_array(strtolower($parts['scheme']), ['http', 'https'], true)) {
+            return false;
+        }
+
+        return (bool) preg_match('/(^|\.)ngrok-free\.dev$/', strtolower($parts['host']));
+    }
+
+    public function proxyWhatsappMediaAction(Request $request)
+    {
+        $url = trim((string) $request->query->get('url', ''));
+        if (!$this->isTrustedWhatsappMediaUrl($url)) {
+            return new Response('URL de media no permitida', 400);
+        }
+
+        try {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_TIMEOUT        => 30,
+                CURLOPT_MAXREDIRS      => 5,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
+                CURLOPT_HTTPHEADER     => [
+                    'Accept: image/*,*/*;q=0.8',
+                    'ngrok-skip-browser-warning: true',
+                ],
+                CURLOPT_BUFFERSIZE     => 1024 * 1024,
+            ]);
+
+            $rawBinary = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError || $httpCode !== 200 || !$rawBinary) {
+                $this->logear("⚠️ proxyWhatsappMediaAction: HTTP={$httpCode}, error={$curlError}, url={$url}");
+                return new Response('No se pudo recuperar la imagen', 502);
+            }
+
+            if (strlen($rawBinary) > 10 * 1024 * 1024) {
+                $this->logear('⚠️ proxyWhatsappMediaAction: archivo demasiado grande para url ' . $url);
+                return new Response('La imagen es demasiado grande', 413);
+            }
+
+            $mimeType = $this->getValidatedImageMimeType($rawBinary, $contentType ?: null);
+            if (!$mimeType) {
+                $this->logear('⚠️ proxyWhatsappMediaAction: contenido no válido como imagen para url ' . $url);
+                return new Response('El recurso no es una imagen válida', 415);
+            }
+
+            $fileName = basename((string) parse_url($url, PHP_URL_PATH));
+            if ($fileName === '' || $fileName === '/' || $fileName === '.') {
+                $fileName = 'whatsapp-media.' . $this->guessExtensionFromMimeType($mimeType);
+            }
+
+            return new Response($rawBinary, 200, [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => 'inline; filename="' . addslashes($fileName) . '"',
+                'Cache-Control' => 'private, max-age=300',
+            ]);
+        } catch (\Exception $e) {
+            $this->logear('❌ proxyWhatsappMediaAction excepción: ' . $e->getMessage());
+            return new Response('Error al recuperar la imagen', 500);
         }
     }
 

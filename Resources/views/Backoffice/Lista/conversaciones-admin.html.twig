@@ -318,6 +318,29 @@
         return mime ? 'data:' + mime + ';base64,' + cleanBase64 : null;
     }
 
+    function getWhatsappRenderableMediaUrl(rawUrl) {
+        if (!rawUrl || typeof rawUrl !== 'string') return null;
+        var normalizedUrl = rawUrl.trim();
+        if (!normalizedUrl) return null;
+
+        if (/^\/uploads\//i.test(normalizedUrl) || /^data:image\//i.test(normalizedUrl)) {
+            return normalizedUrl;
+        }
+
+        if (!/^https?:\/\//i.test(normalizedUrl)) {
+            return normalizedUrl;
+        }
+
+        try {
+            var parsedUrl = new URL(normalizedUrl, window.location.origin);
+            if (/(^|\.)ngrok-free\.dev$/i.test(parsedUrl.hostname)) {
+                return '{{ path('api_proxy_whatsapp_media') }}?url=' + encodeURIComponent(normalizedUrl);
+            }
+        } catch (e) {}
+
+        return normalizedUrl;
+    }
+
     function getWhatsappImageSrc(rawMessage, preferredMime) {
         if (!rawMessage) return null;
         rawMessage = rawMessage.trim();
@@ -334,14 +357,14 @@
                         if (parsed.content) {
                             return buildWhatsappImageDataUri(parsed.content, parsed.mime_type || preferredMime);
                         } else if (parsed.url) {
-                            return parsed.url;
+                            return getWhatsappRenderableMediaUrl(parsed.url);
                         }
                     }
                     if (parsed.content) {
                         return getWhatsappImageSrc(parsed.content, parsed.mime_type || preferredMime);
                     }
                     if (parsed.url) {
-                        return parsed.url;
+                        return getWhatsappRenderableMediaUrl(parsed.url);
                     }
                 }
             } catch(e) {}
@@ -349,7 +372,7 @@
 
         // 2. Si empieza por http/https
         if (/^https?:\/\//i.test(rawMessage)) {
-            return rawMessage;
+            return getWhatsappRenderableMediaUrl(rawMessage);
         }
 
         if (/^\/uploads\//i.test(rawMessage)) {
