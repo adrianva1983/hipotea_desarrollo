@@ -1168,9 +1168,9 @@
 										}
 												<span style="color:grey;font-size:14px;">Con la información que nos has proporcionado, hemos aplicado un algoritmo que estima tu capacidad de pago, considerando los gastos y tu aportación inicial. El precio máximo de vivienda que te recomendamos buscar sería aproximadamente:</span>
 											</div>
-											<h1 class="text-center mb-4">
-												<img src="https://areaprivada.hipotea.com/assets/images/fondo-casa.png" style="max-width: 220px; display: block; margin: 0 auto 10px;">
-												<span data-pago-mensual>
+											<h1 class="text-center mb-4" style="position: relative; display: inline-block; width: 100%; height: 200px; line-height: 200px; font-size: 25px;">
+												<img src="https://areaprivada.hipotea.com/assets/images/fondo-casa.png" style="max-width: 220px; display: block; margin: 0 auto; position: absolute; top: 0; left: 50%; transform: translateX(-50%);">
+												<span data-pago-mensual style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; white-space: nowrap;">
 													{% if resultado is defined %}
 														{{ importe_fijo|number_format(0,',','.') }}
 													{% endif %}
