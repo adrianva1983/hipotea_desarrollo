@@ -900,6 +900,12 @@ api_conversaciones_expediente:
   requirements:
     idSender: '\d+'
 
+# ========= Api Bot ===================
+calcular_sencilla:
+  path: /API/CalcularSencilla
+  controller: AppBundle:BotApi:calcularSencilla
+  methods: [POST]
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }
