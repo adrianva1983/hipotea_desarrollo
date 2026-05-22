@@ -1989,51 +1989,57 @@ class IArtificalController extends Controller
 
     public function construirPromptDinamico(array $metadatos): string
     {
+        // Intentar reutilizar el extractor centralizado definido en InteligenciaArtificialController
+        try {
+            $camposBD = [];
+            foreach ($metadatos as $tipo => $info) {
+                $camposBD[] = [
+                    'id_campo_hito' => isset($info['id']) ? (int)$info['id'] : (isset($info['id_campo_hito']) ? (int)$info['id_campo_hito'] : 0),
+                    'nombre' => $info['nombre'] ?? ($info['nombre_campo'] ?? 'Campo'),
+                    'tipo' => isset($info['tipo_dato']) ? (int)$info['tipo_dato'] : (isset($info['tipo']) ? (int)$info['tipo'] : 0)
+                ];
+            }
+
+            if (class_exists('\AppBundle\Controller\InteligenciaArtificialController')) {
+                $logger = null;
+                try {
+                    $logger = $this->container->get('logger');
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+
+                $iaController = new \AppBundle\Controller\InteligenciaArtificialController($logger ?: new class implements \Psr\Log\LoggerInterface {
+                    public function emergency($msg, array $context = []) {}
+                    public function alert($msg, array $context = []) {}
+                    public function critical($msg, array $context = []) {}
+                    public function error($msg, array $context = []) {}
+                    public function warning($msg, array $context = []) {}
+                    public function notice($msg, array $context = []) {}
+                    public function info($msg, array $context = []) {}
+                    public function debug($msg, array $context = []) {}
+                    public function log($level, $msg, array $context = []) {}
+                });
+
+                if (method_exists($iaController, 'construirPromptExtractor')) {
+                    return $iaController->construirPromptExtractor($camposBD, '');
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->logear('⚠ No se pudo reutilizar construirPromptExtractor: ' . $e->getMessage());
+        }
+
+        // Fallback simple
         if (empty($metadatos)) {
             return 'Eres un extractor de datos especializado en identificar información de expedientes. Tu tarea es analizar el mensaje del cliente y extraer datos relevantes. Responde SIEMPRE con JSON válido.';
         }
-        
+
         $listaCampos = [];
         foreach ($metadatos as $tipo => $info) {
-            $listaCampos[] = "- " . $info['nombre'] . " ({$tipo})";
+            $listaCampos[] = "- " . ($info['nombre'] ?? 'Campo') . " ({$tipo})";
         }
-        
+
         $textoLista = implode("\n            ", $listaCampos);
-        
-        $instruccionesOpciones = '';
-        $opcionesCampos = $this->obtenerOpcionesCampos();
-        foreach ($opcionesCampos as $campoId => $opciones) {
-            $opcionesTexto = implode(", ", array_keys($opciones));
-            $instruccionesOpciones .= "\n- Para \"¿Cuántos titulares sois?\": Solo responde con: " . $opcionesTexto;
-        }
-        
-        $prompt = 'INSTRUCCIÓN CRÍTICA: Debes SIEMPRE responder con un JSON válido, nada más, nada menos. No incluyas ningún otro texto fuera del JSON.
-
-            Eres un extractor de datos especializado en identificar información de expedientes.
-            Tu tarea es analizar el mensaje del cliente y extraer SOLO los datos que encuentres en uno de estos campos:
-                        ' . $textoLista . '
-
-            FORMATO DE RESPUESTA (OBLIGATORIO - DEBES RESPONDER SIEMPRE CON ESTE JSON):
-            {"campos_encontrados": [{"tipo": "tipo_campo", "nombre": "Nombre del campo", "valor": "valor encontrado"}], "hay_datos": true/false}
-
-            SI NO HAY DATOS, RESPONDE EXACTAMENTE CON:
-            {"campos_encontrados": [], "hay_datos": false}
-
-            INSTRUCCIONES DE EXTRACCIÓN:
-            - Solo extrae si la información está clara en el mensaje
-            - No inventes datos
-            - Para fechas, normaliza al formato DD/MM/YYYY
-            - Para titulares/números, normaliza: "uno", "dos", "tres", etc.
-            - Para DNI: Reconoce cualquier string de 8-12 caracteres alfanuméricos como posible DNI/NIE/Pasaporte (ej: Y4516744D, 12345678A, ABC123456)
-            - Para Domicilio actual: Reconoce respuestas sobre vivienda como "propiedad", "alquiler", "alquilado", "vivo en alquiler", "casa propia", "es mía", etc.
-            - Para IMPORTES (cuota alquiler, paga extra, ingresos): Reconoce números con o sin unidades de moneda (ej: "550", "550 euros", "550€", "550 EUR") y extrae solo el número (ej: valor extraído = "550")' . $instruccionesOpciones . '
-
-            VALORES SIN ETIQUETA (IMPORTANTE):
-            El usuario puede responder con SOLO EL VALOR, sin etiqueta ni explicación. En estos casos:
-            - Si el mensaje es un valor que coincide con el tipo de uno de los campos requeridos, extráelo.
-
-            Remembert: Tu respuesta DEBE SER SIEMPRE UN JSON VÁLIDO, nada más. No escribas explicaciones, solo el JSON.';
-        
+        $prompt = 'INSTRUCCIÓN: Responde únicamente con JSON. Extrae los datos para los siguientes campos:\n' . $textoLista;
         return $prompt;
     }
 
