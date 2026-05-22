@@ -1139,11 +1139,13 @@ class WhatsappController extends Controller
         return null;
     }
 
-    private function buildPilotoAutomaticoMissingFieldsMessage(int $idExpediente, bool $guidedMode = true): ?string
+    private function buildPilotoAutomaticoMissingFieldsMessage(int $idExpediente, bool $guidedMode = true, ?array $datosFase1 = null): ?string
     {
         try {
             $iaController = $this->getIAController();
-            $datosFase1 = $iaController->obtenerDatosFase1($idExpediente, $this->getDoctrine()->getConnection());
+            if ($datosFase1 === null) {
+                $datosFase1 = $iaController->obtenerDatosFase1($idExpediente, $this->getDoctrine()->getConnection());
+            }
             if (!is_array($datosFase1) || isset($datosFase1['error'])) {
                 return null;
             }
@@ -1176,6 +1178,7 @@ class WhatsappController extends Controller
     {
         $normalizedIncomingMessage = $this->extractWhatsappMessageTextFromStoredValue($incomingMessage, $messageType);
         $clientName = trim((string) ($pilotoContext['clientName'] ?? ''));
+        $datosFase1 = $pilotoContext['datosFase1'] ?? null;
 
         if (!empty($pilotoContext['clientCreated'])) {
             return $this->buildPilotoAutomaticoOfferMessage($clientName);
@@ -1185,11 +1188,11 @@ class WhatsappController extends Controller
         $choice = $this->detectPilotoAutomaticoChoice($normalizedIncomingMessage);
 
         if ($hasRecentOffer && $choice === 'questionnaire') {
-            return $idExpediente ? $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, false) : 'Perfecto, empezamos con el cuestionario. Envíame una primera respuesta con tus datos y seguimos.';
+            return $idExpediente ? $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, false, $datosFase1) : 'Perfecto, empezamos con el cuestionario. Envíame una primera respuesta con tus datos y seguimos.';
         }
 
         if ($hasRecentOffer && $choice === 'guided') {
-            return $idExpediente ? $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, true) : 'Perfecto, te voy guiando paso a paso. Cuéntame tu situación y te iré pidiendo lo que falte.';
+            return $idExpediente ? $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, true, $datosFase1) : 'Perfecto, te voy guiando paso a paso. Cuéntame tu situación y te iré pidiendo lo que falte.';
         }
 
         if ($hasRecentOffer && $choice === null) {
@@ -1197,7 +1200,7 @@ class WhatsappController extends Controller
         }
 
         if (!empty($pilotoContext['existingClient']) && $idExpediente) {
-            $guidedMessage = $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, true);
+            $guidedMessage = $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, true, $datosFase1);
             if ($guidedMessage) {
                 return $guidedMessage;
             }
@@ -1238,16 +1241,28 @@ class WhatsappController extends Controller
             $updatedFields = $this->actualizarHitosWhatsapp($em, $expediente, $client, $normalizedPhone, $structuredData);
             $em->flush();
 
+            // Limpiar caché del EntityManager para que la siguiente lectura de datosFase1
+            // obtenga los datos recién guardados desde BD y no valores en caché
+            $em->clear();
+            $idExpedienteGuardado = $expediente->getIdExpediente();
+            $datosFase1Actualizados = $this->getIAController()->obtenerDatosFase1(
+                $idExpedienteGuardado,
+                $this->getDoctrine()->getConnection()
+            );
+
             $clientName = trim((string) $client->getUsername() . ' ' . (string) $client->getApellidos());
-            $this->logear('✓ PilotoAutomatico: cliente ' . $client->getIdUsuario() . ', expediente ' . $expediente->getIdExpediente() . ', campos actualizados=' . $updatedFields . ', metodo=' . ($structuredData['metodo'] ?? 'desconocido') . ', clienteNuevo=' . ($clientCreated ? 'sí' : 'no'));
+            $this->logear('✓ PilotoAutomatico: cliente ' . $client->getIdUsuario() . ', expediente ' . $idExpedienteGuardado . ', campos actualizados=' . $updatedFields . ', metodo=' . ($structuredData['metodo'] ?? 'desconocido') . ', clienteNuevo=' . ($clientCreated ? 'sí' : 'no'));
 
             return [
-                'idExpediente' => $expediente->getIdExpediente(),
+                'idExpediente' => $idExpedienteGuardado,
                 'clientCreated' => $clientCreated,
                 'existingClient' => !$clientCreated,
                 'clientName' => $clientName !== '' ? $clientName : null,
                 'updatedFields' => $updatedFields,
                 'structuredData' => $structuredData,
+                'datosFase1' => is_array($datosFase1Actualizados) && !isset($datosFase1Actualizados['error'])
+                    ? $datosFase1Actualizados
+                    : null,
             ];
         } catch (\Exception $e) {
             $this->logear('⚠️ Error procesando alta/relleno automático WhatsApp: ' . $e->getMessage());
