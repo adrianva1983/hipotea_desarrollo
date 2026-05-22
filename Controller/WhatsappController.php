@@ -614,6 +614,9 @@ class WhatsappController extends Controller
             'observaciones' => [700, 218, 234, 679],
             'canal' => [701, 704],
             'trabajo_estado' => [690],
+            // Parte 1: campos especiales
+            'titulares' => [456],
+            'avalista' => [190],
         ];
     }
 
@@ -645,6 +648,16 @@ class WhatsappController extends Controller
                 'propiedad|propia|owner' => 99,
                 'alquiler|renta|rental' => 100,
                 'familiar|family' => 101,
+            ],
+            // Parte 1
+            'titulares' => [
+                '^\s*1\s*$|\buno\b|\bun titular\b|\bsolo yo\b|\bsolo\b|\buno solo\b|\b1 titular\b' => 355,
+                '^\s*2\s*$|\bdos\b|\bdos titulares\b|\bmi pareja\b|\bmi mujer\b|\bmi marido\b|\bmi esposa\b|\bmi esposo\b|\b2 titular' => 356,
+            ],
+            'avalista' => [
+                '\bno\b|\bsin avalista\b|\bno tengo avalista\b|\bno hay avalista\b|\bno tiene avalista\b' => 80,
+                '^\s*1\s*$|\buno\b|\bun avalista\b|\b1 avalista\b' => 79,
+                '^\s*2\s*$|\bdos\b|\bdos avalistas\b|\b2 avalistas\b' => 557,
             ],
         ];
     }
@@ -730,7 +743,7 @@ class WhatsappController extends Controller
                     continue;
                 }
 
-                if ($clave === 'tipo_contrato' || $clave === 'estado_civil') {
+                if ($clave === 'tipo_contrato' || $clave === 'estado_civil' || $clave === 'titulares' || $clave === 'avalista') {
                     foreach ($idsCampos as $idCampo) {
                         $opcionId = $this->mapearValorAOpcionWhatsapp($clave, (string) $valor, $mapeoOpciones);
                         if ($opcionId) {
@@ -760,12 +773,38 @@ class WhatsappController extends Controller
 
     private function extractWhatsappLeadStructuredData(string $text): array
     {
-        $iaData = $this->extractWhatsappLeadDataWithIA($text);
-        if (!empty($iaData['success']) && (((int) ($iaData['campos_detectados'] ?? 0)) > 0 || !empty($iaData['valores_texto']) || !empty($iaData['valores_opcion']))) {
-            return $iaData;
+        $iaData    = $this->extractWhatsappLeadDataWithIA($text);
+        $regexData = $this->extraerDatosConRegexWhatsapp($text);
+
+        $iaHasData = !empty($iaData['success']) && (
+            ((int) ($iaData['campos_detectados'] ?? 0)) > 0
+            || !empty($iaData['valores_texto'])
+            || !empty($iaData['valores_opcion'])
+        );
+
+        if (!$iaHasData) {
+            return $regexData;
         }
 
-        return $this->extraerDatosConRegexWhatsapp($text);
+        // Fusionar: regex rellena campos que la IA no cubre (titulares/avalista);
+        // la IA tiene prioridad en cualquier campo donde ambos aporten valor.
+        $valoresTexto  = array_merge(
+            $regexData['valores_texto']  ?? [],
+            $iaData['valores_texto']     ?? []
+        );
+        $valoresOpcion = array_merge(
+            $regexData['valores_opcion'] ?? [],
+            $iaData['valores_opcion']    ?? []
+        );
+
+        return [
+            'success'           => true,
+            'valores_texto'     => $valoresTexto,
+            'valores_opcion'    => $valoresOpcion,
+            'campos_procesados' => $iaData['campos_procesados'] ?? [],
+            'campos_detectados' => count($valoresTexto) + count($valoresOpcion),
+            'metodo'            => $iaData['metodo'] ?? 'ia_forward',
+        ];
     }
 
     private function getWhatsappExtractedValue(array $structuredData, array $fieldIds): ?string
