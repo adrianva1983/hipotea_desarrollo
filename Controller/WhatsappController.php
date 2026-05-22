@@ -366,6 +366,45 @@ class WhatsappController extends Controller
         return false;
     }
 
+    private function sendPilotoAutomaticoReceiptIfNeeded($conn, ?WhatsappSender $sender, ?int $idExpediente, ?string $fromPhone, ?string $toPhone): void
+    {
+        if (!$sender || !$sender->getSessionId() || !$fromPhone) {
+            return;
+        }
+
+        $senderPhone = $this->normalizeWhatsappPhoneForComparison($sender->getTelefono());
+        if ($senderPhone === '') {
+            return;
+        }
+
+        if (!$this->verificarPilotoAutomatico($senderPhone)) {
+            $this->logear('ℹ️ PilotoAutomatico inactivo para comercial ' . $senderPhone . ', no se envía acuse');
+            return;
+        }
+
+        $receiptMessage = 'recibido';
+        $receiptFromPhone = $toPhone ?: $senderPhone;
+        $receiptToPhone = $fromPhone;
+
+        if ($this->hasRecentOutgoingMessageDuplicate($conn, $idExpediente, $receiptFromPhone, $receiptToPhone, 'text', $receiptMessage)) {
+            $this->logear('ℹ️ Auto-reply omitido por duplicado reciente para cliente ' . $receiptToPhone);
+            return;
+        }
+
+        $botResponse = $this->llamarBotWhatsApp(
+            $sender->getSessionId(),
+            $this->normalizePhonenWithPrefix($receiptToPhone),
+            $receiptMessage
+        );
+
+        if (is_array($botResponse) && !empty($botResponse['success'])) {
+            $this->logear('✓ Auto-reply de PilotoAutomatico enviado a ' . $receiptToPhone . ' para expediente ' . ($idExpediente ?? 'null'));
+            return;
+        }
+
+        $this->logear('⚠️ No se pudo enviar el auto-reply de PilotoAutomatico a ' . $receiptToPhone);
+    }
+
     private function downloadMediaToWhatsappUpload(string $url): ?array
     {
         try {
@@ -3682,6 +3721,10 @@ class WhatsappController extends Controller
             if ($direction === 'enviado' && $this->hasRecentOutgoingMessageDuplicate($conn, $idExpediente, $fromPhone, $toPhone, $type, $messageToSave)) {
                 $this->logear('⚠️ Se omitió un eco duplicado del webhook para expediente ' . ($idExpediente ?? 'null') . ' y teléfono ' . $fromPhone);
                 return new JsonResponse([], 200);
+            }
+
+            if ($direction === 'recibido') {
+                $this->sendPilotoAutomaticoReceiptIfNeeded($conn, $sender, $idExpediente, $fromPhone, $toPhone);
             }
 
             $conn->insert('chat_history', [
