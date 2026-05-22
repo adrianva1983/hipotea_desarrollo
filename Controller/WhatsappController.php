@@ -377,7 +377,12 @@ class WhatsappController extends Controller
             return;
         }
 
-        if (!$this->verificarPilotoAutomatico($senderPhone)) {
+        $pilotoAutomaticoActivo = (bool) $sender->getPilotoAutomatico();
+        if (!$pilotoAutomaticoActivo) {
+            $pilotoAutomaticoActivo = $this->verificarPilotoAutomatico($sender->getTelefono());
+        }
+
+        if (!$pilotoAutomaticoActivo) {
             $this->logear('ℹ️ PilotoAutomatico inactivo para comercial ' . $senderPhone . ', no se envía acuse');
             return;
         }
@@ -3036,14 +3041,21 @@ class WhatsappController extends Controller
         try {
             $em = $this->getDoctrine()->getManager();
             $conn = $em->getConnection();
-            
-            // Preparar variantes del teléfono para la búsqueda
+            $telefonoNormalizado = $this->normalizePhone((string) $telefono);
+            $telefonoConPrefijo = $telefonoNormalizado !== '' ? $this->normalizePhonenWithPrefix((string) $telefonoNormalizado) : null;
+            $telefonoLocal = $telefonoNormalizado !== '' && strlen($telefonoNormalizado) > 9
+                ? substr($telefonoNormalizado, -9)
+                : $telefonoNormalizado;
+
             $variants = array_unique(array_filter([
                 $telefono,
-                ltrim($telefono, '0'),
-                (strlen($telefono) > 9 ? substr($telefono, -9) : null)
+                $telefonoNormalizado,
+                ltrim((string) $telefono, '0'),
+                ltrim($telefonoNormalizado, '0'),
+                $telefonoConPrefijo,
+                $telefonoLocal,
             ]));
-            
+
             if (count($variants) === 0) {
                 return false;
             }
@@ -3156,7 +3168,7 @@ class WhatsappController extends Controller
             foreach ($datosExtraidos['campos_encontrados'] as $campo) {
                 try {
                     $idCampoHito = $campo['campo_id'];
-                    $valor = trim($campo['valor']);
+                    $valor = trim((string) ($campo['valor'] ?? ''));
                     $nombreCampo = $campo['nombre_campo'];
                     $idOpcional = null; // Campo para almacenar id_opciones_campo
 
