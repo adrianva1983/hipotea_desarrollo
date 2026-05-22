@@ -2,6 +2,15 @@
 
 namespace AppBundle\Controller;
 
+use AppBundle\Entity\CampoHito;
+use AppBundle\Entity\CampoHitoExpediente;
+use AppBundle\Entity\Expediente;
+use AppBundle\Entity\Fase;
+use AppBundle\Entity\GrupoCamposHito;
+use AppBundle\Entity\GrupoHitoExpediente;
+use AppBundle\Entity\Hito;
+use AppBundle\Entity\HitoExpediente;
+use AppBundle\Entity\Usuario;
 use AppBundle\Entity\WhatsappSender;
 use AppBundle\Entity\WhatsappServidor;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -490,6 +499,598 @@ class WhatsappController extends Controller
         }
     }
 
+    private function isPilotoAutomaticoEnabledForSender(?WhatsappSender $sender): bool
+    {
+        if (!$sender) {
+            return false;
+        }
+
+        $pilotoAutomaticoActivo = (bool) $sender->getPilotoAutomatico();
+        if (!$pilotoAutomaticoActivo) {
+            $pilotoAutomaticoActivo = $this->verificarPilotoAutomatico($sender->getTelefono());
+        }
+
+        return $pilotoAutomaticoActivo;
+    }
+
+    private function normalizeWhatsappLeadPhone(string $phone): string
+    {
+        $normalizedPhone = $this->normalizePhone($phone);
+        if ($normalizedPhone === '') {
+            return '';
+        }
+
+        return strlen($normalizedPhone) > 9 ? substr($normalizedPhone, -9) : $normalizedPhone;
+    }
+
+    private function extractWhatsappLeadDataWithIA(string $text): array
+    {
+        if (trim($text) === '') {
+            return ['success' => false, 'valores_texto' => [], 'valores_opcion' => [], 'campos_detectados' => 0];
+        }
+
+        try {
+            $request = new Request(
+                [],
+                [],
+                [],
+                [],
+                [],
+                [
+                    'REQUEST_METHOD' => 'POST',
+                    'CONTENT_TYPE' => 'application/json',
+                ],
+                json_encode([
+                    'texto' => $text,
+                    'tipo_entrada' => 'whatsapp',
+                    'grupos' => [4, 29, 5, 6],
+                ])
+            );
+
+            $response = $this->forward('AppBundle:InteligenciaArtificial:procesarTextoExpediente', [
+                'request' => $request,
+            ]);
+
+            $payload = json_decode((string) $response->getContent(), true);
+            if (!is_array($payload) || empty($payload['success'])) {
+                return ['success' => false, 'valores_texto' => [], 'valores_opcion' => [], 'campos_detectados' => 0];
+            }
+
+            if (isset($payload['datosProcessados'])) {
+                $processed = $payload['datosProcessados'];
+                return [
+                    'success' => true,
+                    'valores_texto' => $processed['valores_texto'] ?? [],
+                    'valores_opcion' => $processed['valores_opcion'] ?? [],
+                    'campos_procesados' => $processed['campos_procesados'] ?? [],
+                    'campos_detectados' => count($processed['valores_texto'] ?? []) + count($processed['valores_opcion'] ?? []),
+                    'metodo' => 'ia_forward',
+                ];
+            }
+
+            return [
+                'success' => true,
+                'valores_texto' => $payload['valores_texto'] ?? [],
+                'valores_opcion' => $payload['valores_opcion'] ?? [],
+                'campos_procesados' => $payload['campos_procesados'] ?? [],
+                'campos_detectados' => (int) ($payload['campos_detectados'] ?? 0),
+                'metodo' => 'ia_forward',
+            ];
+        } catch (\Exception $e) {
+            $this->logear('⚠️ Falló la extracción IA para WhatsApp: ' . $e->getMessage());
+            return ['success' => false, 'valores_texto' => [], 'valores_opcion' => [], 'campos_detectados' => 0];
+        }
+    }
+
+    private function obtenerMapeoClavesACamposWhatsapp(): array
+    {
+        return [
+            'nombre_completo' => [192, 693],
+            'nombre' => [693],
+            'apellidos' => [694],
+            'dni' => [194],
+            'email' => [696, 407],
+            'telefono' => [695, 408],
+            'provincia' => [689, 458],
+            'nacionalidad' => [195, 247, 509, 570],
+            'fecha_nacimiento' => [196, 508],
+            'estado_civil' => [198, 507],
+            'empresa' => [220, 545],
+            'puesto' => [222, 539],
+            'tipo_contrato' => [221, 549],
+            'antiguedad' => [223, 541],
+            'nomina' => [225, 555],
+            'ingresos' => [228, 552],
+            'nomina_mensual' => [225, 555],
+            'ingresos_anuales' => [228, 552],
+            'ahorro' => [182, 699],
+            'banco' => [215, 518],
+            'aportacion' => [181, 182],
+            'prestamos_mensuales' => [235, 241],
+            'cuota_alquiler' => [212, 520],
+            'precio_inmueble' => [413, 206, 691],
+            'valor_estimado' => [206, 375],
+            'metros' => [289, 644],
+            'observaciones' => [700, 218, 234, 679],
+            'canal' => [701, 704],
+            'trabajo_estado' => [690],
+        ];
+    }
+
+    private function obtenerMapeoOpcionesGlobalesWhatsapp(): array
+    {
+        return [
+            'tipo_contrato' => [
+                'indefinido|fijo|completo|tiempo completo' => 104,
+                'parcial|part-time|medio tiempo' => 105,
+                'temporal|obra|contrata' => 109,
+                'autónomo|autónoma|autonomo|autonoma' => 97,
+                'pensionista|pensión' => 98,
+                'mercantil' => 103,
+                'funcionario' => 107,
+                'militar' => 357,
+                'laboral fijo' => 555,
+            ],
+            'estado_civil' => [
+                'soltero|soltera|solt@' => 81,
+                'casad@.*gananciales|gananciales.*casad@' => 189,
+                'casad@.*separación|separación.*casad@' => 82,
+                'casado|casada|casad@|married' => 189,
+                'divorciado|divorciada|divorciad@' => 85,
+                'separado|separada|separ@' => 84,
+                'viudo|viuda|viud@' => 86,
+                'pareja de hecho|unión de hecho|pareja|unión|unmarried couple' => 83,
+            ],
+            'domicilio' => [
+                'propiedad|propia|owner' => 99,
+                'alquiler|renta|rental' => 100,
+                'familiar|family' => 101,
+            ],
+        ];
+    }
+
+    private function mapearValorAOpcionWhatsapp(string $clave, string $valor, array $mapeoOpciones): ?int
+    {
+        if (empty($mapeoOpciones[$clave])) {
+            return null;
+        }
+
+        foreach ($mapeoOpciones[$clave] as $patron => $opcionId) {
+            if (@preg_match('/' . $patron . '/iu', $valor)) {
+                return (int) $opcionId;
+            }
+        }
+
+        return null;
+    }
+
+    private function extraerDatosConRegexWhatsapp(string $texto): array
+    {
+        try {
+            $datosExtraidos = [];
+            $mapeoClavesACampos = $this->obtenerMapeoClavesACamposWhatsapp();
+            $mapeoOpciones = $this->obtenerMapeoOpcionesGlobalesWhatsapp();
+
+            if (preg_match('/(?:DNI|D\.N\.I|documento)\s*:?\s*([0-9]{8}[A-Za-z]|[0-9]{8,9})/i', $texto, $matches)) {
+                $datosExtraidos['dni'] = strtoupper(trim($matches[1]));
+            }
+
+            if (preg_match('/(?:salario neto|salario|nómina|nomina|sueldo neto|sueldo)\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $datosExtraidos['nomina'] = str_replace(',', '.', $matches[1]);
+            } elseif (preg_match('/\b(?:gano|cobro|percibo)\s*:?\s*(\d{2,6}(?:[.,]\d{2})?)\b\s*(?:€|euros)?/i', $texto, $matches)) {
+                $datosExtraidos['nomina'] = str_replace(',', '.', $matches[1]);
+            }
+
+            if (preg_match('/\b(indefinid[oa]|temporal|fijo|autonomo|autónomo|por obra|obra y servicio|pensionista|emplead[oa])\b/i', $texto, $matches)) {
+                $datosExtraidos['tipo_contrato'] = strtolower($matches[1]);
+            }
+
+            if (preg_match('/empresa\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['empresa'] = trim($matches[1]);
+            }
+
+            if (preg_match('/(?:puesto|cargo)\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['puesto'] = trim($matches[1]);
+            }
+
+            if (preg_match('/ingresos\s*(?:anuales|mensuales)?\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $datosExtraidos['ingresos'] = str_replace(',', '.', $matches[1]);
+            }
+
+            if (preg_match('/(?:ciudad|provincia|localidad|residencia)\s*:?\s*([A-Za-z0-9\s\&\.\-áéíóúñÁÉÍÓÚÑ]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['provincia'] = trim($matches[1]);
+            }
+
+            if (preg_match('/ahorro\s*:?\s*(\d+(?:[.,]\d{2})?)/i', $texto, $matches)) {
+                $datosExtraidos['ahorro'] = str_replace(',', '.', $matches[1]);
+            }
+
+            if (preg_match('/nacionalidad\s*:?\s*([A-Za-záéíóúñÁÉÍÓÚÑ\s\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['nacionalidad'] = trim($matches[1]);
+            }
+
+            if (preg_match('/\b(?:soy\s+)?(?:estado\s*civil\s*[:\s])?\s*(solter[oa]|casad[oa](?:\s+en\s+(?:gananciales|separaci[oó]n\s+de\s+bienes))?|divorciad[oa]?|separad[oa]|viud[oa]|pareja\s+de\s+hecho|uni[oó]n\s+de\s+hecho)\b/i', $texto, $matches)) {
+                $datosExtraidos['estado_civil'] = trim($matches[1]);
+            }
+
+            if (preg_match('/\b(?:trabajo en|trabajo como|trabaja en|trabajo para|empleado en|trabajo:|trabajo\s-\s)\s*:?\s*([A-Za-z0-9\s\&\.\-\,\(\)]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['empresa'] = trim($matches[1]);
+            }
+
+            if (preg_match('/(?:banco|trabajo con|entidad|cuenta en)\s*:?\s*([A-Za-z0-9\s\&\.\-]+?)(?:\.|,|$|\n|—)/i', $texto, $matches)) {
+                $datosExtraidos['banco'] = trim($matches[1]);
+            }
+
+            $valoresTexto = [];
+            $valoresOpcion = [];
+
+            foreach ($datosExtraidos as $clave => $valor) {
+                $idsCampos = $mapeoClavesACampos[$clave] ?? [];
+                if (!$idsCampos) {
+                    continue;
+                }
+
+                if ($clave === 'tipo_contrato' || $clave === 'estado_civil') {
+                    foreach ($idsCampos as $idCampo) {
+                        $opcionId = $this->mapearValorAOpcionWhatsapp($clave, (string) $valor, $mapeoOpciones);
+                        if ($opcionId) {
+                            $valoresOpcion[$idCampo] = $opcionId;
+                        }
+                    }
+                    continue;
+                }
+
+                foreach ($idsCampos as $idCampo) {
+                    $valoresTexto[$idCampo] = $valor;
+                }
+            }
+
+            return [
+                'success' => !empty($valoresTexto) || !empty($valoresOpcion),
+                'valores_texto' => $valoresTexto,
+                'valores_opcion' => $valoresOpcion,
+                'campos_detectados' => count($valoresTexto) + count($valoresOpcion),
+                'metodo' => 'regex_fallback',
+            ];
+        } catch (\Exception $e) {
+            $this->logear('⚠️ Error en regex fallback WhatsApp: ' . $e->getMessage());
+            return ['success' => false, 'valores_texto' => [], 'valores_opcion' => [], 'campos_detectados' => 0];
+        }
+    }
+
+    private function extractWhatsappLeadStructuredData(string $text): array
+    {
+        $iaData = $this->extractWhatsappLeadDataWithIA($text);
+        if (!empty($iaData['success']) && (((int) ($iaData['campos_detectados'] ?? 0)) > 0 || !empty($iaData['valores_texto']) || !empty($iaData['valores_opcion']))) {
+            return $iaData;
+        }
+
+        return $this->extraerDatosConRegexWhatsapp($text);
+    }
+
+    private function getWhatsappExtractedValue(array $structuredData, array $fieldIds): ?string
+    {
+        $textValues = $structuredData['valores_texto'] ?? [];
+        foreach ($fieldIds as $fieldId) {
+            if (!empty($textValues[$fieldId])) {
+                return trim((string) $textValues[$fieldId]);
+            }
+        }
+
+        return null;
+    }
+
+    private function splitWhatsappFullName(?string $fullName): array
+    {
+        $fullName = trim((string) $fullName);
+        if ($fullName === '') {
+            return ['', ''];
+        }
+
+        $parts = explode(' ', $fullName, 2);
+        return [$parts[0] ?? '', $parts[1] ?? ''];
+    }
+
+    private function updateWhatsappClientWithStructuredData(Usuario $client, array $structuredData, string $normalizedPhone): void
+    {
+        $fullName = $this->getWhatsappExtractedValue($structuredData, [192]);
+        $name = $this->getWhatsappExtractedValue($structuredData, [693]);
+        $surname = $this->getWhatsappExtractedValue($structuredData, [694]);
+        $email = $this->getWhatsappExtractedValue($structuredData, [696, 407]);
+
+        if ($fullName && (!$name || !$surname)) {
+            list($splitName, $splitSurname) = $this->splitWhatsappFullName($fullName);
+            $name = $name ?: $splitName;
+            $surname = $surname ?: $splitSurname;
+        }
+
+        if ($name && trim((string) $client->getUsername()) === '') {
+            $client->setUsername($name);
+        }
+        if ($surname && trim((string) $client->getApellidos()) === '') {
+            $client->setApellidos($surname);
+        }
+        if ($email && trim((string) $client->getEmail()) === '') {
+            $client->setEmail($email);
+        }
+        if ($normalizedPhone !== '' && trim((string) $client->getTelefonoMovil()) === '') {
+            $client->setTelefonoMovil($normalizedPhone);
+        }
+    }
+
+    private function findOrCreateWhatsappClient($em, string $fromPhone, array $structuredData): Usuario
+    {
+        $normalizedPhone = $this->normalizeWhatsappLeadPhone($fromPhone);
+        $repo = $em->getRepository(Usuario::class);
+        $client = null;
+
+        if ($normalizedPhone !== '') {
+            $client = $repo->findOneBy(['telefonoMovil' => $normalizedPhone]);
+        }
+
+        $email = $this->getWhatsappExtractedValue($structuredData, [696, 407]);
+        if (!$client && $email) {
+            $client = $repo->findOneBy(['email' => $email]);
+            if ($client && $client->getRole() !== 'ROLE_CLIENTE') {
+                $client = null;
+            }
+        }
+
+        if ($client) {
+            $this->updateWhatsappClientWithStructuredData($client, $structuredData, $normalizedPhone);
+            return $client;
+        }
+
+        $fullName = $this->getWhatsappExtractedValue($structuredData, [192]);
+        $name = $this->getWhatsappExtractedValue($structuredData, [693]);
+        $surname = $this->getWhatsappExtractedValue($structuredData, [694]);
+        if ($fullName && (!$name || !$surname)) {
+            list($splitName, $splitSurname) = $this->splitWhatsappFullName($fullName);
+            $name = $name ?: $splitName;
+            $surname = $surname ?: $splitSurname;
+        }
+
+        $client = new Usuario();
+        $client->setUsername($name ?: 'Cliente');
+        $client->setApellidos($surname ?: 'WhatsApp');
+        $client->setEmail($email ?: '');
+        $client->setTelefonoMovil($normalizedPhone);
+        $client->setRole('ROLE_CLIENTE');
+        $client->setEstado(true);
+        $client->setPassword('');
+        $client->setPlainPassword('');
+        $client->setFechaRegistro(new \DateTime());
+
+        $em->persist($client);
+        $this->logear('✓ Cliente creado automáticamente desde WhatsApp para teléfono ' . $normalizedPhone);
+
+        return $client;
+    }
+
+    private function generarReferenciaWhatsapp(int $anio): string
+    {
+        $conn = $this->getDoctrine()->getConnection();
+        $sql = "
+            SELECT MAX(CAST(SUBSTRING_INDEX(referencia, '/', 1) AS UNSIGNED)) as max_numero
+            FROM expediente
+            WHERE referencia LIKE :patron
+        ";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->bindValue('patron', '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT));
+        $stmt->execute();
+        $result = $stmt->fetch();
+
+        $maxNumero = isset($result['max_numero']) && $result['max_numero'] !== null ? (int) $result['max_numero'] : 0;
+        return sprintf('%05d/%02d', $maxNumero + 1, $anio);
+    }
+
+    private function asignarReferenciaAExpedienteWhatsapp(Expediente $expediente): string
+    {
+        if (!empty($expediente->getReferencia())) {
+            return $expediente->getReferencia();
+        }
+
+        $anio = (int) $expediente->getFechaCreacion()->format('y');
+        $referencia = $this->generarReferenciaWhatsapp($anio);
+        $expediente->setReferencia($referencia);
+
+        return $referencia;
+    }
+
+    private function findOrCreateWhatsappExpediente($em, Usuario $client, ?WhatsappSender $sender, ?int $existingExpedienteId): Expediente
+    {
+        $expedienteRepo = $em->getRepository(Expediente::class);
+
+        if ($existingExpedienteId) {
+            $existingExpediente = $expedienteRepo->findOneBy(['idExpediente' => $existingExpedienteId]);
+            if ($existingExpediente) {
+                return $existingExpediente;
+            }
+        }
+
+        $expediente = $expedienteRepo->findOneBy([
+            'idCliente' => $client,
+            'estado' => 1,
+        ]);
+
+        if ($expediente) {
+            return $expediente;
+        }
+
+        $primeraFase = $em->getRepository(Fase::class)->findOneBy(['orden' => 1]);
+        if (!$primeraFase) {
+            throw new \Exception('No hay fases configuradas en el sistema');
+        }
+
+        $expediente = new Expediente();
+        $expediente->setIdCliente($client);
+        $expediente->setIdFaseActual($primeraFase);
+        $expediente->setEstado(1);
+        $expediente->setVivienda('NUEVO LEAD WHATSAPP');
+        $expediente->setFechaCreacion(new \DateTime());
+        $expediente->setFechaModificacion(new \DateTime());
+
+        if ($sender && $sender->getIdUsuario()) {
+            $commercial = $em->getRepository(Usuario::class)->findOneBy(['idUsuario' => $sender->getIdUsuario()]);
+            if ($commercial) {
+                $expediente->setIdComercial($commercial);
+            }
+        }
+
+        $this->asignarReferenciaAExpedienteWhatsapp($expediente);
+        $em->persist($expediente);
+        $em->flush();
+
+        $fases = $em->getRepository(Fase::class)->findBy([], ['orden' => 'ASC']);
+        foreach ($fases as $fase) {
+            $hitos = $em->getRepository(Hito::class)->findBy(['idFase' => $fase], ['orden' => 'ASC']);
+
+            foreach ($hitos as $hito) {
+                $hitoExpediente = new HitoExpediente();
+                $hitoExpediente->setIdHito($hito);
+                $hitoExpediente->setIdExpediente($expediente);
+                $hitoExpediente->setFechaModificacion(new \DateTime());
+                $hitoExpediente->setEstado(0);
+
+                $gruposCamposHito = $em->getRepository(GrupoCamposHito::class)->findBy(['idHito' => $hito], ['orden' => 'ASC']);
+                foreach ($gruposCamposHito as $grupoCamposHito) {
+                    $grupoHitoExpediente = new GrupoHitoExpediente();
+                    $grupoHitoExpediente->setIdHitoExpediente($hitoExpediente);
+                    $grupoHitoExpediente->setIdGrupoCamposHito($grupoCamposHito);
+
+                    $camposHito = $em->getRepository(CampoHito::class)->findBy(['idGrupoCamposHito' => $grupoCamposHito], ['orden' => 'ASC']);
+                    foreach ($camposHito as $campoHito) {
+                        $campoHitoExpediente = new CampoHitoExpediente();
+                        $campoHitoExpediente->setIdCampoHito($campoHito);
+                        $campoHitoExpediente->setIdHitoExpediente($hitoExpediente);
+                        $campoHitoExpediente->setIdGrupoHitoExpediente($grupoHitoExpediente);
+                        $campoHitoExpediente->setIdExpediente($expediente);
+                        $campoHitoExpediente->setFechaModificacion(new \DateTime());
+
+                        if ($campoHito->getTipo() == 4) {
+                            $campoHitoExpediente->setObligatorio(1)->setSolicitarAlColaborador(1);
+                        }
+
+                        $em->persist($campoHitoExpediente);
+                    }
+
+                    $em->persist($grupoHitoExpediente);
+                }
+
+                $em->persist($hitoExpediente);
+            }
+        }
+
+        $em->flush();
+        $this->logear('✓ Expediente creado automáticamente desde WhatsApp: ' . $expediente->getIdExpediente());
+
+        return $expediente;
+    }
+
+    private function construirAutorrellenoHitosWhatsapp(Usuario $client, string $normalizedPhone, array $structuredData): array
+    {
+        $valoresTexto = $structuredData['valores_texto'] ?? [];
+        $valoresOpcion = $structuredData['valores_opcion'] ?? [];
+        $campos = [];
+
+        $campos[673] = ['opcion_id' => 663];
+
+        $clientName = trim((string) $client->getUsername());
+        $clientSurname = trim((string) $client->getApellidos());
+        if ($clientName !== '') {
+            $campos[693] = ['valor' => $clientName];
+        }
+        if ($clientSurname !== '') {
+            $campos[694] = ['valor' => $clientSurname];
+        }
+        if ($normalizedPhone !== '') {
+            $campos[695] = ['valor' => $normalizedPhone];
+            $campos[408] = ['valor' => $normalizedPhone];
+        }
+        if (trim((string) $client->getEmail()) !== '') {
+            $campos[696] = ['valor' => trim((string) $client->getEmail())];
+            $campos[407] = ['valor' => trim((string) $client->getEmail())];
+        }
+
+        foreach ($valoresTexto as $idCampo => $valor) {
+            if (trim((string) $valor) !== '') {
+                $campos[(int) $idCampo] = ['valor' => (string) $valor];
+            }
+        }
+
+        foreach ($valoresOpcion as $idCampo => $opcionId) {
+            if (!empty($opcionId)) {
+                $campos[(int) $idCampo] = ['opcion_id' => (int) $opcionId];
+            }
+        }
+
+        return array_filter($campos, function ($configuracion) {
+            return (isset($configuracion['opcion_id']) && !empty($configuracion['opcion_id']))
+                || (isset($configuracion['valor']) && trim((string) $configuracion['valor']) !== '');
+        });
+    }
+
+    private function actualizarHitosWhatsapp($em, Expediente $expediente, Usuario $client, string $normalizedPhone, array $structuredData): int
+    {
+        $camposAActualizar = $this->construirAutorrellenoHitosWhatsapp($client, $normalizedPhone, $structuredData);
+        $updatedFields = 0;
+
+        foreach ($camposAActualizar as $idCampoHito => $configuracion) {
+            $campoHitoExpediente = $em->getRepository(CampoHitoExpediente::class)->findOneBy([
+                'idExpediente' => $expediente,
+                'idCampoHito' => $idCampoHito,
+            ]);
+
+            if (!$campoHitoExpediente) {
+                continue;
+            }
+
+            if (isset($configuracion['opcion_id'])) {
+                $campoHitoExpediente->setIdOpcionesCampo($em->getReference('AppBundle:OpcionesCampo', (int) $configuracion['opcion_id']));
+                $campoHitoExpediente->setValor(null);
+            } elseif (isset($configuracion['valor'])) {
+                $campoHitoExpediente->setValor((string) $configuracion['valor']);
+            }
+
+            $campoHitoExpediente->setFechaModificacion(new \DateTime());
+            $em->persist($campoHitoExpediente);
+            $updatedFields++;
+        }
+
+        $expediente->setFechaModificacion(new \DateTime());
+        $em->persist($expediente);
+
+        return $updatedFields;
+    }
+
+    private function processPilotoAutomaticoLeadData($em, $conn, ?WhatsappSender $sender, ?int $idExpediente, string $fromPhone, string $incomingMessage, string $messageType): ?int
+    {
+        if (!$sender || !$this->isPilotoAutomaticoEnabledForSender($sender)) {
+            return $idExpediente;
+        }
+
+        $textToProcess = $this->extractWhatsappMessageTextFromStoredValue($incomingMessage, $messageType);
+        if ($textToProcess === '' || $textToProcess === '[Imagen]') {
+            return $idExpediente;
+        }
+
+        try {
+            $structuredData = $this->extractWhatsappLeadStructuredData($textToProcess);
+            $client = $this->findOrCreateWhatsappClient($em, $fromPhone, $structuredData);
+            $normalizedPhone = $this->normalizeWhatsappLeadPhone($fromPhone);
+            $expediente = $this->findOrCreateWhatsappExpediente($em, $client, $sender, $idExpediente);
+            $updatedFields = $this->actualizarHitosWhatsapp($em, $expediente, $client, $normalizedPhone, $structuredData);
+            $em->flush();
+
+            $this->logear('✓ PilotoAutomatico: cliente ' . $client->getIdUsuario() . ', expediente ' . $expediente->getIdExpediente() . ', campos actualizados=' . $updatedFields . ', metodo=' . ($structuredData['metodo'] ?? 'desconocido'));
+            return $expediente->getIdExpediente();
+        } catch (\Exception $e) {
+            $this->logear('⚠️ Error procesando alta/relleno automático WhatsApp: ' . $e->getMessage());
+            return $idExpediente;
+        }
+    }
+
     private function generatePilotoAutomaticoReply($conn, ?WhatsappSender $sender, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $incomingMessage, string $messageType): ?string
     {
         if (!$sender) {
@@ -561,10 +1162,7 @@ class WhatsappController extends Controller
             return;
         }
 
-        $pilotoAutomaticoActivo = (bool) $sender->getPilotoAutomatico();
-        if (!$pilotoAutomaticoActivo) {
-            $pilotoAutomaticoActivo = $this->verificarPilotoAutomatico($sender->getTelefono());
-        }
+        $pilotoAutomaticoActivo = $this->isPilotoAutomaticoEnabledForSender($sender);
 
         if (!$pilotoAutomaticoActivo) {
             $this->logear('ℹ️ PilotoAutomatico inactivo para comercial ' . $senderPhone . ', no se envía acuse');
@@ -3920,6 +4518,7 @@ class WhatsappController extends Controller
             }
 
             if ($direction === 'recibido') {
+                $idExpediente = $this->processPilotoAutomaticoLeadData($em, $conn, $sender, $idExpediente, $fromPhone, $messageToSave, $type);
                 $this->sendPilotoAutomaticoReceiptIfNeeded($conn, $sender, $idExpediente, $fromPhone, $toPhone, $messageToSave, $type);
             }
 
