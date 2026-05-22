@@ -2271,7 +2271,16 @@ class WhatsappController extends Controller
         
         try {
             //$url = "https://punchiest-irremediably-suzette.ngrok-free.dev/api/messages/send";
-            $url = "http://82.223.66.254:3000/api/messages/send";
+            $em = $this->getDoctrine()->getManager();
+            $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
+            $servidor = $servidorRepo->findOneBy(['estado' => true]);
+            
+            if (!$servidor) {
+                $this->logear('❌ No hay servidor WhatsApp configurado');
+                return false;
+            }
+
+            $url = rtrim($servidor->getUrl(), '/') . '/api/messages/send';
 
             $payload = json_encode([
                 'sessionId' => $sessionId,
