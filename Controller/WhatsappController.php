@@ -1166,8 +1166,8 @@ class WhatsappController extends Controller
             $mensajeGuiado = $this->construirMensajeUnificado($nombreCliente, $camposFaltantes, $tieneHistorico, $esNuevaParte);
 
             return trim((string) $mensajeGuiado) !== '' ? $mensajeGuiado : $mensajeCompleto;
-        } catch (\Exception $e) {
-            $this->logear('⚠️ No se pudo construir el mensaje de campos faltantes: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->logear('⚠️ No se pudo construir el mensaje de campos faltantes: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
             return null;
         }
     }
@@ -3946,7 +3946,7 @@ class WhatsappController extends Controller
             
             // Si el campo tiene opciones, agregarlas
             if (isset($campo['id_campo_hito'])) {
-                $opciones = $this->obtenerOpcionesFormateadas($campo['id_campo_hito']);
+                $opciones = $this->getIAController()->obtenerOpcionesFormateadas($campo['id_campo_hito']);
                 if ($opciones) {
                     $texto .= $opciones;
                 }
@@ -4287,7 +4287,7 @@ class WhatsappController extends Controller
                     ], 400);
             }
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logear('❌ ERROR en webhook_whatsapp: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
             return new JsonResponse([
                 'error' => 'Internal server error'
@@ -4709,8 +4709,8 @@ class WhatsappController extends Controller
 
             return new JsonResponse([], 200);
 
-        } catch (\Exception $e) {
-            $this->logear('❌ Error en MESSAGE: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->logear('❌ Error en MESSAGE: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
             return new JsonResponse([], 500);
         }
     }

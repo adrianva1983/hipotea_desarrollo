@@ -1224,8 +1224,9 @@ class IArtificalController extends Controller
         ];
     }
 
-    public function obtenerOpcionesFormateadas(int $idCampo): ?string
+    public function obtenerOpcionesFormateadas($idCampo): ?string
     {
+        $idCampo = (int)$idCampo;
         $opcionesMapeo = $this->obtenerOpcionesCampos();
         
         if (!isset($opcionesMapeo[$idCampo])) {
@@ -1451,13 +1452,16 @@ class IArtificalController extends Controller
         return $cond;
     }
 
-    public function aplicarCondicionesCondicionales(&$camposFaltantesParte, array $datosFase1): void
+    public function aplicarCondicionesCondicionales(&$camposFaltantesParte, array $datosFase1, array $camposParte = []): void
     {
         $condiciones = $this->obtenerCondicionesCondicionales();
         
         $this->logear("=== INICIO aplicarCondicionesCondicionales - " . count($condiciones) . " condiciones a verificar ===");
         
         foreach ($condiciones as $idCampoCondicional => $condicion) {
+            if (!empty($camposParte) && !in_array($idCampoCondicional, $camposParte)) {
+                continue;
+            }
             $idCampoPadre = $condicion['dependeDe'];
             $valoresEsperados = isset($condicion['valores']) ? (array)$condicion['valores'] : [$condicion['valor']];
             $tipoComparacion = $condicion['tipoComparacion'] ?? 'opcion';
@@ -1533,10 +1537,12 @@ class IArtificalController extends Controller
                         $camposFaltantesParte[] = [
                             'nombre' => $nombreCampo ?: "Campo {$idCampoCondicional}",
                             'valor' => '',
-                            'id_campo_hito' => $idCampoCondicional
+                            'id_campo_hito' => $idCampoCondicional,
+                            'opciones' => $this->obtenerOpcionesFormateadas($idCampoCondicional)
                         ];
                         $this->logear("  ✓ Campo {$idCampoCondicional} AGREGADO (no existía)");
                     } else {
+                        $campoCondicional['opciones'] = $this->obtenerOpcionesFormateadas($idCampoCondicional);
                         $camposFaltantesParte[] = $campoCondicional;
                         $this->logear("  ✓ Campo {$idCampoCondicional} AGREGADO (vacío/null)");
                     }
@@ -1668,7 +1674,7 @@ class IArtificalController extends Controller
                 }
             }
             
-            $this->aplicarCondicionesCondicionales($camposFaltantesParte, $datosFase1);
+            $this->aplicarCondicionesCondicionales($camposFaltantesParte, $datosFase1, $camposParte);
             
             if (!empty($camposFaltantesParte)) {
                 $this->logear("Parte $numeroParte incompleta: " . count($camposFaltantesParte) . " campos faltantes");
@@ -1958,8 +1964,9 @@ class IArtificalController extends Controller
         return $mensaje;
     }
 
-    public function obtenerNombreCampoDesdeBD(int $idCampo): ?string
+    public function obtenerNombreCampoDesdeBD($idCampo): ?string
     {
+        $idCampo = (int)$idCampo;
         try {
             $conn = $this->getDoctrine()->getConnection();
             $sql = 'SELECT nombre FROM campo_hito WHERE id_campo_hito = :id LIMIT 1';
