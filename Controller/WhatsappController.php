@@ -818,11 +818,12 @@ class WhatsappController extends Controller
         }
     }
 
-    private function findOrCreateWhatsappClient($em, string $fromPhone, array $structuredData): Usuario
+    private function findOrCreateWhatsappClient($em, string $fromPhone, array $structuredData): array
     {
         $normalizedPhone = $this->normalizeWhatsappLeadPhone($fromPhone);
         $repo = $em->getRepository(Usuario::class);
         $client = null;
+        $created = false;
 
         if ($normalizedPhone !== '') {
             $client = $repo->findOneBy(['telefonoMovil' => $normalizedPhone]);
@@ -838,7 +839,10 @@ class WhatsappController extends Controller
 
         if ($client) {
             $this->updateWhatsappClientWithStructuredData($client, $structuredData, $normalizedPhone);
-            return $client;
+            return [
+                'client' => $client,
+                'created' => false,
+            ];
         }
 
         $fullName = $this->getWhatsappExtractedValue($structuredData, [192]);
@@ -864,7 +868,12 @@ class WhatsappController extends Controller
         $em->persist($client);
         $this->logear('✓ Cliente creado automáticamente desde WhatsApp para teléfono ' . $normalizedPhone);
 
-        return $client;
+        $created = true;
+
+        return [
+            'client' => $client,
+            'created' => $created,
+        ];
     }
 
     private function generarReferenciaWhatsapp(int $anio): string
@@ -1064,30 +1073,190 @@ class WhatsappController extends Controller
         return $updatedFields;
     }
 
-    private function processPilotoAutomaticoLeadData($em, $conn, ?WhatsappSender $sender, ?int $idExpediente, string $fromPhone, string $incomingMessage, string $messageType): ?int
+    private function buildPilotoAutomaticoOfferMessage(?string $clientName): string
+    {
+        $firstName = trim((string) $clientName);
+        $firstName = $firstName !== '' ? explode(' ', $firstName)[0] : 'Hola';
+
+        return 'Hola ' . $firstName . ", soy el asistente de Hipotea. Si te parece, podemos continuar de dos formas:\n\n1. CUESTIONARIO: te envío las preguntas por bloques.\n2. GUIADO: te voy guiando paso a paso según lo que falte en tu expediente.\n\nRespóndeme CUESTIONARIO o GUIADO y seguimos.";
+    }
+
+    private function hasRecentPilotoAutomaticoOffer($conn, ?int $idExpediente, ?string $fromPhone, ?string $toPhone): bool
+    {
+        $sql = 'SELECT message
+                FROM chat_history
+                WHERE direction = :direction
+                  AND role = :role
+                  AND message_type = :messageType
+                  AND timestamp >= :recentLimit';
+
+        $params = [
+            'direction' => 'enviado',
+            'role' => 'assistant',
+            'messageType' => 'text',
+            'recentLimit' => date('Y-m-d H:i:s', time() - 1800),
+        ];
+
+        if ($idExpediente !== null) {
+            $sql .= ' AND id_expediente = :idExpediente';
+            $params['idExpediente'] = $idExpediente;
+        }
+
+        $sql .= ' ORDER BY timestamp DESC LIMIT 5';
+
+        try {
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll();
+            foreach ($rows as $row) {
+                $message = $this->extractWhatsappMessageTextFromStoredValue((string) ($row['message'] ?? ''), 'text');
+                if (stripos($message, 'Respóndeme CUESTIONARIO o GUIADO') !== false) {
+                    return true;
+                }
+            }
+        } catch (\Exception $e) {
+            $this->logear('⚠️ No se pudo consultar la oferta reciente del piloto automático: ' . $e->getMessage());
+        }
+
+        return false;
+    }
+
+    private function detectPilotoAutomaticoChoice(string $incomingText): ?string
+    {
+        $normalizedText = mb_strtolower(trim($incomingText), 'UTF-8');
+        if ($normalizedText === '') {
+            return null;
+        }
+
+        if (strpos($normalizedText, 'cuestionario') !== false) {
+            return 'questionnaire';
+        }
+
+        if (strpos($normalizedText, 'guiad') !== false || strpos($normalizedText, 'guiar') !== false || strpos($normalizedText, 'paso a paso') !== false) {
+            return 'guided';
+        }
+
+        return null;
+    }
+
+    private function buildPilotoAutomaticoMissingFieldsMessage(int $idExpediente, bool $guidedMode = true): ?string
+    {
+        try {
+            $iaController = $this->getIAController();
+            $datosFase1 = $iaController->obtenerDatosFase1($idExpediente, $this->getDoctrine()->getConnection());
+            if (!is_array($datosFase1) || isset($datosFase1['error'])) {
+                return null;
+            }
+
+            $resultadoParte = $iaController->obtenerProximaParteYCamposFaltantes($idExpediente, $datosFase1);
+            $camposFaltantes = $resultadoParte['campos_faltantes'] ?? [];
+            $mensajeCompleto = trim((string) ($resultadoParte['mensaje_completo'] ?? ''));
+            $nombreCliente = trim((string) ($resultadoParte['nombre_cliente'] ?? 'Cliente'));
+
+            if (empty($camposFaltantes)) {
+                return 'Perfecto, ahora mismo no nos faltan más datos principales del expediente. Si quieres, dime en qué punto estás y seguimos.';
+            }
+
+            if (!$guidedMode) {
+                return "Perfecto, empezamos con el cuestionario.\n\n" . $mensajeCompleto;
+            }
+
+            $tieneHistorico = $this->tieneConversacionReciente($idExpediente, 10);
+            $esNuevaParte = (($resultadoParte['numero_parte'] ?? 0) > ($resultadoParte['numero_parte_anterior'] ?? 0));
+            $mensajeGuiado = $this->construirMensajeUnificado($nombreCliente, $camposFaltantes, $tieneHistorico, $esNuevaParte);
+
+            return trim((string) $mensajeGuiado) !== '' ? $mensajeGuiado : $mensajeCompleto;
+        } catch (\Exception $e) {
+            $this->logear('⚠️ No se pudo construir el mensaje de campos faltantes: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function resolvePilotoAutomaticoReply($conn, ?WhatsappSender $sender, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $incomingMessage, string $messageType, array $pilotoContext = []): ?string
+    {
+        $normalizedIncomingMessage = $this->extractWhatsappMessageTextFromStoredValue($incomingMessage, $messageType);
+        $clientName = trim((string) ($pilotoContext['clientName'] ?? ''));
+
+        if (!empty($pilotoContext['clientCreated'])) {
+            return $this->buildPilotoAutomaticoOfferMessage($clientName);
+        }
+
+        $hasRecentOffer = $this->hasRecentPilotoAutomaticoOffer($conn, $idExpediente, $fromPhone, $toPhone);
+        $choice = $this->detectPilotoAutomaticoChoice($normalizedIncomingMessage);
+
+        if ($hasRecentOffer && $choice === 'questionnaire') {
+            return $idExpediente ? $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, false) : 'Perfecto, empezamos con el cuestionario. Envíame una primera respuesta con tus datos y seguimos.';
+        }
+
+        if ($hasRecentOffer && $choice === 'guided') {
+            return $idExpediente ? $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, true) : 'Perfecto, te voy guiando paso a paso. Cuéntame tu situación y te iré pidiendo lo que falte.';
+        }
+
+        if ($hasRecentOffer && $choice === null) {
+            return 'Para seguir, respóndeme solo CUESTIONARIO o GUIADO y continúo contigo.';
+        }
+
+        if (!empty($pilotoContext['existingClient']) && $idExpediente) {
+            $guidedMessage = $this->buildPilotoAutomaticoMissingFieldsMessage($idExpediente, true);
+            if ($guidedMessage) {
+                return $guidedMessage;
+            }
+        }
+
+        return $this->generatePilotoAutomaticoReply($conn, $sender, $idExpediente, $fromPhone, $toPhone, $incomingMessage, $messageType);
+    }
+
+    private function processPilotoAutomaticoLeadData($em, $conn, ?WhatsappSender $sender, ?int $idExpediente, string $fromPhone, string $incomingMessage, string $messageType): array
     {
         if (!$sender || !$this->isPilotoAutomaticoEnabledForSender($sender)) {
-            return $idExpediente;
+            return [
+                'idExpediente' => $idExpediente,
+                'clientCreated' => false,
+                'existingClient' => false,
+                'clientName' => null,
+            ];
         }
 
         $textToProcess = $this->extractWhatsappMessageTextFromStoredValue($incomingMessage, $messageType);
         if ($textToProcess === '' || $textToProcess === '[Imagen]') {
-            return $idExpediente;
+            return [
+                'idExpediente' => $idExpediente,
+                'clientCreated' => false,
+                'existingClient' => false,
+                'clientName' => null,
+            ];
         }
 
         try {
             $structuredData = $this->extractWhatsappLeadStructuredData($textToProcess);
-            $client = $this->findOrCreateWhatsappClient($em, $fromPhone, $structuredData);
+            $clientContext = $this->findOrCreateWhatsappClient($em, $fromPhone, $structuredData);
+            /** @var Usuario $client */
+            $client = $clientContext['client'];
+            $clientCreated = (bool) ($clientContext['created'] ?? false);
             $normalizedPhone = $this->normalizeWhatsappLeadPhone($fromPhone);
             $expediente = $this->findOrCreateWhatsappExpediente($em, $client, $sender, $idExpediente);
             $updatedFields = $this->actualizarHitosWhatsapp($em, $expediente, $client, $normalizedPhone, $structuredData);
             $em->flush();
 
-            $this->logear('✓ PilotoAutomatico: cliente ' . $client->getIdUsuario() . ', expediente ' . $expediente->getIdExpediente() . ', campos actualizados=' . $updatedFields . ', metodo=' . ($structuredData['metodo'] ?? 'desconocido'));
-            return $expediente->getIdExpediente();
+            $clientName = trim((string) $client->getUsername() . ' ' . (string) $client->getApellidos());
+            $this->logear('✓ PilotoAutomatico: cliente ' . $client->getIdUsuario() . ', expediente ' . $expediente->getIdExpediente() . ', campos actualizados=' . $updatedFields . ', metodo=' . ($structuredData['metodo'] ?? 'desconocido') . ', clienteNuevo=' . ($clientCreated ? 'sí' : 'no'));
+
+            return [
+                'idExpediente' => $expediente->getIdExpediente(),
+                'clientCreated' => $clientCreated,
+                'existingClient' => !$clientCreated,
+                'clientName' => $clientName !== '' ? $clientName : null,
+                'updatedFields' => $updatedFields,
+                'structuredData' => $structuredData,
+            ];
         } catch (\Exception $e) {
             $this->logear('⚠️ Error procesando alta/relleno automático WhatsApp: ' . $e->getMessage());
-            return $idExpediente;
+            return [
+                'idExpediente' => $idExpediente,
+                'clientCreated' => false,
+                'existingClient' => false,
+                'clientName' => null,
+            ];
         }
     }
 
@@ -1151,7 +1320,7 @@ class WhatsappController extends Controller
         }
     }
 
-    private function sendPilotoAutomaticoReceiptIfNeeded($conn, ?WhatsappSender $sender, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $incomingMessage, string $messageType): void
+    private function sendPilotoAutomaticoReceiptIfNeeded($conn, ?WhatsappSender $sender, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $incomingMessage, string $messageType, array $pilotoContext = []): void
     {
         if (!$sender || !$sender->getSessionId() || !$fromPhone) {
             return;
@@ -1169,7 +1338,7 @@ class WhatsappController extends Controller
             return;
         }
 
-        $receiptMessage = $this->generatePilotoAutomaticoReply($conn, $sender, $idExpediente, $fromPhone, $toPhone, $incomingMessage, $messageType) ?: 'recibido';
+        $receiptMessage = $this->resolvePilotoAutomaticoReply($conn, $sender, $idExpediente, $fromPhone, $toPhone, $incomingMessage, $messageType, $pilotoContext) ?: 'recibido';
         $receiptFromPhone = $toPhone ?: $senderPhone;
         $receiptToPhone = $fromPhone;
 
@@ -4518,8 +4687,9 @@ class WhatsappController extends Controller
             }
 
             if ($direction === 'recibido') {
-                $idExpediente = $this->processPilotoAutomaticoLeadData($em, $conn, $sender, $idExpediente, $fromPhone, $messageToSave, $type);
-                $this->sendPilotoAutomaticoReceiptIfNeeded($conn, $sender, $idExpediente, $fromPhone, $toPhone, $messageToSave, $type);
+                $pilotoContext = $this->processPilotoAutomaticoLeadData($em, $conn, $sender, $idExpediente, $fromPhone, $messageToSave, $type);
+                $idExpediente = $pilotoContext['idExpediente'] ?? $idExpediente;
+                $this->sendPilotoAutomaticoReceiptIfNeeded($conn, $sender, $idExpediente, $fromPhone, $toPhone, $messageToSave, $type, $pilotoContext);
             }
 
             $conn->insert('chat_history', [
