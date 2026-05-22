@@ -429,6 +429,18 @@ class WhatsappController extends Controller
         return (bool) preg_match('/(^|\.)ngrok-free\.dev$/', strtolower($parts['host']));
     }
 
+    private function findLatestWhatsappSenderByUserId($senderRepo, int $idUsuario): ?WhatsappSender
+    {
+        return $senderRepo->createQueryBuilder('ws')
+            ->where('ws.idUsuario = :idUsuario')
+            ->setParameter('idUsuario', $idUsuario)
+            ->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+            ->addOrderBy('ws.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function proxyWhatsappMediaAction(Request $request)
     {
         $url = trim((string) $request->query->get('url', ''));
@@ -3383,9 +3395,13 @@ class WhatsappController extends Controller
             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
             
             $sender = null;
+
+            if ($idGestor) {
+                $sender = $this->findLatestWhatsappSenderByUserId($senderRepo, (int) $idGestor);
+            }
             
-            // Primero intentar buscar por sessionName (nuevo flujo)
-            if ($sessionName) {
+            // Si no aparece por usuario, intentar buscar por sessionName (nuevo flujo)
+            if (!$sender && $sessionName) {
                 $sender = $senderRepo->findOneBy(['sessionName' => $sessionName]);
             }
             
@@ -4157,7 +4173,7 @@ class WhatsappController extends Controller
 
             // Guardar sessionName en WhatsappSender para este usuario
             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
-            $sender = $senderRepo->findOneBy(['idUsuario' => $usuario->getIdUsuario()]);
+            $sender = $this->findLatestWhatsappSenderByUserId($senderRepo, (int) $usuario->getIdUsuario());
             
             if (!$sender) {
                 $sender = new \AppBundle\Entity\WhatsappSender();
