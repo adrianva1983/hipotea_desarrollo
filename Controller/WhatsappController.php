@@ -2270,7 +2270,8 @@ class WhatsappController extends Controller
         $this->logear("body (mensaje): {$mensaje}");
         
         try {
-            $url = "https://punchiest-irremediably-suzette.ngrok-free.dev/api/messages/send";
+            //$url = "https://punchiest-irremediably-suzette.ngrok-free.dev/api/messages/send";
+            $url = "http://82.223.66.254:3000/api/messages/send";
 
             $payload = json_encode([
                 'sessionId' => $sessionId,
