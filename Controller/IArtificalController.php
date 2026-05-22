@@ -1661,8 +1661,10 @@ class IArtificalController extends Controller
                 }
                 
                 $valor = trim($campo['valor'] ?? '');
-                
-                if (empty($valor)) {
+                $idOpcionesCampo = $campo['id_opciones_campo'] ?? null;
+
+                // Si no hay valor textual Y tampoco hay opción seleccionada, considerarlo faltante.
+                if (empty($valor) && empty($idOpcionesCampo)) {
                     $nombreCampo = $this->obtenerNombreCampoDesdeBD($idCampo);
                     $camposFaltantesParte[] = [
                         'nombre' => $nombreCampo ?? ($campo['nombre'] ?? "Campo $idCampo"),
@@ -1670,7 +1672,11 @@ class IArtificalController extends Controller
                         'id_campo_hito' => $idCampo,
                         'opciones' => $this->obtenerOpcionesFormateadas($idCampo)
                     ];
-                    $this->logear("Campo $idCampo (vacío) considerado como faltante");
+                    $this->logear("Campo $idCampo (vacío y sin opción) considerado como faltante");
+                } else {
+                    if (empty($valor) && !empty($idOpcionesCampo)) {
+                        $this->logear("Campo $idCampo (vacío) tiene id_opciones_campo={$idOpcionesCampo}, se considera presente");
+                    }
                 }
             }
             
