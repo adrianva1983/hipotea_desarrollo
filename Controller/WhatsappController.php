@@ -1202,7 +1202,7 @@ class WhatsappController extends Controller
                 return "Perfecto, empezamos con el cuestionario.\n\n" . $mensajeCompleto;
             }
 
-            $tieneHistorico = $this->tieneConversacionReciente($idExpediente, 10);
+            $tieneHistorico = $this->tieneConversacionReciente($idExpediente, 60 * 24 * 7); // 7 días
             $esNuevaParte = (($resultadoParte['numero_parte'] ?? 0) > ($resultadoParte['numero_parte_anterior'] ?? 0));
             $mensajeGuiado = $this->construirMensajeUnificado($nombreCliente, $camposFaltantes, $tieneHistorico, $esNuevaParte);
 
@@ -1248,6 +1248,73 @@ class WhatsappController extends Controller
         return $this->generatePilotoAutomaticoReply($conn, $sender, $idExpediente, $fromPhone, $toPhone, $incomingMessage, $messageType);
     }
 
+    /**
+     * Detecta el último campo preguntado al cliente revisando los mensajes enviados por el asistente
+     * y devuelve el nombre de la clave y su id de campo si corresponde.
+     */
+    private function getUltimaCampoPreguntado($conn, ?int $idExpediente): ?array
+    {
+        if ($idExpediente === null) {
+            return null;
+        }
+
+        try {
+            $sql = 'SELECT message FROM chat_history WHERE direction = :direction AND id_expediente = :idExpediente ORDER BY timestamp DESC LIMIT 10';
+            $stmt = $conn->prepare($sql);
+            $stmt->execute(['direction' => 'enviado', 'idExpediente' => $idExpediente]);
+            $rows = $stmt->fetchAll();
+
+            foreach ($rows as $row) {
+                $msg = $this->extractWhatsappMessageTextFromStoredValue((string)($row['message'] ?? ''), 'text');
+                $msgLower = mb_strtolower($msg, 'UTF-8');
+                if (mb_stripos($msgLower, 'avalista') !== false) {
+                    return ['campo_nombre' => 'avalista', 'campo_id' => 190];
+                }
+                if (mb_stripos($msgLower, 'titular') !== false || mb_stripos($msgLower, 'titulares') !== false) {
+                    return ['campo_nombre' => 'titulares', 'campo_id' => 456];
+                }
+            }
+        } catch (\Exception $e) {
+            $this->logear('⚠️ getUltimaCampoPreguntado error: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Si el cliente responde a una pregunta reciente (campo pendiente), intenta mapear
+     * su respuesta a la opción correspondiente y la inyecta en structuredData.
+     */
+    private function mapearRespuestaContextual(string $textoCliente, ?array $campoPendiente, array $structuredData): array
+    {
+        if ($campoPendiente === null) {
+            return $structuredData;
+        }
+
+        $clave = $campoPendiente['campo_nombre'] ?? null;
+        $idCampo = (int) ($campoPendiente['campo_id'] ?? 0);
+        if (!$clave || $idCampo <= 0) {
+            return $structuredData;
+        }
+
+        // Si ya existe valor de opción detectado, no sobrescribimos
+        if (!empty($structuredData['valores_opcion'][$idCampo])) {
+            return $structuredData;
+        }
+
+        $mapeoOpciones = $this->obtenerMapeoOpcionesGlobalesWhatsapp();
+        $opcionId = $this->mapearValorAOpcionWhatsapp($clave, $textoCliente, $mapeoOpciones);
+
+        if ($opcionId) {
+            $structuredData['valores_opcion'][$idCampo] = $opcionId;
+            $structuredData['campos_detectados'] = ($structuredData['campos_detectados'] ?? 0) + 1;
+            $structuredData['metodo'] = $structuredData['metodo'] ?? 'contextual_mapping';
+            $this->logear("✓ Mapeo contextual: campo {$idCampo} ({$clave}) <- opcion {$opcionId}");
+        }
+
+        return $structuredData;
+    }
+
     private function processPilotoAutomaticoLeadData($em, $conn, ?WhatsappSender $sender, ?int $idExpediente, string $fromPhone, string $incomingMessage, string $messageType): array
     {
         if (!$sender || !$this->isPilotoAutomaticoEnabledForSender($sender)) {
@@ -1271,6 +1338,13 @@ class WhatsappController extends Controller
 
         try {
             $structuredData = $this->extractWhatsappLeadStructuredData($textToProcess);
+
+            // Intento de mapeo contextual: detectar si el último mensaje enviado preguntaba por un campo específico
+            $campoPendiente = $this->getUltimaCampoPreguntado($conn, $idExpediente);
+            if ($campoPendiente !== null) {
+                $structuredData = $this->mapearRespuestaContextual($textToProcess, $campoPendiente, $structuredData);
+            }
+
             $clientContext = $this->findOrCreateWhatsappClient($em, $fromPhone, $structuredData);
             /** @var Usuario $client */
             $client = $clientContext['client'];
@@ -3665,9 +3739,7 @@ class WhatsappController extends Controller
                 
                 $mensajeUnificado .= "\nCuando 3333 puedas, nos lo haces saber. ¡Muchas gracias! 😊";
             }*/
-            $mensajeUnificado = $this->getIAController()->generarMensajeInicial($nombreCliente);
-            $mensajeSegmentadoCampos = $this->getIAController()->generarMensajeSegmentado($primerSegmento);
-            $mensajeUnificado = $mensajeUnificado . $mensajeSegmentadoCampos;
+            $mensajeUnificado = $this->construirMensajeUnificado($nombreCliente, $primerSegmento, $tieneHistorico, $esNuevaParte);
         
             $mensajes = [
                 [
