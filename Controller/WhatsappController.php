@@ -1470,10 +1470,8 @@ class WhatsappController extends Controller
         $receiptFromPhone = $toPhone ?: $senderPhone;
         $receiptToPhone = $fromPhone;
 
-        if ($this->hasRecentOutgoingMessageDuplicate($conn, $idExpediente, $receiptFromPhone, $receiptToPhone, 'text', $receiptMessage)) {
-            $this->logear('ℹ️ Auto-reply omitido por duplicado reciente para cliente ' . $receiptToPhone);
-            return;
-        }
+        // Nota: se omite la supresión por duplicado para asegurar que el cliente reciba siempre
+        // el acuse/respuesta automática incluso si coincide con mensajes recientes.
 
         $botResponse = $this->llamarBotWhatsApp(
             $sender->getSessionId(),
