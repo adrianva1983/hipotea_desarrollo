@@ -29,6 +29,9 @@ class WhatsappController extends Controller
     {
         if ($this->iaController === null) {
             $this->iaController = new IArtificalController();
+            if (method_exists($this->iaController, 'setContainer')) {
+                $this->iaController->setContainer($this->container);
+            }
         }
         return $this->iaController;
     }
@@ -366,7 +369,188 @@ class WhatsappController extends Controller
         return false;
     }
 
-    private function sendPilotoAutomaticoReceiptIfNeeded($conn, ?WhatsappSender $sender, ?int $idExpediente, ?string $fromPhone, ?string $toPhone): void
+    private function extractWhatsappMessageTextFromStoredValue($message, ?string $messageType = null): string
+    {
+        if (!is_string($message)) {
+            return '';
+        }
+
+        $normalizedMessage = trim($message);
+        if ($normalizedMessage === '') {
+            return '';
+        }
+
+        $decodedMessage = json_decode($normalizedMessage, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decodedMessage)) {
+            return $normalizedMessage;
+        }
+
+        $resolvedType = $decodedMessage['type'] ?? $messageType ?? 'text';
+        if ($resolvedType === 'image') {
+            $caption = trim((string) ($decodedMessage['text'] ?? $decodedMessage['caption'] ?? ''));
+            return $caption !== '' ? '[Imagen] ' . $caption : '[Imagen]';
+        }
+
+        return trim((string) ($decodedMessage['content'] ?? $decodedMessage['text'] ?? $decodedMessage['body'] ?? ''));
+    }
+
+    private function buildPilotoAutomaticoConversationContext($conn, ?int $idExpediente, ?string $clientePhone, ?string $comercialPhone, int $limit = 5): string
+    {
+        try {
+            $sql = 'SELECT role, direction, message, message_type, from_phone, to_phone
+                    FROM chat_history';
+            $params = [];
+
+            if ($idExpediente !== null) {
+                $sql .= ' WHERE id_expediente = :idExpediente';
+                $params['idExpediente'] = $idExpediente;
+            } else {
+                $clientePhone = $this->normalizeWhatsappPhoneForComparison($clientePhone);
+                $comercialPhone = $this->normalizeWhatsappPhoneForComparison($comercialPhone);
+
+                if ($clientePhone === '' || $comercialPhone === '') {
+                    return '';
+                }
+
+                $sql .= ' WHERE timestamp >= :recentLimit
+                          AND ((from_phone LIKE :clientePhone AND to_phone LIKE :comercialPhone)
+                               OR (from_phone LIKE :comercialPhone AND to_phone LIKE :clientePhone))';
+                $params['recentLimit'] = date('Y-m-d H:i:s', time() - 86400);
+                $params['clientePhone'] = '%' . $clientePhone . '%';
+                $params['comercialPhone'] = '%' . $comercialPhone . '%';
+            }
+
+            $sql .= ' ORDER BY timestamp DESC LIMIT ' . (int) $limit;
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll();
+
+            if (!$rows) {
+                return '';
+            }
+
+            $rows = array_reverse($rows);
+            $contextLines = [];
+
+            foreach ($rows as $row) {
+                $lineText = $this->extractWhatsappMessageTextFromStoredValue((string) ($row['message'] ?? ''), $row['message_type'] ?? null);
+                if ($lineText === '') {
+                    continue;
+                }
+
+                $speaker = (($row['role'] ?? '') === 'assistant' || ($row['direction'] ?? '') === 'enviado') ? 'COMERCIAL' : 'CLIENTE';
+                $contextLines[] = $speaker . ': ' . substr($lineText, 0, 500);
+            }
+
+            return implode("\n", $contextLines);
+        } catch (\Exception $e) {
+            $this->logear('⚠️ No se pudo construir contexto para piloto automático: ' . $e->getMessage());
+            return '';
+        }
+    }
+
+    private function resolvePilotoAutomaticoSystemPrompt(?WhatsappSender $sender, array $iaConfig): string
+    {
+        $customPrompt = trim((string) ($sender ? $sender->getPilotoAutomaticoSystemPrompt() : ''));
+        $globalPrompt = trim((string) ($iaConfig['system_prompt'] ?? ''));
+        $basePrompt = $customPrompt !== '' ? $customPrompt : $globalPrompt;
+
+        if ($basePrompt === '') {
+            $basePrompt = 'Actúas como el comercial de Hipotea que atiende por WhatsApp a un cliente real. Responde siempre en español, con tono cercano y profesional, en 1-3 frases, sin decir que eres una IA y sin inventar datos.';
+        }
+
+        return $basePrompt . "\n\nUsa el contexto reciente si existe. Mantén continuidad con la conversación, evita repetir saludos innecesarios y pide solo el siguiente dato útil cuando falte información.";
+    }
+
+    private function resolvePilotoAutomaticoClientName($conn, ?int $idExpediente): ?string
+    {
+        if ($idExpediente === null) {
+            return null;
+        }
+
+        try {
+            $sql = 'SELECT c.nombre, c.apellidos
+                    FROM expediente e
+                    LEFT JOIN usuario c ON e.id_cliente = c.id_usuario
+                    WHERE e.id_expediente = :idExpediente
+                    LIMIT 1';
+            $stmt = $conn->prepare($sql);
+            $stmt->execute(['idExpediente' => $idExpediente]);
+            $row = $stmt->fetch();
+
+            if (!$row) {
+                return null;
+            }
+
+            $clientName = trim((string) ($row['nombre'] ?? '') . ' ' . (string) ($row['apellidos'] ?? ''));
+            return $clientName !== '' ? $clientName : null;
+        } catch (\Exception $e) {
+            $this->logear('⚠️ No se pudo obtener el nombre del cliente para piloto automático: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function generatePilotoAutomaticoReply($conn, ?WhatsappSender $sender, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $incomingMessage, string $messageType): ?string
+    {
+        if (!$sender) {
+            return null;
+        }
+
+        try {
+            $normalizedIncomingMessage = $this->extractWhatsappMessageTextFromStoredValue($incomingMessage, $messageType);
+            if ($normalizedIncomingMessage === '') {
+                $normalizedIncomingMessage = $messageType === 'image'
+                    ? 'El cliente ha enviado una imagen sin texto adicional.'
+                    : '';
+            }
+
+            if ($normalizedIncomingMessage === '') {
+                return null;
+            }
+
+            $iaController = $this->getIAController();
+            $iaConfig = $iaController->obtenerConfiguracionIA();
+            if (!$iaConfig || empty($iaConfig['api_key'])) {
+                $this->logear('⚠️ Configuración IA no disponible para piloto automático');
+                return null;
+            }
+
+            $systemPrompt = $this->resolvePilotoAutomaticoSystemPrompt($sender, $iaConfig);
+            $context = $this->buildPilotoAutomaticoConversationContext($conn, $idExpediente, $fromPhone, $toPhone);
+            $clientName = $this->resolvePilotoAutomaticoClientName($conn, $idExpediente);
+            $commercialName = trim((string) $sender->getSessionName()) ?: null;
+
+            $messageForIA = $normalizedIncomingMessage;
+            if ($context !== '') {
+                $messageForIA = "Contexto reciente de la conversación:\n" . $context . "\n\nNuevo mensaje del cliente:\n" . $normalizedIncomingMessage;
+            }
+
+            $reply = $iaController->generarMensajeConIA(
+                $messageForIA,
+                'text',
+                $systemPrompt,
+                null,
+                null,
+                'comercial',
+                $clientName,
+                $commercialName,
+                null
+            );
+
+            $reply = is_string($reply) ? trim($reply) : '';
+            if ($reply === '') {
+                return null;
+            }
+
+            $this->logear('✓ Respuesta IA generada para piloto automático (' . strlen($reply) . ' chars, contexto=' . ($context !== '' ? 'sí' : 'no') . ')');
+            return $reply;
+        } catch (\Exception $e) {
+            $this->logear('⚠️ Error generando respuesta IA para piloto automático: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function sendPilotoAutomaticoReceiptIfNeeded($conn, ?WhatsappSender $sender, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $incomingMessage, string $messageType): void
     {
         if (!$sender || !$sender->getSessionId() || !$fromPhone) {
             return;
@@ -387,7 +571,7 @@ class WhatsappController extends Controller
             return;
         }
 
-        $receiptMessage = 'recibido';
+        $receiptMessage = $this->generatePilotoAutomaticoReply($conn, $sender, $idExpediente, $fromPhone, $toPhone, $incomingMessage, $messageType) ?: 'recibido';
         $receiptFromPhone = $toPhone ?: $senderPhone;
         $receiptToPhone = $fromPhone;
 
@@ -3736,7 +3920,7 @@ class WhatsappController extends Controller
             }
 
             if ($direction === 'recibido') {
-                $this->sendPilotoAutomaticoReceiptIfNeeded($conn, $sender, $idExpediente, $fromPhone, $toPhone);
+                $this->sendPilotoAutomaticoReceiptIfNeeded($conn, $sender, $idExpediente, $fromPhone, $toPhone, $messageToSave, $type);
             }
 
             $conn->insert('chat_history', [
