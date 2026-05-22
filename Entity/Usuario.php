@@ -412,6 +412,16 @@ class Usuario implements UserInterface, Serializable
 	}
 
 	/**
+	 * Get nombre (alias para compatibilidad)
+	 *
+	 * @return string
+	 */
+	public function getNombre()
+	{
+		return $this->getUsername();
+	}
+
+	/**
 	 * Set apellidos
 	 *
 	 * @param string $apellidos
