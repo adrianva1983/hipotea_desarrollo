@@ -876,7 +876,7 @@ class BotApiController extends Controller
 		}
 		$conn = $this->getDoctrine()->getConnection();
 
-		error_log('request', $request);
+		error_log('request: ' . print_r($request, true));
 		if (!$telefono && !$dni) {
 			return new JsonResponse([
 				'success' => false,
