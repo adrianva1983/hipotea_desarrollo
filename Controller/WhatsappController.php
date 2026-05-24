@@ -3701,16 +3701,33 @@ class WhatsappController extends Controller
 
             if ($direction === 'recibido') {
                 try {
-                    $respuestaAutomatica = $this->llamarBotWhatsApp(
+                    $mensajeRespuestaAutomatica = 'mensaje recibido';
+                    $usuarioOrigen = $this->findUserByPhone($fromNorm);
+                    $esUsuarioInterno = false;
+
+                    if ($usuarioOrigen) {
+                        $rolOrigen = strtoupper((string) ($usuarioOrigen['role'] ?? ''));
+                        $esUsuarioInterno = in_array($rolOrigen, ['ROLE_ADMIN', 'ROLE_COMERCIAL', 'ROLE_TECNICO', 'ADMIN', 'COMERCIAL', 'TECNICO'], true);
+                    }
+
+                    if ($esUsuarioInterno) {
+                        $mensajeRespuestaAutomatica = 'Mensaje recibido desde el CRM.';
+                    } elseif ($usuarioOrigen || $idExpediente || $this->findExpedienteByClientPhone($fromNorm)) {
+                        $mensajeRespuestaAutomatica = 'Hola, mensaje recibido. Gracias por escribirnos.';
+                    } else {
+                        $mensajeRespuestaAutomatica = 'Hola, no tenemos tu número registrado. Si quieres, déjanos tu nombre y te contactamos.';
+                    }
+
+                    $respuestaBot = $this->llamarBotWhatsApp(
                         $sessionId,
                         $this->normalizePhonenWithPrefix($fromNorm),
-                        'mensaje recibido'
+                        $mensajeRespuestaAutomatica
                     );
 
-                    if (is_array($respuestaAutomatica) && !empty($respuestaAutomatica['success'])) {
-                        $this->logear('✓ Respuesta automática enviada al cliente: mensaje recibido');
+                    if (is_array($respuestaBot) && !empty($respuestaBot['success'])) {
+                        $this->logear('✓ Respuesta automática enviada al cliente: ' . $mensajeRespuestaAutomatica);
                     } else {
-                        $this->logear('⚠️ No se pudo enviar la respuesta automática: mensaje recibido');
+                        $this->logear('⚠️ No se pudo enviar la respuesta automática');
                     }
                 } catch (\Exception $e) {
                     $this->logear('⚠️ Error enviando respuesta automática: ' . $e->getMessage());
