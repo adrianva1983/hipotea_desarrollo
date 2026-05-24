@@ -903,7 +903,7 @@ api_conversaciones_expediente:
 # === API: Buscar Cliente por teléfono o DNI ===
 api_buscar_cliente:
   path: /API/BuscarCliente
-  controller: AppBundle:BotApiController:buscarCliente
+  controller: AppBundle:BotApi:buscarCliente
   methods: [GET, POST]
 
 pageNotFound:
