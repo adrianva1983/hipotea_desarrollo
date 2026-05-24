@@ -4084,24 +4084,27 @@ class WhatsappController extends Controller
                         return $textoConversacional . "\n\nPara localizar el expediente, ¿puedes indicarme su número de ID, teléfono o DNI del cliente?";
                     }
 
-                    // Preparar llamada a la API
-                    $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '127.0.0.1';
-                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-                    $url = $protocol . '://' . $host . '/API/BuscarExpediente1?api_key=123456';
-                    
-                    if ($idExpediente) $url .= '&id_expediente=' . $idExpediente;
-                    if ($telefonoBusqueda) $url .= '&telefono=' . $telefonoBusqueda;
-                    if ($dniBusqueda) $url .= '&dni=' . $dniBusqueda;
+                    // Preparar llamada a la API internamente en Symfony (evita problemas de cURL/DNS local)
+                    $queryData = ['api_key' => '123456'];
+                    if ($idExpediente) $queryData['id_expediente'] = $idExpediente;
+                    if ($telefonoBusqueda) $queryData['telefono'] = $telefonoBusqueda;
+                    if ($dniBusqueda) $queryData['dni'] = $dniBusqueda;
 
-                    $ch = curl_init($url);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
-                    // En caso de que se use SSL autofirmado en local
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-                    $responseAPI = curl_exec($ch);
-                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    curl_close($ch);
+                    $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                        '/API/BuscarExpediente1',
+                        'GET',
+                        $queryData
+                    );
+
+                    try {
+                        $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                        $httpCode = $response->getStatusCode();
+                        $responseAPI = $response->getContent();
+                    } catch (\Exception $e) {
+                        $this->logear('❌ Error en subpetición a BuscarExpediente1: ' . $e->getMessage());
+                        $httpCode = 500;
+                        $responseAPI = '';
+                    }
 
                     if ($httpCode !== 200 || !$responseAPI) {
                         $criterio = $idExpediente ?: ($telefonoBusqueda ?: $dniBusqueda);
