@@ -569,33 +569,32 @@ class IArtificalController extends Controller
                 $stmt->execute();
                 $mensajes = $stmt->fetchAll();
             } elseif ($phone) {
-                // Usamos el teléfono normalizado para que el LIKE no falle si tiene prefijos diferentes
                 $cleanPhone = preg_replace('/\D/', '', $phone);
-                // Si empieza por 34, podemos omitirlo para ser más tolerantes en la búsqueda
                 if (strpos($cleanPhone, '34') === 0) {
                     $cleanPhone = substr($cleanPhone, 2);
                 }
+                $internationalPhone = '34' . $cleanPhone;
                 
-                error_log('Obteniendo contexto de conversación interno por teléfono ' . $cleanPhone);
+                error_log('Obteniendo contexto de conversación interno por teléfono ' . $cleanPhone . ' o ' . $internationalPhone);
                 $sql = 'SELECT role, message as text, timestamp 
                         FROM chat_history 
-                        WHERE from_phone LIKE :phone OR to_phone LIKE :phone 
+                        WHERE from_phone IN (:phone1, :phone2) OR to_phone IN (:phone1, :phone2) 
                         ORDER BY timestamp DESC 
                         LIMIT :limit';
                 $stmt = $conn->prepare($sql);
-                $stmt->bindValue('phone', '%' . $cleanPhone . '%');
+                $stmt->bindValue('phone1', $cleanPhone);
+                $stmt->bindValue('phone2', $internationalPhone);
                 $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
                 $stmt->execute();
                 $mensajes = $stmt->fetchAll();
             }
-            $mensajes = $stmt->fetchAll();
             
             if (empty($mensajes)) {
-                error_log('No hay histórico de conversación');
+                error_log('⚠️ No hay histórico de conversación para este teléfono o expediente.');
                 return '';
             }
             
-            error_log('Encontrados ' . count($mensajes) . ' mensajes anteriores');
+            error_log('✅ ÉXITO: Histórico extraído correctamente (' . count($mensajes) . ' mensajes recuperados de la BD).');
             
             $mensajes = array_reverse($mensajes);
             

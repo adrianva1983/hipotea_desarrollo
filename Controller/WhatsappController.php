@@ -3805,7 +3805,7 @@ class WhatsappController extends Controller
                             'role' => 'assistant',
                             'direction' => 'enviado',
                             'message_type' => 'text',
-                            'timestamp' => (new \DateTime())->format('Y-m-d H:i:s')
+                            'timestamp' => new \DateTime()
                         ], [
                             'timestamp' => 'datetime'
                         ]);
