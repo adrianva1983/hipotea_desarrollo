@@ -1019,6 +1019,33 @@ class BotApiController extends Controller
 			], 404);
 		}
 
+		// Obtener todos los hitos y campos rellenados para cada expediente (Fase 1, etc)
+		foreach ($expedientes as &$exp) {
+			$sqlHitos = 'SELECT ch.nombre as campo, che.valor as valor, f.nombre as fase, h.nombre as hito 
+						 FROM campo_hito_expediente che
+						 JOIN campo_hito ch ON che.id_campo_hito = ch.id_campo_hito
+						 JOIN grupo_campos_hito gch ON ch.id_grupo_campos_hito = gch.id_grupo_campos_hito
+						 JOIN hito h ON gch.id_hito = h.id_hito
+						 JOIN fase f ON h.id_fase = f.id_fase
+						 WHERE che.id_expediente = :id_expediente AND che.valor IS NOT NULL AND che.valor != \'\'';
+			
+			$stmtHitos = $conn->prepare($sqlHitos);
+			$stmtHitos->bindValue('id_expediente', $exp['id_expediente']);
+			$stmtHitos->execute();
+			$hitosResult = $stmtHitos->fetchAll();
+			
+			$datosExtra = [];
+			foreach ($hitosResult as $row) {
+				$datosExtra[] = [
+					'fase'  => $row['fase'],
+					'hito'  => $row['hito'],
+					'campo' => $row['campo'],
+					'valor' => $row['valor']
+				];
+			}
+			$exp['datos_fases'] = $datosExtra;
+		}
+
 		return new JsonResponse([
 			'success' => true,
 			'expedientes' => $expedientes
