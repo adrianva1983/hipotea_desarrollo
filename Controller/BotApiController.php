@@ -860,8 +860,20 @@ class BotApiController extends Controller
 	 */
 	public function buscarClienteAction(Request $request)
 	{
-		$telefono = $request->get('telefono');
-		$dni = $request->get('dni');
+		// Permitir parámetros por JSON (application/json) o por GET/POST clásicos
+		$telefono = null;
+		$dni = null;
+		$contentType = $request->headers->get('Content-Type');
+		if ($contentType && strpos($contentType, 'application/json') !== false) {
+			$data = json_decode($request->getContent(), true);
+			if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+				$telefono = isset($data['telefono']) ? $data['telefono'] : null;
+				$dni = isset($data['dni']) ? $data['dni'] : null;
+			}
+		} else {
+			$telefono = $request->get('telefono');
+			$dni = $request->get('dni');
+		}
 		$conn = $this->getDoctrine()->getConnection();
 
 		if (!$telefono && !$dni) {
