@@ -3795,6 +3795,23 @@ class WhatsappController extends Controller
 
                     $this->logear('➡️ Preparando respuesta automática para from=' . $fromPhone . ', expediente=' . ($idExpediente ?? 'null') . ', mensaje=' . $mensajeRespuestaAutomatica);
 
+                    // Guardar la respuesta del bot INMEDIATAMENTE en el historial para que Gemini tenga el contexto al instante
+                    try {
+                        $conn->insert('chat_history', [
+                            'id_expediente' => $idExpediente,
+                            'from_phone' => $toPhone,       // El bot
+                            'to_phone' => $fromPhone,       // El comercial/usuario
+                            'message' => $mensajeRespuestaAutomatica,
+                            'role' => 'assistant',
+                            'direction' => 'enviado',
+                            'message_type' => 'text',
+                            'timestamp' => (new \DateTime())->format('Y-m-d H:i:s')
+                        ], [
+                            'timestamp' => 'datetime'
+                        ]);
+                    } catch (\Exception $e) {
+                        $this->logear('⚠️ Error guardando auto-reply en historial: ' . $e->getMessage());
+                    }
                     $respuestaBot = $this->llamarBotWhatsApp(
                         $sessionId,
                         $this->normalizePhonenWithPrefix($fromNorm),
