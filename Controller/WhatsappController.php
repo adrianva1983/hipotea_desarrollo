@@ -3607,24 +3607,7 @@ class WhatsappController extends Controller
                         $idExpediente = $expResult['id_expediente'];
                         $this->logear("✓ Expediente encontrado (RECIBIDO): {$idExpediente}");
                     } else {
-                        // Si no encuentra con técnico, buscar solo por cliente
-                        $this->logear("⚠️ No encontrado con técnico, buscando solo por cliente...");
-                        $sqlBuscaExp2 = "SELECT e.id_expediente FROM expediente e 
-                                       INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
-                                       WHERE u_cliente.telefono_movil LIKE :fromPhone
-                                       AND e.estado > 0
-                                       ORDER BY e.id_expediente DESC LIMIT 1";
-                        
-                        $stmtBuscaExp2 = $conn->prepare($sqlBuscaExp2);
-                        $stmtBuscaExp2->execute([
-                            ':fromPhone' => '%' . $fromLocal . '%'
-                        ]);
-                        $expResult2 = $stmtBuscaExp2->fetch();
-                        
-                        if ($expResult2 && $expResult2['id_expediente']) {
-                            $idExpediente = $expResult2['id_expediente'];
-                            $this->logear("✓ Expediente encontrado (solo cliente): {$idExpediente}");
-                        }
+                        $this->logear("⚠️ No se encontró expediente para mensaje recibido con from={$fromLocal}; se guardará id_expediente null");
                     }
                 }
             }
