@@ -1021,26 +1021,53 @@ class BotApiController extends Controller
 
 		// Obtener todos los hitos y campos rellenados para cada expediente (Fase 1, etc)
 		foreach ($expedientes as &$exp) {
-			$sqlHitos = 'SELECT ch.nombre as campo, che.valor as valor, f.nombre as fase, h.nombre as hito 
+			$sqlHitos = 'SELECT ch.nombre as campo, che.valor as valor, f.nombre as fase, f.id_fase, f.orden as fase_orden, h.nombre as hito 
 						 FROM campo_hito_expediente che
 						 JOIN campo_hito ch ON che.id_campo_hito = ch.id_campo_hito
 						 JOIN grupo_campos_hito gch ON ch.id_grupo_campos_hito = gch.id_grupo_campos_hito
 						 JOIN hito h ON gch.id_hito = h.id_hito
 						 JOIN fase f ON h.id_fase = f.id_fase
-						 WHERE che.id_expediente = :id_expediente AND che.valor IS NOT NULL AND che.valor != \'\'';
+						 WHERE che.id_expediente = :id_expediente 
+						   AND che.valor IS NOT NULL 
+						   AND che.valor != \'\' 
+						   AND che.valor != ch.nombre
+						   AND (f.id_fase = 1 OR f.orden = 1)';
 			
 			$stmtHitos = $conn->prepare($sqlHitos);
 			$stmtHitos->bindValue('id_expediente', $exp['id_expediente']);
 			$stmtHitos->execute();
 			$hitosResult = $stmtHitos->fetchAll();
 			
+			// Extraer IDs de opciones seleccionadas para traducir su valor
+			$opcionesIds = [];
+			foreach ($hitosResult as $row) {
+				if (preg_match('/_opcion_(\d+)$/', $row['valor'], $m)) {
+					$opcionesIds[] = (int)$m[1];
+				}
+			}
+			
+			$opcionesMap = [];
+			if (count($opcionesIds) > 0) {
+				$sqlOpciones = 'SELECT id_opciones_campo, valor FROM opciones_campo WHERE id_opciones_campo IN (' . implode(',', array_unique($opcionesIds)) . ')';
+				$stmtOpciones = $conn->prepare($sqlOpciones);
+				$stmtOpciones->execute();
+				foreach ($stmtOpciones->fetchAll() as $op) {
+					$opcionesMap[$op['id_opciones_campo']] = $op['valor'];
+				}
+			}
+			
 			$datosExtra = [];
 			foreach ($hitosResult as $row) {
+				$valorFinal = $row['valor'];
+				if (preg_match('/_opcion_(\d+)$/', $valorFinal, $m) && isset($opcionesMap[$m[1]])) {
+					$valorFinal = $opcionesMap[$m[1]];
+				}
+
 				$datosExtra[] = [
 					'fase'  => $row['fase'],
 					'hito'  => $row['hito'],
 					'campo' => $row['campo'],
-					'valor' => $row['valor']
+					'valor' => $valorFinal
 				];
 			}
 			$exp['datos_fases'] = $datosExtra;
