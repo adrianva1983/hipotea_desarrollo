@@ -29,6 +29,7 @@ class WhatsappController extends Controller
     {
         if ($this->iaController === null) {
             $this->iaController = new IArtificalController();
+            $this->iaController->setContainer($this->container);
         }
         return $this->iaController;
     }
@@ -3772,12 +3773,18 @@ class WhatsappController extends Controller
                     }
 
                     if ($esUsuarioInterno) {
-                        /*$mensajeRespuestaAutomatica = $this->getIAController()->llamarAPIIA(
-                            $body,
-                            $systemPromptCRM,
-                            $idExpediente
-                        ) ?: 'Mensaje recibido desde el CRM.';*/
-                        $mensajeRespuestaAutomatica = 'Mensaje recibido desde el CRM.';
+                        try {
+                            $mensajeIA = $this->getIAController()->llamarAPIIA(
+                                $body,
+                                $systemPromptCRM,
+                                $idExpediente
+                            );
+
+                            $mensajeRespuestaAutomatica = $mensajeIA ?: 'Mensaje recibido desde el CRM.';
+                        } catch (\Throwable $e) {
+                            $this->logear('⚠️ Error en IA para respuesta CRM: ' . $e->getMessage());
+                            $mensajeRespuestaAutomatica = 'Mensaje recibido desde el CRM.';
+                        }
                     } elseif ($usuarioOrigen || $idExpediente || $this->findExpedienteByClientPhone($fromNorm)) {
                         $mensajeRespuestaAutomatica = 'Hola, mensaje recibido. Gracias por escribirnos.';
                     } else {
