@@ -3764,6 +3764,7 @@ class WhatsappController extends Controller
                     $systemPromptCRM = $this->getSystemPromptCRM();
                     $usuarioOrigen = $this->findUserByPhone($fromNorm);
                     $esUsuarioInterno = false;
+                    $this->logear('systemPromptCRM: ' . $systemPromptCRM);
 
                     if ($usuarioOrigen) {
                         $rolOrigen = strtoupper((string) ($usuarioOrigen['role'] ?? ''));
@@ -3771,11 +3772,12 @@ class WhatsappController extends Controller
                     }
 
                     if ($esUsuarioInterno) {
-                        $mensajeRespuestaAutomatica = $this->getIAController()->llamarAPIIA(
+                        /*$mensajeRespuestaAutomatica = $this->getIAController()->llamarAPIIA(
                             $body,
                             $systemPromptCRM,
                             $idExpediente
-                        ) ?: 'Mensaje recibido desde el CRM.';
+                        ) ?: 'Mensaje recibido desde el CRM.';*/
+                        $mensajeRespuestaAutomatica = 'Mensaje recibido desde el CRM.';
                     } elseif ($usuarioOrigen || $idExpediente || $this->findExpedienteByClientPhone($fromNorm)) {
                         $mensajeRespuestaAutomatica = 'Hola, mensaje recibido. Gracias por escribirnos.';
                     } else {
