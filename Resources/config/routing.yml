@@ -899,6 +899,12 @@ api_conversaciones_expediente:
   methods: [POST]
   requirements:
     idSender: '\d+'
+  
+# === API: Buscar Cliente por teléfono o DNI ===
+api_buscar_cliente:
+  path: /API/BuscarCliente
+  controller: AppBundle:BotApiController:buscarCliente
+  methods: [GET, POST]
 
 pageNotFound:
     path:  /{path}

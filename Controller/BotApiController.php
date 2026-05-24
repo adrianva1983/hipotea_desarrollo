@@ -853,4 +853,79 @@ class BotApiController extends Controller
 
 		return $sugerencias;
 	}
+
+	/**
+	 * Endpoint API para buscar cliente por teléfono o DNI
+	 * Permite GET o POST, recibe 'telefono' o 'dni' y devuelve datos básicos del cliente
+	 */
+	public function buscarClienteAction(Request $request)
+	{
+		$telefono = $request->get('telefono');
+		$dni = $request->get('dni');
+		$conn = $this->getDoctrine()->getConnection();
+
+		if (!$telefono && !$dni) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Debe proporcionar al menos un parámetro: telefono o dni.'
+			], 400);
+		}
+
+		$where = [];
+		$params = [];
+		if ($telefono) {
+			// Buscar por variantes del teléfono (sin prefijo, últimos 9 dígitos)
+			$variants = array_unique(array_filter([
+				$telefono,
+				ltrim($telefono, '0'),
+				(strlen($telefono) > 9 ? substr($telefono, -9) : null)
+			]));
+			$telPlaceholders = [];
+			foreach ($variants as $i => $v) {
+				$ph = ':tel' . $i;
+				$telPlaceholders[] = $ph;
+				$params[$ph] = $v;
+			}
+			$where[] = 'telefono_movil IN (' . implode(',', $telPlaceholders) . ')';
+		}
+		if ($dni) {
+			$where[] = 'nif = :dni';
+			$params[':dni'] = $dni;
+		}
+
+		$sql = 'SELECT id_usuario, nombre, apellidos, nif, email, telefono_movil, telefono_fijo, estado FROM usuario WHERE estado = 1';
+		if (count($where) > 0) {
+			$sql .= ' AND (' . implode(' OR ', $where) . ')';
+		}
+		$sql .= ' LIMIT 1';
+
+		$stmt = $conn->prepare($sql);
+		foreach ($params as $ph => $val) {
+			$stmt->bindValue(trim($ph, ':'), $val);
+		}
+		$stmt->execute();
+		$cliente = $stmt->fetch();
+
+		if (!$cliente) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'No se encontró ningún cliente con los datos proporcionados.'
+			], 404);
+		}
+
+		// Devolver datos básicos del cliente
+		return new JsonResponse([
+			'success' => true,
+			'cliente' => [
+				'id' => $cliente['id_usuario'],
+				'nombre' => $cliente['nombre'],
+				'apellidos' => $cliente['apellidos'],
+				'dni' => $cliente['nif'],
+				'email' => $cliente['email'],
+				'telefono_movil' => $cliente['telefono_movil'],
+				'telefono_fijo' => $cliente['telefono_fijo'],
+				'estado' => $cliente['estado'],
+			]
+		]);
+	}
 }
