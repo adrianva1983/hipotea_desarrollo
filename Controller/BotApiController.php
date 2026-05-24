@@ -864,18 +864,10 @@ class BotApiController extends Controller
 		$telefono = null;
 		$dni = null;
 		$telefono = $request->request->get('telefono');
+		$dni = $request->request->get('dni');
 		error_log('Received telefono: ' . $telefono);
-		$contentType = $request->headers->get('Content-Type');
-		if ($contentType && strpos($contentType, 'application/json') !== false) {
-			$data = json_decode($request->getContent(), true);
-			if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
-				$telefono = isset($data['telefono']) ? $data['telefono'] : null;
-				$dni = isset($data['dni']) ? $data['dni'] : null;
-			}
-		} else {
-			$telefono = $request->get('telefono');
-			$dni = $request->get('dni');
-		}
+		error_log('Received dni: ' . $dni);
+		
 		$conn = $this->getDoctrine()->getConnection();
 
 		error_log('request: ' . print_r($request, true));
