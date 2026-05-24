@@ -906,6 +906,12 @@ api_buscar_cliente1:
   controller: AppBundle:BotApi:buscarCliente1
   methods: [GET, POST]
 
+# === API: Buscar Expediente por id, teléfono o DNI ===
+api_buscar_expediente1:
+  path: /API/BuscarExpediente1
+  controller: AppBundle:BotApi:buscarExpediente1
+  methods: [GET, POST]
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }

@@ -943,6 +943,88 @@ class BotApiController extends Controller
 		]);
 	}
 
+	/**
+	 * Endpoint API para buscar expedientes por ID, teléfono o DNI del cliente
+	 */
+	public function buscarExpediente1Action(Request $request)
+	{
+		// Requiere API key
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+
+		$idExpediente = $request->request->get('id_expediente') ?: $request->query->get('id_expediente');
+		$telefono = $request->request->get('telefono') ?: $request->query->get('telefono');
+		$dni = $request->request->get('dni') ?: $request->query->get('dni');
+
+		if (!$idExpediente && !$telefono && !$dni) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Debe proporcionar al menos un parámetro: id_expediente, telefono o dni.'
+			], 400);
+		}
+
+		$conn = $this->getDoctrine()->getConnection();
+		$where = [];
+		$params = [];
+
+		if ($idExpediente) {
+			$where[] = 'e.id_expediente = :id_exp';
+			$params[':id_exp'] = $idExpediente;
+		} else {
+			if ($telefono) {
+				// Buscar por variantes del teléfono (sin prefijo, últimos 9 dígitos)
+				$variants = array_unique(array_filter([
+					$telefono,
+					ltrim($telefono, '0'),
+					(strlen($telefono) > 9 ? substr($telefono, -9) : null)
+				]));
+				$telPlaceholders = [];
+				foreach ($variants as $i => $v) {
+					$ph = ':tel_exp' . $i;
+					$telPlaceholders[] = $ph;
+					$params[$ph] = $v;
+				}
+				$where[] = 'u.telefono_movil IN (' . implode(',', $telPlaceholders) . ')';
+			}
+			if ($dni) {
+				$where[] = 'u.nif = :dni';
+				$params[':dni'] = $dni;
+			}
+		}
+
+		$sql = 'SELECT e.id_expediente, e.referencia, e.estado, e.fecha_creacion, e.vivienda, e.id_cliente, e.id_comercial, e.id_tecnico, u.nombre as cliente_nombre, u.apellidos as cliente_apellidos 
+				FROM expediente e 
+				LEFT JOIN usuario u ON e.id_cliente = u.id_usuario 
+				WHERE 1=1';
+
+		if (count($where) > 0) {
+			$sql .= ' AND (' . implode(' OR ', $where) . ')';
+		}
+		
+		// Ordenar por el más reciente
+		$sql .= ' ORDER BY e.id_expediente DESC LIMIT 5';
+
+		$stmt = $conn->prepare($sql);
+		foreach ($params as $ph => $val) {
+			$stmt->bindValue(trim($ph, ':'), $val);
+		}
+		$stmt->execute();
+		$expedientes = $stmt->fetchAll();
+
+		if (!$expedientes || count($expedientes) === 0) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'No se encontró ningún expediente con los datos proporcionados.'
+			], 404);
+		}
+
+		return new JsonResponse([
+			'success' => true,
+			'expedientes' => $expedientes
+		]);
+	}
+
 	private function checkApiKey(Request $request)
 	{
 		// Intentar obtener API key desde diferentes fuentes
