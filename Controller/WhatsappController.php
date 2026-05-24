@@ -55,18 +55,18 @@ class WhatsappController extends Controller
     {
         // Usar la raíz del proyecto
         $logDir = dirname(dirname(dirname(__DIR__))) . '/var/logs/';
-        
+
         if (!is_dir($logDir)) {
             @mkdir($logDir, 0777, true);
         }
-        
+
         $logFile = $logDir . 'whatsapp_' . date('Y-m-d') . '.log';
         $timestamp = date('Y-m-d H:i:s');
         $contenido = "[{$timestamp}] {$mensaje}\n";
-        
+
         // Intentar escribir en archivo
         $resultado = @file_put_contents($logFile, $contenido, FILE_APPEND | LOCK_EX);
-        
+
         // Fallback a error_log si no se puede escribir al archivo
         if ($resultado === false) {
             error_log($mensaje);
@@ -102,12 +102,12 @@ class WhatsappController extends Controller
     private function detectMimeTypeFromBinary(string $binaryContent): ?string
     {
         $signatures = [
-            "\xFF\xD8\xFF"      => 'image/jpeg',
+            "\xFF\xD8\xFF" => 'image/jpeg',
             "\x89PNG\r\n\x1A\n" => 'image/png',
-            'GIF87a'            => 'image/gif',
-            'GIF89a'            => 'image/gif',
-            'RIFF'              => 'image/webp',
-            'BM'                => 'image/bmp',
+            'GIF87a' => 'image/gif',
+            'GIF89a' => 'image/gif',
+            'RIFF' => 'image/webp',
+            'BM' => 'image/bmp',
         ];
 
         foreach ($signatures as $signature => $mimeType) {
@@ -155,12 +155,12 @@ class WhatsappController extends Controller
     private function guessExtensionFromMimeType(?string $mimeType): string
     {
         $extensionMap = [
-            'image/jpeg'    => 'jpg',
-            'image/jpg'     => 'jpg',
-            'image/png'     => 'png',
-            'image/gif'     => 'gif',
-            'image/webp'    => 'webp',
-            'image/bmp'     => 'bmp',
+            'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'image/bmp' => 'bmp',
             'image/svg+xml' => 'svg',
         ];
 
@@ -445,15 +445,15 @@ class WhatsappController extends Controller
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_TIMEOUT        => 30,
-                CURLOPT_MAXREDIRS      => 5,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_MAXREDIRS => 5,
                 CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
-                CURLOPT_HTTPHEADER     => [
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
+                CURLOPT_HTTPHEADER => [
                     'Accept: image/*,*/*;q=0.8',
                     'ngrok-skip-browser-warning: true',
                 ],
-                CURLOPT_BUFFERSIZE     => 1024 * 1024,
+                CURLOPT_BUFFERSIZE => 1024 * 1024,
             ]);
 
             $rawBinary = curl_exec($ch);
@@ -525,15 +525,15 @@ class WhatsappController extends Controller
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_TIMEOUT        => 30,
-                CURLOPT_MAXREDIRS      => 5,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_MAXREDIRS => 5,
                 CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
-                CURLOPT_HTTPHEADER     => [
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
+                CURLOPT_HTTPHEADER => [
                     'Accept: image/*,*/*;q=0.8',
                     'ngrok-skip-browser-warning: true',
                 ],
-                CURLOPT_BUFFERSIZE     => 1024 * 1024,
+                CURLOPT_BUFFERSIZE => 1024 * 1024,
             ]);
 
             $rawBinary = curl_exec($ch);
@@ -603,13 +603,13 @@ class WhatsappController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $usuario = $this->getUser();
-        
+
         if (!$usuario) {
             return $this->redirectToRoute('login');
         }
 
         $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
-        
+
         // Obtener la conexión del usuario actual
         $qb = $senderRepo->createQueryBuilder('ws');
         $conexion = $qb
@@ -639,13 +639,13 @@ class WhatsappController extends Controller
     public function agregarModificarConexionAction(Request $request)
     {
         $id_sender = $request->get('id');
-        
+
         $fecha = date('Y-m-d');
-        $hash  = $this->generarHashWhatsapp($fecha);
-        $ip    = $this->obtenerServidorParaSender($id_sender);
-        $base  = $this->baseHostWhatsapp($ip);
+        $hash = $this->generarHashWhatsapp($fecha);
+        $ip = $this->obtenerServidorParaSender($id_sender);
+        $base = $this->baseHostWhatsapp($ip);
         $externalUrl = $base . "/?new=true&hash={$hash}&date={$fecha}";
-        
+
         return $this->render('@App/Backoffice/AgregarModificar/whatsapp-redirect.html.twig', [
             'externalUrl' => $externalUrl,
         ]);
@@ -662,7 +662,7 @@ class WhatsappController extends Controller
         $usuario = $this->getUser();
 
         // Obtener el sender
-        $sender = $senderRepo->find((int)$idSender);
+        $sender = $senderRepo->find((int) $idSender);
         if (!$sender) {
             throw $this->createNotFoundException('Conexión no encontrada');
         }
@@ -713,7 +713,7 @@ class WhatsappController extends Controller
         $usuario = $this->getUser();
 
         // Obtener el sender
-        $sender = $senderRepo->find((int)$idSender);
+        $sender = $senderRepo->find((int) $idSender);
         if (!$sender) {
             return new JsonResponse([
                 'success' => false,
@@ -757,7 +757,7 @@ class WhatsappController extends Controller
         $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
 
         // Obtener el sender
-        $sender = $senderRepo->find((int)$idSender);
+        $sender = $senderRepo->find((int) $idSender);
         if (!$sender) {
             return null;
         }
@@ -797,7 +797,7 @@ class WhatsappController extends Controller
         return null;
     }
 
-    private function generarHashWhatsapp($fecha) 
+    private function generarHashWhatsapp($fecha)
     {
         $texto = "hipotea_whatsapp_" . $fecha;
         return hash('sha256', $texto);
@@ -809,14 +809,14 @@ class WhatsappController extends Controller
     private function baseHostWhatsapp($ipPreferida = null): string
     {
         $host = $ipPreferida ?: $this->seleccionarServidorDisponible();
-        
+
         if (!$host) {
             throw new \Exception('No hay servidores WhatsApp disponibles');
         }
-        
+
         return "http://{$host}:3000";
     }
-    
+
     // Función para encontrar usuario por teléfono (normalizado)
     public function gestorAction(Request $request): JsonResponse
     {
@@ -895,34 +895,31 @@ class WhatsappController extends Controller
         return new JsonResponse($gestor, 200);
     }
 
-    /**
-     * Comprueba la API key general (para endpoints admin/internos).
-     * Lee la clave desde el parámetro Symfony 'whatsapp_api_key',
-     * con fallback a la variable de entorno WHATSAPP_API_KEY.
-     * Acepta la clave en: header X-API-KEY, query ?api_key=, o body JSON {"api_key":"..."}.
-     */
-    private function checkApiKey(Request $request): bool
+    // Comprueba API key en header X-API-KEY o ?api_key= o en body JSON
+    private function checkApiKey(Request $request)
     {
-        $provided = $this->extractApiKeyFromRequest($request);
+        // Intentar obtener API key desde diferentes fuentes
+        $provided = $request->headers->get('X-API-KEY');
 
-        // Leer clave esperada desde parámetro Symfony o variable de entorno
-        $expected = '';
-        try {
-            if ($this->container->hasParameter('whatsapp_api_key')) {
-                $expected = (string) $this->container->getParameter('whatsapp_api_key');
-            }
-        } catch (\Exception $e) { /* ignorar */ }
-
-        if (empty($expected)) {
-            $expected = (string) ($_ENV['WHATSAPP_API_KEY'] ?? getenv('WHATSAPP_API_KEY') ?? '123456');
+        // Si no está en header, buscar en query
+        if (!$provided) {
+            $provided = $request->query->get('api_key');
         }
 
-        $isValid = !empty($provided) && !empty($expected) && hash_equals($expected, $provided);
+        // Si no está en query, buscar en body JSON (para POST)
+        if (!$provided && in_array($request->getMethod(), ['POST', 'PUT'])) {
+            $data = json_decode($request->getContent(), true);
+            $provided = $data['api_key'] ?? null;
+        }
 
+        $expected = '123456';
+        $isValid = $provided && $provided === $expected;
+
+        // Log solo si la API key es inválida
         if (!$isValid && $this->container->has('logger')) {
             $this->container->get('logger')->warning('Invalid API key attempt', [
-                'endpoint' => $request->getPathInfo(),
-                'ip'       => $request->getClientIp(),
+                'provided' => $provided ?: 'NONE',
+                'ip' => $request->getClientIp()
             ]);
         }
 
@@ -930,178 +927,111 @@ class WhatsappController extends Controller
     }
 
     /**
-     * Comprueba la API key exclusiva del bot Baileys (para webhook y endpoints de sync).
-     * Lee la clave desde el parámetro Symfony 'bot_api_key',
-     * con fallback a la variable de entorno BOT_API_KEY.
-     * Acepta la clave en: header X-BOT-API-KEY, header X-API-KEY, o query ?bot_api_key=.
+     * Endpoint para ejecutar consultas SQL directas
+     * ADVERTENCIA: Solo para usuarios autenticados con API key
      */
-    private function checkBotApiKey(Request $request): bool
+    public function ejecutarConsultaSQLAction(Request $request)
     {
-        // Priorizar header específico del bot, luego el genérico
-        $provided = $request->headers->get('X-BOT-API-KEY')
-                 ?: $request->headers->get('X-API-KEY')
-                 ?: $request->query->get('bot_api_key')
-                 ?: null;
+        // Verificar API key
+        if (!$this->checkApiKey($request)) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
 
-        // Leer clave esperada desde parámetro Symfony o variable de entorno
-        $expected = '';
-        try {
-            if ($this->container->hasParameter('bot_api_key')) {
-                $expected = (string) $this->container->getParameter('bot_api_key');
+        // Obtener la consulta SQL del request
+        $data = json_decode($request->getContent(), true);
+        $sql = isset($data['query']) ? trim($data['query']) : null;
+        $params = isset($data['params']) ? $data['params'] : [];
+
+        // Validar que se proporcionó una consulta
+        if (empty($sql)) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'No se proporcionó ninguna consulta SQL'
+            ], 400);
+        }
+
+        // Lista negra de operaciones peligrosas
+        $operacionesPeligrosas = ['DROP', 'TRUNCATE', 'DELETE FROM usuario', 'ALTER TABLE', 'CREATE TABLE', 'GRANT', 'REVOKE'];
+        foreach ($operacionesPeligrosas as $operacion) {
+            if (stripos($sql, $operacion) !== false) {
+                return new JsonResponse([
+                    'success' => false,
+                    'error' => 'Operación no permitida: ' . $operacion
+                ], 403);
             }
-        } catch (\Exception $e) { /* ignorar */ }
-
-        if (empty($expected)) {
-            $expected = (string) ($_ENV['BOT_API_KEY'] ?? getenv('BOT_API_KEY') ?? '1234567890');
         }
 
-        // Si no hay clave configurada en servidor, denegar siempre
-        if (empty($expected)) {
-            $this->logear('⛔ BOT_API_KEY no configurada en servidor — acceso denegado desde ' . $request->getClientIp());
-            return false;
-        }
+        try {
+            $connection = $this->getDoctrine()->getConnection();
 
-        $isValid = !empty($provided) && hash_equals($expected, $provided);
+            // Determinar si es SELECT u otra operación
+            $isSelect = preg_match('/^\s*SELECT/i', $sql);
 
-        if (!$isValid) {
-            $this->logear('⛔ Bot API key inválida desde IP ' . $request->getClientIp() . ' en ' . $request->getPathInfo());
+            // Preparar y ejecutar la consulta
+            $stmt = $connection->prepare($sql);
+
+            // Vincular parámetros si existen
+            if (!empty($params)) {
+                foreach ($params as $key => $value) {
+                    $stmt->bindValue($key, $value);
+                }
+            }
+
+            $stmt->execute();
+
+            // Logging de la consulta ejecutada
             if ($this->container->has('logger')) {
-                $this->container->get('logger')->warning('Invalid bot API key attempt', [
-                    'endpoint' => $request->getPathInfo(),
-                    'ip'       => $request->getClientIp(),
+                $logger = $this->container->get('logger');
+                $logger->warning('SQL Query ejecutada via API Chat', [
+                    'query' => $sql,
+                    'params' => $params,
+                    'ip' => $request->getClientIp(),
+                    'timestamp' => date('Y-m-d H:i:s')
                 ]);
             }
-        }
 
-        return $isValid;
+            if ($isSelect) {
+                // Para SELECT: devolver resultados
+                $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                return new JsonResponse([
+                    'success' => true,
+                    'type' => 'SELECT',
+                    'data' => $results,
+                    'count' => count($results),
+                    'query' => $sql
+                ]);
+            } else {
+                // Para INSERT, UPDATE, DELETE: devolver filas afectadas
+                $rowCount = $stmt->rowCount();
+
+                return new JsonResponse([
+                    'success' => true,
+                    'type' => 'MODIFY',
+                    'affected_rows' => $rowCount,
+                    'message' => "Consulta ejecutada correctamente. Filas afectadas: {$rowCount}",
+                    'query' => $sql
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            // Logging del error
+            if ($this->container->has('logger')) {
+                $logger = $this->container->get('logger');
+                $logger->error('Error ejecutando SQL Query via API Chat', [
+                    'query' => $sql,
+                    'error' => $e->getMessage(),
+                    'ip' => $request->getClientIp()
+                ]);
+            }
+
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'query' => $sql
+            ], 500);
+        }
     }
-
-    /**
-     * Extrae la API key de cualquier fuente estándar de la request:
-     * header X-API-KEY, query ?api_key=, o body JSON {"api_key":"..."}.
-     */
-    private function extractApiKeyFromRequest(Request $request): ?string
-    {
-        $provided = $request->headers->get('X-API-KEY');
-
-        if (!$provided) {
-            $provided = $request->query->get('api_key');
-        }
-
-        if (!$provided && in_array($request->getMethod(), ['POST', 'PUT'], true)) {
-            $data = json_decode($request->getContent(), true);
-            $provided = $data['api_key'] ?? null;
-        }
-
-        return $provided ?: null;
-    }
-
-    /**
-	 * Endpoint para ejecutar consultas SQL directas
-	 * ADVERTENCIA: Solo para usuarios autenticados con API key
-	 */
-	public function ejecutarConsultaSQLAction(Request $request)
-	{
-		// Verificar API key
-		if (!$this->checkApiKey($request)) {
-			return new JsonResponse(['error' => 'Unauthorized'], 401);
-		}
-
-		// Obtener la consulta SQL del request
-		$data = json_decode($request->getContent(), true);
-		$sql = isset($data['query']) ? trim($data['query']) : null;
-		$params = isset($data['params']) ? $data['params'] : [];
-
-		// Validar que se proporcionó una consulta
-		if (empty($sql)) {
-			return new JsonResponse([
-				'success' => false,
-				'error' => 'No se proporcionó ninguna consulta SQL'
-			], 400);
-		}
-
-		// Lista negra de operaciones peligrosas
-		$operacionesPeligrosas = ['DROP', 'TRUNCATE', 'DELETE FROM usuario', 'ALTER TABLE', 'CREATE TABLE', 'GRANT', 'REVOKE'];
-		foreach ($operacionesPeligrosas as $operacion) {
-			if (stripos($sql, $operacion) !== false) {
-				return new JsonResponse([
-					'success' => false,
-					'error' => 'Operación no permitida: ' . $operacion
-				], 403);
-			}
-		}
-
-		try {
-			$connection = $this->getDoctrine()->getConnection();
-			
-			// Determinar si es SELECT u otra operación
-			$isSelect = preg_match('/^\s*SELECT/i', $sql);
-			
-			// Preparar y ejecutar la consulta
-			$stmt = $connection->prepare($sql);
-			
-			// Vincular parámetros si existen
-			if (!empty($params)) {
-				foreach ($params as $key => $value) {
-					$stmt->bindValue($key, $value);
-				}
-			}
-			
-			$stmt->execute();
-			
-			// Logging de la consulta ejecutada
-			if ($this->container->has('logger')) {
-				$logger = $this->container->get('logger');
-				$logger->warning('SQL Query ejecutada via API Chat', [
-					'query' => $sql,
-					'params' => $params,
-					'ip' => $request->getClientIp(),
-					'timestamp' => date('Y-m-d H:i:s')
-				]);
-			}
-			
-			if ($isSelect) {
-				// Para SELECT: devolver resultados
-				$results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-				
-				return new JsonResponse([
-					'success' => true,
-					'type' => 'SELECT',
-					'data' => $results,
-					'count' => count($results),
-					'query' => $sql
-				]);
-			} else {
-				// Para INSERT, UPDATE, DELETE: devolver filas afectadas
-				$rowCount = $stmt->rowCount();
-				
-				return new JsonResponse([
-					'success' => true,
-					'type' => 'MODIFY',
-					'affected_rows' => $rowCount,
-					'message' => "Consulta ejecutada correctamente. Filas afectadas: {$rowCount}",
-					'query' => $sql
-				]);
-			}
-			
-		} catch (\Exception $e) {
-			// Logging del error
-			if ($this->container->has('logger')) {
-				$logger = $this->container->get('logger');
-				$logger->error('Error ejecutando SQL Query via API Chat', [
-					'query' => $sql,
-					'error' => $e->getMessage(),
-					'ip' => $request->getClientIp()
-				]);
-			}
-			
-			return new JsonResponse([
-				'success' => false,
-				'error' => $e->getMessage(),
-				'query' => $sql
-			], 500);
-		}
-	}
 
     // Normaliza el teléfono: elimina todo lo que no sean dígitos
     private function normalizePhone(string $phone): string
@@ -1112,8 +1042,7 @@ class WhatsappController extends Controller
     // 
     public function createAction(Request $request)
     {
-        if (!$this->checkApiKey($request)) 
-        {
+        if (!$this->checkApiKey($request)) {
             return new JsonResponse(['error' => 'Unauthorized'], 401);
         }
 
@@ -1197,9 +1126,9 @@ class WhatsappController extends Controller
         $user = $this->findUserByPhone($phone);
         $displayName = null;
         if ($user && (!empty($user['nombre']) || !empty($user['apellidos']))) {
-            $displayName = trim((string)($user['nombre'] ?? '') . ' ' . (string)($user['apellidos'] ?? ''));
+            $displayName = trim((string) ($user['nombre'] ?? '') . ' ' . (string) ($user['apellidos'] ?? ''));
         }
-        
+
         // role_label será el nombre del usuario de origen
         $role_label = $displayName;
 
@@ -1211,10 +1140,10 @@ class WhatsappController extends Controller
                     LEFT JOIN usuario c ON e.id_cliente = c.id_usuario 
                     WHERE e.id_expediente = :id AND e.estado > 0 LIMIT 1';
             $stmt = $conn->prepare($sql);
-            $stmt->bindValue('id', (int)$idExpediente);
+            $stmt->bindValue('id', (int) $idExpediente);
             $stmt->execute();
             $expediente = $stmt->fetch();
-            
+
             if (!$expediente) {
                 return new JsonResponse([
                     'success' => false,
@@ -1225,25 +1154,25 @@ class WhatsappController extends Controller
             // Opción 2: Buscar por ambos teléfonos (phone_origen y phone_destination)
             if ($phoneDestination) {
                 $phoneDestinationNorm = $this->normalizePhone($phoneDestination);
-                
+
                 // Buscar expediente que tenga ambos teléfonos en cualquier orden
                 $idExpediente = $this->findExpedienteByBothPhones($phone, $phoneDestinationNorm);
-                
+
                 if (!$idExpediente) {
                     // Si no encuentra por ambos, intentar phone_origen como técnico/comercial
                     $idExpediente = $this->findExpedienteByCommercialPhone($phone);
                 }
-                
+
                 if (!$idExpediente) {
                     // Si no encuentra, intentar phone_origen como cliente
                     $idExpediente = $this->findExpedienteByClientPhone($phone);
                 }
-                
+
                 if (!$idExpediente) {
                     // Si aún no encuentra, intentar phone_destination como técnico/comercial
                     $idExpediente = $this->findExpedienteByCommercialPhone($phoneDestinationNorm);
                 }
-                
+
                 if (!$idExpediente) {
                     // Si aún no encuentra, intentar phone_destination como cliente
                     $idExpediente = $this->findExpedienteByClientPhone($phoneDestinationNorm);
@@ -1252,7 +1181,7 @@ class WhatsappController extends Controller
                 // Buscar solo por teléfono de origen
                 // Primero buscar si phone_origen es técnico/comercial
                 $idExpediente = $this->findExpedienteByCommercialPhone($phone);
-                
+
                 // Si no encuentra, buscar si phone_origen es cliente
                 if (!$idExpediente) {
                     $idExpediente = $this->findExpedienteByClientPhone($phone);
@@ -1268,10 +1197,10 @@ class WhatsappController extends Controller
                             LEFT JOIN usuario c ON e.id_cliente = c.id_usuario 
                             WHERE e.id_expediente = :id AND e.estado > 0 LIMIT 1';
                     $stmt = $conn->prepare($sql);
-                    $stmt->bindValue('id', (int)$idExpediente);
+                    $stmt->bindValue('id', (int) $idExpediente);
                     $stmt->execute();
                     $expediente = $stmt->fetch();
-                    
+
                     if (!$expediente) {
                         $this->logear('⚠ Advertencia: No se obtuvieron datos del expediente ' . $idExpediente);
                         $expediente = ['id_expediente' => $idExpediente, 'cliente_nombre' => '', 'cliente_apellidos' => '', 'cliente_nif' => ''];
@@ -1288,11 +1217,11 @@ class WhatsappController extends Controller
             if (!$idExpediente) {
                 // Construir información de debug
                 $debug = [];
-                
+
                 // Info del usuario por phone_origen
                 if ($user) {
                     $debug[] = "Usuario origen: {$displayName} (ID: {$user['id_usuario']})";
-                    
+
                     // Buscar expedientes donde el usuario es técnico/comercial
                     $conn2 = $this->getDoctrine()->getConnection();
                     $sqlDebug = 'SELECT id_expediente FROM expediente WHERE (id_tecnico = :id OR id_comercial = :id) AND estado > 0 LIMIT 5';
@@ -1301,11 +1230,12 @@ class WhatsappController extends Controller
                     $stmtDebug->execute();
                     $expUserOriginTechComm = $stmtDebug->fetchAll();
                     if ($expUserOriginTechComm) {
-                        $debug[] = "Expedientes (como técnico/comercial): " . implode(', ', array_map(function($e) { return $e['id_expediente']; }, $expUserOriginTechComm));
+                        $debug[] = "Expedientes (como técnico/comercial): " . implode(', ', array_map(function ($e) {
+                            return $e['id_expediente']; }, $expUserOriginTechComm));
                     } else {
                         $debug[] = "Expedientes como técnico/comercial: NINGUNO";
                     }
-                    
+
                     // Buscar expedientes donde el usuario es cliente
                     $sqlDebug2 = 'SELECT id_expediente FROM expediente WHERE id_cliente = :id AND estado > 0 LIMIT 5';
                     $stmtDebug2 = $conn2->prepare($sqlDebug2);
@@ -1313,21 +1243,22 @@ class WhatsappController extends Controller
                     $stmtDebug2->execute();
                     $expUserOriginClient = $stmtDebug2->fetchAll();
                     if ($expUserOriginClient) {
-                        $debug[] = "Expedientes (como cliente): " . implode(', ', array_map(function($e) { return $e['id_expediente']; }, $expUserOriginClient));
+                        $debug[] = "Expedientes (como cliente): " . implode(', ', array_map(function ($e) {
+                            return $e['id_expediente']; }, $expUserOriginClient));
                     } else {
                         $debug[] = "Expedientes como cliente: NINGUNO";
                     }
                 } else {
                     $debug[] = "No se encontró usuario con teléfono origen: $phone";
                 }
-                
+
                 // Info del usuario por phone_destination si existe
                 if ($phoneDestination) {
                     $userDest = $this->findUserByPhone($this->normalizePhone($phoneDestination));
                     if ($userDest) {
-                        $nameDest = trim((string)($userDest['nombre'] ?? '') . ' ' . (string)($userDest['apellidos'] ?? ''));
+                        $nameDest = trim((string) ($userDest['nombre'] ?? '') . ' ' . (string) ($userDest['apellidos'] ?? ''));
                         $debug[] = "Usuario destino: $nameDest (ID: {$userDest['id_usuario']})";
-                        
+
                         // Buscar expedientes del usuario destino
                         $conn3 = $this->getDoctrine()->getConnection();
                         $sqlDebug2 = 'SELECT id_expediente, id_tecnico, id_comercial, id_cliente FROM expediente WHERE id_cliente = :id AND estado > 0 LIMIT 5';
@@ -1336,7 +1267,8 @@ class WhatsappController extends Controller
                         $stmtDebug2->execute();
                         $expUserDest = $stmtDebug2->fetchAll();
                         if ($expUserDest) {
-                            $debug[] = "Expedientes del usuario destino (como cliente): " . implode(', ', array_map(function($e) { return $e['id_expediente']; }, $expUserDest));
+                            $debug[] = "Expedientes del usuario destino (como cliente): " . implode(', ', array_map(function ($e) {
+                                return $e['id_expediente']; }, $expUserDest));
                         } else {
                             $debug[] = "El usuario destino NO es cliente de ningún expediente";
                         }
@@ -1344,9 +1276,9 @@ class WhatsappController extends Controller
                         $debug[] = "No se encontró usuario con teléfono destino: $phoneDestination";
                     }
                 }
-                
+
                 $errorMsg = 'No se encontró expediente asociado. Debug: ' . implode('; ', $debug);
-                
+
                 return new JsonResponse([
                     'success' => false,
                     'error' => $errorMsg,
@@ -1356,16 +1288,16 @@ class WhatsappController extends Controller
         }
 
         $conn = $this->getDoctrine()->getConnection();
-        
+
         try {
             // Determinar el role SIEMPRE desde phone_origen
             $finalRole = 'user'; // por defecto
-            
+
             // Buscar usuario por phone_origen
             $usuarioOrigen = $this->findUserByPhone($phone);
             if ($usuarioOrigen) {
                 $roleUsuario = $usuarioOrigen['role'] ?? null;
-                
+
                 // Si el usuario es técnico, comercial o admin, asignar 'assistant'
                 if (in_array($roleUsuario, ['ROLE_TECNICO', 'ROLE_COMERCIAL', 'ROLE_ADMIN', 'technician', 'comercial', 'admin'])) {
                     $finalRole = 'assistant';
@@ -1373,16 +1305,16 @@ class WhatsappController extends Controller
                     $finalRole = 'user';
                 }
             }
-            
+
             // Determinar qué teléfono guardar: siempre el del técnico
             $phoneGuardar = $phone_local;  // Por defecto phone_origen
-            
+
             // Si phone_origen no es técnico, pero phone_destination sí lo es, usar phone_destination como phone_number
             // pero mantener el role del phone_origen
             if ($usuarioOrigen && $finalRole === 'user' && $phoneDestination) {
                 $phoneDestinationNorm = $this->normalizePhone($phoneDestination);
                 $phoneDestinationLocal = (strlen($phoneDestinationNorm) > 9) ? substr($phoneDestinationNorm, -9) : $phoneDestinationNorm;
-                
+
                 $usuarioDestino = $this->findUserByPhone($phoneDestinationNorm);
                 if ($usuarioDestino) {
                     $roleUsuarioDestino = $usuarioDestino['role'] ?? null;
@@ -1393,7 +1325,7 @@ class WhatsappController extends Controller
                 }
             }
 
-            
+
             // Preparar JSON estructurado para guardar en BD
             if ($isImage) {
                 if (!$storedImagePath && $imageData) {
@@ -1424,7 +1356,7 @@ class WhatsappController extends Controller
             }
 
 
-            
+
             $conn->insert('chat_history', [
                 'id_expediente' => $idExpediente,
                 'from_phone' => $phone,
@@ -1440,38 +1372,36 @@ class WhatsappController extends Controller
 
             $mensajeGenerado = null;
 
-            if ($direction === 'recibido') 
-            {
-            // Verificar si el usuario vinculado tiene PilotoAutomatico activo
+            if ($direction === 'recibido') {
+                // Verificar si el usuario vinculado tiene PilotoAutomatico activo
                 $usuarioVinculado = $data['usuario_vinculado'] ?? null;
-                
+
                 $this->logear('Entro11111: ' . ($usuarioVinculado && isset($usuarioVinculado['telefono']) ? $usuarioVinculado['telefono'] : 'telefono no disponible'));
-                
+
                 // Si no hay usuario vinculado o no tiene teléfono, usar el sistema
-                if (!$usuarioVinculado || !isset($usuarioVinculado['telefono']) || empty($usuarioVinculado['telefono'])) 
-                {
+                if (!$usuarioVinculado || !isset($usuarioVinculado['telefono']) || empty($usuarioVinculado['telefono'])) {
                     $this->logear('DEBUG: No hay usuario vinculado con teléfono válido, usando sistema');
                     $telefonoParaBot = $this->telefonoSistema;
                     $pilotoAutomaticoActivo = true; // Asumir que el sistema siempre está activo
-                    
+
                     // Inicializar variables de teléfono para envío de mensajes
                     $phoneDestinoNorm = $this->normalizePhone($phone);
                     $phoneDestinoConPrefijo = $this->normalizePhonenWithPrefix($phoneDestinoNorm);
                     $telefonoUsuarioVinculadoConPrefijo = $this->normalizePhonenWithPrefix($this->telefonoSistema);
                     $hash = $this->generarHashWhatsapp(date('Y-m-d'));
                     $fecha = date('Y-m-d');
-                    
+
                     // Ejecutar el flujo de análisis de mensajes para sistema
                     $this->logear('✓ El teléfono para bot es el del sistema, analizando mensaje entrante');
-                    
+
                     // IMPORTANTE: Obtener datosFase1 PRIMERO
                     $this->logear('DEBUG: Obteniendo datosFase1 para aplicar condiciones antes de IA...');
                     $datosFase1 = $this->getIAController()->obtenerDatosFase1($idExpediente, $this->getDoctrine()->getConnection());
-                    
+
                     // Obtener campos requeridos y metadatos
                     $camposRequeridos = $this->getIAController()->obtenerCamposRequeridos();
                     $metadatosCampos = !empty($camposRequeridos) ? $this->getIAController()->obtenerMetadatosCampos($camposRequeridos) : null;
-                    
+
                     // Analizar mensaje
                     try {
                         $this->logear('DEBUG: Llamando a analizarMensajeParaDatos() con sistema...');
@@ -1481,25 +1411,25 @@ class WhatsappController extends Controller
                         $this->logear('⚠ EXCEPCIÓN en analizarMensajeParaDatos: ' . $e->getMessage());
                         $datosExtraidos = null;
                     }
-                    
+
                     if ($datosExtraidos && !empty($datosExtraidos['campos_encontrados'])) {
                         $this->logear('✓ Datos extraídos: ' . json_encode($datosExtraidos['campos_encontrados']));
-                        
+
                         // Guardar datos
                         $nombreClienteParaSalvar = $expediente['cliente_nombre'] ?? 'Cliente';
                         $nifClienteParaSalvar = $expediente['cliente_nif'] ?? '';
                         $resultadoGuardar = $this->getIAController()->guardarDatosEnExpediente($idExpediente, $datosExtraidos, $phone, $nombreClienteParaSalvar, $nifClienteParaSalvar);
-                        
+
                         // Limpiar cache
                         $em = $this->getDoctrine()->getManager();
                         $em->clear();
-                        
+
                         // Obtener proxima parte
                         $datosFase1 = $this->getIAController()->obtenerDatosFase1($idExpediente, $em->getConnection());
                         $resultadoParte = $this->getIAController()->obtenerProximaParteYCamposFaltantes($idExpediente, $datosFase1);
                         $camposFaltantesActuales = $resultadoParte['campos_faltantes'];
                         $mensajeSegmentado = $resultadoParte['mensaje_completo'] ?? '';
-                        
+
                         if (!empty($camposFaltantesActuales)) {
                             if (!empty($mensajeSegmentado)) {
                                 $this->llamarBotWhatsApp(
@@ -1513,46 +1443,42 @@ class WhatsappController extends Controller
                             }
                         }
                     }
-                } 
-                else if ($usuarioVinculado && isset($usuarioVinculado['telefono'])) 
-                {
+                } else if ($usuarioVinculado && isset($usuarioVinculado['telefono'])) {
                     $this->logear('Entro22222');
                     $telefonoVinculado = $this->normalizePhone($usuarioVinculado['telefono']);
-                    
+
                     // Si no hay teléfono vinculado válido, usar el teléfono del sistema
                     if (empty($telefonoVinculado)) {
                         $this->logear('DEBUG: No hay teléfono vinculado válido, usando teléfono del sistema');
                         $telefonoVinculado = $this->telefonoSistema;
                     }
-                    
+
                     $telefonoVinculadoLocal = (strlen($telefonoVinculado) > 9) ? substr($telefonoVinculado, -9) : $telefonoVinculado;
-                    
+
                     // Buscar en WhatsappSenders si el usuario tiene PilotoAutomatico activo
                     $pilotoAutomaticoActivo = $this->verificarPilotoAutomatico($telefonoVinculadoLocal);
                     $this->logear('Entro22222: ' . ($pilotoAutomaticoActivo ? 'activo' : 'no activo'));
                     //$pilotoAutomaticoActivo = true;
-                    if ($pilotoAutomaticoActivo) 
-                    {
+                    if ($pilotoAutomaticoActivo) {
                         $this->logear('Entro33333');
                         // Enviar mensaje de prueba si piloto automático está activo
                         $telefonoUsuarioVinculado = $this->normalizePhone($telefonoVinculado);
                         $telefonoUsuarioVinculadoConPrefijo = $this->normalizePhonenWithPrefix($telefonoUsuarioVinculado);
 
                         // Comparar si el teléfono vinculado es el del sistema
-                        if ($telefonoUsuarioVinculadoConPrefijo === $this->normalizePhonenWithPrefix($this->telefonoSistema) || $telefonoUsuarioVinculadoConPrefijo === $this->normalizePhonenWithPrefix($this->telefonoSistema)) 
-                        {
+                        if ($telefonoUsuarioVinculadoConPrefijo === $this->normalizePhonenWithPrefix($this->telefonoSistema) || $telefonoUsuarioVinculadoConPrefijo === $this->normalizePhonenWithPrefix($this->telefonoSistema)) {
                             $this->logear('✓ El teléfono vinculado es el del sistema, analizando mensaje entrante');
-                            
+
                             // IMPORTANTE: Obtener datosFase1 PRIMERO para que analizarMensajeParaDatos() pueda aplicar condiciones
                             $this->logear('DEBUG: Obteniendo datosFase1 para aplicar condiciones antes de IA...');
                             $datosFase1 = $this->getIAController()->obtenerDatosFase1($idExpediente, $this->getDoctrine()->getConnection());
-                            
+
                             // Obtener campos requeridos (array manual) y sus metadatos (dinámicos)
                             $camposRequeridos = $this->getIAController()->obtenerCamposRequeridos();
                             $metadatosCampos = !empty($camposRequeridos) ? $this->getIAController()->obtenerMetadatosCampos($camposRequeridos) : null;
-                            
+
                             $this->logear('DEBUG: Antes de analizarMensajeParaDatos - textContent="' . ($textContent ?: 'null') . '", idExpediente=' . $idExpediente . ', metadatos count=' . (is_array($metadatosCampos) ? count($metadatosCampos) : 'null') . ', datosFase1=' . ($datosFase1 ? 'SÍ' : 'NO'));
-                            
+
                             try {
                                 $this->logear('DEBUG: Llamando a analizarMensajeParaDatos()...');
                                 // Analizar el mensaje para extraer datos del expediente (AHORA pasando datosFase1 para aplicar condiciones ANTES de IA)
@@ -1562,25 +1488,25 @@ class WhatsappController extends Controller
                                 $this->logear('⚠ EXCEPCIÓN en analizarMensajeParaDatos: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
                                 $datosExtraidos = null;
                             }
-                            
+
                             // Inicializar variables de teléfono para envío de mensajes (necesarias en toda la rama)
                             $phoneDestinoNorm = $this->normalizePhone($phone);
                             $phoneDestinoConPrefijo = $this->normalizePhonenWithPrefix($phoneDestinoNorm);
                             $hash = $this->generarHashWhatsapp(date('Y-m-d'));
                             $fecha = date('Y-m-d');
-                            
+
                             if ($datosExtraidos && !empty($datosExtraidos['campos_encontrados'])) {
                                 $this->logear('✓ Datos extraídos del mensaje: ' . json_encode($datosExtraidos['campos_encontrados']));
                                 $this->logear('DEBUG: Estructura completa de datosExtraidos:');
                                 $this->logear(json_encode($datosExtraidos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-                                
+
                                 // Obtener nombre completo del cliente para guardar en campo 192
                                 $nombreClienteParaSalvar = trim(($usuarioVinculado['nombre'] ?? '') . ' ' . ($usuarioVinculado['apellidos'] ?? ''));
                                 if (empty($nombreClienteParaSalvar)) {
                                     // Intentar con nombre del cliente (usuario vinculado al expediente)
                                     $nombreClienteParaSalvar = trim(($expediente['cliente_nombre'] ?? '') . ' ' . ($expediente['cliente_apellidos'] ?? ''));
                                 }
-                                
+
                                 // Obtener NIF para campo 194: primero de usuarioVinculado, luego del expediente
                                 $nifClienteParaSalvar = $usuarioVinculado['nif'] ?? '';
                                 if (empty($nifClienteParaSalvar)) {
@@ -1607,19 +1533,19 @@ class WhatsappController extends Controller
                                         $nifClienteParaSalvar = $expediente['cliente_nif'] ?? '';
                                     }
                                 }
-                                
+
                                 $this->logear('DEBUG: usuarioVinculado completo: ' . json_encode($usuarioVinculado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
                                 $this->logear('DEBUG: expediente completo: ' . json_encode($expediente, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-                                
+
                                 // Guardar los datos extraídos en el expediente (incluyendo campo 192 y 194)
                                 $resultadoGuardar = $this->getIAController()->guardarDatosEnExpediente($idExpediente, $datosExtraidos, $phone, $nombreClienteParaSalvar, $nifClienteParaSalvar);
                                 $this->logear('DEBUG: Resultado de guardarDatosEnExpediente: ' . json_encode($resultadoGuardar, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-                                
+
                                 // LIMPIAR CACHE DE DOCTRINE después de guardar datos con SQL directo
                                 $em = $this->getDoctrine()->getManager();
                                 $em->clear();
                                 $this->logear('DEBUG: Cache de Doctrine limpiado para obtener datos frescos');
-                                
+
                                 // VERIFICAR si aún quedan campos faltantes después de guardar
                                 $this->logear('DEBUG: Verificando campos faltantes después de guardar...');
                                 // Obtener nombre del cliente: primero de usuarioVinculado, luego del cliente/usuario, finalmente fallback a 'Roberto'
@@ -1631,7 +1557,7 @@ class WhatsappController extends Controller
                                         $nombreClienteVerif = 'Roberto';
                                     }
                                 }
-                                
+
                                 // OBTENER PROXIMA PARTE A SOLICITAR (calculo dinamico)
                                 $datosFase1 = $this->getIAController()->obtenerDatosFase1($idExpediente, $em->getConnection());
                                 $resultadoParte = $this->getIAController()->obtenerProximaParteYCamposFaltantes($idExpediente, $datosFase1);
@@ -1639,13 +1565,13 @@ class WhatsappController extends Controller
                                 $numeroParteAnterior = $resultadoParte['numero_parte_anterior'];
                                 $camposFaltantesActuales = $resultadoParte['campos_faltantes'];
                                 $mensajeSegmentado = $resultadoParte['mensaje_completo'] ?? '';
-                                
+
                                 $this->logear('DEBUG: Proxima parte a solicitar: ' . $numeroParte . ', campos faltantes: ' . count($camposFaltantesActuales));
-                                
+
                                 // Si aun hay campos faltantes, pedir mas datos
                                 if (!empty($camposFaltantesActuales)) {
                                     $this->logear('⚠ Aun quedan ' . count($camposFaltantesActuales) . ' campos faltantes, pidiendo mas datos...');
-                                    
+
                                     // Usar el mensaje segmentado generado automáticamente
                                     if (!empty($mensajeSegmentado)) {
                                         // El mensaje ya está completamente formado y segmentado - SIEMPRE usar bot del sistema
@@ -1662,7 +1588,7 @@ class WhatsappController extends Controller
                                         $tieneHistorico = $this->getIAController()->tieneConversacionReciente($idExpediente, 10);
                                         $esNuevaParte = ($numeroParte > $numeroParteAnterior);
                                         $mensajeUnificado = $this->getIAController()->construirMensajeUnificado($nombreClienteVerif, $camposFaltantesActuales, $tieneHistorico, $esNuevaParte);
-                                        
+
                                         $this->llamarBotWhatsApp(
                                             $this->normalizePhonenWithPrefix($this->telefonoSistema),
                                             $phoneDestinoConPrefijo,
@@ -1675,17 +1601,17 @@ class WhatsappController extends Controller
                                 } else {
                                     // Todos los campos están completos, generar mensaje de finalización
                                     $this->logear('✓ Todos los campos están completos, generando mensaje final...');
-                                    
+
                                     // Extraer primer nombre del cliente
                                     $nombres = explode(' ', trim($nombreClienteVerif));
                                     $primerNombre = $nombres[0] ?? 'Cliente';
-                                    
+
                                     // Mensaje de finalización agradeciendo y notificando que procesaremos los datos
                                     $mensajeFinal = "¡Perfecto, $primerNombre! 🎉\n\n";
                                     $mensajeFinal .= "Hemos recibido toda la información necesaria para tu expediente.\n\n";
                                     $mensajeFinal .= "Ahora procesaremos tus datos y nos pondremos en contacto contigo en breve para continuar avanzando con tu solicitud.\n\n";
                                     $mensajeFinal .= "¡Gracias por confiar en nosotros! 💙";
-                                    
+
                                     // Enviar mensaje de finalización - SIEMPRE usar bot del sistema
                                     $this->llamarBotWhatsApp(
                                         $this->normalizePhonenWithPrefix($this->telefonoSistema),
@@ -1700,7 +1626,7 @@ class WhatsappController extends Controller
                                 $this->logear('✗ No se encontraron datos útiles en el mensaje para completar el expediente');
                                 $this->logear('DEBUG: datosExtraidos: ' . json_encode($datosExtraidos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
                             }
-                        } 
+                        }
 
                         // LA GENERACIÓN DE MENSAJES SE HACE DENTRO DEL BLOQUE DE DATOS EXTRAÍDOS
                         // AQUÍ NO SE GENERA NADA PORQUE YA SE VERIFICA SI FALTAN DATOS O NO
@@ -1708,9 +1634,7 @@ class WhatsappController extends Controller
                     }
                 }
             }
-        } 
-        catch (\Exception $e) 
-        {
+        } catch (\Exception $e) {
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Error al guardar el mensaje: ' . $e->getMessage()
@@ -1810,13 +1734,13 @@ class WhatsappController extends Controller
             $placeholdersOrigen = [];
             $placeholdersDestino = [];
             $params = [];
-            
+
             foreach ($variantsOrigen as $i => $v) {
                 $ph = ':origen' . $i;
                 $placeholdersOrigen[] = $ph;
                 $params[$ph] = $v;
             }
-            
+
             foreach ($variantsDestino as $i => $v) {
                 $ph = ':destino' . $i;
                 $placeholdersDestino[] = $ph;
@@ -1868,7 +1792,7 @@ class WhatsappController extends Controller
             $stmt->bindValue('destino', $idUsuarioDestino);
             $stmt->execute();
             $expediente = $stmt->fetch();
-            
+
             if ($expediente) {
                 return $expediente['id_expediente'];
             }
@@ -1885,7 +1809,7 @@ class WhatsappController extends Controller
             $stmt->bindValue('destino', $idUsuarioDestino);
             $stmt->execute();
             $expediente = $stmt->fetch();
-            
+
             if ($expediente) {
                 return $expediente['id_expediente'];
             }
@@ -1902,7 +1826,7 @@ class WhatsappController extends Controller
             $stmt->bindValue('destino', $idUsuarioDestino);
             $stmt->execute();
             $expediente = $stmt->fetch();
-            
+
             if ($expediente) {
                 return $expediente['id_expediente'];
             }
@@ -1973,7 +1897,7 @@ class WhatsappController extends Controller
             return $expediente ? $expediente['id_expediente'] : null;
         } catch (\Exception $e) {
             if ($this->container->has('logger')) {
-                $this->container->get('logger')->error('findExpedienteByClientPhone error: '.$e->getMessage());
+                $this->container->get('logger')->error('findExpedienteByClientPhone error: ' . $e->getMessage());
             }
             return null;
         }
@@ -2053,7 +1977,7 @@ class WhatsappController extends Controller
                 $valorNormalizado = preg_replace('/\D+/', '', $r['valor']);
                 foreach ($variants as $v) {
                     if ($v === $valorNormalizado) {
-                        if (isset($r['estado']) && (int)$r['estado'] > 0) {
+                        if (isset($r['estado']) && (int) $r['estado'] > 0) {
                             $ts = 0;
                             if (!empty($r['fecha_creacion'])) {
                                 $ts = strtotime($r['fecha_creacion']);
@@ -2071,7 +1995,7 @@ class WhatsappController extends Controller
             return $matchedExpedienteId;
         } catch (\Exception $e) {
             if ($this->container->has('logger')) {
-                $this->container->get('logger')->error('findExpedienteByCommercialPhone error: '.$e->getMessage());
+                $this->container->get('logger')->error('findExpedienteByCommercialPhone error: ' . $e->getMessage());
             }
             return null;
         }
@@ -2153,7 +2077,7 @@ class WhatsappController extends Controller
                 foreach ($variants as $v) {
                     if ($v === $valorNormalizado) {
                         // verificar estado del expediente (mayor que 0 = activo)
-                        if (isset($r['estado']) && (int)$r['estado'] > 0) {
+                        if (isset($r['estado']) && (int) $r['estado'] > 0) {
                             $ts = 0;
                             if (!empty($r['fecha_creacion'])) {
                                 $ts = strtotime($r['fecha_creacion']);
@@ -2172,9 +2096,9 @@ class WhatsappController extends Controller
         } catch (\Exception $e) {
             // Registrar el error y continuar sin vincular
             if ($this->container->has('logger')) {
-                $this->container->get('logger')->error('findExpedienteByPhone error: '.$e->getMessage());
+                $this->container->get('logger')->error('findExpedienteByPhone error: ' . $e->getMessage());
             } else {
-                $this->logear('findExpedienteByPhone error: '.$e->getMessage());
+                $this->logear('findExpedienteByPhone error: ' . $e->getMessage());
             }
             return null;
         }
@@ -2193,7 +2117,7 @@ class WhatsappController extends Controller
             // Validar que el id_expediente existe
             $sql = 'SELECT id_expediente FROM expediente WHERE id_expediente = :id LIMIT 1';
             $stmt = $conn->prepare($sql);
-            $stmt->bindValue('id', (int)$id);
+            $stmt->bindValue('id', (int) $id);
             $stmt->execute();
             $expediente = $stmt->fetch();
 
@@ -2209,7 +2133,7 @@ class WhatsappController extends Controller
                     WHERE id_expediente = :idExpediente
                     ORDER BY timestamp ASC';
             $stmt = $conn->prepare($sql);
-            $stmt->bindValue('idExpediente', (int)$id);
+            $stmt->bindValue('idExpediente', (int) $id);
             $stmt->execute();
             $messages = $stmt->fetchAll();
 
@@ -2240,7 +2164,7 @@ class WhatsappController extends Controller
             $stmt->execute();
             $results = $stmt->fetchAll();
 
-            $expedienteIds = array_map(function($row) {
+            $expedienteIds = array_map(function ($row) {
                 return $row['id_expediente'];
             }, $results);
 
@@ -2289,7 +2213,7 @@ class WhatsappController extends Controller
             // 1. Validar que el expediente existe
             $sql = 'SELECT id_expediente, id_cliente FROM expediente WHERE id_expediente = :id AND estado > 0 LIMIT 1';
             $stmt = $conn->prepare($sql);
-            $stmt->bindValue('id', (int)$idExpediente);
+            $stmt->bindValue('id', (int) $idExpediente);
             $stmt->execute();
             $expediente = $stmt->fetch();
 
@@ -2319,7 +2243,7 @@ class WhatsappController extends Controller
                         WHERE id_expediente = :id AND id_campo_hito = 408 
                         ORDER BY id_campo_hito_expediente DESC LIMIT 1';
                 $stmt = $conn->prepare($sql);
-                $stmt->bindValue('id', (int)$idExpediente);
+                $stmt->bindValue('id', (int) $idExpediente);
                 $stmt->execute();
                 $campo = $stmt->fetch();
                 if ($campo && $campo['valor']) {
@@ -2344,7 +2268,7 @@ class WhatsappController extends Controller
             }
 
             $idUsuarioLogueado = $usuario->getIdUsuario();
-            
+
             // Buscar en WhatsappSender la sesión activa del usuario
             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
             $senderQuery = $senderRepo->createQueryBuilder('ws')
@@ -2352,9 +2276,9 @@ class WhatsappController extends Controller
                 ->andWhere('ws.imagenQR IS NULL')  // Sesión activa (no necesita escanear QR)
                 ->setParameter('idUsuario', $idUsuarioLogueado)
                 ->getQuery();
-            
+
             $sender = $senderQuery->getOneOrNullResult();
-            
+
             if (!$sender) {
                 return new JsonResponse([
                     'success' => false,
@@ -2364,7 +2288,7 @@ class WhatsappController extends Controller
 
             // 5. Usar sessionId de WhatsappSender (es el UUID correcto de la sesión en el bot)
             $sessionId = $sender->getSessionId() ?: 'ComercialPrueba';
-            
+
             $this->logear("=== CONFIGURACIÓN DE ENVÍO ===");
             $this->logear("Usuario: {$idUsuarioLogueado}");
             $this->logear("SessionId: {$sessionId}");
@@ -2410,13 +2334,13 @@ class WhatsappController extends Controller
         $this->logear("sessionId: {$sessionId}");
         $this->logear("to (telefono): {$telefono}");
         $this->logear("body (mensaje): {$mensaje}");
-        
+
         try {
             //$url = "https://punchiest-irremediably-suzette.ngrok-free.dev/api/messages/send";
             $em = $this->getDoctrine()->getManager();
             $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
             $servidor = $servidorRepo->findOneBy(['estado' => true]);
-            
+
             if (!$servidor) {
                 $this->logear('❌ No hay servidor WhatsApp configurado');
                 return false;
@@ -2429,7 +2353,7 @@ class WhatsappController extends Controller
                 'to' => $telefono,
                 'body' => $mensaje
             ]);
-            
+
             $this->logear("Payload JSON: {$payload}");
 
             $ch = curl_init($url);
@@ -2453,7 +2377,7 @@ class WhatsappController extends Controller
             }
 
             $responseData = json_decode($response, true);
-            
+
             $this->logear("HTTP Code: {$httpCode}");
             $this->logear("Response: " . json_encode($responseData));
 
@@ -2486,7 +2410,8 @@ class WhatsappController extends Controller
      */
     private function normalizePhonenWithPrefix($phone)
     {
-        if ($phone === 'Sistema') $phone = $this->telefonoSistema;
+        if ($phone === 'Sistema')
+            $phone = $this->telefonoSistema;
         // Remover caracteres no numéricos
         $phone = preg_replace('/\D+/', '', $phone);
 
@@ -2519,7 +2444,7 @@ class WhatsappController extends Controller
     public function getExpedienteDatosAction(Request $request)
     {
         $id = $request->query->get('id');
-        
+
         if (!$id) {
             return new JsonResponse([
                 'error' => 'ID de expediente no proporcionado'
@@ -2535,7 +2460,7 @@ class WhatsappController extends Controller
                     LEFT JOIN usuario u ON e.id_cliente = u.id_usuario
                     WHERE e.id_expediente = :id LIMIT 1';
             $stmt = $conn->prepare($sql);
-            $stmt->bindValue('id', (int)$id);
+            $stmt->bindValue('id', (int) $id);
             $stmt->execute();
             $expediente = $stmt->fetch();
 
@@ -2593,7 +2518,7 @@ class WhatsappController extends Controller
                     AND e.id_expediente IN (SELECT DISTINCT id_expediente FROM chat_history WHERE id_expediente IS NOT NULL)
                     AND e.estado > 0
                     ORDER BY ultimo_mensaje_fecha DESC';
-            
+
             $stmt = $conn->prepare($sql);
             $stmt->bindValue('usuarioId', $idUsuario);
             $stmt->execute();
@@ -2625,7 +2550,7 @@ class WhatsappController extends Controller
             return new JsonResponse(['error' => 'Unauthorized'], 401);
         }
 
-        $idExpediente = (int)$id;
+        $idExpediente = (int) $id;
 
         if (!$idExpediente) {
             return new JsonResponse(['error' => 'ID de expediente inválido'], 400);
@@ -2640,7 +2565,7 @@ class WhatsappController extends Controller
                     LEFT JOIN usuario c ON e.id_cliente = c.id_usuario
                     WHERE e.id_expediente = :idExpediente';
             $stmt = $conn->prepare($sql);
-            $stmt->bindValue('idExpediente', (int)$idExpediente);
+            $stmt->bindValue('idExpediente', (int) $idExpediente);
             $stmt->execute();
             $expediente = $stmt->fetch();
 
@@ -2657,7 +2582,7 @@ class WhatsappController extends Controller
                     'success' => false,
                     'message' => 'WhatsApp automático está desactivado para este expediente',
                     'expediente_id' => $idExpediente,
-                    'whatsapp_automatico' => (bool)$expediente['whatsapp_automatico']
+                    'whatsapp_automatico' => (bool) $expediente['whatsapp_automatico']
                 ], 403);
             }
 
@@ -2692,7 +2617,7 @@ class WhatsappController extends Controller
             $numeroParteAnterior = $resultadoParte['numero_parte_anterior'];
             $camposFaltantes = $resultadoParte['campos_faltantes'];
             $mensajeSegmentado = $resultadoParte['mensaje_completo'] ?? '';
-            
+
             // Si no hay parte incompleta, todas están completas
             if ($numeroParteActual === 0 || empty($camposFaltantes)) {
                 return new JsonResponse([
@@ -2702,15 +2627,15 @@ class WhatsappController extends Controller
                     'campos_faltantes' => []
                 ], 200);
             }
-            
+
             // Obtener metadatos dinámicamente para los campos faltantes
-            $camposRequeridos = array_map(function($campo) {
+            $camposRequeridos = array_map(function ($campo) {
                 return $campo['id_campo_hito'] ?? $campo['campo_id'] ?? 0;
             }, $camposFaltantes);
-            
+
             $metadatosCampos = $this->getIAController()->obtenerMetadatosCampos($camposRequeridos);
             $this->logear('Metadatos cargados para ' . count($metadatosCampos) . ' tipos de campos');
-            
+
             $this->logear('=== Detectada Parte ' . $numeroParteActual . ' incompleta con ' . count($camposFaltantes) . ' campos faltantes ===');
 
             // 4. Obtener teléfono del cliente
@@ -2722,16 +2647,16 @@ class WhatsappController extends Controller
             }
 
             $nombreCliente = $expediente['cliente_nombre'] ?? 'Cliente';
-            
+
             // ✅ Verificar si hay historial reciente de conversación
             $tieneHistorico = $this->tieneConversacionReciente($idExpediente, 10); // Últimos 10 minutos
             $esNuevaParte = ($numeroParteAnterior > 0 && $numeroParteAnterior !== $numeroParteActual); // Cambio de parte
-            
+
             $this->logear('Contexto: tieneHistorico=' . ($tieneHistorico ? 'true' : 'false') . ' | esNuevaParte=' . ($esNuevaParte ? 'true' : 'false'));
-            
+
             // Obtener solo los primeros campos del segmento actual
             $primerSegmento = array_slice($camposFaltantes, 0, 2);
-            
+
             // Construir mensaje contextualizado
             /*if (!$tieneHistorico) {
                 // PRIMERA vez: saludar con nombre
@@ -2749,19 +2674,19 @@ class WhatsappController extends Controller
                     $mensajeUnificado = "Gracias por tu respuesta. ✓\n\n";
                     $mensajeUnificado .= "📋 Necesitamos que completes lo siguiente:\n\n";
                 }
-                
+
                 // Agregar campos
                 foreach ($primerSegmento as $campo) {
                     $nombreCampo = $campo['nombre'] ?? $campo['campo_hito'] ?? 'Campo';
                     $mensajeUnificado .= "* " . $nombreCampo . "\n";
                 }
-                
+
                 $mensajeUnificado .= "\nCuando 3333 puedas, nos lo haces saber. ¡Muchas gracias! 😊";
             }*/
             $mensajeUnificado = $this->getIAController()->generarMensajeInicial($nombreCliente);
             $mensajeSegmentadoCampos = $this->getIAController()->generarMensajeSegmentado($primerSegmento);
             $mensajeUnificado = $mensajeUnificado . $mensajeSegmentadoCampos;
-        
+
             $mensajes = [
                 [
                     'tipo' => 'unificado',
@@ -2783,7 +2708,7 @@ class WhatsappController extends Controller
                 $hash = $this->generarHashWhatsapp($fecha);
                 error_log('Enviando mensaje unificado a: ' . $phoneDestinoFull);
                 error_log('Contenido del mensaje: ' . $mensajes[0]['mensaje']);
-                
+
                 $botResponse = $this->llamarBotWhatsApp(
                     $phoneOrigenFull,
                     $phoneDestinoFull,
@@ -2793,28 +2718,28 @@ class WhatsappController extends Controller
                 );
 
                 $respuestaBot = $botResponse;
-                
+
                 if ($botResponse['success']) {
                     $mensajeEnviado = true;
                     error_log('✓ Mensaje unificado enviado correctamente al cliente');
-                    
+
                     // ⭐️ CRÍTICO: Marcar como enviado en BD para evitar duplicados (SECCIÓN 9)
                     try {
                         $expedienteEntidad = $this->getDoctrine()
                             ->getRepository('AppBundle:Expediente')
-                            ->findOneBy(['idExpediente' => (int)$idExpediente]);
-                        
+                            ->findOneBy(['idExpediente' => (int) $idExpediente]);
+
                         if ($expedienteEntidad) {
                             // Actualizar el flag de "ya enviado"
                             $expedienteEntidad->setWhatsappAutomaticoEnviado(true);
-                            
+
                             // Guardar cambios en BD
                             $em = $this->getDoctrine()->getManager();
                             $em->persist($expedienteEntidad);
                             $em->flush();
-                            
+
                             $this->logear('✅ whatsapp_automatico_enviado = 1 (actualizado en BD para expediente ' . $idExpediente . ')');
-                            
+
                             // ⭐️ GUARDAR MENSAJE EN chat_history PARA QUE FUTURAS LLAMADAS VEAN EL HISTORIAL
                             try {
                                 $messageData = [
@@ -2868,7 +2793,7 @@ class WhatsappController extends Controller
 
     public function obtenerDatosFase1PruebaAction(Request $request, $id)
     {
-        $idExpediente = (int)$id;
+        $idExpediente = (int) $id;
 
         if (!$idExpediente) {
             return new JsonResponse([
@@ -2877,8 +2802,7 @@ class WhatsappController extends Controller
             ], 400);
         }
 
-        try 
-        {
+        try {
             $em = $this->getDoctrine()->getManager();
 
             // Validar que el expediente existe
@@ -2906,15 +2830,11 @@ class WhatsappController extends Controller
                 ], 500);
             }
             //$hito15 = $datosFase1['fase']['hitos'][0] ?? null; // Solo para prueba, obtener el primer hito
-            foreach ($datosFase1['fase']['hitos'] as $hito) 
-            {
-                if ($hito['id_hito'] == 15) 
-                {
+            foreach ($datosFase1['fase']['hitos'] as $hito) {
+                if ($hito['id_hito'] == 15) {
                     $camposHito15 = [];
-                    foreach ($hito['grupos'] as $grupo) 
-                    {
-                        foreach ($grupo['campos'] as $campo) 
-                        {
+                    foreach ($hito['grupos'] as $grupo) {
+                        foreach ($grupo['campos'] as $campo) {
                             $camposHito15[] = $campo;
                         }
                     }
@@ -2927,9 +2847,7 @@ class WhatsappController extends Controller
                 'expediente_id' => $idExpediente,
                 'camposHito15' => $camposHito15
             ], 200);
-        } 
-        catch (\Exception $e) 
-        {
+        } catch (\Exception $e) {
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Error al obtener datos de la fase: ' . $e->getMessage(),
@@ -2948,7 +2866,7 @@ class WhatsappController extends Controller
         try {
             $logDir = dirname(dirname(dirname(__DIR__))) . '/var/logs/';
             $logFile = $logDir . 'whatsapp_' . date('Y-m-d') . '.log';
-            
+
             if (!file_exists($logFile)) {
                 return new JsonResponse([
                     'success' => true,
@@ -2956,14 +2874,14 @@ class WhatsappController extends Controller
                     'logs' => []
                 ], 200);
             }
-            
+
             $contenido = file_get_contents($logFile);
             $lineas = explode("\n", trim($contenido));
-            
-            $logs = array_map(function($linea) {
+
+            $logs = array_map(function ($linea) {
                 return trim($linea);
             }, array_filter($lineas));
-            
+
             return new JsonResponse([
                 'success' => true,
                 'fecha' => date('Y-m-d'),
@@ -2971,7 +2889,7 @@ class WhatsappController extends Controller
                 'cantidad' => count($logs),
                 'logs' => $logs
             ], 200);
-            
+
         } catch (\Exception $e) {
             return new JsonResponse([
                 'success' => false,
@@ -3048,7 +2966,7 @@ class WhatsappController extends Controller
         try {
             $conn = $this->getDoctrine()->getConnection();
             $fechaLimite = date('Y-m-d H:i:s', time() - ($minutosAtras * 60));
-            
+
             $sql = 'SELECT COUNT(*) as total FROM chat_history 
                     WHERE id_expediente = :idExp AND timestamp > :fechaLimite';
             $stmt = $conn->prepare($sql);
@@ -3056,8 +2974,8 @@ class WhatsappController extends Controller
             $stmt->bindValue('fechaLimite', $fechaLimite);
             $stmt->execute();
             $resultado = $stmt->fetch();
-            
-            return (int)($resultado['total'] ?? 0) > 0;
+
+            return (int) ($resultado['total'] ?? 0) > 0;
         } catch (\Exception $e) {
             return false;
         }
@@ -3081,7 +2999,7 @@ class WhatsappController extends Controller
 
         // Contar campos
         $totalCampos = count($camposFaltantes);
-        
+
         if ($totalCampos === 0) {
             return "¡Ya tienes todo completado! Muchas gracias por tu información.";
         }
@@ -3090,7 +3008,7 @@ class WhatsappController extends Controller
         $listaCampos = [];
         foreach ($camposFaltantes as $campo) {
             $texto = "• " . $campo['nombre'];
-            
+
             // Si el campo tiene opciones, agregarlas
             if (isset($campo['id_campo_hito'])) {
                 $opciones = $this->obtenerOpcionesFormateadas($campo['id_campo_hito']);
@@ -3098,7 +3016,7 @@ class WhatsappController extends Controller
                     $texto .= $opciones;
                 }
             }
-            
+
             $listaCampos[] = $texto;
         }
         $textoLista = implode("\n", $listaCampos);
@@ -3139,18 +3057,18 @@ class WhatsappController extends Controller
         try {
             $em = $this->getDoctrine()->getManager();
             $conn = $em->getConnection();
-            
+
             // Preparar variantes del teléfono para la búsqueda
             $variants = array_unique(array_filter([
                 $telefono,
                 ltrim($telefono, '0'),
                 (strlen($telefono) > 9 ? substr($telefono, -9) : null)
             ]));
-            
+
             if (count($variants) === 0) {
                 return false;
             }
-            
+
             // Crear placeholders para la búsqueda IN
             $placeholders = [];
             $params = [];
@@ -3159,24 +3077,24 @@ class WhatsappController extends Controller
                 $placeholders[] = $ph;
                 $params[$ph] = $v;
             }
-            
+
             // Buscar en WhatsappSenders por teléfono
             // Nota: Ajusta el nombre de la columna según tu esquema actual (puede ser 'telefono', 'phone', etc.)
             $sql = 'SELECT PilotoAutomatico FROM WhatsappSenders  
                     WHERE telefono IN (' . implode(',', array_keys($params)) . ') 
                     ORDER BY FechaUltimaInteraccion DESC  
                     LIMIT 1';
-            
+
             $stmt = $conn->prepare($sql);
             foreach ($params as $ph => $val) {
                 $stmt->bindValue(trim($ph, ':'), $val);
             }
             $stmt->execute();
             $result = $stmt->fetch();
-            
+
             // Retornar true si PilotoAutomatico es 1 o true
             return $result && ($result['PilotoAutomatico'] == 1 || $result['PilotoAutomatico'] === true);
-            
+
         } catch (\Exception $e) {
             if ($this->container->has('logger')) {
                 $this->container->get('logger')->error('verificarPilotoAutomatico error: ' . $e->getMessage());
@@ -3202,7 +3120,7 @@ class WhatsappController extends Controller
         $this->logear('ID Expediente: ' . $idExpediente);
         $this->logear('Nombre Cliente: ' . $nombreCliente);
         $this->logear('Datos a guardar: ' . json_encode($datosExtraidos['campos_encontrados']));
-        
+
         $conn = $this->getDoctrine()->getConnection();
         $camposGuardados = 0;
         $camposError = 0;
@@ -3220,7 +3138,7 @@ class WhatsappController extends Controller
                     $campo194Existe = true;
                 }
             }
-            
+
             // Agregar campo 192 si no existe y el nombre no está vacío
             if (!$campo192Existe && !empty($nombreCliente)) {
                 $datosExtraidos['campos_encontrados'][] = [
@@ -3231,7 +3149,7 @@ class WhatsappController extends Controller
                 ];
                 $this->logear('✓ Campo 192 agregado automáticamente: ' . $nombreCliente);
             }
-            
+
             // Agregar campo 194 si no existe y el NIF no está vacío
             if (!$campo194Existe && !empty($nifCliente)) {
                 $datosExtraidos['campos_encontrados'][] = [
@@ -3251,10 +3169,10 @@ class WhatsappController extends Controller
 
         try {
             $timestamp = date('Y-m-d H:i:s');
-            
+
             // Obtener mapeo de opciones para campos que las tienen
             $opcionesMapeo = $this->obtenerOpcionesCampos();
-            
+
             // Procesar cada campo encontrado
             foreach ($datosExtraidos['campos_encontrados'] as $campo) {
                 try {
@@ -3269,12 +3187,12 @@ class WhatsappController extends Controller
                         $this->logear('✗ Valor vacío, saltando');
                         continue;
                     }
-                    
+
                     // MAPEO DE OPCIONES: Si el campo tiene opciones configuradas, mapear el valor
                     if (isset($opcionesMapeo[$idCampoHito])) {
                         $valorNormalizado = strtolower(trim($valor));
                         $valorMapeado = null;
-                        
+
                         foreach ($opcionesMapeo[$idCampoHito] as $opcionUsuario => $opcionBD) {
                             if (strpos($valorNormalizado, strtolower($opcionUsuario)) !== false) {
                                 $valorMapeado = $opcionBD;
@@ -3285,7 +3203,7 @@ class WhatsappController extends Controller
                                 break;
                             }
                         }
-                        
+
                         if (!$valorMapeado) {
                             $this->logear("  ⚠ Valor '{$valor}' no coincide con opciones. Guardando como valor texto.");
                         }
@@ -3305,27 +3223,27 @@ class WhatsappController extends Controller
                         // El campo ya existe - verificar si ya tiene valor
                         $valorActual = trim($resultado['valor'] ?? '');
                         $tieneOpcional = !empty($resultado['id_opciones_campo']);
-                        
+
                         // Detectar si el valor es corrupto (formato: campo_hito_XXXX_opcion_YYYY)
                         $esValorCorrupto = preg_match('/^campo_hito_\d+_opcion_\d+$/', $valorActual);
-                        
+
                         // Si tiene opción asignada (válida), NO actualizar
                         if ($tieneOpcional && !$esValorCorrupto) {
                             $this->logear('⚠ CAMPO YA TIENE OPCIÓN ASIGNADA: ' . $nombreCampo . ' = opción ID: ' . $resultado['id_opciones_campo'] . ' (no se actualiza)');
                             continue;
                         }
-                        
+
                         // Si tiene valor válido (no corrupto), NO actualizar
                         if (!empty($valorActual) && !$esValorCorrupto) {
                             $this->logear('⚠ CAMPO YA TIENE VALOR: ' . $nombreCampo . ' = "' . $valorActual . '" (no se actualiza)');
                             continue;
                         }
-                        
+
                         // Si el valor es corrupto, permitir sobrescribir
                         if ($esValorCorrupto) {
                             $this->logear('⚠ VALOR CORRUPTO DETECTADO: ' . $valorActual . ' - SOBRESCRIBIENDO CON: ' . $valor);
                         }
-                        
+
                         // El campo existe pero está vacío, proceder a actualizar
                         $sqlUpdate = 'UPDATE campo_hito_expediente 
                                       SET valor = :valor, id_opciones_campo = :idOpcional, fecha_modificacion = :timestamp
@@ -3362,7 +3280,7 @@ class WhatsappController extends Controller
             }
 
             $this->logear("=== FIN guardarDatosEnExpediente: {$camposGuardados} guardados, {$camposError} errores ===");
-            
+
             return [
                 'exito' => $camposGuardados > 0,
                 'guardados' => $camposGuardados,
@@ -3391,15 +3309,10 @@ class WhatsappController extends Controller
      */
     public function webhookWhatsappAction(Request $request): JsonResponse
     {
-        // ─── Seguridad: solo el bot Baileys puede llamar a este endpoint ───
-        if (!$this->checkBotApiKey($request)) {
-            return new JsonResponse(['error' => 'Unauthorized'], 401);
-        }
-
         try {
             // Obtener datos del webhook
             $data = json_decode($request->getContent(), true);
-            
+
             if (!$data) {
                 return new JsonResponse([
                     'error' => 'Invalid JSON'
@@ -3415,16 +3328,16 @@ class WhatsappController extends Controller
             switch ($status) {
                 case 'PHONE_CONNECTED':
                     return $this->handlePhoneConnected($data);
-                    
+
                 case 'SESSION_CREATED':
                     return $this->handleSessionCreated($data);
-                    
+
                 case 'MESSAGE':
                     return $this->handleMessage($data);
-                    
+
                 case 'DISCONNECTED':
                     return $this->handleDisconnected($data);
-                    
+
                 default:
                     $this->logear('⚠️ Status desconocido: ' . ($status ?? 'null'));
                     return new JsonResponse([
@@ -3550,18 +3463,18 @@ class WhatsappController extends Controller
 
             $em = $this->getDoctrine()->getManager();
             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
-            
+
             $sender = null;
 
             if ($idGestor) {
                 $sender = $this->findLatestWhatsappSenderByUserId($senderRepo, (int) $idGestor);
             }
-            
+
             // Si no aparece por usuario, intentar buscar por sessionName (nuevo flujo)
             if (!$sender && $sessionName) {
                 $sender = $senderRepo->findOneBy(['sessionName' => $sessionName]);
             }
-            
+
             // Si no lo encuentra por sessionName, buscar por teléfono (flujo antiguo)
             if (!$sender) {
                 $phoneNorm = $this->normalizePhone($phone);
@@ -3713,21 +3626,21 @@ class WhatsappController extends Controller
                 if ($direction === 'enviado') {
                     // MENSAJE ENVIADO: Buscar por to_phone (cliente destino)
                     $this->logear("🔍 Buscando expediente ENVIADO para to={$toLocal}, técnico={$sender->getIdUsuario()}");
-                    
+
                     $sqlBuscaExp = "SELECT e.id_expediente FROM expediente e 
                                    INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
                                    WHERE u_cliente.telefono_movil LIKE :toPhone
                                    AND (e.id_comercial = :tecnicoId OR e.id_tecnico = :tecnicoId)
                                    AND e.estado > 0
                                    ORDER BY e.id_expediente DESC LIMIT 1";
-                    
+
                     $stmtBuscaExp = $conn->prepare($sqlBuscaExp);
                     $stmtBuscaExp->execute([
                         ':toPhone' => '%' . $toLocal . '%',
                         ':tecnicoId' => $sender->getIdUsuario()
                     ]);
                     $expResult = $stmtBuscaExp->fetch();
-                    
+
                     if ($expResult && $expResult['id_expediente']) {
                         $idExpediente = $expResult['id_expediente'];
                         $this->logear("✓ Expediente encontrado (ENVIADO): {$idExpediente}");
@@ -3735,21 +3648,21 @@ class WhatsappController extends Controller
                 } else {
                     // MENSAJE RECIBIDO: Buscar por from_phone (cliente remitente)
                     $this->logear("🔍 Buscando expediente RECIBIDO para from={$fromLocal}, técnico={$sender->getIdUsuario()}");
-                    
+
                     $sqlBuscaExp = "SELECT e.id_expediente FROM expediente e 
                                    INNER JOIN usuario u_cliente ON e.id_cliente = u_cliente.id_usuario
                                    WHERE u_cliente.telefono_movil LIKE :fromPhone
                                    AND (e.id_comercial = :tecnicoId OR e.id_tecnico = :tecnicoId)
                                    AND e.estado > 0
                                    ORDER BY e.id_expediente DESC LIMIT 1";
-                    
+
                     $stmtBuscaExp = $conn->prepare($sqlBuscaExp);
                     $stmtBuscaExp->execute([
                         ':fromPhone' => '%' . $fromLocal . '%',
                         ':tecnicoId' => $sender->getIdUsuario()
                     ]);
                     $expResult = $stmtBuscaExp->fetch();
-                    
+
                     if ($expResult && $expResult['id_expediente']) {
                         $idExpediente = $expResult['id_expediente'];
                         $this->logear("✓ Expediente encontrado (RECIBIDO): {$idExpediente}");
@@ -3761,7 +3674,7 @@ class WhatsappController extends Controller
 
             // Guardar mensaje en tabla de mensajes
             $now = new \DateTime();
-            
+
             // Validación final: asegurar que toPhone no sea null ni igual a fromPhone
             if (!$toPhone) {
                 $this->logear("⚠️ toPhone vacío para mensaje de {$fromPhone}");
@@ -3790,20 +3703,20 @@ class WhatsappController extends Controller
 
                 if ($savedImage !== null) {
                     $messageToSave = json_encode([
-                        'type'      => 'image',
-                        'filepath'  => $savedImage['filepath'],
+                        'type' => 'image',
+                        'filepath' => $savedImage['filepath'],
                         'mime_type' => $savedImage['mime_type'],
-                        'text'      => $imagePayload['text'],
+                        'text' => $imagePayload['text'],
                     ]);
                     $this->logear('✓ Imagen descargada y guardada en uploads: ' . $savedImage['filepath']);
                 } else {
                     // Si falla la descarga, guardar la URL como referencia
                     $messageToSave = json_encode([
-                        'type'      => 'image',
-                        'filepath'  => null,
+                        'type' => 'image',
+                        'filepath' => null,
                         'mime_type' => $imageMimeType,
-                        'url'       => $imagePayload['url'],
-                        'text'      => $imagePayload['text'],
+                        'url' => $imagePayload['url'],
+                        'text' => $imagePayload['text'],
                     ]);
                     $this->logear('⚠️ No se pudo guardar la imagen en uploads; revisar si Baileys está enviando solo una URL temporal');
                 }
@@ -3916,12 +3829,12 @@ class WhatsappController extends Controller
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_TIMEOUT        => 30,
-                CURLOPT_MAXREDIRS      => 5,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_MAXREDIRS => 5,
                 CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; HipoteaBot/1.0)',
                 // Limitar a 10 MB
-                CURLOPT_BUFFERSIZE     => 1024 * 1024,
+                CURLOPT_BUFFERSIZE => 1024 * 1024,
             ]);
 
             $raw = curl_exec($ch);
@@ -3959,12 +3872,12 @@ class WhatsappController extends Controller
         }
 
         $signatures = [
-            "\xFF\xD8\xFF"       => 'image/jpeg',
-            "\x89PNG\r\n\x1A\n"  => 'image/png',
-            'GIF87a'             => 'image/gif',
-            'GIF89a'             => 'image/gif',
-            'RIFF'               => 'image/webp',
-            "\x00\x00\x00"       => 'image/mp4',  // mp4/mov genérico
+            "\xFF\xD8\xFF" => 'image/jpeg',
+            "\x89PNG\r\n\x1A\n" => 'image/png',
+            'GIF87a' => 'image/gif',
+            'GIF89a' => 'image/gif',
+            'RIFF' => 'image/webp',
+            "\x00\x00\x00" => 'image/mp4',  // mp4/mov genérico
         ];
 
         foreach ($signatures as $sig => $mime) {
@@ -4036,13 +3949,13 @@ class WhatsappController extends Controller
     {
         // Mapa de tokens de activación → handler interno
         $habilidades = [
-            'buscar datos de cliente'            => 'habilidad_buscar_cliente',
-            'crear expediente'                   => 'habilidad_crear_expediente',
-            'crear cliente'                      => 'habilidad_crear_cliente',
-            'calcular cuota'                     => 'habilidad_calcular_cuota',
-            'calcular precio máximo permitido'   => 'habilidad_calcular_precio_maximo',
-            'calcular cuota y gastos'            => 'habilidad_calcular_cuota_gastos',
-            'simular viabilidad hipotecaria'     => 'habilidad_simular_viabilidad',
+            'buscar datos de cliente' => 'habilidad_buscar_cliente',
+            'crear expediente' => 'habilidad_crear_expediente',
+            'crear cliente' => 'habilidad_crear_cliente',
+            'calcular cuota' => 'habilidad_calcular_cuota',
+            'calcular precio máximo permitido' => 'habilidad_calcular_precio_maximo',
+            'calcular cuota y gastos' => 'habilidad_calcular_cuota_gastos',
+            'simular viabilidad hipotecaria' => 'habilidad_simular_viabilidad',
         ];
 
         $habilidadDetectada = null;
@@ -4128,7 +4041,7 @@ class WhatsappController extends Controller
 
                     // Formatear respuesta con los datos reales
                     $nombreCompleto = trim($cliente['nombre'] . ' ' . $cliente['apellidos']);
-                    $respuesta  = $textoConversacional . "\n\n";
+                    $respuesta = $textoConversacional . "\n\n";
                     $respuesta .= "📋 *Ficha del cliente encontrada:*\n";
                     $respuesta .= "• Nombre: {$nombreCompleto}\n";
                     $respuesta .= "• Teléfono: " . ($cliente['telefono_movil'] ?: 'N/A') . "\n";
@@ -4331,13 +4244,13 @@ class WhatsappController extends Controller
         // Cambiar opción según el parámetro
         switch ($opcion) {
             case 'SyncConversaciones':
-                $conexion->setSyncConversaciones((bool)$estado);
+                $conexion->setSyncConversaciones((bool) $estado);
                 break;
             case 'AutomatizacionesWhatsapp':
-                $conexion->setAutomatizacionesWhatsapp((bool)$estado);
+                $conexion->setAutomatizacionesWhatsapp((bool) $estado);
                 break;
             case 'PilotoAutomatico':
-                $conexion->setPilotoAutomatico((bool)$estado);
+                $conexion->setPilotoAutomatico((bool) $estado);
                 break;
             default:
                 return new JsonResponse(['error' => 'Opción desconocida'], 400);
@@ -4400,14 +4313,14 @@ class WhatsappController extends Controller
             $conexion->setSessionId(null);
             $conexion->setImagenQR('ESPERANDO_NUEVO_QR');
             $conexion->setFechaUltimaInteraccion(new \DateTime());
-            
+
             $em->persist($conexion);
             $em->flush();
             $em->detach($conexion);
             $em->clear();
-            
+
             $this->logear("✓ Sesión desconectada para usuario {$usuario->getIdUsuario()} teléfono {$telefono}");
-            
+
             return new JsonResponse([
                 'success' => true,
                 'mensaje' => 'Sesión desconectada correctamente'
@@ -4434,7 +4347,7 @@ class WhatsappController extends Controller
             $em = $this->getDoctrine()->getManager();
             $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
             $servidor = $servidorRepo->findOneBy(['estado' => true]);
-            
+
             if (!$servidor) {
                 $this->logear('❌ No hay servidor WhatsApp configurado');
                 return false;
@@ -4538,7 +4451,7 @@ class WhatsappController extends Controller
             $em = $this->getDoctrine()->getManager();
             $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
             $servidor = $servidorRepo->findOneBy(['estado' => true]);
-            
+
             if (!$servidor) {
                 $this->logear('❌ No hay servidor WhatsApp configurado');
                 return new JsonResponse(['error' => 'Servidor no configurado'], 503);
@@ -4547,14 +4460,14 @@ class WhatsappController extends Controller
             // Guardar sessionName en WhatsappSender para este usuario
             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
             $sender = $this->findLatestWhatsappSenderByUserId($senderRepo, (int) $usuario->getIdUsuario());
-            
+
             if (!$sender) {
                 $sender = new \AppBundle\Entity\WhatsappSender();
                 $sender->setIdUsuario($usuario->getIdUsuario());
                 $sender->setVersion(1);
                 $em->persist($sender);
             }
-            
+
             $sender->setSessionName($sessionName);
             $sender->setSessionId(null);
             $sender->setImagenQR('ESCANEAR_QR');
@@ -4628,7 +4541,7 @@ class WhatsappController extends Controller
             $em = $this->getDoctrine()->getManager();
             $servidorRepo = $em->getRepository('AppBundle:WhatsappServidor');
             $servidor = $servidorRepo->findOneBy(['estado' => true]);
-            
+
             if (!$servidor) {
                 $this->logear('❌ No hay servidor WhatsApp configurado');
                 return new JsonResponse(['error' => 'Servidor no configurado'], 503);
@@ -4675,7 +4588,7 @@ class WhatsappController extends Controller
             return new JsonResponse(['error' => $e->getMessage()], 500);
         }
     }
-    
+
     /**
      * Lista todas las conexiones WhatsApp activas (solo para ADMIN)
      * GET /Admin/Lista/ConexionesWhatsApp
@@ -4690,7 +4603,7 @@ class WhatsappController extends Controller
         $em = $this->getDoctrine()->getManager();
         $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
         $usuarioRepo = $em->getRepository('AppBundle:Usuario');
-        
+
         // Obtener todas las conexiones con sessionId (activas)
         $conexiones = $senderRepo->createQueryBuilder('ws')
             ->where('ws.sessionId IS NOT NULL')
@@ -4720,7 +4633,7 @@ class WhatsappController extends Controller
     public function conversacionesAdminAction($idSender)
     {
         $this->logear("=== INICIO conversacionesAdminAction, idSender: {$idSender} ===");
-        
+
         $usuario = $this->getUser();
         if (!$usuario || !$this->isGranted('ROLE_ADMIN')) {
             $this->logear("❌ No autorizado o no es admin");
@@ -4728,14 +4641,14 @@ class WhatsappController extends Controller
         }
 
         $em = $this->getDoctrine()->getManager();
-        
+
         // Obtener el sender
         $sender = $em->getRepository('AppBundle:WhatsappSender')->find($idSender);
         if (!$sender) {
             $this->logear("❌ Sender no encontrado: {$idSender}");
             throw $this->createNotFoundException('Conexión no encontrada');
         }
-        
+
         $this->logear("✓ Sender encontrado - ID: {$idSender}, Teléfono: " . ($sender->getTelefono() ?? 'NULL'));
 
         // Obtener el usuario propietario
@@ -4745,22 +4658,22 @@ class WhatsappController extends Controller
         // Obtener expedientes con conversaciones agrupadas
         $conn = $em->getConnection();
         $phone = $sender->getTelefono();
-        
+
         $this->logear("📞 Teléfono sin procesar: " . ($phone ?? 'NULL'));
-        
+
         $expedientes = [];
         if ($phone) {
             // Normalizar el teléfono: remover + y espacios
             $phoneNorm = preg_replace('/[^0-9]/', '', $phone);
-            
+
             // También crear versión sin prefijo 34
             $phoneWithout34 = $phoneNorm;
             if (strpos($phoneNorm, '34') === 0) {
                 $phoneWithout34 = substr($phoneNorm, 2);
             }
-            
+
             $this->logear("📞 Buscando: {$phoneNorm} o {$phoneWithout34}");
-            
+
             // Obtener expedientes con count y última fecha (búsqueda flexible)
             $sql = "SELECT 
                         id_expediente,
@@ -4771,19 +4684,19 @@ class WhatsappController extends Controller
                            OR to_phone LIKE :phone1 OR to_phone LIKE :phone2)
                     GROUP BY id_expediente
                     ORDER BY ultima_fecha DESC";
-            
+
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 ':phone1' => '%' . $phoneNorm . '%',
                 ':phone2' => '%' . $phoneWithout34 . '%'
             ]);
             $expedientes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            
+
             $this->logear("✓ Expedientes encontrados: " . count($expedientes));
         }
 
         $this->logear("=== FIN conversacionesAdminAction - Renderizando vista ===");
-        
+
         return $this->render('@App/Backoffice/Lista/conversaciones-admin.html.twig', [
             'sender' => $sender,
             'usuarioPropietario' => $usuarioPropietario,
@@ -4810,7 +4723,7 @@ class WhatsappController extends Controller
         }
 
         $em = $this->getDoctrine()->getManager();
-        
+
         // Obtener el sender
         $sender = $em->getRepository('AppBundle:WhatsappSender')->find($idSender);
         if (!$sender) {
@@ -4819,7 +4732,7 @@ class WhatsappController extends Controller
 
         $phone = $sender->getTelefono();
         $mensajes = [];
-        
+
         if ($phone) {
             // Normalizar el teléfono
             $phoneNorm = preg_replace('/[^0-9]/', '', $phone);
@@ -4827,11 +4740,11 @@ class WhatsappController extends Controller
             if (strpos($phoneNorm, '34') === 0) {
                 $phoneWithout34 = substr($phoneNorm, 2);
             }
-            
+
             $this->logear("🔍 Buscando en expediente {$idExpediente} - Teléfono: {$phoneNorm} o {$phoneWithout34}");
-            
+
             $conn = $em->getConnection();
-            
+
             // Búsqueda flexible con LIKE para ambos campos (from_phone Y to_phone)
             $sql = "SELECT * FROM chat_history 
                     WHERE id_expediente = :expediente
@@ -4839,7 +4752,7 @@ class WhatsappController extends Controller
                            OR to_phone LIKE :phone1 OR to_phone LIKE :phone2)
                     ORDER BY timestamp ASC
                     LIMIT 200";
-            
+
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 ':expediente' => $idExpediente,
@@ -4847,9 +4760,9 @@ class WhatsappController extends Controller
                 ':phone2' => '%' . $phoneWithout34 . '%'
             ]);
             $mensajes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            
+
             $this->logear("✓ Mensajes encontrados en expediente: " . count($mensajes));
-            
+
             // Debug: Ver dirección de mensajes
             $directionCount = ['enviado' => 0, 'recibido' => 0];
             foreach ($mensajes as $msg) {
@@ -4867,6 +4780,6 @@ class WhatsappController extends Controller
             'mensajes' => $mensajes
         ]);
     }
-    
+
 }
 
