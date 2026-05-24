@@ -553,7 +553,7 @@ class InteligenciaArtificialController extends Controller
     /**
      * Construye un prompt dinámico para extracción de datos basado en los campos disponibles
     */
-    public function construirPromptExtractor(array $camposBD, $texto = '')
+    private function construirPromptExtractor(array $camposBD, $texto = '')
     {
         // Construir la lista de campos dinámicamente
         $seccionCampos = '';

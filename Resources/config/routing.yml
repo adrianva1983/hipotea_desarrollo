@@ -900,28 +900,6 @@ api_conversaciones_expediente:
   requirements:
     idSender: '\d+'
 
-# ========= Api Bot ===================
-calcular_sencilla:
-  path: /API/CalcularSencilla
-  controller: AppBundle:BotApi:calcularSencilla
-  methods: [POST]
-calcular_cuota_gastos:
-  path: /API/CalcularCuotaGastos
-  controller: AppBundle:BotApi:calcularCuotaGastos
-  methods: [POST]
-calcular_precio_maximo:
-  path: /API/CalcularPrecioMaximo
-  controller: AppBundle:BotApi:calcularPrecioMaximo
-  methods: [POST]
-calcular_comparativa:
-  path: /API/CalcularComparativa
-  controller: AppBundle:BotApi:calcularComparativa
-  methods: [POST]
-simular_viabilidad:
-  path: /API/SimularViabilidad
-  controller: AppBundle:BotApi:simularViabilidad
-  methods: [POST]
-
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }
