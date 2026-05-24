@@ -3950,6 +3950,7 @@ class WhatsappController extends Controller
         // Mapa de tokens de activación → handler interno
         $habilidades = [
             'buscar datos de cliente' => 'habilidad_buscar_cliente',
+            'buscar expediente' => 'habilidad_buscar_expediente',
             'crear expediente' => 'habilidad_crear_expediente',
             'crear cliente' => 'habilidad_crear_cliente',
             'calcular cuota' => 'habilidad_calcular_cuota',
@@ -4054,6 +4055,78 @@ class WhatsappController extends Controller
                     }
 
                     $this->logear('✅ Habilidad buscar_cliente ejecutada → cliente ID: ' . $cliente['id_usuario']);
+                    return $respuesta;
+
+                // ─────────────────────────────────────────────────────────────
+                // HABILIDAD: Buscar expediente
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_buscar_expediente':
+                    $idExpediente = null;
+                    $telefonoBusqueda = null;
+                    $dniBusqueda = null;
+
+                    // Buscar ID de expediente (ej: 21042)
+                    if (preg_match('/\b(\d{1,7})\b/', preg_replace('/(6|7|8|9)\d{8}/', '', $bodyOriginal), $mId)) {
+                        $idExpediente = $mId[1];
+                    }
+
+                    // Buscar patrón de teléfono (6xx, 7xx, 9xx + 8 dígitos más)
+                    if (preg_match('/\b([6-9]\d{8})\b/', preg_replace('/\D/', '', $bodyOriginal), $mTel)) {
+                        $telefonoBusqueda = $mTel[1];
+                    }
+
+                    // Buscar patrón DNI/NIE/NIF español
+                    if (preg_match('/\b([0-9]{7,8}[A-Za-z]|[XYZxyz][0-9]{7}[A-Za-z])\b/', $bodyOriginal, $mDni)) {
+                        $dniBusqueda = strtoupper($mDni[1]);
+                    }
+
+                    if (!$idExpediente && !$telefonoBusqueda && !$dniBusqueda) {
+                        return $textoConversacional . "\n\nPara localizar el expediente, ¿puedes indicarme su número de ID, teléfono o DNI del cliente?";
+                    }
+
+                    // Preparar llamada a la API
+                    $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '127.0.0.1';
+                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                    $url = $protocol . '://' . $host . '/API/BuscarExpediente1?api_key=123456';
+                    
+                    if ($idExpediente) $url .= '&id_expediente=' . $idExpediente;
+                    if ($telefonoBusqueda) $url .= '&telefono=' . $telefonoBusqueda;
+                    if ($dniBusqueda) $url .= '&dni=' . $dniBusqueda;
+
+                    $ch = curl_init($url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+                    // En caso de que se use SSL autofirmado en local
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                    $responseAPI = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+
+                    if ($httpCode !== 200 || !$responseAPI) {
+                        $criterio = $idExpediente ?: ($telefonoBusqueda ?: $dniBusqueda);
+                        return $textoConversacional . "\n\n❌ No encontré ningún expediente con el identificador *{$criterio}*.";
+                    }
+
+                    $data = json_decode($responseAPI, true);
+                    if (!$data || !$data['success'] || empty($data['expedientes'])) {
+                        return $textoConversacional . "\n\n❌ No encontré ningún expediente.";
+                    }
+
+                    $exp = $data['expedientes'][0]; // Tomar el primero/más reciente
+                    $respuesta = $textoConversacional . "\n\n";
+                    $respuesta .= "📁 *Expediente #{$exp['id_expediente']} encontrado:*\n";
+                    $respuesta .= "• Cliente: {$exp['cliente_nombre']} {$exp['cliente_apellidos']}\n";
+                    $respuesta .= "• Referencia: " . ($exp['referencia'] ?: 'N/A') . "\n";
+                    
+                    if (!empty($exp['datos_fases'])) {
+                        $respuesta .= "\n*Datos adicionales (Hitos / Fase 1):*\n";
+                        foreach ($exp['datos_fases'] as $hito) {
+                            $respuesta .= "• {$hito['campo']}: {$hito['valor']}\n";
+                        }
+                    }
+
+                    $this->logear('✅ Habilidad buscar_expediente ejecutada → expediente ID: ' . $exp['id_expediente']);
                     return $respuesta;
 
                 // ─────────────────────────────────────────────────────────────
