@@ -863,6 +863,8 @@ class BotApiController extends Controller
 		// Permitir parámetros por JSON (application/json) o por GET/POST clásicos
 		$telefono = null;
 		$dni = null;
+		$telefono = $request->request->get('telefono');
+		error_log('Received telefono: ' . $telefono);
 		$contentType = $request->headers->get('Content-Type');
 		if ($contentType && strpos($contentType, 'application/json') !== false) {
 			$data = json_decode($request->getContent(), true);
