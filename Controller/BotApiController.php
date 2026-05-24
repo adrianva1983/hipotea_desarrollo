@@ -18,7 +18,7 @@ class BotApiController extends Controller
 			'errorlevel' => 0,
 			'errores' => array()
 		);
-		
+
 		$contentType = $request->headers->get('Content-Type');
 		if ($contentType && strpos($contentType, 'application/json') !== false) {
 			$jsonRecibido = json_decode($request->getContent(), true);
@@ -45,10 +45,10 @@ class BotApiController extends Controller
 
 		if ($isValid) {
 			$calculadora = new CalculadoraSencilla();
-			$calculadora->setPrecioTotal((double)$jsonRecibido['precioTotal']);
-			$calculadora->setAportacionInicial((double)$jsonRecibido['aportacionInicial']);
-			$calculadora->setTasaInteres((double)$jsonRecibido['tasaInteres']);
-			$calculadora->setPlazoAmortizacion((int)$jsonRecibido['plazoAmortizacion']);
+			$calculadora->setPrecioTotal((double) $jsonRecibido['precioTotal']);
+			$calculadora->setAportacionInicial((double) $jsonRecibido['aportacionInicial']);
+			$calculadora->setTasaInteres((double) $jsonRecibido['tasaInteres']);
+			$calculadora->setPlazoAmortizacion((int) $jsonRecibido['plazoAmortizacion']);
 
 			$validador = $this->get('validator');
 			$violaciones = $validador->validate($calculadora);
@@ -100,11 +100,11 @@ class BotApiController extends Controller
 		}
 
 		if ($isValid) {
-			$plazo = (int)$jsonRecibido['plazoAmortizacion'];
-			$edadTit1 = isset($jsonRecibido['edadTitularUno']) ? (int)$jsonRecibido['edadTitularUno'] : (isset($jsonRecibido['edad']) ? (int)$jsonRecibido['edad'] : 0);
-			$edadTit2 = isset($jsonRecibido['edadTitularDos']) ? (int)$jsonRecibido['edadTitularDos'] : 0;
+			$plazo = (int) $jsonRecibido['plazoAmortizacion'];
+			$edadTit1 = isset($jsonRecibido['edadTitularUno']) ? (int) $jsonRecibido['edadTitularUno'] : (isset($jsonRecibido['edad']) ? (int) $jsonRecibido['edad'] : 0);
+			$edadTit2 = isset($jsonRecibido['edadTitularDos']) ? (int) $jsonRecibido['edadTitularDos'] : 0;
 			$maxEdad = max($edadTit1, $edadTit2);
-			
+
 			if ($maxEdad > 0 && ($maxEdad + $plazo) > 75) {
 				$respuesta['errorlevel'] = 1;
 				$respuesta['errores'][] = array(
@@ -163,11 +163,11 @@ class BotApiController extends Controller
 		}
 
 		if ($isValid) {
-			$plazo = (int)$jsonRecibido['plazoAmortizacion'];
-			$edadTit1 = isset($jsonRecibido['edadTitularUno']) ? (int)$jsonRecibido['edadTitularUno'] : (isset($jsonRecibido['edad']) ? (int)$jsonRecibido['edad'] : 0);
-			$edadTit2 = isset($jsonRecibido['edadTitularDos']) ? (int)$jsonRecibido['edadTitularDos'] : 0;
+			$plazo = (int) $jsonRecibido['plazoAmortizacion'];
+			$edadTit1 = isset($jsonRecibido['edadTitularUno']) ? (int) $jsonRecibido['edadTitularUno'] : (isset($jsonRecibido['edad']) ? (int) $jsonRecibido['edad'] : 0);
+			$edadTit2 = isset($jsonRecibido['edadTitularDos']) ? (int) $jsonRecibido['edadTitularDos'] : 0;
 			$maxEdad = max($edadTit1, $edadTit2);
-			
+
 			if ($maxEdad > 0 && ($maxEdad + $plazo) > 75) {
 				$respuesta['errorlevel'] = 1;
 				$respuesta['errores'][] = array(
@@ -273,16 +273,16 @@ class BotApiController extends Controller
 			}
 		}
 
-		$edadTit1 = isset($jsonRecibido['edadTitularUno']) ? (int)$jsonRecibido['edadTitularUno'] : (isset($jsonRecibido['edad']) ? (int)$jsonRecibido['edad'] : 0);
+		$edadTit1 = isset($jsonRecibido['edadTitularUno']) ? (int) $jsonRecibido['edadTitularUno'] : (isset($jsonRecibido['edad']) ? (int) $jsonRecibido['edad'] : 0);
 		if ($edadTit1 <= 0) {
 			$isValid = false;
 		}
 
 		if ($isValid) {
-			$plazoAmortizacion = isset($jsonRecibido['plazoAmortizacion']) ? (int)$jsonRecibido['plazoAmortizacion'] : 30;
-			$edadTit2 = isset($jsonRecibido['edadTitularDos']) ? (int)$jsonRecibido['edadTitularDos'] : 0;
+			$plazoAmortizacion = isset($jsonRecibido['plazoAmortizacion']) ? (int) $jsonRecibido['plazoAmortizacion'] : 30;
+			$edadTit2 = isset($jsonRecibido['edadTitularDos']) ? (int) $jsonRecibido['edadTitularDos'] : 0;
 			$maxEdad = max($edadTit1, $edadTit2);
-			
+
 			if ($maxEdad > 0 && ($maxEdad + $plazoAmortizacion) > 75) {
 				$respuesta['errorlevel'] = 1;
 				$respuesta['errores'][] = array(
@@ -293,14 +293,14 @@ class BotApiController extends Controller
 			}
 
 			$em = $this->getDoctrine()->getManager();
-			
+
 			// Paso 2: Calcular precio máximo (Calculadora Avanzada, tipo = 2)
 			$calcMax = new CalculadoraAvanzada();
 			$calcMax->setTipo(2);
 			$this->populateCalculadoraAvanzada($calcMax, $jsonRecibido);
-			
+
 			$resultadoPaso2 = $calcMax->calcularAvanzada($em);
-			
+
 			if (!isset($resultadoPaso2['importe_fijo']) || $resultadoPaso2['importe_fijo'] <= 0) {
 				$respuesta['errorlevel'] = 3;
 				$respuesta['errores'][] = array('mensaje' => 'No se pudo calcular el precio máximo con los ingresos y aportación aportados.');
@@ -318,9 +318,9 @@ class BotApiController extends Controller
 			$this->populateCalculadoraAvanzada($calcCuota, $jsonRecibido);
 			$calcCuota->setValorInmueble($precioMaximo);
 			$calcCuota->setAportacionInicial($aportacion);
-			
+
 			$resultadoPaso3 = $calcCuota->calcularAvanzada($em);
-			
+
 			if (!isset($resultadoPaso3['importe_fijo']) || $resultadoPaso3['importe_fijo'] <= 0) {
 				$respuesta['errorlevel'] = 3;
 				$respuesta['errores'][] = array('mensaje' => 'No se pudo calcular la cuota y gastos estimados.');
@@ -349,7 +349,7 @@ class BotApiController extends Controller
 					'porcentajeFinanciacion' => round($porcentajeFinanciacion, 2),
 				],
 				'cuota' => [
-					'plazoAmortizacion' => (int)$plazoAmortizacion,
+					'plazoAmortizacion' => (int) $plazoAmortizacion,
 					'tipoInteres' => 'fijo',
 					'gastosTotalesAproximados' => round($gastosTotalesAproximados, 2),
 					'aportacionNecesaria' => round($aportacion, 2),
@@ -358,7 +358,7 @@ class BotApiController extends Controller
 					'porcentajeFinanciacion' => round($porcentajeFinanciacion3, 2),
 				],
 				'riesgo' => [
-					'tienePrestamosImpagados' => (bool)$jsonRecibido['tienePrestamosImpagados'],
+					'tienePrestamosImpagados' => (bool) $jsonRecibido['tienePrestamosImpagados'],
 					'situacionLaboral' => $jsonRecibido['situacionLaboral'],
 					'antiguedadLaboral' => $jsonRecibido['antiguedadLaboral']
 				]
@@ -391,20 +391,20 @@ class BotApiController extends Controller
 	private function populateCalculadoraAvanzada(CalculadoraAvanzada $calculadora, array $data)
 	{
 		if (isset($data['tipo'])) {
-			$calculadora->setTipo((int)$data['tipo']);
+			$calculadora->setTipo((int) $data['tipo']);
 		}
 		if (isset($data['numTitulares'])) {
-			$calculadora->setNumTitulares((int)$data['numTitulares']);
+			$calculadora->setNumTitulares((int) $data['numTitulares']);
 		} else {
 			$calculadora->setNumTitulares(1);
 		}
-		
-		$edadTitularUno = isset($data['edadTitularUno']) ? (int)$data['edadTitularUno'] : (isset($data['edad']) ? (int)$data['edad'] : 0);
-		$edadTitularDos = isset($data['edadTitularDos']) ? (int)$data['edadTitularDos'] : 0;
-		
+
+		$edadTitularUno = isset($data['edadTitularUno']) ? (int) $data['edadTitularUno'] : (isset($data['edad']) ? (int) $data['edad'] : 0);
+		$edadTitularDos = isset($data['edadTitularDos']) ? (int) $data['edadTitularDos'] : 0;
+
 		$calculadora->setEdadTitularUno($edadTitularUno);
 		$calculadora->setEdadTitularDos($edadTitularDos);
-		
+
 		$edadMin = 0;
 		if ($edadTitularUno > 0 && $edadTitularDos > 0) {
 			$edadMin = min($edadTitularUno, $edadTitularDos);
@@ -414,16 +414,16 @@ class BotApiController extends Controller
 		$calculadora->setEdad($edadMin ?: $edadTitularUno);
 
 		if (isset($data['valorInmueble'])) {
-			$calculadora->setValorInmueble((double)$data['valorInmueble']);
+			$calculadora->setValorInmueble((double) $data['valorInmueble']);
 		}
 		if (isset($data['aportacionInicial'])) {
-			$calculadora->setAportacionInicial((double)$data['aportacionInicial']);
+			$calculadora->setAportacionInicial((double) $data['aportacionInicial']);
 		}
 		if (isset($data['honorariosInmobiliaria'])) {
-			$calculadora->setHonorariosInmobiliaria((double)$data['honorariosInmobiliaria']);
+			$calculadora->setHonorariosInmobiliaria((double) $data['honorariosInmobiliaria']);
 		}
 		if (isset($data['destinoCompra'])) {
-			$calculadora->setDestinoCompra((int)$data['destinoCompra']);
+			$calculadora->setDestinoCompra((int) $data['destinoCompra']);
 		}
 		if (isset($data['producto'])) {
 			$productoValue = $data['producto'];
@@ -436,154 +436,154 @@ class BotApiController extends Controller
 			} elseif ($productoValue === 'sin_compromiso') {
 				$productoValue = 3;
 			}
-			$calculadora->setProducto((int)$productoValue);
+			$calculadora->setProducto((int) $productoValue);
 		}
 		if (isset($data['valorViviendaActual'])) {
-			$calculadora->setValorViviendaActual((double)$data['valorViviendaActual']);
+			$calculadora->setValorViviendaActual((double) $data['valorViviendaActual']);
 		}
 		if (isset($data['hipotecaActual'])) {
-			$calculadora->setHipotecaActual((double)$data['hipotecaActual']);
+			$calculadora->setHipotecaActual((double) $data['hipotecaActual']);
 		}
 		if (isset($data['aportacionTrasVenta'])) {
-			$calculadora->setAportacionTrasVenta((double)$data['aportacionTrasVenta']);
+			$calculadora->setAportacionTrasVenta((double) $data['aportacionTrasVenta']);
 		}
 		if (isset($data['plazoAmortizacion'])) {
-			$calculadora->setPlazoAmortizacion((int)$data['plazoAmortizacion']);
+			$calculadora->setPlazoAmortizacion((int) $data['plazoAmortizacion']);
 		}
 		if (isset($data['ingresosMensuales'])) {
-			$calculadora->setIngresosMensuales((double)$data['ingresosMensuales']);
+			$calculadora->setIngresosMensuales((double) $data['ingresosMensuales']);
 		}
 		if (isset($data['numPagasExtra'])) {
-			$calculadora->setNumPagasExtra((int)$data['numPagasExtra']);
+			$calculadora->setNumPagasExtra((int) $data['numPagasExtra']);
 		}
 		if (isset($data['importePagaExtra'])) {
-			$calculadora->setImportsPagaExtra((double)$data['importePagaExtra']);
+			$calculadora->setImportsPagaExtra((double) $data['importePagaExtra']);
 		}
 		if (isset($data['prestamosMensuales'])) {
-			$calculadora->setPrestamosMensuales((double)$data['prestamosMensuales']);
+			$calculadora->setPrestamosMensuales((double) $data['prestamosMensuales']);
 		}
 		if (isset($data['ingresosMensualesDos'])) {
-			$calculadora->setIngresosMensualesDos((double)$data['ingresosMensualesDos']);
+			$calculadora->setIngresosMensualesDos((double) $data['ingresosMensualesDos']);
 		}
 		if (isset($data['numPagasExtraDos'])) {
-			$calculadora->setNumPagasExtraDos((int)$data['numPagasExtraDos']);
+			$calculadora->setNumPagasExtraDos((int) $data['numPagasExtraDos']);
 		}
 		if (isset($data['importePagaExtraDos'])) {
-			$calculadora->setImportePagaExtraDos((double)$data['importePagaExtraDos']);
+			$calculadora->setImportePagaExtraDos((double) $data['importePagaExtraDos']);
 		}
 		if (isset($data['prestamosMensualesDos'])) {
-			$calculadora->setPrestamosMensualesDos((double)$data['prestamosMensualesDos']);
+			$calculadora->setPrestamosMensualesDos((double) $data['prestamosMensualesDos']);
 		}
 
 		// Booleans / Strings
 		if (isset($data['tipologiaOperacion'])) {
-			$calculadora->setTipologiaOperacion((int)$data['tipologiaOperacion']);
+			$calculadora->setTipologiaOperacion((int) $data['tipologiaOperacion']);
 		}
 		if (isset($data['comunidadAutonoma'])) {
-			$calculadora->setComunidadAutonoma((int)$data['comunidadAutonoma']);
+			$calculadora->setComunidadAutonoma((int) $data['comunidadAutonoma']);
 		}
 		if (isset($data['obraNueva'])) {
-			$calculadora->setObraNueva((bool)$data['obraNueva']);
+			$calculadora->setObraNueva((bool) $data['obraNueva']);
 		}
 		if (isset($data['minusvaliaFamiliaNumerosa'])) {
-			$calculadora->setMinusvaliaFamiliaNumerosa((bool)$data['minusvaliaFamiliaNumerosa']);
+			$calculadora->setMinusvaliaFamiliaNumerosa((bool) $data['minusvaliaFamiliaNumerosa']);
 		}
 		if (isset($data['familiaNumerosa'])) {
-			$calculadora->setFamiliaNumerosa((bool)$data['familiaNumerosa']);
+			$calculadora->setFamiliaNumerosa((bool) $data['familiaNumerosa']);
 		}
 		if (isset($data['monoparental'])) {
-			$calculadora->setMonoparental((bool)$data['monoparental']);
+			$calculadora->setMonoparental((bool) $data['monoparental']);
 		}
 		if (isset($data['vpo'])) {
-			$calculadora->setVpo((bool)$data['vpo']);
+			$calculadora->setVpo((bool) $data['vpo']);
 		}
 	}
 
 	private function populateCalculadoraComparativa(CalculadoraComparativa $calculadora, array $data)
 	{
 		if (isset($data['destino'])) {
-			$calculadora->setDestino((int)$data['destino']);
+			$calculadora->setDestino((int) $data['destino']);
 		}
 		if (isset($data['tipoHipoteca'])) {
-			$calculadora->setTipoHipoteca((int)$data['tipoHipoteca']);
+			$calculadora->setTipoHipoteca((int) $data['tipoHipoteca']);
 		}
 		if (isset($data['aniosPendientesHipoteca'])) {
-			$calculadora->setAniosPendientesHipoteca((int)$data['aniosPendientesHipoteca']);
+			$calculadora->setAniosPendientesHipoteca((int) $data['aniosPendientesHipoteca']);
 		}
 		if (isset($data['plazoAmortizacion'])) {
-			$calculadora->setPlazoAmortizacion((int)$data['plazoAmortizacion']);
+			$calculadora->setPlazoAmortizacion((int) $data['plazoAmortizacion']);
 		}
 		if (isset($data['aniosPlazoFijo'])) {
-			$calculadora->setAniosPlazoFijo((int)$data['aniosPlazoFijo']);
+			$calculadora->setAniosPlazoFijo((int) $data['aniosPlazoFijo']);
 		}
 		if (isset($data['plazoTotal'])) {
-			$calculadora->setPlazoTotal((int)$data['plazoTotal']);
+			$calculadora->setPlazoTotal((int) $data['plazoTotal']);
 		}
 		if (isset($data['importeHipoteca'])) {
-			$calculadora->setImporteHipoteca((double)$data['importeHipoteca']);
+			$calculadora->setImporteHipoteca((double) $data['importeHipoteca']);
 		}
 		if (isset($data['tipo'])) {
-			$calculadora->setTipo((double)$data['tipo']);
+			$calculadora->setTipo((double) $data['tipo']);
 		}
 		if (isset($data['revision'])) {
-			$calculadora->setRevision((double)$data['revision']);
+			$calculadora->setRevision((double) $data['revision']);
 		}
 		if (isset($data['tipoFijo'])) {
-			$calculadora->setTipoFijo((double)$data['tipoFijo']);
+			$calculadora->setTipoFijo((double) $data['tipoFijo']);
 		}
 		if (isset($data['tipoVariable'])) {
-			$calculadora->setTipoVariable((double)$data['tipoVariable']);
+			$calculadora->setTipoVariable((double) $data['tipoVariable']);
 		}
 		if (isset($data['revisionVariable'])) {
-			$calculadora->setRevisionVariable((double)$data['revisionVariable']);
+			$calculadora->setRevisionVariable((double) $data['revisionVariable']);
 		}
 		if (isset($data['tipoMixta'])) {
-			$calculadora->setTipoMixta((double)$data['tipoMixta']);
+			$calculadora->setTipoMixta((double) $data['tipoMixta']);
 		}
 		if (isset($data['revisionMixta'])) {
-			$calculadora->setRevisionMixta((double)$data['revisionMixta']);
+			$calculadora->setRevisionMixta((double) $data['revisionMixta']);
 		}
 		if (isset($data['aniosMixta'])) {
-			$calculadora->setAniosMixta((int)$data['aniosMixta']);
+			$calculadora->setAniosMixta((int) $data['aniosMixta']);
 		}
 		if (isset($data['oferta'])) {
-			$calculadora->setOferta((int)$data['oferta']);
+			$calculadora->setOferta((int) $data['oferta']);
 		}
 		if (isset($data['edad'])) {
-			$calculadora->setEdad((int)$data['edad']);
+			$calculadora->setEdad((int) $data['edad']);
 		}
 
 		// Personalizada
 		if (isset($data['persoTipoHipoteca'])) {
-			$calculadora->setPersoTipoHipoteca((int)$data['persoTipoHipoteca']);
+			$calculadora->setPersoTipoHipoteca((int) $data['persoTipoHipoteca']);
 		}
 		if (isset($data['persoVinculacion'])) {
-			$calculadora->setPersoVinculacion((int)$data['persoVinculacion']);
+			$calculadora->setPersoVinculacion((int) $data['persoVinculacion']);
 		}
 		if (isset($data['persoAnios'])) {
-			$calculadora->setPersoAnios((int)$data['persoAnios']);
+			$calculadora->setPersoAnios((int) $data['persoAnios']);
 		}
 		if (isset($data['persoTipo'])) {
-			$calculadora->setPersoTipo((double)$data['persoTipo']);
+			$calculadora->setPersoTipo((double) $data['persoTipo']);
 		}
 		if (isset($data['persoRevision'])) {
-			$calculadora->setPersoRevision((double)$data['persoRevision']);
+			$calculadora->setPersoRevision((double) $data['persoRevision']);
 		}
 	}
 
 	private function postProcessCalculoAvanzado(array $resultado, CalculadoraAvanzada $calculadora, array $data)
 	{
-		$tipoCalculo = (int)$calculadora->getTipo();
-		$valorInmueble = (double)$calculadora->getValorInmueble();
-		$aportacion = (double)$calculadora->getAportacionInicial();
-		
+		$tipoCalculo = (int) $calculadora->getTipo();
+		$valorInmueble = (double) $calculadora->getValorInmueble();
+		$aportacion = (double) $calculadora->getAportacionInicial();
+
 		// ===== CALCULAR IMPORTE_PRESTAMO SI NO VIENE =====
 		if (empty($resultado['importe_prestamo'])) {
 			if ($tipoCalculo === 1) {
-				$gastos = isset($resultado['gastos']) ? (double)$resultado['gastos'] : 0;
+				$gastos = isset($resultado['gastos']) ? (double) $resultado['gastos'] : 0;
 				$resultado['importe_prestamo'] = ($valorInmueble + $gastos) - $aportacion;
 			} elseif ($tipoCalculo === 2 && !empty($resultado['importe_maximo'])) {
-				$resultado['importe_prestamo'] = (double)$resultado['importe_maximo'] - $aportacion;
+				$resultado['importe_prestamo'] = (double) $resultado['importe_maximo'] - $aportacion;
 			} else {
 				$resultado['importe_prestamo'] = 0;
 			}
@@ -592,10 +592,10 @@ class BotApiController extends Controller
 		// ===== CALCULAR PORCENTAJE_FINANCIACION SI NO VIENE =====
 		if (empty($resultado['porcentaje_financiacion']) && !empty($resultado['importe_prestamo']) && !empty($valorInmueble)) {
 			$porc = ($resultado['importe_prestamo'] / $valorInmueble) * 100;
-			$producto = (int)$calculadora->getProducto();
+			$producto = (int) $calculadora->getProducto();
 			if ($producto === 4) {
-				$valorViviendaActual = (double)$calculadora->getValorViviendaActual();
-				$gastos = isset($resultado['gastos']) ? (double)$resultado['gastos'] : 0;
+				$valorViviendaActual = (double) $calculadora->getValorViviendaActual();
+				$gastos = isset($resultado['gastos']) ? (double) $resultado['gastos'] : 0;
 				$baseFinanciacion = ($valorViviendaActual > 0) ? ($valorInmueble + $valorViviendaActual) : $valorInmueble;
 				$importeFinanciado = ($valorInmueble + $gastos) - $aportacion;
 				if ($baseFinanciacion > 0) {
@@ -621,10 +621,10 @@ class BotApiController extends Controller
 			'entrada' => round(isset($resultado['entrada']) ? $resultado['entrada'] : 0, 2),
 			'gastos' => round(isset($resultado['gastos']) ? $resultado['gastos'] : 0, 2),
 			'cuota' => round(isset($resultado['cuota']) ? $resultado['cuota'] : 0, 2),
-			'amortizacion' => isset($resultado['amortizacion']) ? (int)$resultado['amortizacion'] : (int)$calculadora->getPlazoAmortizacion(),
+			'amortizacion' => isset($resultado['amortizacion']) ? (int) $resultado['amortizacion'] : (int) $calculadora->getPlazoAmortizacion(),
 			'mensaje' => isset($resultado['mensaje']) ? $resultado['mensaje'] : 'Cálculo completado exitosamente',
 			'tipo_calculo' => isset($resultado['tipo_calculo']) ? $resultado['tipo_calculo'] : ($tipoCalculo === 1 ? 'cuota' : 'importe-maximo'),
-			'obraNueva' => isset($resultado['obraNueva']) ? (bool)$resultado['obraNueva'] : (bool)$calculadora->getObraNueva(),
+			'obraNueva' => isset($resultado['obraNueva']) ? (bool) $resultado['obraNueva'] : (bool) $calculadora->getObraNueva(),
 			'tasacion' => isset($resultado['tasacion']) ? round($resultado['tasacion'], 2) : 0,
 			'notario' => isset($resultado['notario']) ? round($resultado['notario'], 2) : 0,
 			'registro' => isset($resultado['registro']) ? round($resultado['registro'], 2) : 0,
@@ -635,7 +635,7 @@ class BotApiController extends Controller
 			'importe_prestamo' => round(isset($resultado['importe_prestamo']) ? $resultado['importe_prestamo'] : 0, 2),
 			'porcentaje_financiacion' => round(isset($resultado['porcentaje_financiacion']) ? $resultado['porcentaje_financiacion'] : 0, 2),
 			'vinculaciones' => round(isset($resultado['vinculaciones']) ? $resultado['vinculaciones'] : 0, 2),
-			
+
 			// Additional fields for Type 1
 			'cuota_fija' => round(isset($resultado['cuota_fija']) ? $resultado['cuota_fija'] : 0, 2),
 			'cuota_variable' => round(isset($resultado['cuota_variable']) ? $resultado['cuota_variable'] : 0, 2),
@@ -650,20 +650,20 @@ class BotApiController extends Controller
 			'intereses' => round(isset($resultado['intereses']) ? $resultado['intereses'] : 0, 2),
 			'importe_total' => round(isset($resultado['importe_total']) ? $resultado['importe_total'] : 0, 2),
 			'importe_variable' => round(isset($resultado['importe_variable']) ? $resultado['importe_variable'] : 0, 2),
-			'con_interes_fijo' => isset($resultado['con_interes_fijo']) ? (bool)$resultado['con_interes_fijo'] : false,
-			'con_interes_variable' => isset($resultado['con_interes_variable']) ? (bool)$resultado['con_interes_variable'] : false,
+			'con_interes_fijo' => isset($resultado['con_interes_fijo']) ? (bool) $resultado['con_interes_fijo'] : false,
+			'con_interes_variable' => isset($resultado['con_interes_variable']) ? (bool) $resultado['con_interes_variable'] : false,
 			'con_entrada_fijo' => round(isset($resultado['con_entrada_fijo']) ? $resultado['con_entrada_fijo'] : 0, 2),
 			'con_entrada_variable' => round(isset($resultado['con_entrada_variable']) ? $resultado['con_entrada_variable'] : 0, 2),
-			
+
 			'valor_inmueble' => round($valorInmueble, 2),
-			'valor_vivienda_actual' => round((double)$calculadora->getValorViviendaActual(), 2),
-			'hipoteca_actual' => round((double)$calculadora->getHipotecaActual(), 2),
-			'aportacion_tras_venta' => round((double)$calculadora->getAportacionTrasVenta(), 2),
+			'valor_vivienda_actual' => round((double) $calculadora->getValorViviendaActual(), 2),
+			'hipoteca_actual' => round((double) $calculadora->getHipotecaActual(), 2),
+			'aportacion_tras_venta' => round((double) $calculadora->getAportacionTrasVenta(), 2),
 			'escritura_compra_impuesto_transmisiones' => round(isset($resultado['escritura_compra_impuesto_transmisiones']) ? $resultado['escritura_compra_impuesto_transmisiones'] : 0, 2),
-			'gastos_inmobiliaria' => round(isset($resultado['gastos_inmobiliaria']) ? $resultado['gastos_inmobiliaria'] : (isset($resultado['honorarios_inmobiliaria']) ? $resultado['honorarios_inmobiliaria'] : (double)$calculadora->getHonorariosInmobiliaria()), 2),
-			'producto' => (int)$calculadora->getProducto()
+			'gastos_inmobiliaria' => round(isset($resultado['gastos_inmobiliaria']) ? $resultado['gastos_inmobiliaria'] : (isset($resultado['honorarios_inmobiliaria']) ? $resultado['honorarios_inmobiliaria'] : (double) $calculadora->getHonorariosInmobiliaria()), 2),
+			'producto' => (int) $calculadora->getProducto()
 		];
-		
+
 		return $datosRespuesta;
 	}
 
@@ -860,6 +860,11 @@ class BotApiController extends Controller
 	 */
 	public function buscarCliente1Action(Request $request)
 	{
+		// Requiere API key para este endpoint
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+
 		// Permitir parámetros por JSON (application/json) o por GET/POST clásicos
 		$telefono = null;
 		$dni = null;
@@ -867,7 +872,7 @@ class BotApiController extends Controller
 		$dni = $request->request->get('dni');
 		error_log('Received telefono: ' . $telefono);
 		error_log('Received dni: ' . $dni);
-		
+
 		$conn = $this->getDoctrine()->getConnection();
 
 		error_log('request: ' . print_r($request, true));
@@ -936,5 +941,35 @@ class BotApiController extends Controller
 				'estado' => $cliente['estado'],
 			]
 		]);
+	}
+
+	private function checkApiKey(Request $request)
+	{
+		// Intentar obtener API key desde diferentes fuentes
+		$provided = $request->headers->get('X-API-KEY');
+
+		// Si no está en header, buscar en query
+		if (!$provided) {
+			$provided = $request->query->get('api_key');
+		}
+
+		// Si no está en query, buscar en body JSON (para POST)
+		if (!$provided && in_array($request->getMethod(), ['POST', 'PUT'])) {
+			$data = json_decode($request->getContent(), true);
+			$provided = $data['api_key'] ?? null;
+		}
+
+		$expected = '123456';
+		$isValid = $provided && $provided === $expected;
+
+		// Log solo si la API key es inválida
+		if (!$isValid && $this->container->has('logger')) {
+			$this->container->get('logger')->warning('Invalid API key attempt', [
+				'provided' => $provided ?: 'NONE',
+				'ip' => $request->getClientIp()
+			]);
+		}
+
+		return $isValid;
 	}
 }
