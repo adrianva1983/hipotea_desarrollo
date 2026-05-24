@@ -3780,7 +3780,20 @@ class WhatsappController extends Controller
                                 $idExpediente
                             );
 
-                            $mensajeRespuestaAutomatica = $mensajeIA ?: 'Mensaje recibido desde el CRM.';
+                            $mensajeIA = $mensajeIA ?: 'Mensaje recibido desde el CRM.';
+
+                            // Interceptar habilidades detectadas por la IA
+                            $resultadoHabilidad = $this->ejecutarHabilidadCRM($mensajeIA, $body, $fromNorm, $idExpediente, $sessionId);
+
+                            if ($resultadoHabilidad !== null) {
+                                // La habilidad fue ejecutada: usar su respuesta enriquecida
+                                $mensajeRespuestaAutomatica = $resultadoHabilidad;
+                            } else {
+                                // No había habilidad: usar respuesta IA limpiando el token si quedó
+                                $mensajeRespuestaAutomatica = preg_replace('/\[Habilidad[^\]]+identificada\]/i', '', $mensajeIA);
+                                $mensajeRespuestaAutomatica = trim($mensajeRespuestaAutomatica);
+                            }
+
                         } catch (\Throwable $e) {
                             $this->logear('⚠️ Error en IA para respuesta CRM: ' . $e->getMessage());
                             $mensajeRespuestaAutomatica = 'Mensaje recibido desde el CRM.';
@@ -3926,6 +3939,171 @@ class WhatsappController extends Controller
         } catch (\Exception $e) {
             $this->logear('❌ Error en DISCONNECTED: ' . $e->getMessage());
             return new JsonResponse([], 500);
+        }
+    }
+
+    /**
+     * Intercepta tokens de habilidades CRM en la respuesta de la IA y los ejecuta.
+     *
+     * La IA incluye al final de su texto una frase como:
+     *   [Habilidad buscar datos de cliente identificada]
+     * Este método detecta esa frase, llama al servicio correspondiente,
+     * y devuelve una respuesta enriquecida con los datos reales.
+     *
+     * @param string      $mensajeIA      Respuesta completa generada por la IA
+     * @param string      $bodyOriginal   Mensaje original enviado por el usuario
+     * @param string      $fromPhone      Teléfono normalizado del remitente
+     * @param int|null    $idExpediente   ID del expediente activo (puede ser null)
+     * @param string      $sessionId      Session ID de WhatsApp para respuestas adicionales
+     * @return string|null Respuesta final enriquecida, o null si no se detectó habilidad
+     */
+    private function ejecutarHabilidadCRM(string $mensajeIA, string $bodyOriginal, string $fromPhone, ?int $idExpediente, string $sessionId): ?string
+    {
+        // Mapa de tokens de activación → handler interno
+        $habilidades = [
+            'buscar datos de cliente'            => 'habilidad_buscar_cliente',
+            'crear expediente'                   => 'habilidad_crear_expediente',
+            'crear cliente'                      => 'habilidad_crear_cliente',
+            'calcular cuota'                     => 'habilidad_calcular_cuota',
+            'calcular precio máximo permitido'   => 'habilidad_calcular_precio_maximo',
+            'calcular cuota y gastos'            => 'habilidad_calcular_cuota_gastos',
+            'simular viabilidad hipotecaria'     => 'habilidad_simular_viabilidad',
+        ];
+
+        $habilidadDetectada = null;
+        foreach ($habilidades as $token => $handler) {
+            if (stripos($mensajeIA, '[Habilidad ' . $token . ' identificada]') !== false) {
+                $habilidadDetectada = $handler;
+                $this->logear('🎯 Habilidad CRM detectada: ' . $token);
+                break;
+            }
+        }
+
+        if ($habilidadDetectada === null) {
+            return null; // Sin habilidad detectada
+        }
+
+        // Extraer el texto de la IA sin el token de activación (parte conversacional)
+        $textoConversacional = preg_replace('/\[Habilidad[^\]]+identificada\]/i', '', $mensajeIA);
+        $textoConversacional = trim($textoConversacional);
+
+        try {
+            switch ($habilidadDetectada) {
+
+                // ─────────────────────────────────────────────────────────────
+                // HABILIDAD 7: Buscar datos de cliente por teléfono o DNI
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_buscar_cliente':
+                    $conn = $this->getDoctrine()->getConnection();
+
+                    // Intentar extraer teléfono o DNI del mensaje original
+                    $telefonoBusqueda = null;
+                    $dniBusqueda = null;
+
+                    // Buscar patrón de teléfono (6xx, 7xx, 9xx + 8 dígitos más)
+                    if (preg_match('/\b([6-9]\d{8})\b/', preg_replace('/\D/', '', $bodyOriginal), $mTel)) {
+                        $telefonoBusqueda = $mTel[1];
+                    }
+
+                    // Buscar patrón DNI/NIE/NIF español
+                    if (preg_match('/\b([0-9]{7,8}[A-Za-z]|[XYZxyz][0-9]{7}[A-Za-z])\b/', $bodyOriginal, $mDni)) {
+                        $dniBusqueda = strtoupper($mDni[1]);
+                    }
+
+                    if (!$telefonoBusqueda && !$dniBusqueda) {
+                        // No se encontró identificador: pedir el dato al usuario
+                        return $textoConversacional . "\n\nPara localizar al cliente, ¿puedes indicarme su teléfono o DNI/NIF?";
+                    }
+
+                    // Construir la consulta dinámica
+                    $where = [];
+                    $params = [];
+
+                    if ($telefonoBusqueda) {
+                        // Buscar por últimos 9 dígitos
+                        $telLocal = strlen($telefonoBusqueda) > 9 ? substr($telefonoBusqueda, -9) : $telefonoBusqueda;
+                        $where[] = 'u.telefono_movil LIKE :telefono';
+                        $params['telefono'] = '%' . $telLocal . '%';
+                    }
+                    if ($dniBusqueda) {
+                        $where[] = 'u.nif = :nif';
+                        $params['nif'] = $dniBusqueda;
+                    }
+
+                    $sql = 'SELECT u.id_usuario, u.nombre, u.apellidos, u.email, u.telefono_movil, u.nif,
+                                   e.id_expediente, e.estado AS estado_expediente
+                            FROM usuario u
+                            LEFT JOIN expediente e ON (e.id_cliente = u.id_usuario AND e.estado > 0)
+                            WHERE u.estado = 1
+                              AND (' . implode(' OR ', $where) . ')
+                            ORDER BY e.id_expediente DESC
+                            LIMIT 1';
+
+                    $stmt = $conn->prepare($sql);
+                    foreach ($params as $k => $v) {
+                        $stmt->bindValue($k, $v);
+                    }
+                    $stmt->execute();
+                    $cliente = $stmt->fetch();
+
+                    if (!$cliente) {
+                        $criterio = $telefonoBusqueda ?: $dniBusqueda;
+                        return $textoConversacional . "\n\n❌ No encontré ningún cliente con el identificador *{$criterio}* en el sistema.";
+                    }
+
+                    // Formatear respuesta con los datos reales
+                    $nombreCompleto = trim($cliente['nombre'] . ' ' . $cliente['apellidos']);
+                    $respuesta  = $textoConversacional . "\n\n";
+                    $respuesta .= "📋 *Ficha del cliente encontrada:*\n";
+                    $respuesta .= "• Nombre: {$nombreCompleto}\n";
+                    $respuesta .= "• Teléfono: " . ($cliente['telefono_movil'] ?: 'N/A') . "\n";
+                    $respuesta .= "• DNI/NIF: " . ($cliente['nif'] ?: 'N/A') . "\n";
+                    $respuesta .= "• Email: " . ($cliente['email'] ?: 'N/A') . "\n";
+                    if ($cliente['id_expediente']) {
+                        $respuesta .= "• Expediente activo: #{$cliente['id_expediente']}\n";
+                    } else {
+                        $respuesta .= "• Sin expediente activo\n";
+                    }
+
+                    $this->logear('✅ Habilidad buscar_cliente ejecutada → cliente ID: ' . $cliente['id_usuario']);
+                    return $respuesta;
+
+                // ─────────────────────────────────────────────────────────────
+                // HABILIDADES PENDIENTES DE IMPLEMENTAR
+                // Devuelven el texto conversacional y avisan que están en desarrollo
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_crear_expediente':
+                    // TODO: Llamar a la API de creación de expediente
+                    return $textoConversacional;
+
+                case 'habilidad_crear_cliente':
+                    // TODO: Llamar a la API de creación de cliente
+                    return $textoConversacional;
+
+                case 'habilidad_calcular_cuota':
+                    // TODO: Extraer parámetros y llamar a CalculadorasController
+                    return $textoConversacional . "\n\nPara calcular la cuota necesito: importe del préstamo, plazo en años y tipo de interés. ¿Me los puedes indicar?";
+
+                case 'habilidad_calcular_precio_maximo':
+                    // TODO: Llamar a calculadora de precio máximo
+                    return $textoConversacional . "\n\nPara calcular el precio máximo necesito: ingresos netos mensuales y deudas actuales. ¿Me los facilitas?";
+
+                case 'habilidad_calcular_cuota_gastos':
+                    // TODO: Llamar a calculadora con gastos
+                    return $textoConversacional . "\n\nPara el cálculo completo con gastos necesito: importe, plazo, tipo de interés y comunidad autónoma. ¿Me los indicas?";
+
+                case 'habilidad_simular_viabilidad':
+                    // TODO: Llamar a SimuladorViabilidadController
+                    return $textoConversacional . "\n\nPara simular la viabilidad necesito: ingresos netos, deudas actuales, ahorros disponibles e importe de la vivienda. ¿Me los facilitas?";
+
+                default:
+                    return null;
+            }
+
+        } catch (\Exception $e) {
+            $this->logear('❌ ejecutarHabilidadCRM error (' . $habilidadDetectada . '): ' . $e->getMessage());
+            // En caso de error, devolver el texto conversacional sin datos reales
+            return $textoConversacional;
         }
     }
 
