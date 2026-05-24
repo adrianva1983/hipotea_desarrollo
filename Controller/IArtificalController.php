@@ -558,7 +558,7 @@ class IArtificalController extends Controller
             
             if ($idExpediente) {
                 error_log('Obteniendo contexto de conversación para expediente ' . $idExpediente);
-                $sql = 'SELECT role, role_label, message as text, timestamp 
+                $sql = 'SELECT role, message as text, timestamp 
                         FROM chat_history 
                         WHERE id_expediente = :idExpediente 
                         ORDER BY timestamp DESC 
@@ -570,7 +570,7 @@ class IArtificalController extends Controller
                 $mensajes = $stmt->fetchAll();
             } elseif ($phone) {
                 error_log('Obteniendo contexto de conversación interno por teléfono ' . $phone);
-                $sql = 'SELECT role, role_label, message as text, timestamp 
+                $sql = 'SELECT role, message as text, timestamp 
                         FROM chat_history 
                         WHERE from_phone = :phone OR to_phone = :phone 
                         ORDER BY timestamp DESC 
@@ -595,7 +595,6 @@ class IArtificalController extends Controller
             $contexto = "\n\n--- HISTÓRICO DE CONVERSACIÓN ANTERIOR ---\n";
             foreach ($mensajes as $msg) {
                 $role = $msg['role'] === 'assistant' ? 'Asistente' : 'Cliente';
-                $label = $msg['role_label'] ? ' (' . $msg['role_label'] . ')' : '';
                 $text = isset($msg['text']) ? $msg['text'] : '';
                 
                 // Si el texto es JSON, extraer el contenido
@@ -604,7 +603,7 @@ class IArtificalController extends Controller
                     $text = $json['content'] ?? $json['text'] ?? $text;
                 }
                 
-                $contexto .= "{$role}{$label}: " . substr($text, 0, 100) . "\n";
+                $contexto .= "{$role}: " . substr($text, 0, 100) . "\n";
             }
             $contexto .= "--- FIN HISTÓRICO ---\n";
             
