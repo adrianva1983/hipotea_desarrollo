@@ -895,35 +895,105 @@ class WhatsappController extends Controller
         return new JsonResponse($gestor, 200);
     }
 
-    // Comprueba API key en header X-API-KEY o ?api_key= o en body JSON
-    private function checkApiKey(Request $request)
+    /**
+     * Comprueba la API key general (para endpoints admin/internos).
+     * Lee la clave desde el parámetro Symfony 'whatsapp_api_key',
+     * con fallback a la variable de entorno WHATSAPP_API_KEY.
+     * Acepta la clave en: header X-API-KEY, query ?api_key=, o body JSON {"api_key":"..."}.
+     */
+    private function checkApiKey(Request $request): bool
     {
-        // Intentar obtener API key desde diferentes fuentes
+        $provided = $this->extractApiKeyFromRequest($request);
+
+        // Leer clave esperada desde parámetro Symfony o variable de entorno
+        $expected = '';
+        try {
+            if ($this->container->hasParameter('whatsapp_api_key')) {
+                $expected = (string) $this->container->getParameter('whatsapp_api_key');
+            }
+        } catch (\Exception $e) { /* ignorar */ }
+
+        if (empty($expected)) {
+            $expected = (string) ($_ENV['WHATSAPP_API_KEY'] ?? getenv('WHATSAPP_API_KEY') ?? '123456');
+        }
+
+        $isValid = !empty($provided) && !empty($expected) && hash_equals($expected, $provided);
+
+        if (!$isValid && $this->container->has('logger')) {
+            $this->container->get('logger')->warning('Invalid API key attempt', [
+                'endpoint' => $request->getPathInfo(),
+                'ip'       => $request->getClientIp(),
+            ]);
+        }
+
+        return $isValid;
+    }
+
+    /**
+     * Comprueba la API key exclusiva del bot Baileys (para webhook y endpoints de sync).
+     * Lee la clave desde el parámetro Symfony 'bot_api_key',
+     * con fallback a la variable de entorno BOT_API_KEY.
+     * Acepta la clave en: header X-BOT-API-KEY, header X-API-KEY, o query ?bot_api_key=.
+     */
+    private function checkBotApiKey(Request $request): bool
+    {
+        // Priorizar header específico del bot, luego el genérico
+        $provided = $request->headers->get('X-BOT-API-KEY')
+                 ?: $request->headers->get('X-API-KEY')
+                 ?: $request->query->get('bot_api_key')
+                 ?: null;
+
+        // Leer clave esperada desde parámetro Symfony o variable de entorno
+        $expected = '';
+        try {
+            if ($this->container->hasParameter('bot_api_key')) {
+                $expected = (string) $this->container->getParameter('bot_api_key');
+            }
+        } catch (\Exception $e) { /* ignorar */ }
+
+        if (empty($expected)) {
+            $expected = (string) ($_ENV['BOT_API_KEY'] ?? getenv('BOT_API_KEY') ?? '');
+        }
+
+        // Si no hay clave configurada en servidor, denegar siempre
+        if (empty($expected)) {
+            $this->logear('⛔ BOT_API_KEY no configurada en servidor — acceso denegado desde ' . $request->getClientIp());
+            return false;
+        }
+
+        $isValid = !empty($provided) && hash_equals($expected, $provided);
+
+        if (!$isValid) {
+            $this->logear('⛔ Bot API key inválida desde IP ' . $request->getClientIp() . ' en ' . $request->getPathInfo());
+            if ($this->container->has('logger')) {
+                $this->container->get('logger')->warning('Invalid bot API key attempt', [
+                    'endpoint' => $request->getPathInfo(),
+                    'ip'       => $request->getClientIp(),
+                ]);
+            }
+        }
+
+        return $isValid;
+    }
+
+    /**
+     * Extrae la API key de cualquier fuente estándar de la request:
+     * header X-API-KEY, query ?api_key=, o body JSON {"api_key":"..."}.
+     */
+    private function extractApiKeyFromRequest(Request $request): ?string
+    {
         $provided = $request->headers->get('X-API-KEY');
-        
-        // Si no está en header, buscar en query
+
         if (!$provided) {
             $provided = $request->query->get('api_key');
         }
-        
-        // Si no está en query, buscar en body JSON (para POST)
-        if (!$provided && in_array($request->getMethod(), ['POST', 'PUT'])) {
+
+        if (!$provided && in_array($request->getMethod(), ['POST', 'PUT'], true)) {
             $data = json_decode($request->getContent(), true);
             $provided = $data['api_key'] ?? null;
         }
-        
-        $expected = '123456';
-        $isValid = $provided && $provided === $expected;
-        
-        // Log solo si la API key es inválida
-        if (!$isValid && $this->container->has('logger')) {
-            $this->container->get('logger')->warning('Invalid API key attempt', [
-                'provided' => $provided ?: 'NONE',
-                'ip' => $request->getClientIp()
-            ]);
-        }
-        
-        return $isValid;
+
+        return $provided ?: null;
     }
 
     /**
@@ -3321,6 +3391,11 @@ class WhatsappController extends Controller
      */
     public function webhookWhatsappAction(Request $request): JsonResponse
     {
+        // ─── Seguridad: solo el bot Baileys puede llamar a este endpoint ───
+        if (!$this->checkBotApiKey($request)) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
         try {
             // Obtener datos del webhook
             $data = json_decode($request->getContent(), true);
