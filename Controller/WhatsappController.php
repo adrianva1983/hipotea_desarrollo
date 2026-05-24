@@ -380,6 +380,63 @@ class WhatsappController extends Controller
         return false;
     }
 
+    private function hasRecentIncomingMessageDuplicate($conn, ?int $idExpediente, ?string $fromPhone, ?string $toPhone, string $messageType, string $messageToCompare): bool
+    {
+        $normalizedCandidate = $this->normalizeWhatsappMessageForComparison($messageToCompare, $messageType);
+        $normalizedFromPhone = $this->normalizeWhatsappPhoneForComparison($fromPhone);
+        $normalizedToPhone = $this->normalizeWhatsappPhoneForComparison($toPhone);
+
+        if ($normalizedCandidate === '' || $normalizedFromPhone === '') {
+            return false;
+        }
+
+        $sql = 'SELECT message
+                     , from_phone
+                     , to_phone
+                FROM chat_history
+                WHERE direction = :direction
+                  AND role = :role
+                  AND message_type = :messageType';
+
+        $params = [
+            'direction' => 'recibido',
+            'role' => 'user',
+            'messageType' => $messageType,
+            'recentLimit' => date('Y-m-d H:i:s', time() - 60),
+        ];
+
+        if ($idExpediente !== null) {
+            $sql .= ' AND id_expediente = :idExpediente';
+            $params['idExpediente'] = $idExpediente;
+        }
+
+        $sql .= ' AND timestamp >= :recentLimit ORDER BY timestamp DESC LIMIT 10';
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        $recentMessages = $stmt->fetchAll();
+
+        foreach ($recentMessages as $recentMessageRow) {
+            $recentFromPhone = $this->normalizeWhatsappPhoneForComparison($recentMessageRow['from_phone'] ?? null);
+            $recentToPhone = $this->normalizeWhatsappPhoneForComparison($recentMessageRow['to_phone'] ?? null);
+
+            if ($recentFromPhone !== $normalizedFromPhone) {
+                continue;
+            }
+
+            if ($normalizedToPhone !== '' && $recentToPhone !== '' && $recentToPhone !== $normalizedToPhone) {
+                continue;
+            }
+
+            $recentNormalized = $this->normalizeWhatsappMessageForComparison((string) ($recentMessageRow['message'] ?? ''), $messageType);
+            if ($recentNormalized !== '' && $recentNormalized === $normalizedCandidate) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function downloadMediaToWhatsappUpload(string $url): ?array
     {
         try {
@@ -3681,6 +3738,11 @@ class WhatsappController extends Controller
                 return new JsonResponse([], 200);
             }
 
+            if ($direction === 'recibido' && $this->hasRecentIncomingMessageDuplicate($conn, $idExpediente, $fromPhone, $toPhone, $type, $messageToSave)) {
+                $this->logear('⚠️ Se omitió un webhook entrante duplicado para expediente ' . ($idExpediente ?? 'null') . ' y teléfono ' . $fromPhone);
+                return new JsonResponse([], 200);
+            }
+
             $conn->insert('chat_history', [
                 'id_expediente' => $idExpediente,   // ✅ Id del expediente (si se encuentra)
                 'from_phone' => $fromPhone,         // ✅ Quién envía
@@ -3719,6 +3781,8 @@ class WhatsappController extends Controller
                     } else {
                         $mensajeRespuestaAutomatica = 'Hola, no tenemos tu número registrado. Si quieres, déjanos tu nombre y te contactamos.';
                     }
+
+                    $this->logear('➡️ Preparando respuesta automática para from=' . $fromPhone . ', expediente=' . ($idExpediente ?? 'null') . ', mensaje=' . $mensajeRespuestaAutomatica);
 
                     $respuestaBot = $this->llamarBotWhatsApp(
                         $sessionId,
