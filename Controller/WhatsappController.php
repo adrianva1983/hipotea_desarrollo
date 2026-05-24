@@ -3721,7 +3721,7 @@ class WhatsappController extends Controller
                 'timestamp' => 'datetime'
             ]);
 
-            $this->logear('✓ MESSAGE GUARDADO: from=' . $fromPhone . ', to=' . $toPhone . ', direction=' . $direction . ', expediente=' . $idExpediente . ' | ' . substr($body, 0, 50));
+            $this->logear('✓ MESSAGE GUARDADO111: from=' . $fromPhone . ', to=' . $toPhone . ', direction=' . $direction . ', expediente=' . $idExpediente . ' | ' . substr($body, 0, 50));
 
             return new JsonResponse([], 200);
 
