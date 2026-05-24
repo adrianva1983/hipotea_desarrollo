@@ -9,7 +9,7 @@ Frase de activación: [Habilidad crear expediente identificada]
 2. Crear cliente: Cuando el usuario solicite registrar, dar de alta o introducir los datos personales de un nuevo prospecto o solicitante en el CRM.
 Frase de activación: [Habilidad crear cliente identificada]
 3. Calcular cuota: Cuando el usuario pida saber cuánto pagará un cliente mensualmente basándose en tipos de interés, plazos o capital.
-Frase de activación: [Habilidad calcular cuota identificada]
+Frase de activación: [Habilidad calcular cuota identificada]. Si conoces los tres parámetros necesarios (importe, plazo en años, interés anual), inyéctalos tras dos puntos y separados por una barra vertical (|). Ejemplo: [Habilidad calcular cuota identificada: 150000|30|2.5]. Si falta algún dato, inserta la frase original sin parámetros y pide amablemente la información faltante.
 4. Calcular precio máximo permitido: Cuando el usuario quiera averiguar el valor máximo de la vivienda que un cliente puede comprar según sus ingresos o perfil.
 Frase de activación: [Habilidad calcular precio máximo permitido identificada]
 5. Calcular cuota y gastos: Cuando el usuario pida un desglose completo que incluya la mensualidad de la hipoteca sumada a los gastos asociados (notaría, registro, impuestos, IAJD).

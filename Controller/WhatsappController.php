@@ -4177,7 +4177,40 @@ class WhatsappController extends Controller
                     return $textoConversacional;
 
                 case 'habilidad_calcular_cuota':
-                    // TODO: Extraer parámetros y llamar a CalculadorasController
+                    if (!empty($parametroHabilidad)) {
+                        $partes = explode('|', $parametroHabilidad);
+                        if (count($partes) === 3) {
+                            $importe = (float) trim($partes[0]);
+                            $plazo = (int) trim($partes[1]);
+                            $interes = (float) str_replace(',', '.', trim($partes[2]));
+                            
+                            try {
+                                $calc = new \AppBundle\Entity\CalculadoraSencilla();
+                                $calc->setPrecioTotal($importe);
+                                $calc->setAportacionInicial(0); // Para que el importe a financiar sea el total
+                                $calc->setPlazoAmortizacion($plazo);
+                                $calc->setTasaInteres($interes);
+                                
+                                $resultado = $calc->calcularHipoteca();
+                                
+                                if (isset($resultado['fee'])) {
+                                    $cuota = number_format($resultado['fee'], 2, ',', '.');
+                                    $interesesTotales = number_format($resultado['interest_discharged_total'], 2, ',', '.');
+                                    $totalDevolver = number_format($importe + $resultado['interest_discharged_total'], 2, ',', '.');
+                                    
+                                    return $textoConversacional . "\n\n📋 *Resultado de la simulación:*\n" .
+                                           "• *Importe:* " . number_format($importe, 0, ',', '.') . " €\n" .
+                                           "• *Plazo:* " . $plazo . " años\n" .
+                                           "• *Interés anual:* " . number_format($interes, 2, ',', '.') . " %\n\n" .
+                                           "💰 *Cuota mensual estimada:* " . $cuota . " €\n" .
+                                           "📊 *Total intereses:* " . $interesesTotales . " €\n" .
+                                           "📈 *Total a devolver:* " . $totalDevolver . " €";
+                                }
+                            } catch (\Exception $e) {
+                                $this->logear('⚠️ Error en calculadora sencilla: ' . $e->getMessage());
+                            }
+                        }
+                    }
                     return $textoConversacional . "\n\nPara calcular la cuota necesito: importe del préstamo, plazo en años y tipo de interés. ¿Me los puedes indicar?";
 
                 case 'habilidad_calcular_precio_maximo':
