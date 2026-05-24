@@ -35,7 +35,7 @@ class WhatsappController extends Controller
 
     private function getSystemPromptCRM(): string
     {
-        $promptPath = $this->get('kernel')->getProjectDir() . '/AppBundle/Resources/prompts/system_prompt_crm.md';
+        $promptPath = dirname(__DIR__, 2) . '/AppBundle/Resources/prompts/system_prompt_crm.md';
 
         if (is_file($promptPath)) {
             $prompt = trim((string) @file_get_contents($promptPath));
@@ -185,7 +185,7 @@ class WhatsappController extends Controller
             return '/uploads/' . ltrim(substr($normalizedAbsolutePath, strlen($normalizedFilesDirectory)), '/');
         }
 
-        $projectWebDirectory = rtrim(str_replace('\\', '/', $this->get('kernel')->getProjectDir() . '/web'), '/');
+        $projectWebDirectory = rtrim(str_replace('\\', '/', dirname(__DIR__, 2) . '/web'), '/');
         if (strpos($normalizedAbsolutePath, $projectWebDirectory) === 0) {
             return substr($normalizedAbsolutePath, strlen($projectWebDirectory));
         }
