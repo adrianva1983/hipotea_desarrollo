@@ -569,14 +569,21 @@ class IArtificalController extends Controller
                 $stmt->execute();
                 $mensajes = $stmt->fetchAll();
             } elseif ($phone) {
-                error_log('Obteniendo contexto de conversación interno por teléfono ' . $phone);
+                // Usamos el teléfono normalizado para que el LIKE no falle si tiene prefijos diferentes
+                $cleanPhone = preg_replace('/\D/', '', $phone);
+                // Si empieza por 34, podemos omitirlo para ser más tolerantes en la búsqueda
+                if (strpos($cleanPhone, '34') === 0) {
+                    $cleanPhone = substr($cleanPhone, 2);
+                }
+                
+                error_log('Obteniendo contexto de conversación interno por teléfono ' . $cleanPhone);
                 $sql = 'SELECT role, message as text, timestamp 
                         FROM chat_history 
-                        WHERE from_phone = :phone OR to_phone = :phone 
+                        WHERE from_phone LIKE :phone OR to_phone LIKE :phone 
                         ORDER BY timestamp DESC 
                         LIMIT :limit';
                 $stmt = $conn->prepare($sql);
-                $stmt->bindValue('phone', $phone);
+                $stmt->bindValue('phone', '%' . $cleanPhone . '%');
                 $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
                 $stmt->execute();
                 $mensajes = $stmt->fetchAll();
@@ -603,7 +610,7 @@ class IArtificalController extends Controller
                     $text = $json['content'] ?? $json['text'] ?? $text;
                 }
                 
-                $contexto .= "{$role}: " . substr($text, 0, 100) . "\n";
+                $contexto .= "{$role}: " . $text . "\n";
             }
             $contexto .= "--- FIN HISTÓRICO ---\n";
             
