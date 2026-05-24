@@ -858,7 +858,7 @@ class BotApiController extends Controller
 	 * Endpoint API para buscar cliente por teléfono o DNI
 	 * Permite GET o POST, recibe 'telefono' o 'dni' y devuelve datos básicos del cliente
 	 */
-	public function buscarClienteAction(Request $request)
+	public function buscarCliente1Action(Request $request)
 	{
 		// Permitir parámetros por JSON (application/json) o por GET/POST clásicos
 		$telefono = null;
