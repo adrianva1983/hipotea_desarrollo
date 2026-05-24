@@ -906,6 +906,8 @@ class BotApiController extends Controller
 		}
 		$sql .= ' LIMIT 1';
 
+		error_log('Executing SQL: ' . $sql . ' with params: ' . print_r($params, true));
+
 		$stmt = $conn->prepare($sql);
 		foreach ($params as $ph => $val) {
 			$stmt->bindValue(trim($ph, ':'), $val);
