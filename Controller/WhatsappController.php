@@ -3765,7 +3765,8 @@ class WhatsappController extends Controller
                             $mensajeIA = $this->getIAController()->llamarAPIIA(
                                 $body,
                                 $systemPromptCRM,
-                                $idExpediente
+                                $idExpediente,
+                                $fromNorm
                             );
 
                             $mensajeIA = $mensajeIA ?: 'Mensaje recibido desde el CRM.';
@@ -3960,10 +3961,13 @@ class WhatsappController extends Controller
         ];
 
         $habilidadDetectada = null;
+        $parametroHabilidad = null;
         foreach ($habilidades as $token => $handler) {
-            if (stripos($mensajeIA, '[Habilidad ' . $token . ' identificada]') !== false) {
+            $pattern = '/\[Habilidad ' . preg_quote($token, '/') . ' identificada(?::\s*([^\]]+))?\]/i';
+            if (preg_match($pattern, $mensajeIA, $mToken)) {
                 $habilidadDetectada = $handler;
-                $this->logear('🎯 Habilidad CRM detectada: ' . $token);
+                $parametroHabilidad = trim($mToken[1] ?? '');
+                $this->logear('🎯 Habilidad CRM detectada: ' . $token . ($parametroHabilidad ? " (Param: $parametroHabilidad)" : ''));
                 break;
             }
         }
@@ -4065,18 +4069,29 @@ class WhatsappController extends Controller
                     $telefonoBusqueda = null;
                     $dniBusqueda = null;
 
-                    // Buscar ID de expediente (ej: 21042)
-                    if (preg_match('/\b(\d{1,7})\b/', preg_replace('/(6|7|8|9)\d{8}/', '', $bodyOriginal), $mId)) {
+                    // 1) Intentar extraer ID o datos desde el parámetro que la IA inyectó por el contexto
+                    if (!empty($parametroHabilidad)) {
+                        if (preg_match('/\b(\d{1,7})\b/', $parametroHabilidad, $mId)) {
+                            $idExpediente = $mId[1];
+                        } elseif (preg_match('/\b([6-9]\d{8})\b/', preg_replace('/\D/', '', $parametroHabilidad), $mTel)) {
+                            $telefonoBusqueda = $mTel[1];
+                        } elseif (preg_match('/\b([0-9]{7,8}[A-Za-z]|[XYZxyz][0-9]{7}[A-Za-z])\b/', $parametroHabilidad, $mDni)) {
+                            $dniBusqueda = strtoupper($mDni[1]);
+                        }
+                    }
+
+                    // 2) Si la IA no lo inyectó, buscar ID de expediente en el texto original del usuario
+                    if (!$idExpediente && preg_match('/\b(\d{1,7})\b/', preg_replace('/(6|7|8|9)\d{8}/', '', $bodyOriginal), $mId)) {
                         $idExpediente = $mId[1];
                     }
 
                     // Buscar patrón de teléfono (6xx, 7xx, 9xx + 8 dígitos más)
-                    if (preg_match('/\b([6-9]\d{8})\b/', preg_replace('/\D/', '', $bodyOriginal), $mTel)) {
+                    if (!$telefonoBusqueda && preg_match('/\b([6-9]\d{8})\b/', preg_replace('/\D/', '', $bodyOriginal), $mTel)) {
                         $telefonoBusqueda = $mTel[1];
                     }
 
                     // Buscar patrón DNI/NIE/NIF español
-                    if (preg_match('/\b([0-9]{7,8}[A-Za-z]|[XYZxyz][0-9]{7}[A-Za-z])\b/', $bodyOriginal, $mDni)) {
+                    if (!$dniBusqueda && preg_match('/\b([0-9]{7,8}[A-Za-z]|[XYZxyz][0-9]{7}[A-Za-z])\b/', $bodyOriginal, $mDni)) {
                         $dniBusqueda = strtoupper($mDni[1]);
                     }
 

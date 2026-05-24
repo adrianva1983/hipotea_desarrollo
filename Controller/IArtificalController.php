@@ -550,23 +550,37 @@ class IArtificalController extends Controller
      * @param int $limit Número máximo de mensajes anteriores a recuperar
      * @return string Contexto de conversación formateado, o string vacío si no hay histórico
      */
-    public function obtenerContextoConversacion(int $idExpediente, int $limit = 5): string
+    public function obtenerContextoConversacion(?int $idExpediente, ?string $phone = null, int $limit = 5): string
     {
         try {
             $conn = $this->getDoctrine()->getConnection();
+            $mensajes = [];
             
-            error_log('Obteniendo contexto de conversación para expediente ' . $idExpediente);
-            
-            $sql = 'SELECT role, role_label, text, timestamp 
-                    FROM chat_history 
-                    WHERE id_expediente = :idExpediente 
-                    ORDER BY timestamp DESC 
-                    LIMIT :limit';
-            
-            $stmt = $conn->prepare($sql);
-            $stmt->bindValue('idExpediente', $idExpediente);
-            $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
-            $stmt->execute();
+            if ($idExpediente) {
+                error_log('Obteniendo contexto de conversación para expediente ' . $idExpediente);
+                $sql = 'SELECT role, role_label, message as text, timestamp 
+                        FROM chat_history 
+                        WHERE id_expediente = :idExpediente 
+                        ORDER BY timestamp DESC 
+                        LIMIT :limit';
+                $stmt = $conn->prepare($sql);
+                $stmt->bindValue('idExpediente', $idExpediente);
+                $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+                $stmt->execute();
+                $mensajes = $stmt->fetchAll();
+            } elseif ($phone) {
+                error_log('Obteniendo contexto de conversación interno por teléfono ' . $phone);
+                $sql = 'SELECT role, role_label, message as text, timestamp 
+                        FROM chat_history 
+                        WHERE from_phone = :phone OR to_phone = :phone 
+                        ORDER BY timestamp DESC 
+                        LIMIT :limit';
+                $stmt = $conn->prepare($sql);
+                $stmt->bindValue('phone', $phone);
+                $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+                $stmt->execute();
+                $mensajes = $stmt->fetchAll();
+            }
             $mensajes = $stmt->fetchAll();
             
             if (empty($mensajes)) {
@@ -602,10 +616,7 @@ class IArtificalController extends Controller
         }
     }
 
-    /**
-     * Llama a la API de IA general (coordina Gemini u OpenAI)
-     */
-    public function llamarAPIIA(string $mensaje, ?string $systemPrompt = null, ?int $idExpediente = null): ?string
+    public function llamarAPIIA(string $mensaje, ?string $systemPrompt = null, ?int $idExpediente = null, ?string $phone = null): ?string
     {
         try {
             $config = $this->obtenerConfiguracionIA();
@@ -614,9 +625,9 @@ class IArtificalController extends Controller
             }
 
             $mensajeEnriquecido = $mensaje;
-            if ($idExpediente) {
-                error_log('llamarAPIIA: Obteniendo contexto histórico para expediente ' . $idExpediente);
-                $contexto = $this->obtenerContextoConversacion($idExpediente);
+            if ($idExpediente || $phone) {
+                error_log('llamarAPIIA: Obteniendo contexto histórico');
+                $contexto = $this->obtenerContextoConversacion($idExpediente, $phone);
                 if ($contexto) {
                     error_log('llamarAPIIA: Contexto obtenido, inyectando en mensaje');
                     $mensajeEnriquecido = $contexto . "\n\nNuevo mensaje del cliente: " . $mensaje;
