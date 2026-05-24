@@ -3766,7 +3766,7 @@ class WhatsappController extends Controller
                                 $body,
                                 $systemPromptCRM,
                                 $idExpediente,
-                                $fromNorm
+                                $fromPhone
                             );
 
                             $mensajeIA = $mensajeIA ?: 'Mensaje recibido desde el CRM.';
