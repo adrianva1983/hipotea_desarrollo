@@ -33,6 +33,20 @@ class WhatsappController extends Controller
         return $this->iaController;
     }
 
+    private function getSystemPromptCRM(): string
+    {
+        $promptPath = $this->get('kernel')->getProjectDir() . '/AppBundle/Resources/prompts/system_prompt_crm.md';
+
+        if (is_file($promptPath)) {
+            $prompt = trim((string) @file_get_contents($promptPath));
+            if ($prompt !== '') {
+                return $prompt;
+            }
+        }
+
+        return 'Eres el Asistente Inteligente de Soporte Operativo para el CRM Hipotecario. Responde en español, con tono cercano, profesional y directo. Si detectas una de las habilidades internas del CRM, incluye la frase de activación exacta al final de tu respuesta. Si faltan datos, pide solo lo necesario.';
+    }
+
     /**
      * Registra un mensaje en el log diario
      */
@@ -3685,6 +3699,7 @@ class WhatsappController extends Controller
             if ($direction === 'recibido') {
                 try {
                     $mensajeRespuestaAutomatica = 'mensaje recibido';
+                    $systemPromptCRM = $this->getSystemPromptCRM();
                     $usuarioOrigen = $this->findUserByPhone($fromNorm);
                     $esUsuarioInterno = false;
 
@@ -3694,7 +3709,11 @@ class WhatsappController extends Controller
                     }
 
                     if ($esUsuarioInterno) {
-                        $mensajeRespuestaAutomatica = 'Mensaje recibido desde el CRM.';
+                        $mensajeRespuestaAutomatica = $this->getIAController()->llamarAPIIA(
+                            $body,
+                            $systemPromptCRM,
+                            $idExpediente
+                        ) ?: 'Mensaje recibido desde el CRM.';
                     } elseif ($usuarioOrigen || $idExpediente || $this->findExpedienteByClientPhone($fromNorm)) {
                         $mensajeRespuestaAutomatica = 'Hola, mensaje recibido. Gracias por escribirnos.';
                     } else {
