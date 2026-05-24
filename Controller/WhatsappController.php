@@ -1300,6 +1300,30 @@ class WhatsappController extends Controller
 
             if ($direction === 'recibido') 
             {
+                try {
+                    $respuestaAutomatica = $this->llamarBotWhatsApp(
+                        $sessionId,
+                        $this->normalizePhonenWithPrefix($fromPhone),
+                        'mensaje recibido',
+                        $this->generarHashWhatsapp(date('Y-m-d')),
+                        date('Y-m-d')
+                    );
+
+                    if (is_array($respuestaAutomatica) && !empty($respuestaAutomatica['success'])) {
+                        $this->logear('✓ Respuesta automática enviada al cliente: mensaje recibido');
+                    } else {
+                        $this->logear('⚠️ No se pudo enviar la respuesta automática: mensaje recibido');
+                    }
+                } catch (\Exception $e) {
+                    $this->logear('⚠️ Error enviando respuesta automática: ' . $e->getMessage());
+                }
+
+                return new JsonResponse([
+                    'success' => true,
+                    'id' => $id,
+                    'auto_reply' => 'mensaje recibido'
+                ], 200);
+
                 // Verificar si el usuario vinculado tiene PilotoAutomatico activo
                 $usuarioVinculado = $data['usuario_vinculado'] ?? null;
                 
