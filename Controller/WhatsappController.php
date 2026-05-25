@@ -4283,6 +4283,10 @@ class WhatsappController extends Controller
                         if (count($partes) >= 2) {
                             $ingresos = (float) trim($partes[0]);
                             $deudas = (float) trim($partes[1]);
+                            $aportacion = isset($partes[2]) && trim($partes[2]) !== '' ? (float) trim($partes[2]) : 0;
+                            $plazo = isset($partes[3]) && trim($partes[3]) !== '' ? (int) trim($partes[3]) : 30;
+                            $comunidad = isset($partes[4]) && trim($partes[4]) !== '' ? trim($partes[4]) : 'Andalucia';
+                            $edad = isset($partes[5]) && trim($partes[5]) !== '' ? (int) trim($partes[5]) : 35;
                             
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotCalcularPrecioMaximo',
@@ -4291,9 +4295,10 @@ class WhatsappController extends Controller
                                     'api_key' => '123456',
                                     'ingresosMensuales' => $ingresos,
                                     'prestamosMensuales' => $deudas,
-                                    'plazoAmortizacion' => 30, // default
-                                    'comunidadAutonoma' => 1, // default
-                                    'edad' => 35
+                                    'aportacionInicial' => $aportacion,
+                                    'plazoAmortizacion' => $plazo,
+                                    'comunidadAutonoma' => $comunidad,
+                                    'edad' => $edad
                                 ]
                             );
                             
@@ -4317,7 +4322,7 @@ class WhatsappController extends Controller
                             }
                         }
                     }
-                    return $textoConversacional . "\n\nPara calcular el precio máximo necesito: ingresos netos mensuales y deudas actuales. ¿Me los facilitas?";
+                    return $textoConversacional . "\n\nPara calcular el precio máximo necesito: ingresos netos mensuales y deudas actuales. (Opcionalmente: ahorros aportados, plazo en años, comunidad autónoma y edad). ¿Me los facilitas?";
 
                 case 'habilidad_calcular_cuota_gastos':
                     if (!empty($parametroHabilidad)) {
@@ -4421,6 +4426,12 @@ class WhatsappController extends Controller
                             $deudas = (float) trim($partes[1]);
                             $ahorros = (float) trim($partes[2]);
                             $valor = (float) trim($partes[3]);
+                            $plazo = isset($partes[4]) && trim($partes[4]) !== '' ? (int) trim($partes[4]) : 30;
+                            $comunidad = isset($partes[5]) && trim($partes[5]) !== '' ? trim($partes[5]) : 'Andalucia';
+                            $edad = isset($partes[6]) && trim($partes[6]) !== '' ? (int) trim($partes[6]) : 35;
+                            $obraNueva = isset($partes[7]) && strtolower(trim($partes[7])) === 'true';
+                            $discapacidad = isset($partes[8]) && strtolower(trim($partes[8])) === 'true';
+                            $familiaNumerosa = isset($partes[9]) && strtolower(trim($partes[9])) === 'true';
                             
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotSimularViabilidad',
@@ -4434,8 +4445,12 @@ class WhatsappController extends Controller
                                     'tienePrestamosImpagados' => false,
                                     'situacionLaboral' => 'contrato_indefinido',
                                     'antiguedadLaboral' => 'mas_2_anios',
-                                    'plazoAmortizacion' => 30,
-                                    'edad' => 35
+                                    'plazoAmortizacion' => $plazo,
+                                    'comunidadAutonoma' => $comunidad,
+                                    'edad' => $edad,
+                                    'obraNueva' => $obraNueva,
+                                    'minusvaliaFamiliaNumerosa' => $discapacidad,
+                                    'familiaNumerosa' => $familiaNumerosa
                                 ]
                             );
                             
