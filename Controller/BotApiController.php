@@ -1001,7 +1001,7 @@ class BotApiController extends Controller
 		if (count($where) > 0) {
 			$sql .= ' AND (' . implode(' OR ', $where) . ')';
 		}
-		
+
 		// Ordenar por el más reciente
 		$sql .= ' ORDER BY e.id_expediente DESC LIMIT 5';
 
@@ -1032,20 +1032,20 @@ class BotApiController extends Controller
 						   AND che.valor != \'\' 
 						   AND che.valor != ch.nombre
 						   AND (f.id_fase = 1 OR f.orden = 1)';
-			
+
 			$stmtHitos = $conn->prepare($sqlHitos);
 			$stmtHitos->bindValue('id_expediente', $exp['id_expediente']);
 			$stmtHitos->execute();
 			$hitosResult = $stmtHitos->fetchAll();
-			
+
 			// Extraer IDs de opciones seleccionadas para traducir su valor
 			$opcionesIds = [];
 			foreach ($hitosResult as $row) {
 				if (preg_match('/_opcion_(\d+)$/', $row['valor'], $m)) {
-					$opcionesIds[] = (int)$m[1];
+					$opcionesIds[] = (int) $m[1];
 				}
 			}
-			
+
 			$opcionesMap = [];
 			if (count($opcionesIds) > 0) {
 				$sqlOpciones = 'SELECT id_opciones_campo, valor FROM opciones_campo WHERE id_opciones_campo IN (' . implode(',', array_unique($opcionesIds)) . ')';
@@ -1055,7 +1055,7 @@ class BotApiController extends Controller
 					$opcionesMap[$op['id_opciones_campo']] = $op['valor'];
 				}
 			}
-			
+
 			$datosExtra = [];
 			foreach ($hitosResult as $row) {
 				$valorFinal = $row['valor'];
@@ -1064,8 +1064,8 @@ class BotApiController extends Controller
 				}
 
 				$datosExtra[] = [
-					'fase'  => $row['fase'],
-					'hito'  => $row['hito'],
+					'fase' => $row['fase'],
+					'hito' => $row['hito'],
 					'campo' => $row['campo'],
 					'valor' => $valorFinal
 				];
@@ -1134,8 +1134,10 @@ class BotApiController extends Controller
 			$cliente->setNombre($nombre);
 			$cliente->setApellidos($apellidos);
 			$cliente->setTelefonoMovil($telefono);
-			if ($email) $cliente->setEmail($email);
-			if ($dni) $cliente->setNif($dni);
+			if ($email)
+				$cliente->setEmail($email);
+			if ($dni)
+				$cliente->setNif($dni);
 			$cliente->setUsername($telefono);
 			$cliente->setRole('ROLE_CLIENTE');
 			$cliente->setEstado(1);
