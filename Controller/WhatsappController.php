@@ -4322,21 +4322,37 @@ class WhatsappController extends Controller
                 case 'habilidad_calcular_cuota_gastos':
                     if (!empty($parametroHabilidad)) {
                         $partes = explode('|', $parametroHabilidad);
-                        if (count($partes) >= 2) {
+                        if (count($partes) >= 4) {
                             $importe = (float) trim($partes[0]);
-                            $plazo = (int) trim($partes[1]);
+                            $aporte = (float) trim($partes[1]);
+                            $plazo = (int) trim($partes[2]);
+                            $interes = (float) str_replace(',', '.', trim($partes[3]));
+                            
+                            $comunidad = isset($partes[4]) && trim($partes[4]) !== '' ? trim($partes[4]) : 'Andalucia';
+                            $edad = isset($partes[5]) && trim($partes[5]) !== '' ? (int) trim($partes[5]) : 35;
+                            $obraNueva = isset($partes[6]) && strtolower(trim($partes[6])) === 'true';
+                            $discapacidad = isset($partes[7]) && strtolower(trim($partes[7])) === 'true';
+                            $familiaNumerosa = isset($partes[8]) && strtolower(trim($partes[8])) === 'true';
                             
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotCalcularCuotaGastos',
                                 'POST',
-                                [
+                                [],
+                                [],
+                                [],
+                                ['CONTENT_TYPE' => 'application/json'],
+                                json_encode([
                                     'api_key' => '123456',
                                     'valorInmueble' => $importe,
+                                    'aportacionInicial' => $aporte,
                                     'plazoAmortizacion' => $plazo,
-                                    'aportacionInicial' => $importe * 0.20,
-                                    'comunidadAutonoma' => 1,
-                                    'edad' => 35
-                                ]
+                                    'tasaInteres' => $interes,
+                                    'comunidadAutonoma' => $comunidad,
+                                    'edad' => $edad,
+                                    'obraNueva' => $obraNueva,
+                                    'minusvaliaFamiliaNumerosa' => $discapacidad,
+                                    'familiaNumerosa' => $familiaNumerosa
+                                ])
                             );
                             
                             try {
