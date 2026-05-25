@@ -4361,20 +4361,50 @@ class WhatsappController extends Controller
 
                                 if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos'])) {
                                     $res = $datos['datos'];
-                                    $gastos = number_format($res['gastos'], 0, ',', '.');
-                                    $cuota = number_format($res['cuota'], 2, ',', '.');
-                                    $notaria = number_format($res['notario'], 0, ',', '.');
-                                    $registro = number_format($res['registro'], 0, ',', '.');
-                                    $impuestos = number_format($res['escritura_compra_impuesto_transmisiones'], 0, ',', '.');
-
-                                    return $textoConversacional . "\n\n📋 *Resultado Cuota y Gastos:*\n" .
-                                           "• *Valor Inmueble:* " . number_format($importe, 0, ',', '.') . " €\n" .
-                                           "• *Plazo:* " . $plazo . " años\n\n" .
-                                           "💰 *Cuota mensual:* " . $cuota . " €\n" .
-                                           "💸 *Gastos totales aprox:* " . $gastos . " €\n" .
-                                           "   - Notaría: " . $notaria . " €\n" .
-                                           "   - Registro: " . $registro . " €\n" .
-                                           "   - Impuestos: " . $impuestos . " €";
+                                    
+                                    $gastos = number_format($res['gastos'], 2, ',', '.');
+                                    $precioViviendaStr = number_format($importe, 2, ',', '.');
+                                    $aportacionStr = number_format($aporte, 2, ',', '.');
+                                    
+                                    $importeHipoteca = $importe + $res['gastos'] - $aporte;
+                                    $importeHipotecaStr = number_format($importeHipoteca, 2, ',', '.');
+                                    
+                                    $msg = $textoConversacional . "\n\n";
+                                    $msg .= "Para un inmueble de {$precioViviendaStr} €, con una aportación de {$aportacionStr} € y unos gastos totales de {$gastos} €, el importe total de hipoteca será de {$importeHipotecaStr} €. Tu pago mensual calculado a {$plazo} años será de:\n\n";
+                                    
+                                    // Cuotas
+                                    $msg .= "🔹 *Tipo Fijo:* " . number_format($res['cuota_fija'], 2, ',', '.') . " €\n";
+                                    $msg .= "   _(Tipo de interés " . number_format($res['tipo_fijo'], 2, ',', '.') . "%)_\n";
+                                    $msg .= "🔹 *Tipo Variable:* " . number_format($res['cuota_variable'], 2, ',', '.') . " €\n";
+                                    $msg .= "   _(Primer año " . number_format($res['tipo_variable'], 2, ',', '.') . "%, posteriormente Euribor + " . number_format($res['tipo_luego_mixto'], 2, ',', '.') . "%)_\n";
+                                    $msg .= "🔹 *Tipo Mixto:* " . number_format($res['cuota_mixta'], 2, ',', '.') . " €\n";
+                                    $msg .= "   _(Primeros 5 años " . number_format($res['tipo_mixto'], 2, ',', '.') . "%, posteriormente Euribor + " . number_format($res['tipo_luego_mixto'], 2, ',', '.') . "%)_\n\n";
+                                    
+                                    // Gastos
+                                    $msg .= "*Gastos asociados a la compraventa*\n";
+                                    $msg .= str_repeat("-", 20) . "\n";
+                                    if ($res['obraNueva']) {
+                                        $msg .= "🍔 AJD " . number_format($res['tipo_interes_ccaa'], 2, ',', '.') . "%: " . number_format($res['escritura_compra_impuesto_transmisiones'], 2, ',', '.') . " €\n";
+                                        $msg .= "💶 IVA: " . number_format($res['importe_iva'], 2, ',', '.') . " €\n";
+                                    } else {
+                                        $msg .= "🍔 ITP " . number_format($res['tipo_interes_ccaa'], 2, ',', '.') . "%: " . number_format($res['escritura_compra_impuesto_transmisiones'], 2, ',', '.') . " €\n";
+                                    }
+                                    $msg .= "👨‍⚖️ Notaría: " . number_format($res['notario'], 2, ',', '.') . " €\n";
+                                    $msg .= "🏛️ Registro: " . number_format($res['registro'], 2, ',', '.') . " €\n";
+                                    $msg .= "👨‍💼 Gestoría: " . number_format($res['gestoria'], 2, ',', '.') . " €\n";
+                                    $msg .= "🏠 Tasación: " . number_format($res['tasacion'], 2, ',', '.') . " €\n\n";
+                                    
+                                    // Resumen
+                                    $msg .= "*Importe total de tu Hipoteca*\n";
+                                    $msg .= str_repeat("-", 20) . "\n";
+                                    $msg .= "Precio vivienda: {$precioViviendaStr} €\n";
+                                    $msg .= "Gastos: + {$gastos} €\n";
+                                    $msg .= "Aportación: - {$aportacionStr} €\n";
+                                    $msg .= "*IMPORTE HIPOTECA A SOLICITAR:* {$importeHipotecaStr} €\n\n";
+                                    
+                                    $msg .= "_Esta calculadora solo está destinada para vivienda. Los tipos mostrados son una estimación media y los gastos son orientativos._";
+                                    
+                                    return $msg;
                                 }
                             } catch (\Exception $e) {
                                 $this->logear('⚠️ Error en cuota y gastos API: ' . $e->getMessage());
