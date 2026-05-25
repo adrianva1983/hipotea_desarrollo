@@ -4291,7 +4291,11 @@ class WhatsappController extends Controller
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotCalcularPrecioMaximo',
                                 'POST',
-                                [
+                                [],
+                                [],
+                                [],
+                                ['CONTENT_TYPE' => 'application/json'],
+                                json_encode([
                                     'api_key' => '123456',
                                     'ingresosMensuales' => $ingresos,
                                     'prestamosMensuales' => $deudas,
@@ -4299,7 +4303,7 @@ class WhatsappController extends Controller
                                     'plazoAmortizacion' => $plazo,
                                     'comunidadAutonoma' => $comunidad,
                                     'edad' => $edad
-                                ]
+                                ])
                             );
                             
                             try {
@@ -4316,9 +4320,11 @@ class WhatsappController extends Controller
                                            "• *Deudas:* " . number_format($deudas, 0, ',', '.') . " €\n\n" .
                                            "💰 *Precio máximo recomendado:* " . $precioMaximo . " €\n" .
                                            "📊 *Cuota estimada:* " . $cuota . " €/mes";
+                                } else {
+                                    return $textoConversacional . "\n\n❌ Hubo un error al calcular: " . json_encode($datos, JSON_UNESCAPED_UNICODE);
                                 }
                             } catch (\Exception $e) {
-                                $this->logear('⚠️ Error en precio maximo API: ' . $e->getMessage());
+                                return $textoConversacional . "\n\n❌ Excepción del sistema: " . $e->getMessage();
                             }
                         }
                     }
@@ -4436,7 +4442,11 @@ class WhatsappController extends Controller
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotSimularViabilidad',
                                 'POST',
-                                [
+                                [],
+                                [],
+                                [],
+                                ['CONTENT_TYPE' => 'application/json'],
+                                json_encode([
                                     'api_key' => '123456',
                                     'ingresosMensuales' => $ingresos,
                                     'prestamosMensuales' => $deudas,
@@ -4451,7 +4461,7 @@ class WhatsappController extends Controller
                                     'obraNueva' => $obraNueva,
                                     'minusvaliaFamiliaNumerosa' => $discapacidad,
                                     'familiaNumerosa' => $familiaNumerosa
-                                ]
+                                ])
                             );
                             
                             try {
