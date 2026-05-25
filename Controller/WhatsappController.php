@@ -4312,14 +4312,51 @@ class WhatsappController extends Controller
 
                                 if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos'])) {
                                     $res = $datos['datos'];
-                                    $precioMaximo = number_format($res['importe_fijo'], 0, ',', '.');
+                                    $precioMaximo = $res['importe_fijo'];
+                                    
+                                    $gastos = number_format($res['gastos'], 2, ',', '.');
+                                    $precioViviendaStr = number_format($precioMaximo, 2, ',', '.');
+                                    $aportacionStr = number_format($aportacion, 2, ',', '.');
+                                    
+                                    $importeHipoteca = $precioMaximo + $res['gastos'] - $aportacion;
+                                    $importeHipotecaStr = number_format($importeHipoteca, 2, ',', '.');
+                                    
                                     $cuota = number_format($res['cuota'], 2, ',', '.');
                                     
-                                    return $textoConversacional . "\n\n🏠 *Resultado Precio Máximo:*\n" .
+                                    $msg = $textoConversacional . "\n\n🏠 *Resultado Precio Máximo:*\n" .
                                            "• *Ingresos:* " . number_format($ingresos, 0, ',', '.') . " €\n" .
-                                           "• *Deudas:* " . number_format($deudas, 0, ',', '.') . " €\n\n" .
-                                           "💰 *Precio máximo recomendado:* " . $precioMaximo . " €\n" .
-                                           "📊 *Cuota estimada:* " . $cuota . " €/mes";
+                                           "• *Deudas:* " . number_format($deudas, 0, ',', '.') . " €\n\n";
+                                           
+                                    $msg .= "Con la información que nos has proporcionado, hemos estimado tu capacidad de pago. El precio máximo de vivienda que te recomendamos buscar ronda los *{$precioViviendaStr} €*.\n\n";
+
+                                    // Gastos
+                                    $msg .= "*Gastos asociados a la compraventa*\n";
+                                    $msg .= str_repeat("-", 20) . "\n";
+                                    if (isset($res['obraNueva']) && $res['obraNueva']) {
+                                        $msg .= "🍔 AJD " . number_format($res['tipo_interes_ccaa'], 2, ',', '.') . "%: " . number_format($res['escritura_compra_impuesto_transmisiones'], 2, ',', '.') . " €\n";
+                                        $msg .= "💶 IVA: " . number_format($res['importe_iva'], 2, ',', '.') . " €\n";
+                                    } else {
+                                        $msg .= "🍔 ITP " . number_format($res['tipo_interes_ccaa'], 2, ',', '.') . "%: " . number_format($res['escritura_compra_impuesto_transmisiones'], 2, ',', '.') . " €\n";
+                                    }
+                                    $msg .= "👨‍⚖️ Notaría: " . number_format($res['notario'], 2, ',', '.') . " €\n";
+                                    $msg .= "🏛️ Registro: " . number_format($res['registro'], 2, ',', '.') . " €\n";
+                                    $msg .= "👨‍💼 Gestoría: " . number_format($res['gestoria'], 2, ',', '.') . " €\n";
+                                    $msg .= "🏠 Tasación: " . number_format($res['tasacion'], 2, ',', '.') . " €\n\n";
+                                    
+                                    // Resumen
+                                    $msg .= "*Importe total de tu Hipoteca*\n";
+                                    $msg .= str_repeat("-", 20) . "\n";
+                                    $msg .= "Precio vivienda: {$precioViviendaStr} €\n";
+                                    $msg .= "Gastos: + {$gastos} €\n";
+                                    $msg .= "Aportación: - {$aportacionStr} €\n";
+                                    $msg .= "*IMPORTE HIPOTECA A SOLICITAR:* {$importeHipotecaStr} €\n\n";
+                                    
+                                    $msg .= "⏳ Plazo: {$plazo} años\n";
+                                    $msg .= "📊 Cuota estimada: {$cuota} €/mes\n\n";
+                                    
+                                    $msg .= "_Recuerda que este cálculo es orientativo. Para obtener una valoración más precisa y personalizada con nuestros mejores tipos, contáctanos._";
+
+                                    return $msg;
                                 } else {
                                     return $textoConversacional . "\n\n❌ Hubo un error al calcular: " . json_encode($datos, JSON_UNESCAPED_UNICODE);
                                 }
@@ -4328,7 +4365,7 @@ class WhatsappController extends Controller
                             }
                         }
                     }
-                    return $textoConversacional . "\n\nPara calcular el precio máximo necesito: ingresos netos mensuales y deudas actuales. (Opcionalmente: ahorros aportados, plazo en años, comunidad autónoma y edad). ¿Me los facilitas?";
+                    return $textoConversacional . "\n\nPara calcular el precio máximo de forma realista necesito estos 4 datos: *ingresos netos mensuales*, *deudas actuales*, *ahorros aportados* y la *edad* del titular menor. ¿Me los facilitas?";
 
                 case 'habilidad_calcular_cuota_gastos':
                     if (!empty($parametroHabilidad)) {
