@@ -1185,6 +1185,7 @@ class BotApiController extends Controller
 			$expediente = new \AppBundle\Entity\Expediente();
 			$expediente->setIdCliente($cliente);
 			$expediente->setEstado('1');
+			$expediente->setVivienda('Creado desde el Bot'); // Evita el error "vivienda cannot be null"
 			$expediente->setFechaCreacion(new \DateTime());
 			$expediente->setFechaModificacion(new \DateTime());
 
