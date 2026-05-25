@@ -438,9 +438,13 @@ class BotApiController extends Controller
 		}
 		if (isset($data['honorariosInmobiliaria'])) {
 			$calculadora->setHonorariosInmobiliaria((double) $data['honorariosInmobiliaria']);
+		} else {
+			$calculadora->setHonorariosInmobiliaria(0.0);
 		}
 		if (isset($data['destinoCompra'])) {
 			$calculadora->setDestinoCompra((int) $data['destinoCompra']);
+		} else {
+			$calculadora->setDestinoCompra(1);
 		}
 		if (isset($data['producto'])) {
 			$productoValue = $data['producto'];
@@ -497,6 +501,8 @@ class BotApiController extends Controller
 		// Booleans / Strings
 		if (isset($data['tipologiaOperacion'])) {
 			$calculadora->setTipologiaOperacion((int) $data['tipologiaOperacion']);
+		} else {
+			$calculadora->setTipologiaOperacion(1);
 		}
 		if (isset($data['comunidadAutonoma'])) {
 			$ccaa = $data['comunidadAutonoma'];
@@ -517,18 +523,28 @@ class BotApiController extends Controller
 		}
 		if (isset($data['obraNueva'])) {
 			$calculadora->setObraNueva((bool) $data['obraNueva']);
+		} else {
+			$calculadora->setObraNueva(false);
 		}
 		if (isset($data['minusvaliaFamiliaNumerosa'])) {
 			$calculadora->setMinusvaliaFamiliaNumerosa((bool) $data['minusvaliaFamiliaNumerosa']);
+		} else {
+			$calculadora->setMinusvaliaFamiliaNumerosa(false);
 		}
 		if (isset($data['familiaNumerosa'])) {
 			$calculadora->setFamiliaNumerosa((bool) $data['familiaNumerosa']);
+		} else {
+			$calculadora->setFamiliaNumerosa(false);
 		}
 		if (isset($data['monoparental'])) {
 			$calculadora->setMonoparental((bool) $data['monoparental']);
+		} else {
+			$calculadora->setMonoparental(false);
 		}
 		if (isset($data['vpo'])) {
 			$calculadora->setVpo((bool) $data['vpo']);
+		} else {
+			$calculadora->setVpo(false);
 		}
 	}
 
