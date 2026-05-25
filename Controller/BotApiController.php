@@ -1108,6 +1108,40 @@ class BotApiController extends Controller
 
 		return $isValid;
 	}
+
+	private function generarReferencia(int $anio): string
+	{
+		try {
+			$doctrine = $this->getDoctrine();
+			$conn = $doctrine->getConnection();
+			
+			$sql = "
+				SELECT MAX(CAST(SUBSTRING_INDEX(referencia, '/', 1) AS UNSIGNED)) as max_numero
+				FROM expediente
+				WHERE referencia LIKE :patron
+			";
+			
+			$stmt = $conn->prepare($sql);
+			$patron = '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT);
+			$stmt->bindValue('patron', $patron);
+			$stmt->execute();
+			$result = $stmt->fetch();
+			
+			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero']) 
+				? (int)$result['max_numero'] 
+				: 0;
+			
+			$siguienteNumero = $maxNumero + 1;
+			
+			// Formato: NNNN/YY (5 dígitos para número, 2 para año)
+			$referencia = sprintf('%05d/%02d', $siguienteNumero, $anio);
+			
+			return $referencia;
+		} catch (\Exception $e) {
+			throw new \Exception('Error al generar referencia de expediente: ' . $e->getMessage());
+		}
+	}
+
 	public function botCrearClienteAction(Request $request)
 	{
 		if (!$this->checkApiKey($request)) {
@@ -1195,6 +1229,10 @@ class BotApiController extends Controller
 
 			$expediente->setFechaCreacion(new \DateTime());
 			$expediente->setFechaModificacion(new \DateTime());
+
+			$anio = (int)$expediente->getFechaCreacion()->format('y');
+			$referencia = $this->generarReferencia($anio);
+			$expediente->setReferencia($referencia);
 
 			$em = $this->getDoctrine()->getManager();
 			$em->persist($expediente);
