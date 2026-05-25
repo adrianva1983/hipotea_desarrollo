@@ -1124,7 +1124,7 @@ class BotApiController extends Controller
 			return new JsonResponse(['success' => false, 'error' => 'Faltan parámetros requeridos (nombre, apellidos, telefono)'], 400);
 		}
 
-		$usuarioExistente = $this->getDoctrine()->getRepository('AppBundle:Usuario')->findOneBy(['telefono' => $telefono]);
+		$usuarioExistente = $this->getDoctrine()->getRepository('AppBundle:Usuario')->findOneBy(['telefonoMovil' => $telefono]);
 		if ($usuarioExistente) {
 			return new JsonResponse(['success' => false, 'error' => 'Ya existe un cliente registrado con ese teléfono', 'cliente' => $usuarioExistente->getNombre()], 409);
 		}
@@ -1133,13 +1133,13 @@ class BotApiController extends Controller
 			$cliente = new \AppBundle\Entity\Usuario();
 			$cliente->setNombre($nombre);
 			$cliente->setApellidos($apellidos);
-			$cliente->setTelefono($telefono);
+			$cliente->setTelefonoMovil($telefono);
 			if ($email) $cliente->setEmail($email);
-			if ($dni) $cliente->setDni($dni);
+			if ($dni) $cliente->setNif($dni);
 			$cliente->setUsername($telefono);
 			$cliente->setRole('ROLE_CLIENTE');
 			$cliente->setEstado(1);
-			$cliente->setFechaAlta(new \DateTime());
+			$cliente->setFechaRegistro(new \DateTime());
 			$cliente->setPassword(md5(uniqid()));
 
 			$em = $this->getDoctrine()->getManager();
@@ -1164,9 +1164,9 @@ class BotApiController extends Controller
 		}
 
 		$repoUsuario = $this->getDoctrine()->getRepository('AppBundle:Usuario');
-		$cliente = $repoUsuario->findOneBy(['telefono' => $identificador]);
+		$cliente = $repoUsuario->findOneBy(['telefonoMovil' => $identificador]);
 		if (!$cliente) {
-			$cliente = $repoUsuario->findOneBy(['dni' => $identificador]);
+			$cliente = $repoUsuario->findOneBy(['nif' => $identificador]);
 		}
 
 		if (!$cliente) {
@@ -1177,7 +1177,7 @@ class BotApiController extends Controller
 			$expediente = new \AppBundle\Entity\Expediente();
 			$expediente->setIdCliente($cliente);
 			$expediente->setEstado('1');
-			$expediente->setFechaEntrada(new \DateTime());
+			$expediente->setFechaCreacion(new \DateTime());
 			$expediente->setFechaModificacion(new \DateTime());
 
 			$em = $this->getDoctrine()->getManager();
