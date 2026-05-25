@@ -1186,6 +1186,13 @@ class BotApiController extends Controller
 			$expediente->setIdCliente($cliente);
 			$expediente->setEstado('1');
 			$expediente->setVivienda('Creado desde el Bot'); // Evita el error "vivienda cannot be null"
+			
+			// Asignar fase inicial por defecto (Fase 1) para evitar el error "id_fase_actual cannot be null"
+			$faseInicial = $this->getDoctrine()->getRepository('AppBundle:Fase')->find(1);
+			if ($faseInicial) {
+				$expediente->setIdFaseActual($faseInicial);
+			}
+
 			$expediente->setFechaCreacion(new \DateTime());
 			$expediente->setFechaModificacion(new \DateTime());
 
