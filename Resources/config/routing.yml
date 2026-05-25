@@ -901,15 +901,15 @@ api_conversaciones_expediente:
     idSender: '\d+'
   
 # === API: Buscar Cliente por teléfono o DNI ===
-api_buscar_cliente1:
-  path: /API/BuscarCliente1
-  controller: AppBundle:BotApi:buscarCliente1
+api_bot_buscar_cliente:
+  path: /API/BotBuscarCliente
+  controller: AppBundle:BotApi:botBuscarCliente
   methods: [GET, POST]
 
 # === API: Buscar Expediente por id, teléfono o DNI ===
-api_buscar_expediente1:
-  path: /API/BuscarExpediente1
-  controller: AppBundle:BotApi:buscarExpediente1
+api_bot_buscar_expediente:
+  path: /API/BotBuscarExpediente
+  controller: AppBundle:BotApi:botBuscarExpediente
   methods: [GET, POST]
 
 api_bot_crear_cliente:

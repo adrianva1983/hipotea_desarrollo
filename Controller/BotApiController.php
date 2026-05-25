@@ -858,7 +858,7 @@ class BotApiController extends Controller
 	 * Endpoint API para buscar cliente por teléfono o DNI
 	 * Permite GET o POST, recibe 'telefono' o 'dni' y devuelve datos básicos del cliente
 	 */
-	public function buscarCliente1Action(Request $request)
+	public function botBuscarClienteAction(Request $request)
 	{
 		// Requiere API key para este endpoint
 		if (!$this->checkApiKey($request)) {
@@ -946,7 +946,7 @@ class BotApiController extends Controller
 	/**
 	 * Endpoint API para buscar expedientes por ID, teléfono o DNI del cliente
 	 */
-	public function buscarExpediente1Action(Request $request)
+	public function botBuscarExpedienteAction(Request $request)
 	{
 		// Requiere API key
 		if (!$this->checkApiKey($request)) {
