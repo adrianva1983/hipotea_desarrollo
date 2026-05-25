@@ -1108,4 +1108,123 @@ class BotApiController extends Controller
 
 		return $isValid;
 	}
+	public function botCrearClienteAction(Request $request)
+	{
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+
+		$nombre = trim($request->request->get('nombre') ?: $request->query->get('nombre'));
+		$apellidos = trim($request->request->get('apellidos') ?: $request->query->get('apellidos'));
+		$telefono = trim($request->request->get('telefono') ?: $request->query->get('telefono'));
+		$email = trim($request->request->get('email') ?: $request->query->get('email'));
+		$dni = trim($request->request->get('dni') ?: $request->query->get('dni'));
+
+		if (!$nombre || !$apellidos || !$telefono) {
+			return new JsonResponse(['success' => false, 'error' => 'Faltan parámetros requeridos (nombre, apellidos, telefono)'], 400);
+		}
+
+		$usuarioExistente = $this->getDoctrine()->getRepository('AppBundle:Usuario')->findOneBy(['telefono' => $telefono]);
+		if ($usuarioExistente) {
+			return new JsonResponse(['success' => false, 'error' => 'Ya existe un cliente registrado con ese teléfono', 'cliente' => $usuarioExistente->getNombre()], 409);
+		}
+
+		try {
+			$cliente = new \AppBundle\Entity\Usuario();
+			$cliente->setNombre($nombre);
+			$cliente->setApellidos($apellidos);
+			$cliente->setTelefono($telefono);
+			if ($email) $cliente->setEmail($email);
+			if ($dni) $cliente->setDni($dni);
+			$cliente->setUsername($telefono);
+			$cliente->setRole('ROLE_CLIENTE');
+			$cliente->setEstado(1);
+			$cliente->setFechaAlta(new \DateTime());
+			$cliente->setPassword(md5(uniqid()));
+
+			$em = $this->getDoctrine()->getManager();
+			$em->persist($cliente);
+			$em->flush();
+
+			return new JsonResponse(['success' => true, 'mensaje' => 'Cliente creado correctamente', 'id' => $cliente->getIdUsuario()]);
+		} catch (\Exception $e) {
+			return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+		}
+	}
+
+	public function botCrearExpedienteAction(Request $request)
+	{
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+
+		$identificador = trim($request->request->get('identificador') ?: $request->query->get('identificador'));
+		if (!$identificador) {
+			return new JsonResponse(['success' => false, 'error' => 'Falta identificador (teléfono o DNI)'], 400);
+		}
+
+		$repoUsuario = $this->getDoctrine()->getRepository('AppBundle:Usuario');
+		$cliente = $repoUsuario->findOneBy(['telefono' => $identificador]);
+		if (!$cliente) {
+			$cliente = $repoUsuario->findOneBy(['dni' => $identificador]);
+		}
+
+		if (!$cliente) {
+			return new JsonResponse(['success' => false, 'error' => 'Cliente no encontrado'], 404);
+		}
+
+		try {
+			$expediente = new \AppBundle\Entity\Expediente();
+			$expediente->setIdCliente($cliente);
+			$expediente->setEstado('1');
+			$expediente->setFechaEntrada(new \DateTime());
+			$expediente->setFechaModificacion(new \DateTime());
+
+			$em = $this->getDoctrine()->getManager();
+			$em->persist($expediente);
+			$em->flush();
+
+			return new JsonResponse([
+				'success' => true,
+				'mensaje' => 'Expediente creado correctamente',
+				'id_expediente' => $expediente->getIdExpediente(),
+				'cliente_nombre' => $cliente->getNombre(),
+				'cliente_apellidos' => $cliente->getApellidos()
+			]);
+		} catch (\Exception $e) {
+			return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+		}
+	}
+
+	public function botCalcularCuotaAction(Request $request)
+	{
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+		return $this->calcularSencillaAction($request);
+	}
+
+	public function botCalcularPrecioMaximoAction(Request $request)
+	{
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+		return $this->calcularPrecioMaximoAction($request);
+	}
+
+	public function botCalcularCuotaGastosAction(Request $request)
+	{
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+		return $this->calcularCuotaGastosAction($request);
+	}
+
+	public function botSimularViabilidadAction(Request $request)
+	{
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+		return $this->simularViabilidadAction($request);
+	}
 }

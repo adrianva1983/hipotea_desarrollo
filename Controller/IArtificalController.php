@@ -729,7 +729,7 @@ class IArtificalController extends Controller
             ]);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Aumentado a 30s para acomodar historiales largos
 
             error_log('GeminiAPI - Enviando request a API...');
             
@@ -744,8 +744,9 @@ class IArtificalController extends Controller
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 $curlError = curl_error($ch);
 
-                if ($httpCode === 503 || $httpCode === 429) {
-                    error_log("GeminiAPI - Intento $attempt fallido con HTTP $httpCode. Reintentando en $retryDelay ms...");
+                // Reintentar si la API está sobrecargada (503/429) o si hay un timeout de conexión (HTTP 0)
+                if ($httpCode === 503 || $httpCode === 429 || $httpCode === 0) {
+                    error_log("GeminiAPI - Intento $attempt fallido con HTTP $httpCode (Error: $curlError). Reintentando en $retryDelay ms...");
                     usleep($retryDelay * 1000);
                     $retryDelay *= 2; // Backoff exponencial
                     continue;

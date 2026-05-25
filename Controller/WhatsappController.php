@@ -4169,12 +4169,74 @@ class WhatsappController extends Controller
                 // Devuelven el texto conversacional y avisan que están en desarrollo
                 // ─────────────────────────────────────────────────────────────
                 case 'habilidad_crear_expediente':
-                    // TODO: Llamar a la API de creación de expediente
-                    return $textoConversacional;
+                    if (!empty($parametroHabilidad)) {
+                        $identificador = trim($parametroHabilidad);
+                        
+                        $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                            '/API/BotCrearExpediente',
+                            'POST',
+                            ['api_key' => '123456', 'identificador' => $identificador]
+                        );
+                        
+                        try {
+                            $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                            $data = json_decode($response->getContent(), true);
+                            
+                            if ($response->getStatusCode() === 200 && $data['success']) {
+                                return $textoConversacional . "\n\n✅ Expediente creado correctamente para el cliente *" . $data['cliente_nombre'] . " " . $data['cliente_apellidos'] . "*. ID de Expediente: " . $data['id_expediente'];
+                            } elseif ($response->getStatusCode() === 404) {
+                                return $textoConversacional . "\n\n⚠️ No he encontrado ningún cliente con el teléfono o DNI " . $identificador . ". Por favor, créalo primero.";
+                            } else {
+                                return $textoConversacional . "\n\n❌ Hubo un error al intentar crear el expediente: " . ($data['error'] ?? 'Desconocido');
+                            }
+                        } catch (\Exception $e) {
+                            $this->logear('⚠️ Error al crear expediente vía API: ' . $e->getMessage());
+                            return $textoConversacional . "\n\n❌ Hubo un error al intentar crear el expediente.";
+                        }
+                    }
+                    return $textoConversacional . "\n\nPara crear un expediente necesito el teléfono o DNI del cliente. ¿Me lo indicas?";
 
                 case 'habilidad_crear_cliente':
-                    // TODO: Llamar a la API de creación de cliente
-                    return $textoConversacional;
+                    if (!empty($parametroHabilidad)) {
+                        $partes = explode('|', $parametroHabilidad);
+                        if (count($partes) >= 3) {
+                            $nombre = trim($partes[0]);
+                            $apellidos = trim($partes[1]);
+                            $telefono = trim($partes[2]);
+                            $email = isset($partes[3]) ? trim($partes[3]) : '';
+                            $dni = isset($partes[4]) ? trim($partes[4]) : '';
+                            
+                            $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                                '/API/BotCrearCliente',
+                                'POST',
+                                [
+                                    'api_key' => '123456',
+                                    'nombre' => $nombre,
+                                    'apellidos' => $apellidos,
+                                    'telefono' => $telefono,
+                                    'email' => $email,
+                                    'dni' => $dni
+                                ]
+                            );
+                            
+                            try {
+                                $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                                $data = json_decode($response->getContent(), true);
+                                
+                                if ($response->getStatusCode() === 200 && $data['success']) {
+                                    return $textoConversacional . "\n\n✅ Cliente *" . $nombre . " " . $apellidos . "* registrado correctamente con teléfono " . $telefono . ".";
+                                } elseif ($response->getStatusCode() === 409) {
+                                    return $textoConversacional . "\n\n⚠️ Ya existe un cliente registrado con el teléfono " . $telefono . " (" . $data['cliente'] . ").";
+                                } else {
+                                    return $textoConversacional . "\n\n❌ Hubo un error al intentar registrar el cliente: " . ($data['error'] ?? 'Desconocido');
+                                }
+                            } catch (\Exception $e) {
+                                $this->logear('⚠️ Error al crear cliente vía API: ' . $e->getMessage());
+                                return $textoConversacional . "\n\n❌ Hubo un error al intentar registrar el cliente.";
+                            }
+                        }
+                    }
+                    return $textoConversacional . "\n\nPara crear el cliente necesito al menos: Nombre, Apellidos y Teléfono. ¿Me los indicas?";
 
                 case 'habilidad_calcular_cuota':
                     if (!empty($parametroHabilidad)) {
@@ -4184,19 +4246,30 @@ class WhatsappController extends Controller
                             $plazo = (int) trim($partes[1]);
                             $interes = (float) str_replace(',', '.', trim($partes[2]));
                             
+                            $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                                '/API/BotCalcularCuota',
+                                'POST',
+                                [],
+                                [],
+                                [],
+                                ['CONTENT_TYPE' => 'application/json'],
+                                json_encode([
+                                    'api_key' => '123456',
+                                    'precio_vivienda' => $importe,
+                                    'aportacion' => 0,
+                                    'plazo' => $plazo,
+                                    'tipo_interes' => $interes
+                                ])
+                            );
+                            
                             try {
-                                $calc = new \AppBundle\Entity\CalculadoraSencilla();
-                                $calc->setPrecioTotal($importe);
-                                $calc->setAportacionInicial(0); // Para que el importe a financiar sea el total
-                                $calc->setPlazoAmortizacion($plazo);
-                                $calc->setTasaInteres($interes);
+                                $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                                $datos = json_decode($response->getContent(), true);
                                 
-                                $resultado = $calc->calcularHipoteca();
-                                
-                                if (isset($resultado['fee'])) {
-                                    $cuota = number_format($resultado['fee'], 2, ',', '.');
-                                    $interesesTotales = number_format($resultado['interest_discharged_total'], 2, ',', '.');
-                                    $totalDevolver = number_format($importe + $resultado['interest_discharged_total'], 2, ',', '.');
+                                if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0) {
+                                    $cuota = number_format($datos['fee'], 2, ',', '.');
+                                    $interesesTotales = number_format($datos['interest_discharged_total'], 2, ',', '.');
+                                    $totalDevolver = number_format($importe + $datos['interest_discharged_total'], 2, ',', '.');
                                     
                                     return $textoConversacional . "\n\n📋 *Resultado de la simulación:*\n" .
                                            "• *Importe:* " . number_format($importe, 0, ',', '.') . " €\n" .
@@ -4207,22 +4280,153 @@ class WhatsappController extends Controller
                                            "📈 *Total a devolver:* " . $totalDevolver . " €";
                                 }
                             } catch (\Exception $e) {
-                                $this->logear('⚠️ Error en calculadora sencilla: ' . $e->getMessage());
+                                $this->logear('⚠️ Error en calculadora sencilla API: ' . $e->getMessage());
                             }
                         }
                     }
                     return $textoConversacional . "\n\nPara calcular la cuota necesito: importe del préstamo, plazo en años y tipo de interés. ¿Me los puedes indicar?";
 
                 case 'habilidad_calcular_precio_maximo':
-                    // TODO: Llamar a calculadora de precio máximo
+                    if (!empty($parametroHabilidad)) {
+                        $partes = explode('|', $parametroHabilidad);
+                        if (count($partes) >= 2) {
+                            $ingresos = (float) trim($partes[0]);
+                            $deudas = (float) trim($partes[1]);
+                            
+                            $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                                '/API/BotCalcularPrecioMaximo',
+                                'POST',
+                                [
+                                    'api_key' => '123456',
+                                    'ingresosMensuales' => $ingresos,
+                                    'prestamosMensuales' => $deudas,
+                                    'plazoAmortizacion' => 30, // default
+                                    'comunidadAutonoma' => 1, // default
+                                    'edad' => 35
+                                ]
+                            );
+                            
+                            try {
+                                $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                                $datos = json_decode($response->getContent(), true);
+
+                                if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos'])) {
+                                    $res = $datos['datos'];
+                                    $precioMaximo = number_format($res['importe_fijo'], 0, ',', '.');
+                                    $cuota = number_format($res['cuota'], 2, ',', '.');
+                                    
+                                    return $textoConversacional . "\n\n🏠 *Resultado Precio Máximo:*\n" .
+                                           "• *Ingresos:* " . number_format($ingresos, 0, ',', '.') . " €\n" .
+                                           "• *Deudas:* " . number_format($deudas, 0, ',', '.') . " €\n\n" .
+                                           "💰 *Precio máximo recomendado:* " . $precioMaximo . " €\n" .
+                                           "📊 *Cuota estimada:* " . $cuota . " €/mes";
+                                }
+                            } catch (\Exception $e) {
+                                $this->logear('⚠️ Error en precio maximo API: ' . $e->getMessage());
+                            }
+                        }
+                    }
                     return $textoConversacional . "\n\nPara calcular el precio máximo necesito: ingresos netos mensuales y deudas actuales. ¿Me los facilitas?";
 
                 case 'habilidad_calcular_cuota_gastos':
-                    // TODO: Llamar a calculadora con gastos
-                    return $textoConversacional . "\n\nPara el cálculo completo con gastos necesito: importe, plazo, tipo de interés y comunidad autónoma. ¿Me los indicas?";
+                    if (!empty($parametroHabilidad)) {
+                        $partes = explode('|', $parametroHabilidad);
+                        if (count($partes) >= 2) {
+                            $importe = (float) trim($partes[0]);
+                            $plazo = (int) trim($partes[1]);
+                            
+                            $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                                '/API/BotCalcularCuotaGastos',
+                                'POST',
+                                [
+                                    'api_key' => '123456',
+                                    'valorInmueble' => $importe,
+                                    'plazoAmortizacion' => $plazo,
+                                    'aportacionInicial' => $importe * 0.20,
+                                    'comunidadAutonoma' => 1,
+                                    'edad' => 35
+                                ]
+                            );
+                            
+                            try {
+                                $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                                $datos = json_decode($response->getContent(), true);
+
+                                if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos'])) {
+                                    $res = $datos['datos'];
+                                    $gastos = number_format($res['gastos'], 0, ',', '.');
+                                    $cuota = number_format($res['cuota'], 2, ',', '.');
+                                    $notaria = number_format($res['notario'], 0, ',', '.');
+                                    $registro = number_format($res['registro'], 0, ',', '.');
+                                    $impuestos = number_format($res['escritura_compra_impuesto_transmisiones'], 0, ',', '.');
+
+                                    return $textoConversacional . "\n\n📋 *Resultado Cuota y Gastos:*\n" .
+                                           "• *Valor Inmueble:* " . number_format($importe, 0, ',', '.') . " €\n" .
+                                           "• *Plazo:* " . $plazo . " años\n\n" .
+                                           "💰 *Cuota mensual:* " . $cuota . " €\n" .
+                                           "💸 *Gastos totales aprox:* " . $gastos . " €\n" .
+                                           "   - Notaría: " . $notaria . " €\n" .
+                                           "   - Registro: " . $registro . " €\n" .
+                                           "   - Impuestos: " . $impuestos . " €";
+                                }
+                            } catch (\Exception $e) {
+                                $this->logear('⚠️ Error en cuota y gastos API: ' . $e->getMessage());
+                            }
+                        }
+                    }
+                    return $textoConversacional . "\n\nPara el cálculo completo con gastos necesito: importe, plazo, e interés. ¿Me los indicas?";
 
                 case 'habilidad_simular_viabilidad':
-                    // TODO: Llamar a SimuladorViabilidadController
+                    if (!empty($parametroHabilidad)) {
+                        $partes = explode('|', $parametroHabilidad);
+                        if (count($partes) >= 4) {
+                            $ingresos = (float) trim($partes[0]);
+                            $deudas = (float) trim($partes[1]);
+                            $ahorros = (float) trim($partes[2]);
+                            $valor = (float) trim($partes[3]);
+                            
+                            $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                                '/API/BotSimularViabilidad',
+                                'POST',
+                                [
+                                    'api_key' => '123456',
+                                    'ingresosMensuales' => $ingresos,
+                                    'prestamosMensuales' => $deudas,
+                                    'aportacionInicial' => $ahorros,
+                                    'valorInmueble' => $valor,
+                                    'tienePrestamosImpagados' => false,
+                                    'situacionLaboral' => 'contrato_indefinido',
+                                    'antiguedadLaboral' => 'mas_2_anios',
+                                    'plazoAmortizacion' => 30,
+                                    'edad' => 35
+                                ]
+                            );
+                            
+                            try {
+                                $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                                $datos = json_decode($response->getContent(), true);
+
+                                if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos']['resultado'])) {
+                                    $res = $datos['datos']['resultado'];
+                                    
+                                    $semaforoEmoji = '🟡';
+                                    if ($res['semaforo'] == 'verde') $semaforoEmoji = '🟢';
+                                    if ($res['semaforo'] == 'rojo') $semaforoEmoji = '🔴';
+
+                                    $motivosTxt = "";
+                                    foreach ($res['motivos'] as $motivo) {
+                                        $motivosTxt .= "   - " . $motivo['mensaje'] . "\n";
+                                    }
+
+                                    return $textoConversacional . "\n\n" . $semaforoEmoji . " *Simulación de Viabilidad:*\n" .
+                                           "• *Resultado:* " . $res['mensaje'] . "\n\n" .
+                                           "🔍 *Detalles:*\n" . $motivosTxt;
+                                }
+                            } catch (\Exception $e) {
+                                $this->logear('⚠️ Error en simular viabilidad API: ' . $e->getMessage());
+                            }
+                        }
+                    }
                     return $textoConversacional . "\n\nPara simular la viabilidad necesito: ingresos netos, deudas actuales, ahorros disponibles e importe de la vivienda. ¿Me los facilitas?";
 
                 default:

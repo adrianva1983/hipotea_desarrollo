@@ -912,6 +912,37 @@ api_buscar_expediente1:
   controller: AppBundle:BotApi:buscarExpediente1
   methods: [GET, POST]
 
+api_bot_crear_cliente:
+  path: /API/BotCrearCliente
+  controller: AppBundle:BotApi:botCrearCliente
+  methods: [POST]
+
+api_bot_crear_expediente:
+  path: /API/BotCrearExpediente
+  controller: AppBundle:BotApi:botCrearExpediente
+  methods: [POST]
+
+api_bot_calcular_cuota:
+  path: /API/BotCalcularCuota
+  controller: AppBundle:BotApi:botCalcularCuota
+  methods: [GET, POST]
+
+api_bot_calcular_precio_maximo:
+  path: /API/BotCalcularPrecioMaximo
+  controller: AppBundle:BotApi:botCalcularPrecioMaximo
+  methods: [GET, POST]
+
+api_bot_calcular_cuota_gastos:
+  path: /API/BotCalcularCuotaGastos
+  controller: AppBundle:BotApi:botCalcularCuotaGastos
+  methods: [GET, POST]
+
+api_bot_simular_viabilidad:
+  path: /API/BotSimularViabilidad
+  controller: AppBundle:BotApi:botSimularViabilidad
+  methods: [GET, POST]
+
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }
