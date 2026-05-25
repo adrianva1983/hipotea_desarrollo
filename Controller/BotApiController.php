@@ -1126,19 +1126,18 @@ class BotApiController extends Controller
 
 		$usuarioExistente = $this->getDoctrine()->getRepository('AppBundle:Usuario')->findOneBy(['telefonoMovil' => $telefono]);
 		if ($usuarioExistente) {
-			return new JsonResponse(['success' => false, 'error' => 'Ya existe un cliente registrado con ese teléfono', 'cliente' => $usuarioExistente->getNombre()], 409);
+			return new JsonResponse(['success' => false, 'error' => 'Ya existe un cliente registrado con ese teléfono', 'cliente' => $usuarioExistente->getUsername()], 409);
 		}
 
 		try {
 			$cliente = new \AppBundle\Entity\Usuario();
-			$cliente->setNombre($nombre);
+			$cliente->setUsername($nombre);
 			$cliente->setApellidos($apellidos);
 			$cliente->setTelefonoMovil($telefono);
 			if ($email)
 				$cliente->setEmail($email);
 			if ($dni)
 				$cliente->setNif($dni);
-			$cliente->setUsername($telefono);
 			$cliente->setRole('ROLE_CLIENTE');
 			$cliente->setEstado(1);
 			$cliente->setFechaRegistro(new \DateTime());
@@ -1190,7 +1189,7 @@ class BotApiController extends Controller
 				'success' => true,
 				'mensaje' => 'Expediente creado correctamente',
 				'id_expediente' => $expediente->getIdExpediente(),
-				'cliente_nombre' => $cliente->getNombre(),
+				'cliente_nombre' => $cliente->getUsername(),
 				'cliente_apellidos' => $cliente->getApellidos()
 			]);
 		} catch (\Exception $e) {
