@@ -454,6 +454,8 @@ class BotApiController extends Controller
 				$productoValue = 3;
 			}
 			$calculadora->setProducto((int) $productoValue);
+		} else {
+			$calculadora->setProducto(1);
 		}
 		if (isset($data['valorViviendaActual'])) {
 			$calculadora->setValorViviendaActual((double) $data['valorViviendaActual']);
@@ -497,7 +499,21 @@ class BotApiController extends Controller
 			$calculadora->setTipologiaOperacion((int) $data['tipologiaOperacion']);
 		}
 		if (isset($data['comunidadAutonoma'])) {
-			$calculadora->setComunidadAutonoma((int) $data['comunidadAutonoma']);
+			$ccaa = $data['comunidadAutonoma'];
+			if (!is_numeric($ccaa)) {
+				$ccaaStr = strtolower(preg_replace('/[^a-zA-Z0-9 ]/', '', iconv('UTF-8', 'ASCII//TRANSLIT', $ccaa)));
+				$map = [
+					'andalucia' => 1, 'aragon' => 2, 'asturias' => 3, 'baleares' => 4,
+					'canarias' => 5, 'cantabria' => 6, 'castilla la mancha' => 7, 'castilla y leon' => 8,
+					'cataluna' => 9, 'catalunya' => 9, 'ceuta' => 10, 'comunidad valenciana' => 11,
+					'valencia' => 11, 'extremadura' => 12, 'galicia' => 13, 'la rioja' => 14, 'rioja' => 14,
+					'madrid' => 15, 'melilla' => 16, 'murcia' => 17, 'navarra' => 18, 'pais vasco' => 19
+				];
+				$ccaa = isset($map[$ccaaStr]) ? $map[$ccaaStr] : 1;
+			}
+			$calculadora->setComunidadAutonoma((int) $ccaa);
+		} else {
+			$calculadora->setComunidadAutonoma(1);
 		}
 		if (isset($data['obraNueva'])) {
 			$calculadora->setObraNueva((bool) $data['obraNueva']);
