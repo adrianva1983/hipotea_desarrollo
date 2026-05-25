@@ -3994,7 +3994,7 @@ class WhatsappController extends Controller
         }
 
         // Extraer el texto de la IA sin el token de activación (parte conversacional)
-        $textoConversacional = preg_replace('/\[Habilidad[^\]]+identificada\]/i', '', $mensajeIA);
+        $textoConversacional = preg_replace('/\[Habilidad[^\]]+\]/i', '', $mensajeIA);
         $textoConversacional = trim($textoConversacional);
 
         try {
