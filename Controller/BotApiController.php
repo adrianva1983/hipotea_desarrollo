@@ -55,11 +55,28 @@ class BotApiController extends Controller
 
 			if (count($violaciones) === 0) {
 				$resultadoHipoteca = $calculadora->calcularHipoteca();
+				
+				$hipoteca = $resultadoHipoteca['capital_less_initial_amount'];
+				$pago_mensual = $resultadoHipoteca['fee'];
+				$plazo = $calculadora->getPlazoAmortizacion();
+				
+				// Formatear el precio sin decimales y la cuota con 2 decimales
+				$hipotecaFmt = number_format($hipoteca, 0, ',', '');
+				$pagoFmt = number_format($pago_mensual, 2, '.', '');
+				
+				$mensaje_texto = sprintf(
+					"Para una hipoteca de %s € amortizada en %s año(s), tu pago mensual es de: %s €",
+					$hipotecaFmt,
+					$plazo,
+					$pagoFmt
+				);
+
 				$respuesta['datos'] = array(
-					'hipoteca' => $resultadoHipoteca['capital_less_initial_amount'],
-					'pago_mensual' => $resultadoHipoteca['fee'],
+					'hipoteca' => $hipoteca,
+					'pago_mensual' => $pago_mensual,
 					'hipoteca_total_con_interes' => $resultadoHipoteca['capital_less_initial_amount'] + $resultadoHipoteca['interest_discharged_total'],
-					'total_con_anticipo' => $calculadora->getPrecioTotal() + $resultadoHipoteca['interest_discharged_total']
+					'total_con_anticipo' => $calculadora->getPrecioTotal() + $resultadoHipoteca['interest_discharged_total'],
+					'mensaje_texto' => $mensaje_texto
 				);
 			} else {
 				$respuesta['errorlevel'] = 1;
