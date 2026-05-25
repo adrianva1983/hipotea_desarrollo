@@ -1129,6 +1129,13 @@ class BotApiController extends Controller
 			return new JsonResponse(['success' => false, 'error' => 'Ya existe un cliente registrado con ese teléfono', 'cliente' => $usuarioExistente->getUsername()], 409);
 		}
 
+		if ($dni) {
+			$usuarioDni = $this->getDoctrine()->getRepository('AppBundle:Usuario')->findOneBy(['nif' => $dni]);
+			if ($usuarioDni) {
+				return new JsonResponse(['success' => false, 'error' => 'Ya existe un cliente registrado con ese DNI', 'cliente' => $usuarioDni->getUsername()], 409);
+			}
+		}
+
 		try {
 			$cliente = new \AppBundle\Entity\Usuario();
 			$cliente->setUsername($nombre);
