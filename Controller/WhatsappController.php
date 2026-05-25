@@ -4241,10 +4241,11 @@ class WhatsappController extends Controller
                 case 'habilidad_calcular_cuota':
                     if (!empty($parametroHabilidad)) {
                         $partes = explode('|', $parametroHabilidad);
-                        if (count($partes) === 3) {
-                            $importe = (float) trim($partes[0]);
-                            $plazo = (int) trim($partes[1]);
-                            $interes = (float) str_replace(',', '.', trim($partes[2]));
+                        if (count($partes) === 4) {
+                            $precio = (float) trim($partes[0]);
+                            $aporte = (float) trim($partes[1]);
+                            $plazo = (int) trim($partes[2]);
+                            $interes = (float) str_replace(',', '.', trim($partes[3]));
                             
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotCalcularCuota',
@@ -4255,10 +4256,10 @@ class WhatsappController extends Controller
                                 ['CONTENT_TYPE' => 'application/json'],
                                 json_encode([
                                     'api_key' => '123456',
-                                    'precio_vivienda' => $importe,
-                                    'aportacion' => 0,
-                                    'plazo' => $plazo,
-                                    'tipo_interes' => $interes
+                                    'precioTotal' => $precio,
+                                    'aportacionInicial' => $aporte,
+                                    'plazoAmortizacion' => $plazo,
+                                    'tasaInteres' => $interes
                                 ])
                             );
                             
@@ -4267,24 +4268,14 @@ class WhatsappController extends Controller
                                 $datos = json_decode($response->getContent(), true);
                                 
                                 if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0) {
-                                    $cuota = number_format($datos['fee'], 2, ',', '.');
-                                    $interesesTotales = number_format($datos['interest_discharged_total'], 2, ',', '.');
-                                    $totalDevolver = number_format($importe + $datos['interest_discharged_total'], 2, ',', '.');
-                                    
-                                    return $textoConversacional . "\n\n📋 *Resultado de la simulación:*\n" .
-                                           "• *Importe:* " . number_format($importe, 0, ',', '.') . " €\n" .
-                                           "• *Plazo:* " . $plazo . " años\n" .
-                                           "• *Interés anual:* " . number_format($interes, 2, ',', '.') . " %\n\n" .
-                                           "💰 *Cuota mensual estimada:* " . $cuota . " €\n" .
-                                           "📊 *Total intereses:* " . $interesesTotales . " €\n" .
-                                           "📈 *Total a devolver:* " . $totalDevolver . " €";
+                                    return $textoConversacional . "\n\n" . $datos['datos']['mensaje_texto'];
                                 }
                             } catch (\Exception $e) {
                                 $this->logear('⚠️ Error en calculadora sencilla API: ' . $e->getMessage());
                             }
                         }
                     }
-                    return $textoConversacional . "\n\nPara calcular la cuota necesito: importe del préstamo, plazo en años y tipo de interés. ¿Me los puedes indicar?";
+                    return $textoConversacional . "\n\nPara calcular la cuota necesito: valor del inmueble, aporte inicial, plazo en años y tipo de interés. ¿Me los puedes indicar?";
 
                 case 'habilidad_calcular_precio_maximo':
                     if (!empty($parametroHabilidad)) {
