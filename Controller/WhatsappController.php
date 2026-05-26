@@ -4464,17 +4464,20 @@ class WhatsappController extends Controller
                 case 'habilidad_simular_viabilidad':
                     if (!empty($parametroHabilidad)) {
                         $partes = explode('|', $parametroHabilidad);
-                        if (count($partes) >= 4) {
+                        if (count($partes) >= 7) {
                             $ingresos = (float) trim($partes[0]);
                             $deudas = (float) trim($partes[1]);
                             $ahorros = (float) trim($partes[2]);
                             $valor = (float) trim($partes[3]);
-                            $plazo = isset($partes[4]) && trim($partes[4]) !== '' ? (int) trim($partes[4]) : 30;
-                            $comunidad = isset($partes[5]) && trim($partes[5]) !== '' ? trim($partes[5]) : 'Andalucia';
-                            $edad = isset($partes[6]) && trim($partes[6]) !== '' ? (int) trim($partes[6]) : 35;
-                            $obraNueva = isset($partes[7]) && strtolower(trim($partes[7])) === 'true';
-                            $discapacidad = isset($partes[8]) && strtolower(trim($partes[8])) === 'true';
-                            $familiaNumerosa = isset($partes[9]) && strtolower(trim($partes[9])) === 'true';
+                            $situacionLaboral = isset($partes[4]) && trim($partes[4]) !== '' ? trim($partes[4]) : 'contrato_indefinido';
+                            $antiguedadLaboral = isset($partes[5]) && trim($partes[5]) !== '' ? trim($partes[5]) : 'mas_2_anios';
+                            $impagos = isset($partes[6]) && strtolower(trim($partes[6])) === 'true';
+                            $plazo = isset($partes[7]) && trim($partes[7]) !== '' ? (int) trim($partes[7]) : 30;
+                            $comunidad = isset($partes[8]) && trim($partes[8]) !== '' ? trim($partes[8]) : 'Andalucia';
+                            $edad = isset($partes[9]) && trim($partes[9]) !== '' ? (int) trim($partes[9]) : 35;
+                            $obraNueva = isset($partes[10]) && strtolower(trim($partes[10])) === 'true';
+                            $discapacidad = isset($partes[11]) && strtolower(trim($partes[11])) === 'true';
+                            $familiaNumerosa = isset($partes[12]) && strtolower(trim($partes[12])) === 'true';
                             
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotSimularViabilidad',
@@ -4489,9 +4492,9 @@ class WhatsappController extends Controller
                                     'prestamosMensuales' => $deudas,
                                     'aportacionInicial' => $ahorros,
                                     'valorInmueble' => $valor,
-                                    'tienePrestamosImpagados' => false,
-                                    'situacionLaboral' => 'contrato_indefinido',
-                                    'antiguedadLaboral' => 'mas_2_anios',
+                                    'tienePrestamosImpagados' => $impagos,
+                                    'situacionLaboral' => $situacionLaboral,
+                                    'antiguedadLaboral' => $antiguedadLaboral,
                                     'plazoAmortizacion' => $plazo,
                                     'comunidadAutonoma' => $comunidad,
                                     'edad' => $edad,
@@ -4522,11 +4525,11 @@ class WhatsappController extends Controller
                                            "🔍 *Detalles:*\n" . $motivosTxt;
                                 }
                             } catch (\Exception $e) {
-                                $this->logear('⚠️ Error en simular viabilidad API: ' . $e->getMessage());
+                                return $textoConversacional . "\n\n❌ Excepción del sistema: " . $e->getMessage();
                             }
                         }
                     }
-                    return $textoConversacional . "\n\nPara simular la viabilidad necesito: ingresos netos, deudas actuales, ahorros disponibles e importe de la vivienda. ¿Me los facilitas?";
+                    return $textoConversacional . "\n\nPara simular la viabilidad necesito conocer de forma obligatoria estos datos: *ingresos netos mensuales*, *deudas actuales*, *ahorros aportados*, *valor de compra*, tu *situación laboral* (si eres indefinido, autónomo...), tu *antigüedad en el puesto*, y si tienes *impagos* (ASNEF). ¿Me los facilitas?";
 
                 default:
                     return null;
