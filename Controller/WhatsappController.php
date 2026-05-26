@@ -3781,26 +3781,26 @@ class WhatsappController extends Controller
                         $isDespedida = preg_match('/^(gracias|muchas gracias|perfecto|ok|vale|adios|adiós|hasta luego|chao|genial|entendido)\b/i', $bodyClean) && strlen($bodyClean) < 25;
 
                         if ($isAyuda) {
-                            $mensajeRespuestaAutomatica = "🤖 *SISTEMA DE AYUDA - HABILIDADES DE MAX*\n\n"
-                                . "Puedes hablarme de forma natural para ejecutar cualquiera de estas acciones. Si me falta algún dato, te lo pediré:\n\n"
-                                . "🔍 *BÚSQUEDAS*\n"
-                                . "• *Buscar cliente:* Necesito su teléfono o DNI.\n"
-                                . "• *Buscar expediente:* Necesito su ID, Referencia, teléfono o DNI.\n\n"
-                                . "📝 *GESTIÓN*\n"
-                                . "• *Crear cliente:* Necesito Nombre, Apellidos y Teléfono (email y DNI opcionales).\n"
-                                . "• *Crear expediente:* Necesito el teléfono o DNI del cliente a asociar.\n"
-                                . "• *Modificar expediente:* Necesito la Referencia/ID y el dato exacto a cambiar.\n\n"
-                                . "🧮 *CALCULADORAS Y SIMULACIONES*\n"
-                                . "• *Calcular cuota:* Necesito Valor del inmueble, Aportación inicial, Plazo e Interés.\n"
-                                . "• *Calcular cuota y gastos:* Igual que el anterior, suma gastos de notaría/impuestos.\n"
-                                . "• *Calcular precio máximo:* Necesito Ingresos netos, Deudas actuales, Ahorros y Edad.\n"
-                                . "• *Simular viabilidad:* Necesito Ingresos, Deudas, Ahorros, Valor de compra, Situación laboral, Antigüedad e Impagos.\n\n"
-                                . "👉 Simplemente dime qué quieres hacer (ej: _'Búscame al cliente 600000000'_ o _'Simula viabilidad para...'_).";
+                            $saludoAyuda = $nombreCorto ? "¡Hola, $nombreCorto!" : "¡Hola!";
+                            $mensajeRespuestaAutomatica = "🤖 $saludoAyuda Soy MAX, tu asistente. Aquí tienes un resumen de lo que puedo hacer para facilitarte el día:\n\n"
+                                . "🔍 *Si necesitas buscar algo:*\n"
+                                . "• *Cliente:* Solo dime su teléfono o DNI y te saco la ficha.\n"
+                                . "• *Expediente:* Pásame su ID, la Referencia (EXP-...), el teléfono o el DNI del cliente y te lo busco.\n\n"
+                                . "📝 *Si necesitas crear o editar:*\n"
+                                . "• *Nuevo cliente:* Dame su Nombre, Apellidos y Teléfono (el email y el DNI son opcionales, pero si los tienes, geniales).\n"
+                                . "• *Nuevo expediente:* Dime a qué teléfono o DNI se lo asociamos y te lo abro enseguida.\n"
+                                . "• *Modificar expediente:* Dime de qué expediente hablamos (ej. EXP-123) y el dato exacto que quieres actualizar.\n\n"
+                                . "🧮 *Si necesitas que calcule algo por ti:*\n"
+                                . "• *Cuota simple:* Dame el Valor de la casa, la Aportación inicial, el Plazo y el Interés.\n"
+                                . "• *Cuota con gastos:* Lo mismo de arriba, pero te desgrano la notaría, impuestos, etc.\n"
+                                . "• *Precio máximo:* Dime los Ingresos, Deudas, Ahorros y la Edad, y te digo qué casa se pueden permitir.\n"
+                                . "• *Simular viabilidad:* Necesito Ingresos, Deudas, Ahorros, Valor de compra, Situación laboral, Antigüedad e Impagos para decirte si la operación es viable.\n\n"
+                                . "👉 *Lo más importante:* ¡Háblame como a un compañero más! (Ej: _'Búscame al cliente 600000000'_ o _'Modifica el expediente 123 y pon que es funcionario'_). Si me falta algo para hacer mi magia, yo mismo te lo pediré.";
                         } elseif ($isSaludo) {
                             $saludoNombre = $nombreCorto ? ", $nombreCorto" : "";
-                            $mensajeRespuestaAutomatica = "¡Hola$saludoNombre! Soy MAX 🤖, tu asistente operativo. ¿En qué te puedo ayudar hoy con tus gestiones? (escribe */ayuda* si quieres ver lo que puedo hacer).";
+                            $mensajeRespuestaAutomatica = "¡Hola$saludoNombre! Soy MAX 🤖, tu compi digital. ¿Qué gestión tenemos entre manos hoy? (Recuerda que si me escribes */ayuda* te cuento todo lo que puedo hacer).";
                         } elseif ($isDespedida) {
-                            $mensajeRespuestaAutomatica = "¡A ti! Ya sabes dónde estoy si necesitas que te eche un cable con algo más. ¡A tope! 💪";
+                            $mensajeRespuestaAutomatica = "¡Nada que agradecer! Para eso estamos. Pídeme lo que necesites cuando quieras. ¡A seguir a tope! 💪";
                         } else {
                             try {
                                 $mensajeIA = $this->getIAController()->llamarAPIIA(
