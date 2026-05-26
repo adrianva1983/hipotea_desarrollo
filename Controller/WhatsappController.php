@@ -3791,15 +3791,19 @@ class WhatsappController extends Controller
 
                         $hasCustomPersona = !empty(trim($customPrompt ?? ''));
 
+                        // Eliminar la sección "# Rol y contexto" hardcodeada de system_prompt_crm.md para evitar conflicto de identidades
+                        $partesPrompt = explode("# Habilidades reconocidas y disparadores", $systemPromptCRM);
+                        $habilidadesCRM = count($partesPrompt) > 1 ? "# Habilidades reconocidas y disparadores" . $partesPrompt[1] : $systemPromptCRM;
+
                         if ($hasCustomPersona) {
                             // Sobrescribir la personalidad inicial con la que definió el comercial, manteniendo las reglas del CRM
-                            $systemPromptCRM = "INSTRUCCIONES DE IDENTIDAD Y PERSONALIDAD:\n" . trim($customPrompt) . "\n\n--- INSTRUCCIONES OPERATIVAS Y HABILIDADES CRM (OBLIGATORIAS) ---\n" . $systemPromptCRM;
+                            $systemPromptCRM = "INSTRUCCIONES DE IDENTIDAD Y PERSONALIDAD:\n" . trim($customPrompt) . "\n\n--- INSTRUCCIONES OPERATIVAS Y HABILIDADES CRM (OBLIGATORIAS) ---\n" . $habilidadesCRM;
                             if ($nombreCorto) {
                                 $systemPromptCRM .= "\n\nNOTA DE CONTEXTO: Estás hablando con tu compañero/a comercial llamado/a " . $nombreCorto . ".";
                             }
                         } else {
                             // Si no hay prompt customizado, inyectar el nombre del Bot según la base de datos
-                            $systemPromptCRM = "INSTRUCCIONES DE IDENTIDAD Y PERSONALIDAD:\nTu nombre es " . $nombreBot . ". Eres el asistente operativo del CRM. Habla de forma natural, amistosa y enérgica.\n\n--- INSTRUCCIONES OPERATIVAS Y HABILIDADES CRM (OBLIGATORIAS) ---\n" . $systemPromptCRM;
+                            $systemPromptCRM = "INSTRUCCIONES DE IDENTIDAD Y PERSONALIDAD:\nTu nombre es " . $nombreBot . ". Eres el asistente operativo del CRM. Habla de forma natural, amistosa y enérgica. Tu función principal es interactuar de manera cercana, fluida y veloz con los gestores y comerciales internos de la plataforma, ayudándoles a ser más productivos.\n\n--- INSTRUCCIONES OPERATIVAS Y HABILIDADES CRM (OBLIGATORIAS) ---\n" . $habilidadesCRM;
                             if ($nombreCorto) {
                                 $systemPromptCRM .= "\n\nNOTA DE CONTEXTO: Estás hablando con tu compañero/a comercial llamado/a " . $nombreCorto . ". Úsalo para dirigirte a él/ella por su nombre de forma cercana (ej: '¡Claro que sí, " . $nombreCorto . "!...').";
                             }
