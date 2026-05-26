@@ -4127,7 +4127,7 @@ class WhatsappController extends Controller
                     }
 
                     $sql = 'SELECT u.id_usuario, u.nombre, u.apellidos, u.email, u.telefono_movil, u.nif,
-                                   e.id_expediente, e.estado AS estado_expediente
+                                   e.id_expediente, e.referencia, e.estado AS estado_expediente
                             FROM usuario u
                             LEFT JOIN expediente e ON (e.id_cliente = u.id_usuario AND e.estado > 0)
                             WHERE u.estado = 1
@@ -4156,7 +4156,8 @@ class WhatsappController extends Controller
                     $respuesta .= "• DNI/NIF: " . ($cliente['nif'] ?: 'N/A') . "\n";
                     $respuesta .= "• Email: " . ($cliente['email'] ?: 'N/A') . "\n";
                     if ($cliente['id_expediente']) {
-                        $respuesta .= "• Expediente activo: #{$cliente['id_expediente']}\n";
+                        $refAMostrar = $cliente['referencia'] ? $cliente['referencia'] : $cliente['id_expediente'];
+                        $respuesta .= "• Expediente activo: {$refAMostrar}\n";
                     } else {
                         $respuesta .= "• Sin expediente activo\n";
                     }
