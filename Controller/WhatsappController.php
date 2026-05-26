@@ -3749,6 +3749,13 @@ class WhatsappController extends Controller
 
             if ($direction === 'recibido') {
                 try {
+                    // VERIFICAR PILOTO AUTOMÁTICO
+                    $toPhoneLocal = (strlen($toPhone) > 9) ? substr($toPhone, -9) : $toPhone;
+                    if (!$this->verificarPilotoAutomatico($toPhoneLocal)) {
+                        $this->logear('🛑 Piloto Automático desactivado para ' . $toPhone . '. No se enviará auto-respuesta.');
+                        return new JsonResponse([], 200);
+                    }
+
                     $mensajeRespuestaAutomatica = 'mensaje recibido';
                     $systemPromptCRM = $this->getSystemPromptCRM();
                     $usuarioOrigen = $this->findUserByPhone($fromNorm);
