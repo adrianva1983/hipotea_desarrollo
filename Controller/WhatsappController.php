@@ -4034,7 +4034,8 @@ class WhatsappController extends Controller
                         // Pasar los grupos relevantes: 2 (Titular 1), 3 (Económicos), etc. 
                         // O bien, podemos pasar un rango del 1 al 20 para abarcar la mayoría de grupos
                         $gruposAMapear = range(1, 20); 
-                        $camposProcesados = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
+                        $resultadoGlobal = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
+                        $camposProcesados = $resultadoGlobal['campos_procesados'] ?? [];
                     } catch (\Exception $e) {
                         return $textoConversacional . "\n\n❌ Hubo un error al conectar con la IA de extracción: " . $e->getMessage();
                     }
