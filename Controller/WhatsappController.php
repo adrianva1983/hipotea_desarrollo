@@ -3059,10 +3059,13 @@ class WhatsappController extends Controller
             $conn = $em->getConnection();
 
             // Preparar variantes del teléfono para la búsqueda
+            $numLocal = (strlen($telefono) > 9) ? substr($telefono, -9) : $telefono;
             $variants = array_unique(array_filter([
                 $telefono,
                 ltrim($telefono, '0'),
-                (strlen($telefono) > 9 ? substr($telefono, -9) : null)
+                $numLocal,
+                '34' . $numLocal,
+                '+34' . $numLocal
             ]));
 
             if (count($variants) === 0) {
@@ -3750,8 +3753,7 @@ class WhatsappController extends Controller
             if ($direction === 'recibido') {
                 try {
                     // VERIFICAR PILOTO AUTOMÁTICO
-                    $toPhoneLocal = (strlen($toPhone) > 9) ? substr($toPhone, -9) : $toPhone;
-                    if (!$this->verificarPilotoAutomatico($toPhoneLocal)) {
+                    if (!$this->verificarPilotoAutomatico($toPhone)) {
                         $this->logear('🛑 Piloto Automático desactivado para ' . $toPhone . '. No se enviará auto-respuesta.');
                         return new JsonResponse([], 200);
                     }
