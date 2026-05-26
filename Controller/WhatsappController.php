@@ -4023,8 +4023,23 @@ class WhatsappController extends Controller
                         return $textoConversacional . "\n\nHe entendido que quieres modificar un expediente, pero me falta el ID o el dato a cambiar. ¿Puedes repetírmelo?";
                     }
 
-                    $idExp = (int) trim($partes[0]);
+                    $idExpParam = trim($partes[0]);
                     $textoModificacion = trim($partes[1]);
+
+                    // Buscar el expediente real ya sea por ID o por Referencia
+                    $conn = $this->getDoctrine()->getConnection();
+                    $sqlBusquedaExp = "SELECT id_expediente FROM expediente WHERE id_expediente = :param OR referencia = :param LIMIT 1";
+                    $stmtBusquedaExp = $conn->prepare($sqlBusquedaExp);
+                    // Si es numérico, podría ser el ID, sino buscamos como string (referencia)
+                    $stmtBusquedaExp->bindValue('param', $idExpParam);
+                    $stmtBusquedaExp->execute();
+                    $idExpReal = $stmtBusquedaExp->fetchColumn();
+
+                    if (!$idExpReal) {
+                        return $textoConversacional . "\n\n❌ Lo siento, no he encontrado ningún expediente con el ID o referencia: " . $idExpParam;
+                    }
+
+                    $idExp = (int) $idExpReal;
 
                     // Instanciar InteligenciaArtificialController para extraer de todos los campos posibles
                     $iaControllerGlobal = new \AppBundle\Controller\InteligenciaArtificialController($this->get('logger'));
