@@ -809,5 +809,49 @@ class InteligenciaArtificialController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Extrae campos de un texto utilizando los grupos indicados.
+     * Método público para ser llamado desde otros controladores (ej: WhatsappController).
+     *
+     * @param string $texto
+     * @param array $grupoIds Array de IDs de grupo_campos_hito
+     * @return array Array de campos procesados
+     * @throws \Exception
+     */
+    public function extraerCamposGlobal(string $texto, array $grupoIds): array
+    {
+        if (empty(trim($texto))) {
+            return [];
+        }
+
+        $configIA = $this->obtenerConfiguracionIA();
+
+        if (empty($configIA['api_key'])) {
+            throw new \Exception('No hay configuración de IA activa.');
+        }
+
+        $camposBD = $this->obtenerCamposDeGruposMod($grupoIds);
+        $prompt = $this->construirPromptExtractor($camposBD, $texto);
+
+        $resultadoIA = null;
+        if ($configIA['provider'] === 'GEMINI') {
+            $resultadoIA = $this->enviarAGeminiTexto($texto, $prompt, $configIA);
+        } elseif ($configIA['provider'] === 'OPENAI') {
+            $resultadoIA = $this->enviarAOpenAITexto($texto, $prompt, $configIA);
+        } elseif ($configIA['provider'] === 'OLLAMA') {
+            $resultadoIA = $this->enviarAOllamaTexto($texto, $prompt, $configIA);
+        } else {
+            throw new \Exception('Proveedor IA desconocido: ' . $configIA['provider']);
+        }
+
+        if (!$resultadoIA) {
+            throw new \Exception('No se obtuvo respuesta del proveedor IA');
+        }
+
+        // procesarRespuestaIA devuelve un array de campos encontrados
+        return $this->procesarRespuestaIA($resultadoIA['datos'], $grupoIds);
+    }
 }
+
 

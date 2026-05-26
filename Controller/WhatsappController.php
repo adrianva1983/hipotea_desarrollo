@@ -4026,11 +4026,31 @@ class WhatsappController extends Controller
                     $idExp = (int) trim($partes[0]);
                     $textoModificacion = trim($partes[1]);
 
-                    // Extraer los datos usando el motor de IA
-                    $datosExtraidos = $this->getIAController()->analizarMensajeParaDatos($textoModificacion, $idExp);
+                    // Instanciar InteligenciaArtificialController para extraer de todos los campos posibles
+                    $iaControllerGlobal = new \AppBundle\Controller\InteligenciaArtificialController($this->get('logger'));
+                    $iaControllerGlobal->setContainer($this->container);
+
+                    try {
+                        // Pasar los grupos relevantes: 2 (Titular 1), 3 (Económicos), etc. 
+                        // O bien, podemos pasar un rango del 1 al 20 para abarcar la mayoría de grupos
+                        $gruposAMapear = range(1, 20); 
+                        $camposProcesados = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
+                    } catch (\Exception $e) {
+                        return $textoConversacional . "\n\n❌ Hubo un error al conectar con la IA de extracción: " . $e->getMessage();
+                    }
                     
-                    if (empty($datosExtraidos['campos_encontrados'])) {
+                    if (empty($camposProcesados)) {
                         return $textoConversacional . "\n\n❌ Lo siento, no he podido identificar a qué campo te refieres con: '" . $textoModificacion . "'. Intenta decirlo de otra forma.";
+                    }
+
+                    // Mapear al formato que espera guardarDatosEnExpediente
+                    $datosExtraidos = ['campos_encontrados' => []];
+                    foreach ($camposProcesados as $campoProc) {
+                        $datosExtraidos['campos_encontrados'][] = [
+                            'campo_id' => $campoProc['id'],
+                            'nombre_campo' => $campoProc['nombre'] ?? '',
+                            'valor' => $campoProc['valor']
+                        ];
                     }
 
                     // Guardar los datos extraídos
