@@ -3776,12 +3776,29 @@ class WhatsappController extends Controller
                         }
                         
                         $bodyClean = trim(strtolower($body));
+                        $isAyuda = preg_match('/^\/(ayuda|help|habilidades|comandos|habilidad)/i', $bodyClean);
                         $isSaludo = preg_match('/^(hola|buenas|buenos dias|buenos días|buenas tardes|buenas noches|qué tal|que tal)\b/i', $bodyClean) && strlen($bodyClean) < 25;
                         $isDespedida = preg_match('/^(gracias|muchas gracias|perfecto|ok|vale|adios|adiós|hasta luego|chao|genial|entendido)\b/i', $bodyClean) && strlen($bodyClean) < 25;
 
-                        if ($isSaludo) {
+                        if ($isAyuda) {
+                            $mensajeRespuestaAutomatica = "🤖 *SISTEMA DE AYUDA - HABILIDADES DE MAX*\n\n"
+                                . "Puedes hablarme de forma natural para ejecutar cualquiera de estas acciones. Si me falta algún dato, te lo pediré:\n\n"
+                                . "🔍 *BÚSQUEDAS*\n"
+                                . "• *Buscar cliente:* Necesito su teléfono o DNI.\n"
+                                . "• *Buscar expediente:* Necesito su ID, Referencia, teléfono o DNI.\n\n"
+                                . "📝 *GESTIÓN*\n"
+                                . "• *Crear cliente:* Necesito Nombre, Apellidos y Teléfono (email y DNI opcionales).\n"
+                                . "• *Crear expediente:* Necesito el teléfono o DNI del cliente a asociar.\n"
+                                . "• *Modificar expediente:* Necesito la Referencia/ID y el dato exacto a cambiar.\n\n"
+                                . "🧮 *CALCULADORAS Y SIMULACIONES*\n"
+                                . "• *Calcular cuota:* Necesito Valor del inmueble, Aportación inicial, Plazo e Interés.\n"
+                                . "• *Calcular cuota y gastos:* Igual que el anterior, suma gastos de notaría/impuestos.\n"
+                                . "• *Calcular precio máximo:* Necesito Ingresos netos, Deudas actuales, Ahorros y Edad.\n"
+                                . "• *Simular viabilidad:* Necesito Ingresos, Deudas, Ahorros, Valor de compra, Situación laboral, Antigüedad e Impagos.\n\n"
+                                . "👉 Simplemente dime qué quieres hacer (ej: _'Búscame al cliente 600000000'_ o _'Simula viabilidad para...'_).";
+                        } elseif ($isSaludo) {
                             $saludoNombre = $nombreCorto ? ", $nombreCorto" : "";
-                            $mensajeRespuestaAutomatica = "¡Hola$saludoNombre! Soy MAX 🤖, tu asistente operativo. ¿En qué te puedo ayudar hoy con tus gestiones?";
+                            $mensajeRespuestaAutomatica = "¡Hola$saludoNombre! Soy MAX 🤖, tu asistente operativo. ¿En qué te puedo ayudar hoy con tus gestiones? (escribe */ayuda* si quieres ver lo que puedo hacer).";
                         } elseif ($isDespedida) {
                             $mensajeRespuestaAutomatica = "¡A ti! Ya sabes dónde estoy si necesitas que te eche un cable con algo más. ¡A tope! 💪";
                         } else {
