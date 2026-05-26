@@ -3770,6 +3770,11 @@ class WhatsappController extends Controller
                     }
 
                     if ($esUsuarioInterno) {
+                        $nombreCorto = trim(($usuarioOrigen['nombre'] ?? '') . ' ' . ($usuarioOrigen['apellidos'] ?? ''));
+                        if ($nombreCorto) {
+                            $systemPromptCRM .= "\n\nNOTA DE CONTEXTO: Estás hablando con tu compañero/a comercial llamado/a " . $nombreCorto . ". Úsalo para dirigirte a él/ella por su nombre de forma cercana (ej: '¡Claro que sí, " . $nombreCorto . "!...').";
+                        }
+                        
                         try {
                             $mensajeIA = $this->getIAController()->llamarAPIIA(
                                 $body,
