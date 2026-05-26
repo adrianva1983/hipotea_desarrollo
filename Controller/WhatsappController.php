@@ -3775,31 +3775,42 @@ class WhatsappController extends Controller
                             $systemPromptCRM .= "\n\nNOTA DE CONTEXTO: Estás hablando con tu compañero/a comercial llamado/a " . $nombreCorto . ". Úsalo para dirigirte a él/ella por su nombre de forma cercana (ej: '¡Claro que sí, " . $nombreCorto . "!...').";
                         }
                         
-                        try {
-                            $mensajeIA = $this->getIAController()->llamarAPIIA(
-                                $body,
-                                $systemPromptCRM,
-                                $idExpediente,
-                                $fromPhone
-                            );
+                        $bodyClean = trim(strtolower($body));
+                        $isSaludo = preg_match('/^(hola|buenas|buenos dias|buenos días|buenas tardes|buenas noches|qué tal|que tal)\b/i', $bodyClean) && strlen($bodyClean) < 25;
+                        $isDespedida = preg_match('/^(gracias|muchas gracias|perfecto|ok|vale|adios|adiós|hasta luego|chao|genial|entendido)\b/i', $bodyClean) && strlen($bodyClean) < 25;
 
-                            $mensajeIA = $mensajeIA ?: 'Mensaje recibido desde el CRM.';
+                        if ($isSaludo) {
+                            $saludoNombre = $nombreCorto ? ", $nombreCorto" : "";
+                            $mensajeRespuestaAutomatica = "¡Hola$saludoNombre! Soy MAX 🤖, tu asistente operativo. ¿En qué te puedo ayudar hoy con tus gestiones?";
+                        } elseif ($isDespedida) {
+                            $mensajeRespuestaAutomatica = "¡A ti! Ya sabes dónde estoy si necesitas que te eche un cable con algo más. ¡A tope! 💪";
+                        } else {
+                            try {
+                                $mensajeIA = $this->getIAController()->llamarAPIIA(
+                                    $body,
+                                    $systemPromptCRM,
+                                    $idExpediente,
+                                    $fromPhone
+                                );
 
-                            // Interceptar habilidades detectadas por la IA
-                            $resultadoHabilidad = $this->ejecutarHabilidadCRM($mensajeIA, $body, $fromNorm, $idExpediente, $sessionId);
+                                $mensajeIA = $mensajeIA ?: 'Mensaje recibido desde el CRM.';
 
-                            if ($resultadoHabilidad !== null) {
-                                // La habilidad fue ejecutada: usar su respuesta enriquecida
-                                $mensajeRespuestaAutomatica = $resultadoHabilidad;
-                            } else {
-                                // No había habilidad: usar respuesta IA limpiando el token si quedó
-                                $mensajeRespuestaAutomatica = preg_replace('/\[Habilidad[^\]]+identificada\]/i', '', $mensajeIA);
-                                $mensajeRespuestaAutomatica = trim($mensajeRespuestaAutomatica);
+                                // Interceptar habilidades detectadas por la IA
+                                $resultadoHabilidad = $this->ejecutarHabilidadCRM($mensajeIA, $body, $fromNorm, $idExpediente, $sessionId);
+
+                                if ($resultadoHabilidad !== null) {
+                                    // La habilidad fue ejecutada: usar su respuesta enriquecida
+                                    $mensajeRespuestaAutomatica = $resultadoHabilidad;
+                                } else {
+                                    // No había habilidad: usar respuesta IA limpiando el token si quedó
+                                    $mensajeRespuestaAutomatica = preg_replace('/\[Habilidad[^\]]+identificada\]/i', '', $mensajeIA);
+                                    $mensajeRespuestaAutomatica = trim($mensajeRespuestaAutomatica);
+                                }
+
+                            } catch (\Throwable $e) {
+                                $this->logear('⚠️ Error en IA para respuesta CRM: ' . $e->getMessage());
+                                $mensajeRespuestaAutomatica = 'Mensaje recibido desde el CRM.';
                             }
-
-                        } catch (\Throwable $e) {
-                            $this->logear('⚠️ Error en IA para respuesta CRM: ' . $e->getMessage());
-                            $mensajeRespuestaAutomatica = 'Mensaje recibido desde el CRM.';
                         }
                     } elseif ($usuarioOrigen || $idExpediente || $this->findExpedienteByClientPhone($fromNorm)) {
                         $mensajeRespuestaAutomatica = 'Hola, mensaje recibido. Gracias por escribirnos.';
