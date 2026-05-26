@@ -3174,7 +3174,7 @@ class WhatsappController extends Controller
             $timestamp = date('Y-m-d H:i:s');
 
             // Obtener mapeo de opciones para campos que las tienen
-            $opcionesMapeo = $this->obtenerOpcionesCampos();
+            $opcionesMapeo = $this->getIAController()->obtenerOpcionesCampos();
 
             // Procesar cada campo encontrado
             foreach ($datosExtraidos['campos_encontrados'] as $campo) {
