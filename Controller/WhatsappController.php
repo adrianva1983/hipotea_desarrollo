@@ -3984,6 +3984,7 @@ class WhatsappController extends Controller
             'calcular precio máximo permitido' => 'habilidad_calcular_precio_maximo',
             'calcular cuota y gastos' => 'habilidad_calcular_cuota_gastos',
             'simular viabilidad hipotecaria' => 'habilidad_simular_viabilidad',
+            'modificar expediente' => 'habilidad_modificar_expediente',
         ];
 
         $habilidadDetectada = null;
@@ -4008,6 +4009,46 @@ class WhatsappController extends Controller
 
         try {
             switch ($habilidadDetectada) {
+
+                // ─────────────────────────────────────────────────────────────
+                // NUEVA HABILIDAD: Modificar expediente
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_modificar_expediente':
+                    if (empty($parametroHabilidad)) {
+                        return $textoConversacional . "\n\nPara modificar el expediente, por favor dime su número y qué dato quieres que cambie (ej: 'Modifica el expediente 123 y ponle un salario neto de 1800 al titular 1').";
+                    }
+
+                    $partes = explode('|', $parametroHabilidad);
+                    if (count($partes) < 2) {
+                        return $textoConversacional . "\n\nHe entendido que quieres modificar un expediente, pero me falta el ID o el dato a cambiar. ¿Puedes repetírmelo?";
+                    }
+
+                    $idExp = (int) trim($partes[0]);
+                    $textoModificacion = trim($partes[1]);
+
+                    // Extraer los datos usando el motor de IA
+                    $datosExtraidos = $this->getIAController()->analizarMensajeParaDatos($textoModificacion, $idExp);
+                    
+                    if (empty($datosExtraidos['campos_encontrados'])) {
+                        return $textoConversacional . "\n\n❌ Lo siento, no he podido identificar a qué campo te refieres con: '" . $textoModificacion . "'. Intenta decirlo de otra forma.";
+                    }
+
+                    // Guardar los datos extraídos
+                    $resultadoGuardar = $this->guardarDatosEnExpediente($idExp, $datosExtraidos, $fromPhone);
+
+                    if ($resultadoGuardar['exito']) {
+                        $msg = "✅ *Expediente $idExp actualizado*\nHe guardado los siguientes datos:\n";
+                        foreach ($datosExtraidos['campos_encontrados'] as $campo) {
+                            $nombre = $campo['nombre_campo'] ?? $campo['tipo'] ?? 'Desconocido';
+                            $valor = $campo['valor'] ?? '';
+                            if ($nombre && $valor) {
+                                $msg .= "   - " . $nombre . ": " . $valor . "\n";
+                            }
+                        }
+                        return $textoConversacional . "\n\n" . $msg;
+                    } else {
+                        return $textoConversacional . "\n\n⚠️ Intenté modificar el expediente $idExp, pero hubo un error al guardar los datos.";
+                    }
 
                 // ─────────────────────────────────────────────────────────────
                 // HABILIDAD 7: Buscar datos de cliente por teléfono o DNI
