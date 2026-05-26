@@ -698,6 +698,11 @@ api_toggle_opcion_whatsapp:
   controller: AppBundle:Whatsapp:toggleOpcionWhatsapp
   methods: [POST]
 
+api_guardar_prompt_whatsapp:
+  path: /AJAX/whatsapp/guardar-prompt
+  controller: AppBundle:Whatsapp:guardarPromptWhatsapp
+  methods: [POST]
+
 api_desconectar_whatsapp:
   path: /AJAX/whatsapp/desconectar
   controller: AppBundle:Whatsapp:desconectarWhatsapp

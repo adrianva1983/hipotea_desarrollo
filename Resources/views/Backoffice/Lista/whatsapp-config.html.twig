@@ -206,6 +206,22 @@
                             Primero conecta tu WhatsApp para acceder a las opciones de configuración.
                         </div>
                     {% endif %}
+
+                    {% if datosConexion.tieneConexion %}
+                        <!-- Prompt Piloto Automático -->
+                        <div class="row mt-3 pt-3 border-top" id="container-piloto-prompt" style="{% if not datosConexion.opciones.pilotoAutomatico %}display: none;{% endif %}">
+                            <div class="col-md-12">
+                                <div class="form-group mb-2">
+                                    <label for="piloto-automatico-prompt" class="font-weight-bold"><i class="fas fa-robot text-success"></i> Personalidad del Piloto Automático (Prompt)</label>
+                                    <textarea class="form-control" id="piloto-automatico-prompt" rows="5" placeholder="Ej: Tu nombre es Leo. Eres un asistente sarcástico...">{{ datosConexion.opciones.pilotoAutomaticoSystemPrompt }}</textarea>
+                                    <small class="form-text text-muted">Define la personalidad e instrucciones específicas para este bot. Si lo dejas vacío, usará el nombre del usuario por defecto de la base de datos.</small>
+                                </div>
+                                <button class="btn btn-sm btn-success" id="btn-guardar-prompt">
+                                    <i class="fas fa-save"></i> Guardar Personalidad
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -501,6 +517,48 @@ $(document).ready(function() {
             }
         });
     });
+    // Mostrar/ocultar el editor del prompt cuando se hace toggle del Piloto Automático
+    $('#piloto-automatico').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#container-piloto-prompt').slideDown();
+        } else {
+            $('#container-piloto-prompt').slideUp();
+        }
+    });
+
+    // Guardar el prompt
+    $('#btn-guardar-prompt').on('click', function() {
+        var btn = $(this);
+        var prompt = $('#piloto-automatico-prompt').val();
+        
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
+        
+        $.ajax({
+            url: '{{ path('api_guardar_prompt_whatsapp') }}',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: JSON.stringify({
+                prompt: prompt
+            }),
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('Personalidad guardada correctamente');
+                } else {
+                    toastr.error(response.error || 'Error al guardar la personalidad');
+                }
+            },
+            error: function() {
+                toastr.error('Error de comunicación con el servidor');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Personalidad');
+            }
+        });
+    });
+
 });
     </script>
 {% endblock %}

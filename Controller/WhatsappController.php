@@ -4858,6 +4858,7 @@ class WhatsappController extends Controller
                     'syncConversaciones' => $conexion->getSyncConversaciones(),
                     'automatizacionesWhatsapp' => $conexion->getAutomatizacionesWhatsapp(),
                     'pilotoAutomatico' => $conexion->getPilotoAutomatico(),
+                    'pilotoAutomaticoSystemPrompt' => $conexion->getPilotoAutomaticoSystemPrompt(),
                 ],
             ];
         }
@@ -4868,6 +4869,46 @@ class WhatsappController extends Controller
             'datosConexion' => $datosConexion,
             'tieneConexion' => $tieneConexion,
         ]);
+    }
+
+    /**
+     * Guarda el prompt personalizado del Piloto Automático
+     * POST /API/whatsapp/guardar-prompt
+     * Body: {prompt: 'Tu nombre es Leo...'}
+     */
+    public function guardarPromptWhatsappAction(Request $request)
+    {
+        $usuario = $this->getUser();
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!$data) {
+            return new JsonResponse(['error' => 'Invalid JSON'], 400);
+        }
+
+        $prompt = $data['prompt'] ?? '';
+
+        $em = $this->getDoctrine()->getManager();
+        $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+
+        $conexion = $senderRepo->createQueryBuilder('ws')
+            ->where('ws.idUsuario = :idUsuario')
+            ->setParameter('idUsuario', $usuario->getIdUsuario())
+            ->orderBy('ws.fechaUltimaInteraccion', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$conexion) {
+            return new JsonResponse(['error' => 'No hay sesión WhatsApp'], 404);
+        }
+
+        $conexion->setPilotoAutomaticoSystemPrompt($prompt);
+        $em->flush();
+
+        return new JsonResponse(['success' => true]);
     }
 
     /**
