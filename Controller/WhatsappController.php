@@ -4509,20 +4509,87 @@ class WhatsappController extends Controller
                                 $datos = json_decode($response->getContent(), true);
 
                                 if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos']['resultado'])) {
-                                    $res = $datos['datos']['resultado'];
+                                    $dataCompleta = $datos['datos'];
+                                    $res = $dataCompleta['resultado'];
                                     
                                     $semaforoEmoji = '🟡';
                                     if ($res['semaforo'] == 'verde') $semaforoEmoji = '🟢';
                                     if ($res['semaforo'] == 'rojo') $semaforoEmoji = '🔴';
 
                                     $motivosTxt = "";
-                                    foreach ($res['motivos'] as $motivo) {
-                                        $motivosTxt .= "   - " . $motivo['mensaje'] . "\n";
+                                    if (!empty($res['motivos'])) {
+                                        foreach ($res['motivos'] as $motivo) {
+                                            $motivosTxt .= "   - " . $motivo['mensaje'] . "\n";
+                                        }
+                                    } else {
+                                        $motivosTxt .= "   - Todo en orden.\n";
                                     }
 
-                                    return $textoConversacional . "\n\n" . $semaforoEmoji . " *Simulación de Viabilidad:*\n" .
-                                           "• *Resultado:* " . $res['mensaje'] . "\n\n" .
-                                           "🔍 *Detalles:*\n" . $motivosTxt;
+                                    // Formatear valores
+                                    $tieneImpagos = $dataCompleta['riesgo']['tienePrestamosImpagados'] ? '❌ Sí' : '✅ No';
+                                    $porcentajeFinan = number_format($dataCompleta['cuota']['porcentajeFinanciacion'], 1, ',', '.');
+                                    
+                                    $precioMaximo = $dataCompleta['precio']['precioMaximoRecomendado'];
+                                    $vsMaximo = ($valor <= $precioMaximo) ? '✅ Dentro límite' : '❌ Supera límite';
+                                    
+                                    $antiguedades = [
+                                        'menos_1_anio' => 'Menos de 1 año',
+                                        'un_anio' => '1 año',
+                                        'mas_2_anios' => 'Más de 2 años'
+                                    ];
+                                    $antiguedadStr = $antiguedades[$dataCompleta['riesgo']['antiguedadLaboral']] ?? $dataCompleta['riesgo']['antiguedadLaboral'];
+                                    
+                                    $situaciones = [
+                                        'contrato_indefinido' => 'Contrato indefinido',
+                                        'contrato_temporal' => 'Contrato temporal',
+                                        'funcionario' => 'Funcionario',
+                                        'autonomo' => 'Autónomo',
+                                        'pensionista' => 'Pensionista',
+                                        'desempleado' => 'Desempleado'
+                                    ];
+                                    $situacionStr = $situaciones[$dataCompleta['riesgo']['situacionLaboral']] ?? $dataCompleta['riesgo']['situacionLaboral'];
+
+                                    $cuotaEst = $dataCompleta['cuota']['cuotaHipotecariaEstimada'];
+                                    $ratioEndeudamiento = ($ingresos > 0) ? (($cuotaEst + $deudas) / $ingresos) * 100 : 0;
+                                    $ratioEndeudamientoStr = number_format($ratioEndeudamiento, 1, ',', '.');
+                                    $ratioIcon = ($ratioEndeudamiento <= 35) ? '✅' : '⚠️';
+
+                                    $importeFinanciar = number_format($dataCompleta['cuota']['importePrestamo'], 0, ',', '.');
+                                    
+                                    $cuotaStr = number_format($cuotaEst, 2, ',', '.');
+                                    $gastosStr = number_format($dataCompleta['cuota']['gastosTotalesAproximados'], 0, ',', '.');
+                                    $aportacionStr = number_format($ahorros, 0, ',', '.');
+                                    $precioMaximoStr = number_format($precioMaximo, 0, ',', '.');
+                                    $valorViviendaStr = number_format($valor, 0, ',', '.');
+
+                                    $msg = $textoConversacional . "\n\n";
+                                    $msg .= $semaforoEmoji . " *RESULTADO DE VIABILIDAD: " . strtoupper($res['semaforo']) . "*\n";
+                                    $msg .= "_" . $res['mensaje'] . "_\n\n";
+
+                                    $msg .= "📋 *Criterios Evaluados*\n";
+                                    $msg .= "------------------------\n";
+                                    $msg .= "• Préstamos impagados: {$tieneImpagos}\n";
+                                    $msg .= "• % Financiación: {$porcentajeFinan}%\n";
+                                    $msg .= "• Precio vs máximo: {$vsMaximo}\n";
+                                    $msg .= "• Situación laboral: {$situacionStr}\n";
+                                    $msg .= "• Antigüedad: {$antiguedadStr}\n";
+                                    $msg .= "• Ratio endeudamiento: {$ratioIcon} {$ratioEndeudamientoStr}%\n";
+                                    $msg .= "• *Importe a financiar:* {$importeFinanciar} €\n\n";
+
+                                    $msg .= "💰 *Resumen Financiero*\n";
+                                    $msg .= "------------------------\n";
+                                    $msg .= "🏠 Precio vivienda: {$valorViviendaStr} €\n";
+                                    $msg .= "💸 Gastos aprox: {$gastosStr} €\n";
+                                    $msg .= "🏦 Aportación total: {$aportacionStr} €\n";
+                                    $msg .= "📈 *Cuota orientativa:* {$cuotaStr} €/mes\n\n";
+                                    
+                                    $msg .= "🎯 *Precio Máximo Recomendado:* {$precioMaximoStr} €\n\n";
+
+                                    if (!empty($res['motivos'])) {
+                                        $msg .= "🔍 *Motivos del análisis:*\n" . $motivosTxt;
+                                    }
+
+                                    return $msg;
                                 }
                             } catch (\Exception $e) {
                                 return $textoConversacional . "\n\n❌ Excepción del sistema: " . $e->getMessage();
