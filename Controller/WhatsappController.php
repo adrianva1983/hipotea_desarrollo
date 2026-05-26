@@ -3771,18 +3771,49 @@ class WhatsappController extends Controller
 
                     if ($esUsuarioInterno) {
                         $nombreCorto = trim(($usuarioOrigen['nombre'] ?? '') . ' ' . ($usuarioOrigen['apellidos'] ?? ''));
-                        if ($nombreCorto) {
-                            $systemPromptCRM .= "\n\nNOTA DE CONTEXTO: Estás hablando con tu compañero/a comercial llamado/a " . $nombreCorto . ". Úsalo para dirigirte a él/ella por su nombre de forma cercana (ej: '¡Claro que sí, " . $nombreCorto . "!...').";
+                        
+                        // Buscar el usuario del BOT (el destinatario del mensaje)
+                        $usuarioBot = $this->findUserByPhone($this->normalizePhone($toPhone));
+                        $nombreBot = "MAX"; // Default
+                        $customPrompt = null;
+                        
+                        if ($usuarioBot) {
+                            $nombreBotAux = trim(($usuarioBot['nombre'] ?? '') . ' ' . ($usuarioBot['apellidos'] ?? ''));
+                            if (!empty($nombreBotAux)) {
+                                $nombreBot = $nombreBotAux;
+                            }
+                            
+                            $em = $this->getDoctrine()->getManager();
+                            $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
+                            $senderBot = $this->findLatestWhatsappSenderByUserId($senderRepo, (int) $usuarioBot['id_usuario']);
+                            $customPrompt = $senderBot ? $senderBot->getPilotoAutomaticoSystemPrompt() : null;
+                        }
+
+                        $hasCustomPersona = !empty(trim($customPrompt ?? ''));
+
+                        if ($hasCustomPersona) {
+                            // Sobrescribir la personalidad inicial con la que definió el comercial, manteniendo las reglas del CRM
+                            $systemPromptCRM = "INSTRUCCIONES DE IDENTIDAD Y PERSONALIDAD:\n" . trim($customPrompt) . "\n\n--- INSTRUCCIONES OPERATIVAS Y HABILIDADES CRM (OBLIGATORIAS) ---\n" . $systemPromptCRM;
+                            if ($nombreCorto) {
+                                $systemPromptCRM .= "\n\nNOTA DE CONTEXTO: Estás hablando con tu compañero/a comercial llamado/a " . $nombreCorto . ".";
+                            }
+                        } else {
+                            // Si no hay prompt customizado, inyectar el nombre del Bot según la base de datos
+                            $systemPromptCRM = "INSTRUCCIONES DE IDENTIDAD Y PERSONALIDAD:\nTu nombre es " . $nombreBot . ". Eres el asistente operativo del CRM. Habla de forma natural, amistosa y enérgica.\n\n--- INSTRUCCIONES OPERATIVAS Y HABILIDADES CRM (OBLIGATORIAS) ---\n" . $systemPromptCRM;
+                            if ($nombreCorto) {
+                                $systemPromptCRM .= "\n\nNOTA DE CONTEXTO: Estás hablando con tu compañero/a comercial llamado/a " . $nombreCorto . ". Úsalo para dirigirte a él/ella por su nombre de forma cercana (ej: '¡Claro que sí, " . $nombreCorto . "!...').";
+                            }
                         }
                         
                         $bodyClean = trim(strtolower($body));
                         $isAyuda = preg_match('/^\/(ayuda|help|habilidades|comandos|habilidad)/i', $bodyClean);
-                        $isSaludo = preg_match('/^(hola|buenas|buenos dias|buenos días|buenas tardes|buenas noches|qué tal|que tal)\b/i', $bodyClean) && strlen($bodyClean) < 25;
-                        $isDespedida = preg_match('/^(gracias|muchas gracias|perfecto|ok|vale|adios|adiós|hasta luego|chao|genial|entendido)\b/i', $bodyClean) && strlen($bodyClean) < 25;
+                        // Solo usamos respuestas hardcodeadas de saludo/despedida si NO hay personalidad customizada
+                        $isSaludo = !$hasCustomPersona && preg_match('/^(hola|buenas|buenos dias|buenos días|buenas tardes|buenas noches|qué tal|que tal)\b/i', $bodyClean) && strlen($bodyClean) < 25;
+                        $isDespedida = !$hasCustomPersona && preg_match('/^(gracias|muchas gracias|perfecto|ok|vale|adios|adiós|hasta luego|chao|genial|entendido)\b/i', $bodyClean) && strlen($bodyClean) < 25;
 
                         if ($isAyuda) {
                             $saludoAyuda = $nombreCorto ? "¡Hola, $nombreCorto!" : "¡Hola!";
-                            $mensajeRespuestaAutomatica = "🤖 $saludoAyuda Soy MAX, tu asistente. Aquí tienes un resumen de lo que puedo hacer para facilitarte el día:\n\n"
+                            $mensajeRespuestaAutomatica = "🤖 $saludoAyuda Soy $nombreBot. Aquí tienes un resumen de lo que puedo hacer para facilitarte el día:\n\n"
                                 . "🔍 *Si necesitas buscar algo:*\n"
                                 . "• *Cliente:* Solo dime su teléfono o DNI y te saco la ficha.\n"
                                 . "• *Expediente:* Pásame su ID, la Referencia (EXP-...), el teléfono o el DNI del cliente y te lo busco.\n\n"
@@ -3795,10 +3826,10 @@ class WhatsappController extends Controller
                                 . "• *Cuota con gastos:* Lo mismo de arriba, pero te desgrano la notaría, impuestos, etc.\n"
                                 . "• *Precio máximo:* Dime los Ingresos, Deudas, Ahorros y la Edad, y te digo qué casa se pueden permitir.\n"
                                 . "• *Simular viabilidad:* Necesito Ingresos, Deudas, Ahorros, Valor de compra, Situación laboral, Antigüedad e Impagos para decirte si la operación es viable.\n\n"
-                                . "👉 *Lo más importante:* ¡Háblame como a un compañero más! (Ej: _'Búscame al cliente 600000000'_ o _'Modifica el expediente 123 y pon que es funcionario'_). Si me falta algo para hacer mi magia, yo mismo te lo pediré.";
+                                . "👉 *Lo más importante:* ¡Háblame como a un compañero más! Si me falta algo para hacer mi magia, yo mismo te lo pediré.";
                         } elseif ($isSaludo) {
                             $saludoNombre = $nombreCorto ? ", $nombreCorto" : "";
-                            $mensajeRespuestaAutomatica = "¡Hola$saludoNombre! Soy MAX 🤖, tu compi digital. ¿Qué gestión tenemos entre manos hoy? (Recuerda que si me escribes */ayuda* te cuento todo lo que puedo hacer).";
+                            $mensajeRespuestaAutomatica = "¡Hola$saludoNombre! Soy $nombreBot 🤖. ¿Qué gestión tenemos entre manos hoy? (Recuerda que si me escribes */ayuda* te cuento todo lo que puedo hacer).";
                         } elseif ($isDespedida) {
                             $mensajeRespuestaAutomatica = "¡Nada que agradecer! Para eso estamos. Pídeme lo que necesites cuando quieras. ¡A seguir a tope! 💪";
                         } else {
