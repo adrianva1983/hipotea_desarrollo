@@ -1600,13 +1600,26 @@ class BotApiController extends Controller
                         $stmt->execute();
                         $this->get('logger')->info('✓ ACTUALIZADO: ' . $nombreCampo);
                     } else {
+                        // Obtener id_hito_expediente
+                        $sqlHito = 'SELECT he.id_hito_expediente 
+                                    FROM hito_expediente he
+                                    JOIN campo_hito ch ON ch.id_hito = he.id_hito
+                                    WHERE he.id_expediente = :idExp AND ch.id_campo_hito = :idCampo LIMIT 1';
+                        $stmtHito = $conn->prepare($sqlHito);
+                        $stmtHito->bindValue('idExp', $idExpediente);
+                        $stmtHito->bindValue('idCampo', $idCampoHito);
+                        $stmtHito->execute();
+                        $resHito = $stmtHito->fetch();
+                        $idHitoExp = $resHito ? $resHito['id_hito_expediente'] : 0;
+
                         // Insertar
                         $sqlInsert = 'INSERT INTO campo_hito_expediente 
-                                      (id_expediente, id_campo_hito, valor, id_opciones_campo, fecha_modificacion, obligatorio)
-                                      VALUES (:idExp, :idCampo, :valor, :idOpcional, :timestamp, 0)';
+                                      (id_expediente, id_campo_hito, id_hito_expediente, valor, id_opciones_campo, fecha_modificacion, obligatorio)
+                                      VALUES (:idExp, :idCampo, :idHitoExp, :valor, :idOpcional, :timestamp, 0)';
                         $stmt = $conn->prepare($sqlInsert);
                         $stmt->bindValue('idExp', $idExpediente);
                         $stmt->bindValue('idCampo', $idCampoHito);
+                        $stmt->bindValue('idHitoExp', $idHitoExp);
                         $stmt->bindValue('valor', $valor);
                         $stmt->bindValue('idOpcional', $idOpcional);
                         $stmt->bindValue('timestamp', $timestamp);
