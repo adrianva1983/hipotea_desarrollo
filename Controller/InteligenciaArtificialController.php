@@ -571,7 +571,8 @@ class InteligenciaArtificialController extends Controller
         Actúa como un extractor de datos para un CRM. Tu misión es mapear la información del texto a los IDs de mi formulario.
 
         ### REGLA DE ORO PARA DATOS NO DEFINIDOS:
-        Si el usuario menciona información que NO tiene un ID asignado abajo (por ejemplo: Nombre de la empresa, CIF, Horario de contacto, Redes sociales, Profesión, Notas adicionales), DEBES incluirla obligatoriamente en el campo ID: 191 (Comentarios).
+        Si el usuario menciona información que NO tiene un ID asignado abajo (por ejemplo: CIF, Horario de contacto, Redes sociales, Notas adicionales), DEBES incluirla obligatoriamente en el campo ID: 191 (Comentarios).
+        IMPORTANTE: Si un campo SÍ existe en la lista de IDs (como "Nombre empresa"), DEBES usar ese ID específico y NO ponerlo en Comentarios.
 
         ### ESTRUCTURA DE EXTRACCIÓN:
         {$seccionCampos}
@@ -689,7 +690,7 @@ class InteligenciaArtificialController extends Controller
             {"id": "693", "nombre": "Nombre", "valor": "Juan"},
             {"id": "695", "nombre": "Teléfono", "valor": "612345678"},
             {"id": "696", "nombre": "Email", "valor": "juan@example.com"},
-            {"id": "191", "nombre": "Comentarios", "valor": "Mencionó que trabaja en 'TecnoSL' como ingeniero. Prefiere contacto por la tarde."}
+            {"id": "191", "nombre": "Comentarios", "valor": "Prefiere contacto por la tarde. Le interesa zona centro."}
         ]
         }
 
