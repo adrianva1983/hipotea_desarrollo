@@ -1169,6 +1169,10 @@ class BotApiController extends Controller
 			$provided = $request->query->get('api_key');
 		}
 
+		if (!$provided) {
+			$provided = $request->request->get('api_key');
+		}
+
 		// Si no está en query, buscar en body JSON (para POST)
 		if (!$provided && in_array($request->getMethod(), ['POST', 'PUT'])) {
 			$data = json_decode($request->getContent(), true);
