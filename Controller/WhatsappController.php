@@ -4108,6 +4108,8 @@ class WhatsappController extends Controller
                     try {
                         $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                         $data = json_decode($response->getContent(), true);
+                        $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
+
                         if ($data === null) {
                             $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
                         }
@@ -4168,6 +4170,8 @@ class WhatsappController extends Controller
                     try {
                         $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                         $data = json_decode($response->getContent(), true);
+                        $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
+
                         if ($data === null) {
                             $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
                         }
@@ -4312,6 +4316,8 @@ class WhatsappController extends Controller
                         try {
                             $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                             $data = json_decode($response->getContent(), true);
+                        $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
+
                         if ($data === null) {
                             $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
                         }
@@ -4356,6 +4362,8 @@ class WhatsappController extends Controller
                             try {
                                 $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                                 $data = json_decode($response->getContent(), true);
+                        $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
+
                         if ($data === null) {
                             $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
                         }
