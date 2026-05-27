@@ -4108,6 +4108,9 @@ class WhatsappController extends Controller
                     try {
                         $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                         $data = json_decode($response->getContent(), true);
+                        if ($data === null) {
+                            $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
+                        }
 
                         if ($response->getStatusCode() === 200 && $data['success']) {
                             $msg = "✅ *Expediente " . $data['id_expediente'] . " actualizado*\nHe guardado los siguientes datos:\n";
@@ -4165,6 +4168,9 @@ class WhatsappController extends Controller
                     try {
                         $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                         $data = json_decode($response->getContent(), true);
+                        if ($data === null) {
+                            $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
+                        }
 
                         if ($response->getStatusCode() === 200 && $data['success']) {
                             $cliente = $data['cliente'];
@@ -4306,6 +4312,9 @@ class WhatsappController extends Controller
                         try {
                             $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                             $data = json_decode($response->getContent(), true);
+                        if ($data === null) {
+                            $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
+                        }
                             
                             if ($response->getStatusCode() === 200 && $data['success']) {
                                 return $textoConversacional . "\n\n✅ Expediente creado correctamente para el cliente *" . $data['cliente_nombre'] . " " . $data['cliente_apellidos'] . "*. ID de Expediente: " . $data['id_expediente'];
@@ -4347,6 +4356,9 @@ class WhatsappController extends Controller
                             try {
                                 $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                                 $data = json_decode($response->getContent(), true);
+                        if ($data === null) {
+                            $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
+                        }
                                 
                                 if ($response->getStatusCode() === 200 && $data['success']) {
                                     return $textoConversacional . "\n\n✅ Cliente *" . $nombre . " " . $apellidos . "* registrado correctamente con teléfono " . $telefono . ".";
