@@ -1002,10 +1002,16 @@ class BotApiController extends Controller
 			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
 		}
 
-		$referencia = $request->request->get('referencia') ?: $request->query->get('referencia');
-		$idExpediente = $request->request->get('id_expediente') ?: $request->query->get('id_expediente');
-		$telefono = $request->request->get('telefono') ?: $request->query->get('telefono');
-		$dni = $request->request->get('dni') ?: $request->query->get('dni');
+		// Intentar leer desde el Body JSON (Raw) si la petición es POST
+		$jsonData = [];
+		if ($request->getContentType() === 'json' || strpos($request->headers->get('Content-Type'), 'application/json') !== false) {
+			$jsonData = json_decode($request->getContent(), true) ?: [];
+		}
+
+		$referencia = $request->request->get('referencia') ?: $request->query->get('referencia') ?: ($jsonData['referencia'] ?? null);
+		$idExpediente = $request->request->get('id_expediente') ?: $request->query->get('id_expediente') ?: ($jsonData['id_expediente'] ?? null);
+		$telefono = $request->request->get('telefono') ?: $request->query->get('telefono') ?: ($jsonData['telefono'] ?? null);
+		$dni = $request->request->get('dni') ?: $request->query->get('dni') ?: ($jsonData['dni'] ?? null);
 
 		if (!$referencia && !$idExpediente && !$telefono && !$dni) {
 			return new JsonResponse([
