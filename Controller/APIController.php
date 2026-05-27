@@ -825,13 +825,29 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 			), array(
 				'idExpediente' => 'DESC'
 			));
-		} elseif ($this->getUser()->getRole() === 'ROLE_COLABORADOR') {
-			$expedientes = $repositorios['Expedientes']->findBy(array(
-				'idColaborador' => $this->getUser()->getIdUsuario(),
-				'estado' => 1
-			), array(
-				'idExpediente' => 'DESC'
-			));
+		} elseif (in_array($this->getUser()->getRole(), ['ROLE_COLABORADOR', 'ROLE_JEFE_INMOBILIARIA', 'ROLE_JEFE_OFICINA', 'ROLE_RESPONSABLE_ZONA'])) {
+			$qb = $repositorios['Expedientes']->createQueryBuilder('e')
+				->where('e.estado = 1');
+				
+			$role = $this->getUser()->getRole();
+			if ($role === 'ROLE_COLABORADOR') {
+				$qb->andWhere('e.idColaborador = :userId')
+				   ->setParameter('userId', $this->getUser()->getIdUsuario());
+			} elseif ($role === 'ROLE_JEFE_INMOBILIARIA') {
+				$qb->leftJoin('e.idColaborador', 'c')
+				   ->andWhere('c.idInmobiliaria = :inmoId')
+				   ->setParameter('inmoId', $this->getUser()->getIdInmobiliaria());
+			} elseif ($role === 'ROLE_JEFE_OFICINA') {
+				$qb->leftJoin('e.idColaborador', 'c')
+				   ->andWhere('c.idOficina = :oficinaId')
+				   ->setParameter('oficinaId', $this->getUser()->getIdOficina());
+			} elseif ($role === 'ROLE_RESPONSABLE_ZONA') {
+				$qb->leftJoin('e.idColaborador', 'c')
+				   ->andWhere('c.idZona = :zonaId')
+				   ->setParameter('zonaId', $this->getUser()->getIdZona());
+			}
+			$qb->orderBy('e.idExpediente', 'DESC');
+			$expedientes = $qb->getQuery()->getResult();
 		}
 		$camposExtra = array();
 		$hitoVivienda = $doctrine->getRepository(Hito::class)->findOneBy(array(
@@ -992,11 +1008,29 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 				'idCliente' => $this->getUser()->getIdUsuario(),
 				'idExpediente' => $idExpediente
 			));
-		} elseif ($this->getUser()->getRole() === 'ROLE_COLABORADOR') {
-			$expedientes = $repositorios['Expedientes']->findOneBy(array(
-				'idColaborador' => $this->getUser()->getIdUsuario(),
-				'idExpediente' => $idExpediente
-			));
+		} elseif (in_array($this->getUser()->getRole(), ['ROLE_COLABORADOR', 'ROLE_JEFE_INMOBILIARIA', 'ROLE_JEFE_OFICINA', 'ROLE_RESPONSABLE_ZONA'])) {
+			$qb = $repositorios['Expedientes']->createQueryBuilder('e')
+				->where('e.idExpediente = :idExpediente')
+				->setParameter('idExpediente', $idExpediente);
+				
+			$role = $this->getUser()->getRole();
+			if ($role === 'ROLE_COLABORADOR') {
+				$qb->andWhere('e.idColaborador = :userId')
+				   ->setParameter('userId', $this->getUser()->getIdUsuario());
+			} elseif ($role === 'ROLE_JEFE_INMOBILIARIA') {
+				$qb->leftJoin('e.idColaborador', 'c')
+				   ->andWhere('c.idInmobiliaria = :inmoId')
+				   ->setParameter('inmoId', $this->getUser()->getIdInmobiliaria());
+			} elseif ($role === 'ROLE_JEFE_OFICINA') {
+				$qb->leftJoin('e.idColaborador', 'c')
+				   ->andWhere('c.idOficina = :oficinaId')
+				   ->setParameter('oficinaId', $this->getUser()->getIdOficina());
+			} elseif ($role === 'ROLE_RESPONSABLE_ZONA') {
+				$qb->leftJoin('e.idColaborador', 'c')
+				   ->andWhere('c.idZona = :zonaId')
+				   ->setParameter('zonaId', $this->getUser()->getIdZona());
+			}
+			$expedientes = $qb->getQuery()->getOneOrNullResult();
 		}
 		$seguimientosExpediente = $repositorios['SeguimientosExpediente']->findBy(array(
 			'idExpediente' => $expedientes
@@ -1131,7 +1165,7 @@ Esta comunicación es privada y los documentos adjuntos a la misma son confidenc
 		);
 		if ($this->getUser()->getRole() === 'ROLE_CLIENTE') {
 			$tipos_documentos = [0, 2];
-		} elseif ($this->getUser()->getRole() === 'ROLE_COLABORADOR') {
+		} elseif (in_array($this->getUser()->getRole(), ['ROLE_COLABORADOR', 'ROLE_JEFE_INMOBILIARIA', 'ROLE_JEFE_OFICINA', 'ROLE_RESPONSABLE_ZONA'])) {
 			$tipos_documentos = [1, 2];
 		} else {
 			$tipos_documentos = [0, 1, 2, 3];

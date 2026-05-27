@@ -1505,9 +1505,11 @@ class CalculadoraAvanzada
 					}else if($habitual && $edad <35 && $importeVivienda>(180000 + $margen_error)){
 						$respuesta['tipo'] = 0.08;
 						$respuesta['mensaje'] = "Tiene una bonificación por ser menor de 35 años y el importe de la vivienda habitual ser mayor de 180.000€.";
+					}else if($importeVivienda > (1000000 + $margen_error)){
+						$respuesta['tipo'] = 0.11;
+						$respuesta['mensaje'] = "Se aplica el tipo incrementado del 11% por superar el importe de 1.000.000€.";
 					}else {
-						$respuesta['tipo'] = 0.10;
-
+						$respuesta['tipo'] = 0.09;
 					}
 
 					return $respuesta;

@@ -1002,14 +1002,15 @@ class BotApiController extends Controller
 			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
 		}
 
+		$referencia = $request->request->get('referencia') ?: $request->query->get('referencia');
 		$idExpediente = $request->request->get('id_expediente') ?: $request->query->get('id_expediente');
 		$telefono = $request->request->get('telefono') ?: $request->query->get('telefono');
 		$dni = $request->request->get('dni') ?: $request->query->get('dni');
 
-		if (!$idExpediente && !$telefono && !$dni) {
+		if (!$referencia && !$idExpediente && !$telefono && !$dni) {
 			return new JsonResponse([
 				'success' => false,
-				'error' => 'Debe proporcionar al menos un parámetro: id_expediente, telefono o dni.'
+				'error' => 'Debe proporcionar al menos un parámetro: referencia, id_expediente, telefono o dni.'
 			], 400);
 		}
 
@@ -1017,7 +1018,10 @@ class BotApiController extends Controller
 		$where = [];
 		$params = [];
 
-		if ($idExpediente) {
+		if ($referencia) {
+			$where[] = 'e.referencia = :ref';
+			$params[':ref'] = $referencia;
+		} else if ($idExpediente) {
 			$where[] = 'e.id_expediente = :id_exp';
 			$params[':id_exp'] = $idExpediente;
 		} else {
