@@ -55,15 +55,15 @@ class BotApiController extends Controller
 
 			if (count($violaciones) === 0) {
 				$resultadoHipoteca = $calculadora->calcularHipoteca();
-				
+
 				$hipoteca = $resultadoHipoteca['capital_less_initial_amount'];
 				$pago_mensual = $resultadoHipoteca['fee'];
 				$plazo = $calculadora->getPlazoAmortizacion();
-				
+
 				// Formatear el precio sin decimales y la cuota con 2 decimales
 				$hipotecaFmt = number_format($hipoteca, 0, ',', '');
 				$pagoFmt = number_format($pago_mensual, 2, '.', '');
-				
+
 				$mensaje_texto = sprintf(
 					"Para una hipoteca de %s € amortizada en %s año(s), tu pago mensual es de: %s €",
 					$hipotecaFmt,
@@ -509,11 +509,28 @@ class BotApiController extends Controller
 			if (!is_numeric($ccaa)) {
 				$ccaaStr = strtolower(preg_replace('/[^a-zA-Z0-9 ]/', '', iconv('UTF-8', 'ASCII//TRANSLIT', $ccaa)));
 				$map = [
-					'andalucia' => 1, 'aragon' => 2, 'asturias' => 3, 'baleares' => 4,
-					'canarias' => 5, 'cantabria' => 6, 'castilla la mancha' => 7, 'castilla y leon' => 8,
-					'cataluna' => 9, 'catalunya' => 9, 'ceuta' => 10, 'comunidad valenciana' => 11,
-					'valencia' => 11, 'extremadura' => 12, 'galicia' => 13, 'la rioja' => 14, 'rioja' => 14,
-					'madrid' => 15, 'melilla' => 16, 'murcia' => 17, 'navarra' => 18, 'pais vasco' => 19
+					'andalucia' => 1,
+					'aragon' => 2,
+					'asturias' => 3,
+					'baleares' => 4,
+					'canarias' => 5,
+					'cantabria' => 6,
+					'castilla la mancha' => 7,
+					'castilla y leon' => 8,
+					'cataluna' => 9,
+					'catalunya' => 9,
+					'ceuta' => 10,
+					'comunidad valenciana' => 11,
+					'valencia' => 11,
+					'extremadura' => 12,
+					'galicia' => 13,
+					'la rioja' => 14,
+					'rioja' => 14,
+					'madrid' => 15,
+					'melilla' => 16,
+					'murcia' => 17,
+					'navarra' => 18,
+					'pais vasco' => 19
 				];
 				$ccaa = isset($map[$ccaaStr]) ? $map[$ccaaStr] : 1;
 			}
@@ -1173,28 +1190,28 @@ class BotApiController extends Controller
 		try {
 			$doctrine = $this->getDoctrine();
 			$conn = $doctrine->getConnection();
-			
+
 			$sql = "
 				SELECT MAX(CAST(SUBSTRING_INDEX(referencia, '/', 1) AS UNSIGNED)) as max_numero
 				FROM expediente
 				WHERE referencia LIKE :patron
 			";
-			
+
 			$stmt = $conn->prepare($sql);
 			$patron = '%/' . str_pad($anio, 2, '0', STR_PAD_LEFT);
 			$stmt->bindValue('patron', $patron);
 			$stmt->execute();
 			$result = $stmt->fetch();
-			
-			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero']) 
-				? (int)$result['max_numero'] 
+
+			$maxNumero = isset($result['max_numero']) && !is_null($result['max_numero'])
+				? (int) $result['max_numero']
 				: 0;
-			
+
 			$siguienteNumero = $maxNumero + 1;
-			
+
 			// Formato: NNNN/YY (5 dígitos para número, 2 para año)
 			$referencia = sprintf('%05d/%02d', $siguienteNumero, $anio);
-			
+
 			return $referencia;
 		} catch (\Exception $e) {
 			throw new \Exception('Error al generar referencia de expediente: ' . $e->getMessage());
@@ -1279,7 +1296,7 @@ class BotApiController extends Controller
 			$expediente->setIdCliente($cliente);
 			$expediente->setEstado('1');
 			$expediente->setVivienda('Creado desde el Bot'); // Evita el error "vivienda cannot be null"
-			
+
 			// Asignar fase inicial por defecto (Fase 1) para evitar el error "id_fase_actual cannot be null"
 			$faseInicial = $this->getDoctrine()->getRepository('AppBundle:Fase')->find(1);
 			if ($faseInicial) {
@@ -1289,7 +1306,7 @@ class BotApiController extends Controller
 			$expediente->setFechaCreacion(new \DateTime());
 			$expediente->setFechaModificacion(new \DateTime());
 
-			$anio = (int)$expediente->getFechaCreacion()->format('y');
+			$anio = (int) $expediente->getFechaCreacion()->format('y');
 			$referencia = $this->generarReferencia($anio);
 			$expediente->setReferencia($referencia);
 
@@ -1340,4 +1357,278 @@ class BotApiController extends Controller
 		}
 		return $this->simularViabilidadAction($request);
 	}
+
+	/**
+	 * Endpoint API para modificar un expediente existente recibiendo texto NLP para que la IA extraiga los campos
+	 */
+	public function botModificarExpedienteAction(Request $request)
+	{
+		// Requiere API key
+		if (!$this->checkApiKey($request)) {
+			return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+		}
+
+		$jsonData = [];
+		if ($request->getContentType() === 'json' || strpos($request->headers->get('Content-Type'), 'application/json') !== false) {
+			$jsonData = json_decode($request->getContent(), true) ?: [];
+		}
+
+		$idExpParam = $request->request->get('identificador') ?: $request->query->get('identificador') ?: ($jsonData['identificador'] ?? null);
+		$textoModificacion = $request->request->get('texto') ?: $request->query->get('texto') ?: ($jsonData['texto'] ?? null);
+		$fromPhone = $request->request->get('fromPhone') ?: $request->query->get('fromPhone') ?: ($jsonData['fromPhone'] ?? null);
+
+		if (!$idExpParam || !$textoModificacion) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Debe proporcionar "identificador" (ID o referencia) y "texto".'
+			], 400);
+		}
+
+		$conn = $this->getDoctrine()->getConnection();
+		$sqlBusquedaExp = "SELECT id_expediente FROM expediente WHERE id_expediente = :id_param OR referencia = :ref_param LIMIT 1";
+		$stmtBusquedaExp = $conn->prepare($sqlBusquedaExp);
+		$stmtBusquedaExp->bindValue('id_param', is_numeric($idExpParam) ? (int)$idExpParam : 0);
+		$stmtBusquedaExp->bindValue('ref_param', (string)$idExpParam);
+		$stmtBusquedaExp->execute();
+		$idExpReal = $stmtBusquedaExp->fetchColumn();
+
+		if (!$idExpReal) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'No se encontró ningún expediente con el ID o referencia: ' . $idExpParam
+			], 404);
+		}
+
+		$idExp = (int) $idExpReal;
+
+		$iaControllerGlobal = new \AppBundle\Controller\InteligenciaArtificialController($this->get('logger'));
+		$iaControllerGlobal->setContainer($this->container);
+
+		try {
+			$gruposAMapear = range(1, 20); 
+			$resultadoGlobal = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
+			$camposProcesados = $resultadoGlobal['campos_procesados'] ?? [];
+		} catch (\Exception $e) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Hubo un error al conectar con la IA de extracción: ' . $e->getMessage()
+			], 500);
+		}
+		
+		if (empty($camposProcesados)) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'No se ha podido identificar a qué campo te refieres con: ' . $textoModificacion
+			], 400);
+		}
+
+		$datosExtraidos = ['campos_encontrados' => []];
+		foreach ($camposProcesados as $campoProc) {
+			$datosExtraidos['campos_encontrados'][] = [
+				'campo_id' => $campoProc['id'],
+				'nombre_campo' => $campoProc['nombre'] ?? '',
+				'valor' => $campoProc['valor']
+			];
+		}
+
+		$resultadoGuardar = $this->guardarDatosEnExpediente($idExp, $datosExtraidos, $fromPhone ?? 'API', '', '', $iaControllerGlobal);
+
+		if ($resultadoGuardar['exito']) {
+			return new JsonResponse([
+				'success' => true,
+				'id_expediente' => $idExp,
+				'datos_guardados' => $datosExtraidos['campos_encontrados']
+			]);
+		} else {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Hubo un error al guardar los datos en base de datos.',
+				'detalles' => $resultadoGuardar['error'] ?? 'Desconocido'
+			], 500);
+		}
+	}
+    private function guardarDatosEnExpediente(int $idExpediente, array $datosExtraidos, string $telefonoOrigen, string $nombreCliente = '', string $nifCliente = '', $iaControllerGlobal = null)
+    {
+        $this->get('logger')->info('=== INICIO guardarDatosEnExpediente ===');
+        $this->get('logger')->info('ID Expediente: ' . $idExpediente);
+        $this->get('logger')->info('Nombre Cliente: ' . $nombreCliente);
+        $this->get('logger')->info('Datos a guardar: ' . json_encode($datosExtraidos['campos_encontrados']));
+
+        $conn = $this->getDoctrine()->getConnection();
+        $camposGuardados = 0;
+        $camposError = 0;
+
+        // Agregar campo 192 (Nombre y Apellidos) y campo 194 (DNI) si no vienen en los datos extraídos
+        if (is_array($datosExtraidos['campos_encontrados'])) {
+            // Verificar si ya existen en los datos extraídos
+            $campo192Existe = false;
+            $campo194Existe = false;
+            foreach ($datosExtraidos['campos_encontrados'] as $campo) {
+                if (isset($campo['campo_id']) && $campo['campo_id'] == 192) {
+                    $campo192Existe = true;
+                }
+                if (isset($campo['campo_id']) && $campo['campo_id'] == 194) {
+                    $campo194Existe = true;
+                }
+            }
+
+            // Agregar campo 192 si no existe y el nombre no está vacío
+            if (!$campo192Existe && !empty($nombreCliente)) {
+                $datosExtraidos['campos_encontrados'][] = [
+                    'tipo' => 'nombre_apellidos',
+                    'nombre_campo' => 'Nombre y Apellidos',
+                    'campo_id' => 192,
+                    'valor' => $nombreCliente
+                ];
+                $this->get('logger')->info('✓ Campo 192 agregado automáticamente: ' . $nombreCliente);
+            }
+
+            // Agregar campo 194 si no existe y el NIF no está vacío
+            if (!$campo194Existe && !empty($nifCliente)) {
+                $datosExtraidos['campos_encontrados'][] = [
+                    'tipo' => 'dni',
+                    'nombre_campo' => 'DNI, NIE, Tarjeta Residencia',
+                    'campo_id' => 194,
+                    'valor' => $nifCliente
+                ];
+                $this->get('logger')->info('✓ Campo 194 agregado automáticamente: ' . $nifCliente);
+            }
+        }
+
+        if (empty($datosExtraidos['campos_encontrados'])) {
+            $this->get('logger')->info('✗ No hay campos para guardar');
+            return ['exito' => false, 'guardados' => 0];
+        }
+
+        try {
+            $timestamp = date('Y-m-d H:i:s');
+
+            // Obtener mapeo de opciones para campos que las tienen
+            $opcionesMapeo = $iaControllerGlobal->obtenerOpcionesCampos();
+
+            // Procesar cada campo encontrado
+            foreach ($datosExtraidos['campos_encontrados'] as $campo) {
+                try {
+                    $idCampoHito = $campo['campo_id'];
+                    $valor = trim($campo['valor']);
+                    $nombreCampo = $campo['nombre_campo'];
+                    $idOpcional = null; // Campo para almacenar id_opciones_campo
+
+                    $this->get('logger')->info("→ Guardando: {$nombreCampo} (ID: {$idCampoHito}) = '{$valor}'");
+
+                    if (empty($valor)) {
+                        $this->get('logger')->info('✗ Valor vacío, saltando');
+                        continue;
+                    }
+
+                    // MAPEO DE OPCIONES: Si el campo tiene opciones configuradas, mapear el valor
+                    if (isset($opcionesMapeo[$idCampoHito])) {
+                        $valorNormalizado = strtolower(trim($valor));
+                        $valorMapeado = null;
+
+                        foreach ($opcionesMapeo[$idCampoHito] as $opcionUsuario => $opcionBD) {
+                            if (strpos($valorNormalizado, strtolower($opcionUsuario)) !== false) {
+                                $valorMapeado = $opcionBD;
+                                $idOpcional = $valorMapeado; // Guardar el ID de la opción en id_opciones_campo
+                                $this->get('logger')->info("  → Mapeado: '{$valor}' → opción ID '{$valorMapeado}'");
+                                $this->get('logger')->info("  → Guardando en id_opciones_campo");
+                                // NO sobrescribir $valor - mantener el valor original
+                                break;
+                            }
+                        }
+
+                        if (!$valorMapeado) {
+                            $this->get('logger')->info("  ⚠ Valor '{$valor}' no coincide con opciones. Guardando como valor texto.");
+                        }
+                    }
+
+                    // Usar SQL directo para máxima compatibilidad
+                    // Primero verificar si existe y obtener su valor actual
+                    $sql = 'SELECT id_campo_hito_expediente, valor, id_opciones_campo FROM campo_hito_expediente 
+                            WHERE id_expediente = :idExp AND id_campo_hito = :idCampo LIMIT 1';
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bindValue('idExp', $idExpediente);
+                    $stmt->bindValue('idCampo', $idCampoHito);
+                    $stmt->execute();
+                    $resultado = $stmt->fetch();
+
+                    if ($resultado) {
+                        // El campo ya existe - verificar si ya tiene valor
+                        $valorActual = trim($resultado['valor'] ?? '');
+                        $tieneOpcional = !empty($resultado['id_opciones_campo']);
+
+                        // Detectar si el valor es corrupto (formato: campo_hito_XXXX_opcion_YYYY)
+                        $esValorCorrupto = preg_match('/^campo_hito_\d+_opcion_\d+$/', $valorActual);
+
+                        // Si tiene opción asignada (válida), NO actualizar
+                        if ($tieneOpcional && !$esValorCorrupto) {
+                            $this->get('logger')->info('⚠ CAMPO YA TIENE OPCIÓN ASIGNADA: ' . $nombreCampo . ' = opción ID: ' . $resultado['id_opciones_campo'] . ' (no se actualiza)');
+                            continue;
+                        }
+
+                        // Si tiene valor válido (no corrupto), NO actualizar
+                        if (!empty($valorActual) && !$esValorCorrupto) {
+                            $this->get('logger')->info('⚠ CAMPO YA TIENE VALOR: ' . $nombreCampo . ' = "' . $valorActual . '" (no se actualiza)');
+                            continue;
+                        }
+
+                        // Si el valor es corrupto, permitir sobrescribir
+                        if ($esValorCorrupto) {
+                            $this->get('logger')->info('⚠ VALOR CORRUPTO DETECTADO: ' . $valorActual . ' - SOBRESCRIBIENDO CON: ' . $valor);
+                        }
+
+                        // El campo existe pero está vacío, proceder a actualizar
+                        $sqlUpdate = 'UPDATE campo_hito_expediente 
+                                      SET valor = :valor, id_opciones_campo = :idOpcional, fecha_modificacion = :timestamp
+                                      WHERE id_expediente = :idExp AND id_campo_hito = :idCampo';
+                        $stmt = $conn->prepare($sqlUpdate);
+                        $stmt->bindValue('valor', $valor);
+                        $stmt->bindValue('idOpcional', $idOpcional);
+                        $stmt->bindValue('timestamp', $timestamp);
+                        $stmt->bindValue('idExp', $idExpediente);
+                        $stmt->bindValue('idCampo', $idCampoHito);
+                        $stmt->execute();
+                        $this->get('logger')->info('✓ ACTUALIZADO: ' . $nombreCampo);
+                    } else {
+                        // Insertar
+                        $sqlInsert = 'INSERT INTO campo_hito_expediente 
+                                      (id_expediente, id_campo_hito, valor, id_opciones_campo, fecha_modificacion, obligatorio)
+                                      VALUES (:idExp, :idCampo, :valor, :idOpcional, :timestamp, 0)';
+                        $stmt = $conn->prepare($sqlInsert);
+                        $stmt->bindValue('idExp', $idExpediente);
+                        $stmt->bindValue('idCampo', $idCampoHito);
+                        $stmt->bindValue('valor', $valor);
+                        $stmt->bindValue('idOpcional', $idOpcional);
+                        $stmt->bindValue('timestamp', $timestamp);
+                        $stmt->execute();
+                        $this->get('logger')->info('✓ INSERTADO: ' . $nombreCampo);
+                    }
+
+                    $camposGuardados++;
+
+                } catch (\Exception $e) {
+                    $this->get('logger')->info('✗ Error: ' . $e->getMessage());
+                    $camposError++;
+                }
+            }
+
+            $this->get('logger')->info("=== FIN guardarDatosEnExpediente: {$camposGuardados} guardados, {$camposError} errores ===");
+
+            return [
+                'exito' => $camposGuardados > 0,
+                'guardados' => $camposGuardados,
+                'errores' => $camposError
+            ];
+
+        } catch (\Exception $e) {
+            $this->get('logger')->info('✗ EXCEPCIÓN FATAL: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
+            return [
+                'exito' => false,
+                'guardados' => 0,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+
 }

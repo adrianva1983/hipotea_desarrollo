@@ -947,6 +947,10 @@ api_bot_simular_viabilidad:
   controller: AppBundle:BotApi:botSimularViabilidad
   methods: [GET, POST]
 
+api_bot_modificar_expediente:
+  path: /API/BotModificarExpediente
+  controller: AppBundle:BotApi:botModificarExpediente
+  methods: [POST]
 
 pageNotFound:
     path:  /{path}

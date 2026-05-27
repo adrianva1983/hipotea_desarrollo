@@ -4094,64 +4094,39 @@ class WhatsappController extends Controller
                     $idExpParam = trim($partes[0]);
                     $textoModificacion = trim($partes[1]);
 
-                    // Buscar el expediente real ya sea por ID o por Referencia
-                    $conn = $this->getDoctrine()->getConnection();
-                    $sqlBusquedaExp = "SELECT id_expediente FROM expediente WHERE id_expediente = :param OR referencia = :param LIMIT 1";
-                    $stmtBusquedaExp = $conn->prepare($sqlBusquedaExp);
-                    // Si es numérico, podría ser el ID, sino buscamos como string (referencia)
-                    $stmtBusquedaExp->bindValue('param', $idExpParam);
-                    $stmtBusquedaExp->execute();
-                    $idExpReal = $stmtBusquedaExp->fetchColumn();
-
-                    if (!$idExpReal) {
-                        return $textoConversacional . "\n\n❌ Lo siento, no he encontrado ningún expediente con el ID o referencia: " . $idExpParam;
-                    }
-
-                    $idExp = (int) $idExpReal;
-
-                    // Instanciar InteligenciaArtificialController para extraer de todos los campos posibles
-                    $iaControllerGlobal = new \AppBundle\Controller\InteligenciaArtificialController($this->get('logger'));
-                    $iaControllerGlobal->setContainer($this->container);
+                    $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                        '/API/BotModificarExpediente',
+                        'POST',
+                        [
+                            'api_key' => '123456',
+                            'identificador' => $idExpParam,
+                            'texto' => $textoModificacion,
+                            'fromPhone' => $fromPhone
+                        ]
+                    );
 
                     try {
-                        // Pasar los grupos relevantes: 2 (Titular 1), 3 (Económicos), etc. 
-                        // O bien, podemos pasar un rango del 1 al 20 para abarcar la mayoría de grupos
-                        $gruposAMapear = range(1, 20); 
-                        $resultadoGlobal = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
-                        $camposProcesados = $resultadoGlobal['campos_procesados'] ?? [];
-                    } catch (\Exception $e) {
-                        return $textoConversacional . "\n\n❌ Hubo un error al conectar con la IA de extracción: " . $e->getMessage();
-                    }
-                    
-                    if (empty($camposProcesados)) {
-                        return $textoConversacional . "\n\n❌ Lo siento, no he podido identificar a qué campo te refieres con: '" . $textoModificacion . "'. Intenta decirlo de otra forma.";
-                    }
+                        $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                        $data = json_decode($response->getContent(), true);
 
-                    // Mapear al formato que espera guardarDatosEnExpediente
-                    $datosExtraidos = ['campos_encontrados' => []];
-                    foreach ($camposProcesados as $campoProc) {
-                        $datosExtraidos['campos_encontrados'][] = [
-                            'campo_id' => $campoProc['id'],
-                            'nombre_campo' => $campoProc['nombre'] ?? '',
-                            'valor' => $campoProc['valor']
-                        ];
-                    }
-
-                    // Guardar los datos extraídos
-                    $resultadoGuardar = $this->guardarDatosEnExpediente($idExp, $datosExtraidos, $fromPhone);
-
-                    if ($resultadoGuardar['exito']) {
-                        $msg = "✅ *Expediente $idExp actualizado*\nHe guardado los siguientes datos:\n";
-                        foreach ($datosExtraidos['campos_encontrados'] as $campo) {
-                            $nombre = $campo['nombre_campo'] ?? $campo['tipo'] ?? 'Desconocido';
-                            $valor = $campo['valor'] ?? '';
-                            if ($nombre && $valor) {
-                                $msg .= "   - " . $nombre . ": " . $valor . "\n";
+                        if ($response->getStatusCode() === 200 && $data['success']) {
+                            $msg = "✅ *Expediente " . $data['id_expediente'] . " actualizado*\nHe guardado los siguientes datos:\n";
+                            foreach ($data['datos_guardados'] as $campo) {
+                                $nombre = $campo['nombre_campo'] ?? $campo['tipo'] ?? 'Desconocido';
+                                $valor = $campo['valor'] ?? '';
+                                if ($nombre && $valor) {
+                                    $msg .= "   - " . $nombre . ": " . $valor . "\n";
+                                }
                             }
+                            return $textoConversacional . "\n\n" . $msg;
+                        } elseif ($response->getStatusCode() === 404) {
+                            return $textoConversacional . "\n\n❌ Lo siento, no he encontrado ningún expediente con el ID o referencia: " . $idExpParam;
+                        } else {
+                            return $textoConversacional . "\n\n❌ Hubo un error al intentar modificar el expediente: " . ($data['error'] ?? 'Desconocido');
                         }
-                        return $textoConversacional . "\n\n" . $msg;
-                    } else {
-                        return $textoConversacional . "\n\n⚠️ Intenté modificar el expediente $idExp, pero hubo un error al guardar los datos.";
+                    } catch (\Exception $e) {
+                        $this->logear('⚠️ Error al modificar expediente vía API: ' . $e->getMessage());
+                        return $textoConversacional . "\n\n❌ Hubo un error al intentar modificar el expediente.";
                     }
 
                 // ─────────────────────────────────────────────────────────────

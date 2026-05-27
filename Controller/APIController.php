@@ -154,7 +154,8 @@ class APIController extends Controller
 									'idCampoHito' => $campoHito->getIdCampoHito(),
 									'idExpediente' => $expediente->getIdExpediente(),
 									'idCampoHitoExpediente' => $campoHitoExpediente->getIdCampoHitoExpediente(),
-									'nombre' => $campoHito->getNombre()
+									'nombre' => $campoHito->getNombre(),
+									'descargable' => in_array($campoHito->getIdCampoHito(), [313,731,315,322,728,729,324,708,709,710,711,712,713,716,717,718,719,722,723,724,726,738,739])
 								);
 								if ($ficheroCampo) {
 									$fichero['nombreFichero'] = $ficheroCampo->getNombreFichero();
