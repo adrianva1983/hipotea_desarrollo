@@ -1397,8 +1397,8 @@ class BotApiController extends Controller
 		$conn = $this->getDoctrine()->getConnection();
 		$sqlBusquedaExp = "SELECT id_expediente FROM expediente WHERE id_expediente = :id_param OR referencia = :ref_param LIMIT 1";
 		$stmtBusquedaExp = $conn->prepare($sqlBusquedaExp);
-		$stmtBusquedaExp->bindValue('id_param', is_numeric($idExpParam) ? (int)$idExpParam : 0);
-		$stmtBusquedaExp->bindValue('ref_param', (string)$idExpParam);
+		$stmtBusquedaExp->bindValue('id_param', is_numeric($idExpParam) ? (int) $idExpParam : 0);
+		$stmtBusquedaExp->bindValue('ref_param', (string) $idExpParam);
 		$stmtBusquedaExp->execute();
 		$idExpReal = $stmtBusquedaExp->fetchColumn();
 
@@ -1415,7 +1415,7 @@ class BotApiController extends Controller
 		$iaControllerGlobal->setContainer($this->container);
 
 		try {
-			$gruposAMapear = range(1, 20); // TODOS los grupos a mapear
+			$gruposAMapear = range(1, 20);
 			$resultadoGlobal = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
 			$camposProcesados = $resultadoGlobal['campos_procesados'] ?? [];
 		} catch (\Exception $e) {
@@ -1424,7 +1424,7 @@ class BotApiController extends Controller
 				'error' => 'Hubo un error al conectar con la IA de extracción: ' . $e->getMessage()
 			], 500);
 		}
-		
+
 		if (empty($camposProcesados)) {
 			return new JsonResponse([
 				'success' => false,
@@ -1441,7 +1441,7 @@ class BotApiController extends Controller
 			];
 		}
 
-		$resultadoGuardar = $this->guardarDatosEnExpediente($idExp, $datosExtraidos, $fromPhone ?? 'API', '', '', $iaControllerGlobal);
+		$resultadoGuardar = $this->guardarDatosEnExpediente($idExp, $datosExtraidos, $fromPhone ?? 'API', '', '', $iaControllerGlobal, true);
 
 		if ($resultadoGuardar['exito']) {
 			return new JsonResponse([
@@ -1457,204 +1457,204 @@ class BotApiController extends Controller
 			], 500);
 		}
 	}
-    private function guardarDatosEnExpediente(int $idExpediente, array $datosExtraidos, string $telefonoOrigen, string $nombreCliente = '', string $nifCliente = '', $iaControllerGlobal = null)
-    {
-        $this->get('logger')->info('=== INICIO guardarDatosEnExpediente ===');
-        $this->get('logger')->info('ID Expediente: ' . $idExpediente);
-        $this->get('logger')->info('Nombre Cliente: ' . $nombreCliente);
-        $this->get('logger')->info('Datos a guardar: ' . json_encode($datosExtraidos['campos_encontrados']));
+	private function guardarDatosEnExpediente(int $idExpediente, array $datosExtraidos, string $telefonoOrigen, string $nombreCliente = '', string $nifCliente = '', $iaControllerGlobal = null, bool $forzarSobrescritura = false)
+	{
+		$this->get('logger')->info('=== INICIO guardarDatosEnExpediente ===');
+		$this->get('logger')->info('ID Expediente: ' . $idExpediente);
+		$this->get('logger')->info('Nombre Cliente: ' . $nombreCliente);
+		$this->get('logger')->info('Datos a guardar: ' . json_encode($datosExtraidos['campos_encontrados']));
 
-        $conn = $this->getDoctrine()->getConnection();
-        $camposGuardados = 0;
-        $camposError = 0;
+		$conn = $this->getDoctrine()->getConnection();
+		$camposGuardados = 0;
+		$camposError = 0;
 
-        // Agregar campo 192 (Nombre y Apellidos) y campo 194 (DNI) si no vienen en los datos extraídos
-        if (is_array($datosExtraidos['campos_encontrados'])) {
-            // Verificar si ya existen en los datos extraídos
-            $campo192Existe = false;
-            $campo194Existe = false;
-            foreach ($datosExtraidos['campos_encontrados'] as $campo) {
-                if (isset($campo['campo_id']) && $campo['campo_id'] == 192) {
-                    $campo192Existe = true;
-                }
-                if (isset($campo['campo_id']) && $campo['campo_id'] == 194) {
-                    $campo194Existe = true;
-                }
-            }
+		// Agregar campo 192 (Nombre y Apellidos) y campo 194 (DNI) si no vienen en los datos extraídos
+		if (is_array($datosExtraidos['campos_encontrados'])) {
+			// Verificar si ya existen en los datos extraídos
+			$campo192Existe = false;
+			$campo194Existe = false;
+			foreach ($datosExtraidos['campos_encontrados'] as $campo) {
+				if (isset($campo['campo_id']) && $campo['campo_id'] == 192) {
+					$campo192Existe = true;
+				}
+				if (isset($campo['campo_id']) && $campo['campo_id'] == 194) {
+					$campo194Existe = true;
+				}
+			}
 
-            // Agregar campo 192 si no existe y el nombre no está vacío
-            if (!$campo192Existe && !empty($nombreCliente)) {
-                $datosExtraidos['campos_encontrados'][] = [
-                    'tipo' => 'nombre_apellidos',
-                    'nombre_campo' => 'Nombre y Apellidos',
-                    'campo_id' => 192,
-                    'valor' => $nombreCliente
-                ];
-                $this->get('logger')->info('✓ Campo 192 agregado automáticamente: ' . $nombreCliente);
-            }
+			// Agregar campo 192 si no existe y el nombre no está vacío
+			if (!$campo192Existe && !empty($nombreCliente)) {
+				$datosExtraidos['campos_encontrados'][] = [
+					'tipo' => 'nombre_apellidos',
+					'nombre_campo' => 'Nombre y Apellidos',
+					'campo_id' => 192,
+					'valor' => $nombreCliente
+				];
+				$this->get('logger')->info('✓ Campo 192 agregado automáticamente: ' . $nombreCliente);
+			}
 
-            // Agregar campo 194 si no existe y el NIF no está vacío
-            if (!$campo194Existe && !empty($nifCliente)) {
-                $datosExtraidos['campos_encontrados'][] = [
-                    'tipo' => 'dni',
-                    'nombre_campo' => 'DNI, NIE, Tarjeta Residencia',
-                    'campo_id' => 194,
-                    'valor' => $nifCliente
-                ];
-                $this->get('logger')->info('✓ Campo 194 agregado automáticamente: ' . $nifCliente);
-            }
-        }
+			// Agregar campo 194 si no existe y el NIF no está vacío
+			if (!$campo194Existe && !empty($nifCliente)) {
+				$datosExtraidos['campos_encontrados'][] = [
+					'tipo' => 'dni',
+					'nombre_campo' => 'DNI, NIE, Tarjeta Residencia',
+					'campo_id' => 194,
+					'valor' => $nifCliente
+				];
+				$this->get('logger')->info('✓ Campo 194 agregado automáticamente: ' . $nifCliente);
+			}
+		}
 
-        if (empty($datosExtraidos['campos_encontrados'])) {
+		if (empty($datosExtraidos['campos_encontrados'])) {
 
-            $this->get('logger')->info('✗ No hay campos para guardar');
-            return ['exito' => false, 'guardados' => 0];
-        }
+			$this->get('logger')->info('✗ No hay campos para guardar');
+			return ['exito' => false, 'guardados' => 0];
+		}
 
-        try {
-            $timestamp = date('Y-m-d H:i:s');
+		try {
+			$timestamp = date('Y-m-d H:i:s');
 
-            // Obtener mapeo de opciones para campos que las tienen
-            $iArtificalController = new \AppBundle\Controller\IArtificalController();
-            $iArtificalController->setContainer($this->container);
-            $opcionesMapeo = $iArtificalController->obtenerOpcionesCampos();
+			// Obtener mapeo de opciones para campos que las tienen
+			$iArtificalController = new \AppBundle\Controller\IArtificalController();
+			$iArtificalController->setContainer($this->container);
+			$opcionesMapeo = $iArtificalController->obtenerOpcionesCampos();
 
-            // Procesar cada campo encontrado
-            foreach ($datosExtraidos['campos_encontrados'] as $campo) {
-                try {
-                    $idCampoHito = $campo['campo_id'];
-                    $valor = trim($campo['valor']);
-                    $nombreCampo = $campo['nombre_campo'];
-                    $idOpcional = null; // Campo para almacenar id_opciones_campo
+			// Procesar cada campo encontrado
+			foreach ($datosExtraidos['campos_encontrados'] as $campo) {
+				try {
+					$idCampoHito = $campo['campo_id'];
+					$valor = trim($campo['valor']);
+					$nombreCampo = $campo['nombre_campo'];
+					$idOpcional = null; // Campo para almacenar id_opciones_campo
 
-                    $this->get('logger')->info("→ Guardando: {$nombreCampo} (ID: {$idCampoHito}) = '{$valor}'");
+					$this->get('logger')->info("→ Guardando: {$nombreCampo} (ID: {$idCampoHito}) = '{$valor}'");
 
-                    if (empty($valor)) {
-                        $this->get('logger')->info('✗ Valor vacío, saltando');
-                        continue;
-                    }
+					if (empty($valor)) {
+						$this->get('logger')->info('✗ Valor vacío, saltando');
+						continue;
+					}
 
-                    // MAPEO DE OPCIONES: Si el campo tiene opciones configuradas, mapear el valor
-                    if (isset($opcionesMapeo[$idCampoHito])) {
-                        $valorNormalizado = strtolower(trim($valor));
-                        $valorMapeado = null;
+					// MAPEO DE OPCIONES: Si el campo tiene opciones configuradas, mapear el valor
+					if (isset($opcionesMapeo[$idCampoHito])) {
+						$valorNormalizado = strtolower(trim($valor));
+						$valorMapeado = null;
 
-                        foreach ($opcionesMapeo[$idCampoHito] as $opcionUsuario => $opcionBD) {
-                            if (strpos($valorNormalizado, strtolower($opcionUsuario)) !== false) {
-                                $valorMapeado = $opcionBD;
-                                $idOpcional = $valorMapeado; // Guardar el ID de la opción en id_opciones_campo
-                                $this->get('logger')->info("  → Mapeado: '{$valor}' → opción ID '{$valorMapeado}'");
-                                $this->get('logger')->info("  → Guardando en id_opciones_campo");
-                                // NO sobrescribir $valor - mantener el valor original
-                                break;
-                            }
-                        }
+						foreach ($opcionesMapeo[$idCampoHito] as $opcionUsuario => $opcionBD) {
+							if (strpos($valorNormalizado, strtolower($opcionUsuario)) !== false) {
+								$valorMapeado = $opcionBD;
+								$idOpcional = $valorMapeado; // Guardar el ID de la opción en id_opciones_campo
+								$this->get('logger')->info("  → Mapeado: '{$valor}' → opción ID '{$valorMapeado}'");
+								$this->get('logger')->info("  → Guardando en id_opciones_campo");
+								// NO sobrescribir $valor - mantener el valor original
+								break;
+							}
+						}
 
-                        if (!$valorMapeado) {
-                            $this->get('logger')->info("  ⚠ Valor '{$valor}' no coincide con opciones. Guardando como valor texto.");
-                        }
-                    }
+						if (!$valorMapeado) {
+							$this->get('logger')->info("  ⚠ Valor '{$valor}' no coincide con opciones. Guardando como valor texto.");
+						}
+					}
 
-                    // Usar SQL directo para máxima compatibilidad
-                    // Primero verificar si existe y obtener su valor actual
-                    $sql = 'SELECT id_campo_hito_expediente, valor, id_opciones_campo FROM campo_hito_expediente 
+					// Usar SQL directo para máxima compatibilidad
+					// Primero verificar si existe y obtener su valor actual
+					$sql = 'SELECT id_campo_hito_expediente, valor, id_opciones_campo FROM campo_hito_expediente 
                             WHERE id_expediente = :idExp AND id_campo_hito = :idCampo LIMIT 1';
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bindValue('idExp', $idExpediente);
-                    $stmt->bindValue('idCampo', $idCampoHito);
-                    $stmt->execute();
-                    $resultado = $stmt->fetch();
+					$stmt = $conn->prepare($sql);
+					$stmt->bindValue('idExp', $idExpediente);
+					$stmt->bindValue('idCampo', $idCampoHito);
+					$stmt->execute();
+					$resultado = $stmt->fetch();
 
-                    if ($resultado) {
-                        // El campo ya existe - verificar si ya tiene valor
-                        $valorActual = trim($resultado['valor'] ?? '');
-                        $tieneOpcional = !empty($resultado['id_opciones_campo']);
+					if ($resultado) {
+						// El campo ya existe - verificar si ya tiene valor
+						$valorActual = trim($resultado['valor'] ?? '');
+						$tieneOpcional = !empty($resultado['id_opciones_campo']);
 
-                        // Detectar si el valor es corrupto (formato: campo_hito_XXXX_opcion_YYYY)
-                        $esValorCorrupto = preg_match('/^campo_hito_\d+_opcion_\d+$/', $valorActual);
+						// Detectar si el valor es corrupto (formato: campo_hito_XXXX_opcion_YYYY)
+						$esValorCorrupto = preg_match('/^campo_hito_\d+_opcion_\d+$/', $valorActual);
 
-                        // Si tiene opción asignada (válida), NO actualizar
-                        if ($tieneOpcional && !$esValorCorrupto) {
-                            $this->get('logger')->info('⚠ CAMPO YA TIENE OPCIÓN ASIGNADA: ' . $nombreCampo . ' = opción ID: ' . $resultado['id_opciones_campo'] . ' (no se actualiza)');
-                            continue;
-                        }
+						// Si tiene opción asignada (válida), NO actualizar (salvo si se fuerza sobrescritura)
+						if ($tieneOpcional && !$esValorCorrupto && !$forzarSobrescritura) {
+							$this->get('logger')->info('⚠ CAMPO YA TIENE OPCIÓN ASIGNADA: ' . $nombreCampo . ' = opción ID: ' . $resultado['id_opciones_campo'] . ' (no se actualiza)');
+							continue;
+						}
 
-                        // Si tiene valor válido (no corrupto), NO actualizar
-                        if (!empty($valorActual) && !$esValorCorrupto) {
-                            $this->get('logger')->info('⚠ CAMPO YA TIENE VALOR: ' . $nombreCampo . ' = "' . $valorActual . '" (no se actualiza)');
-                            continue;
-                        }
+						// Si tiene valor válido (no corrupto), NO actualizar (salvo si se fuerza sobrescritura)
+						if (!empty($valorActual) && !$esValorCorrupto && !$forzarSobrescritura) {
+							$this->get('logger')->info('⚠ CAMPO YA TIENE VALOR: ' . $nombreCampo . ' = "' . $valorActual . '" (no se actualiza)');
+							continue;
+						}
 
-                        // Si el valor es corrupto, permitir sobrescribir
-                        if ($esValorCorrupto) {
-                            $this->get('logger')->info('⚠ VALOR CORRUPTO DETECTADO: ' . $valorActual . ' - SOBRESCRIBIENDO CON: ' . $valor);
-                        }
+						// Si el valor es corrupto, permitir sobrescribir
+						if ($esValorCorrupto) {
+							$this->get('logger')->info('⚠ VALOR CORRUPTO DETECTADO: ' . $valorActual . ' - SOBRESCRIBIENDO CON: ' . $valor);
+						}
 
-                        // El campo existe pero está vacío, proceder a actualizar
-                        $sqlUpdate = 'UPDATE campo_hito_expediente 
+						// El campo existe pero está vacío, proceder a actualizar
+						$sqlUpdate = 'UPDATE campo_hito_expediente 
                                       SET valor = :valor, id_opciones_campo = :idOpcional, fecha_modificacion = :timestamp
                                       WHERE id_expediente = :idExp AND id_campo_hito = :idCampo';
-                        $stmt = $conn->prepare($sqlUpdate);
-                        $stmt->bindValue('valor', $valor);
-                        $stmt->bindValue('idOpcional', $idOpcional);
-                        $stmt->bindValue('timestamp', $timestamp);
-                        $stmt->bindValue('idExp', $idExpediente);
-                        $stmt->bindValue('idCampo', $idCampoHito);
-                        $stmt->execute();
-                        $this->get('logger')->info('✓ ACTUALIZADO: ' . $nombreCampo);
-                    } else {
-                        // Obtener id_hito_expediente
-                        $sqlHito = 'SELECT he.id_hito_expediente 
+						$stmt = $conn->prepare($sqlUpdate);
+						$stmt->bindValue('valor', $valor);
+						$stmt->bindValue('idOpcional', $idOpcional);
+						$stmt->bindValue('timestamp', $timestamp);
+						$stmt->bindValue('idExp', $idExpediente);
+						$stmt->bindValue('idCampo', $idCampoHito);
+						$stmt->execute();
+						$this->get('logger')->info('✓ ACTUALIZADO: ' . $nombreCampo);
+					} else {
+						// Obtener id_hito_expediente
+						$sqlHito = 'SELECT he.id_hito_expediente 
                                     FROM hito_expediente he
                                     JOIN campo_hito ch ON ch.id_hito = he.id_hito
                                     WHERE he.id_expediente = :idExp AND ch.id_campo_hito = :idCampo LIMIT 1';
-                        $stmtHito = $conn->prepare($sqlHito);
-                        $stmtHito->bindValue('idExp', $idExpediente);
-                        $stmtHito->bindValue('idCampo', $idCampoHito);
-                        $stmtHito->execute();
-                        $resHito = $stmtHito->fetch();
-                        $idHitoExp = $resHito ? $resHito['id_hito_expediente'] : 0;
+						$stmtHito = $conn->prepare($sqlHito);
+						$stmtHito->bindValue('idExp', $idExpediente);
+						$stmtHito->bindValue('idCampo', $idCampoHito);
+						$stmtHito->execute();
+						$resHito = $stmtHito->fetch();
+						$idHitoExp = $resHito ? $resHito['id_hito_expediente'] : 0;
 
-                        // Insertar
-                        $sqlInsert = 'INSERT INTO campo_hito_expediente 
+						// Insertar
+						$sqlInsert = 'INSERT INTO campo_hito_expediente 
                                       (id_expediente, id_campo_hito, id_hito_expediente, valor, id_opciones_campo, fecha_modificacion, obligatorio)
                                       VALUES (:idExp, :idCampo, :idHitoExp, :valor, :idOpcional, :timestamp, 0)';
-                        $stmt = $conn->prepare($sqlInsert);
-                        $stmt->bindValue('idExp', $idExpediente);
-                        $stmt->bindValue('idCampo', $idCampoHito);
-                        $stmt->bindValue('idHitoExp', $idHitoExp);
-                        $stmt->bindValue('valor', $valor);
-                        $stmt->bindValue('idOpcional', $idOpcional);
-                        $stmt->bindValue('timestamp', $timestamp);
-                        $stmt->execute();
-                        $this->get('logger')->info('✓ INSERTADO: ' . $nombreCampo);
-                    }
+						$stmt = $conn->prepare($sqlInsert);
+						$stmt->bindValue('idExp', $idExpediente);
+						$stmt->bindValue('idCampo', $idCampoHito);
+						$stmt->bindValue('idHitoExp', $idHitoExp);
+						$stmt->bindValue('valor', $valor);
+						$stmt->bindValue('idOpcional', $idOpcional);
+						$stmt->bindValue('timestamp', $timestamp);
+						$stmt->execute();
+						$this->get('logger')->info('✓ INSERTADO: ' . $nombreCampo);
+					}
 
-                    $camposGuardados++;
+					$camposGuardados++;
 
-                } catch (\Exception $e) {
-                    $this->get('logger')->info('✗ Error: ' . $e->getMessage());
-                    $camposError++;
-                }
-            }
+				} catch (\Exception $e) {
+					$this->get('logger')->info('✗ Error: ' . $e->getMessage());
+					$camposError++;
+				}
+			}
 
-            $this->get('logger')->info("=== FIN guardarDatosEnExpediente: {$camposGuardados} guardados, {$camposError} errores ===");
+			$this->get('logger')->info("=== FIN guardarDatosEnExpediente: {$camposGuardados} guardados, {$camposError} errores ===");
 
-            return [
-                'exito' => $camposGuardados > 0,
-                'guardados' => $camposGuardados,
-                'errores' => $camposError
-            ];
+			return [
+				'exito' => $camposGuardados > 0,
+				'guardados' => $camposGuardados,
+				'errores' => $camposError
+			];
 
-        } catch (\Exception $e) {
-            $this->get('logger')->info('✗ EXCEPCIÓN FATAL: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
-            return [
-                'exito' => false,
-                'guardados' => 0,
-                'error' => $e->getMessage()
-            ];
-        }
-    }
+		} catch (\Exception $e) {
+			$this->get('logger')->info('✗ EXCEPCIÓN FATAL: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
+			return [
+				'exito' => false,
+				'guardados' => 0,
+				'error' => $e->getMessage()
+			];
+		}
+	}
 
 
 }

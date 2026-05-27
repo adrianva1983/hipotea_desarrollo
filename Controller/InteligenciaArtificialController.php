@@ -30,7 +30,7 @@ class InteligenciaArtificialController extends Controller
     {
         try {
             error_log('InteligenciaArtificialController: 🚀 enviarAGeminiTexto() - Iniciando...');
-            
+
             $url = "https://generativelanguage.googleapis.com/v1beta/models/{$configIA['model']}:generateContent?key={$configIA['api_key']}";
             error_log('InteligenciaArtificialController: URL Gemini: ' . $url);
 
@@ -60,7 +60,7 @@ class InteligenciaArtificialController extends Controller
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
             curl_setopt($ch, CURLOPT_TIMEOUT, 60);
             curl_setopt($ch, CURLOPT_VERBOSE, true);
-            
+
             error_log('InteligenciaArtificialController: ⏳ Enviando request a Gemini...');
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -105,10 +105,10 @@ class InteligenciaArtificialController extends Controller
 
             $textoRespuesta = $data['candidates'][0]['content']['parts'][0]['text'];
             error_log('InteligenciaArtificialController: Respuesta de IA (primeros 300 chars): ' . substr($textoRespuesta, 0, 300));
-            
+
             // Limpiar markdown JSON si es necesario
             $textoRespuesta = preg_replace('/```json\s*|\s*```/', '', $textoRespuesta);
-            
+
             error_log('InteligenciaArtificialController: 🔄 Parseando JSON de respuesta IA...');
             $datosExtraidos = json_decode($textoRespuesta, true);
 
@@ -124,7 +124,7 @@ class InteligenciaArtificialController extends Controller
                 'confianza' => 0.90,
                 'proveedor' => 'GEMINI'
             ];
-            
+
         } catch (\Exception $e) {
             error_log('InteligenciaArtificialController: ❌ Error en enviarAGeminiTexto(): ' . $e->getMessage());
             throw $e;
@@ -173,10 +173,10 @@ class InteligenciaArtificialController extends Controller
         }
 
         $textoRespuesta = $data['choices'][0]['message']['content'];
-        
+
         // Limpiar markdown JSON
         $textoRespuesta = preg_replace('/```json\s*|\s*```/', '', $textoRespuesta);
-        
+
         $datosExtraidos = json_decode($textoRespuesta, true);
 
         if (!is_array($datosExtraidos)) {
@@ -227,10 +227,10 @@ class InteligenciaArtificialController extends Controller
         }
 
         $textoRespuesta = $data['response'];
-        
+
         // Limpiar markdown JSON
         $textoRespuesta = preg_replace('/```json\s*|\s*```/', '', $textoRespuesta);
-        
+
         $datosExtraidos = json_decode($textoRespuesta, true);
 
         if (!is_array($datosExtraidos)) {
@@ -251,13 +251,13 @@ class InteligenciaArtificialController extends Controller
     {
         try {
             error_log('InteligenciaArtificialController: obtenerConfiguracionIA() - Buscando en BD...');
-            
+
             $em = $this->getDoctrine()->getManager();
 
             // Intentar obtener de BD
             $sql = "SELECT * FROM ia_config WHERE activo = 1 AND es_proveedor_por_defecto = 1 LIMIT 1";
             error_log('InteligenciaArtificialController: SQL: ' . $sql);
-            
+
             $connection = $em->getConnection();
             $statement = $connection->prepare($sql);
             $statement->execute();
@@ -281,9 +281,9 @@ class InteligenciaArtificialController extends Controller
             $geminiKey = getenv('GEMINI_API_KEY');
             $openaiKey = getenv('OPENAI_API_KEY');
             $ollamaUrl = getenv('OLLAMA_API_URL');
-            
-            error_log('InteligenciaArtificialController: Variables de entorno - GEMINI: ' . (empty($geminiKey) ? 'NO' : 'SÍ') . 
-                     ', OPENAI: ' . (empty($openaiKey) ? 'NO' : 'SÍ') . ', OLLAMA: ' . (empty($ollamaUrl) ? 'NO' : 'SÍ'));
+
+            error_log('InteligenciaArtificialController: Variables de entorno - GEMINI: ' . (empty($geminiKey) ? 'NO' : 'SÍ') .
+                ', OPENAI: ' . (empty($openaiKey) ? 'NO' : 'SÍ') . ', OLLAMA: ' . (empty($ollamaUrl) ? 'NO' : 'SÍ'));
 
             $apiKey = $geminiKey ?: $openaiKey ?: $ollamaUrl;
 
@@ -326,19 +326,19 @@ class InteligenciaArtificialController extends Controller
         // Si viene en formato {"campos": [...]}
         if (isset($datosIA['campos']) && is_array($datosIA['campos'])) {
             $campos = $datosIA['campos'];
-            
+
             foreach ($campos as $campo) {
                 if (!isset($campo['id']) || !isset($campo['valor'])) {
                     continue;
                 }
 
-                $idCampo = (int)$campo['id'];
+                $idCampo = (int) $campo['id'];
                 $valor = $campo['valor'];
                 $nombre = $campo['nombre'] ?? '';
 
                 // Si no tenemos info del campo en BD, asumimos texto
                 if (!isset($camposBD[$idCampo])) {
-                    $valoresTexto[$idCampo] = (string)$valor;
+                    $valoresTexto[$idCampo] = (string) $valor;
                     $camposProcesados[] = [
                         'id' => $idCampo,
                         'nombre' => $nombre,
@@ -353,7 +353,7 @@ class InteligenciaArtificialController extends Controller
 
                 // Campo de opción (dropdown, radio)
                 if (in_array($tipoCampo, [2, 3]) && !empty($opciones)) {
-                    $valorNorm = strtolower(trim((string)$valor));
+                    $valorNorm = strtolower(trim((string) $valor));
                     $opcionEncontrada = null;
 
                     // Registrar opciones disponibles
@@ -389,7 +389,7 @@ class InteligenciaArtificialController extends Controller
 
                         foreach ($opciones as $opcion) {
                             $opcionNorm = strtolower(trim($opcion['valor']));
-                            
+
                             // Calcular distancia Levenshtein
                             $distancia = levenshtein($valorNorm, $opcionNorm);
                             $maxLen = max(strlen($valorNorm), strlen($opcionNorm));
@@ -430,7 +430,7 @@ class InteligenciaArtificialController extends Controller
                     }
                 } else {
                     // Campo de texto
-                    $valoresTexto[$idCampo] = (string)$valor;
+                    $valoresTexto[$idCampo] = (string) $valor;
                     $camposProcesados[] = [
                         'id' => $idCampo,
                         'nombre' => $nombre,
@@ -442,7 +442,7 @@ class InteligenciaArtificialController extends Controller
         }
 
         error_log('InteligenciaArtificialController: procesarRespuestaIA - texto: ' . count($valoresTexto) . ', opcion: ' . count($valoresOpcion) . ', total: ' . count($camposProcesados));
-        
+
         // Resumir estado de campos
         $resumen = [
             'texto' => count($valoresTexto),
@@ -484,8 +484,8 @@ class InteligenciaArtificialController extends Controller
         $filas = $stmt->fetchAll();
 
         foreach ($filas as $fila) {
-            $idCampo = (int)$fila['id_campo_hito'];
-            $tipo = (int)$fila['tipo'];
+            $idCampo = (int) $fila['id_campo_hito'];
+            $tipo = (int) $fila['tipo'];
             $opciones = [];
 
             // Si es un campo de opción, obtener sus valores
@@ -494,14 +494,14 @@ class InteligenciaArtificialController extends Controller
                                FROM opciones_campo oc 
                                WHERE oc.id_campo_hito = ? 
                                ORDER BY oc.orden';
-                
+
                 $stmtOpciones = $conn->prepare($sqlOpciones);
                 $stmtOpciones->execute([$idCampo]);
                 $filasOpciones = $stmtOpciones->fetchAll();
 
                 foreach ($filasOpciones as $opcion) {
                     $opciones[] = [
-                        'id' => (int)$opcion['id_opciones_campo'],
+                        'id' => (int) $opcion['id_opciones_campo'],
                         'valor' => $opcion['valor']
                     ];
                 }
@@ -541,9 +541,9 @@ class InteligenciaArtificialController extends Controller
 
         foreach ($filas as $fila) {
             $resultado[] = [
-                'id_campo_hito' => (int)$fila['id_campo_hito'],
-                'nombre'        => $fila['nombre'],
-                'tipo'          => (int)$fila['tipo'],
+                'id_campo_hito' => (int) $fila['id_campo_hito'],
+                'nombre' => $fila['nombre'],
+                'tipo' => (int) $fila['tipo'],
             ];
         }
 
@@ -552,7 +552,7 @@ class InteligenciaArtificialController extends Controller
     }
     /**
      * Construye un prompt dinámico para extracción de datos basado en los campos disponibles
-    */
+     */
     private function construirPromptExtractor(array $camposBD, $texto = '')
     {
         // Construir la lista de campos dinámicamente
@@ -561,7 +561,7 @@ class InteligenciaArtificialController extends Controller
             $nombre = $campo['nombre'];
             $id = $campo['id_campo_hito'];
             $tipo = $campo['tipo'];
-            
+
             // Indicar si es un campo de selección (tipo 2=dropdown, tipo 3=radio)
             $tipoIndicador = in_array($tipo, [2, 3]) ? ' [SELECCIÓN]' : '';
             $seccionCampos .= "- ID {$id}: {$nombre}{$tipoIndicador}\n";
@@ -571,7 +571,7 @@ class InteligenciaArtificialController extends Controller
         Actúa como un extractor de datos para un CRM. Tu misión es mapear la información del texto a los IDs de mi formulario.
 
         ### REGLA DE ORO PARA DATOS NO DEFINIDOS:
-        Si el usuario menciona información que NO tiene un ID asignado abajo (por ejemplo: CIF, Horario de contacto, Redes sociales, Notas adicionales), DEBES incluirla obligatoriamente en el campo ID: 191 (Comentarios).
+        Si el usuario menciona información que NO tiene un ID asignado abajo (por ejemplo: Nombre de la empresa, CIF, Horario de contacto, Redes sociales, Profesión, Notas adicionales), DEBES incluirla obligatoriamente en el campo ID: 191 (Comentarios).
 
         ### ESTRUCTURA DE EXTRACCIÓN:
         {$seccionCampos}
@@ -582,7 +582,7 @@ class InteligenciaArtificialController extends Controller
            - Nombres en Title Case (Juan, María, González)
            - Emails en minúsculas (juan@example.com)
            - Teléfonos SOLO números sin espacios ni caracteres especiales (612345678)
-           - Cantidades monetarias como números enteros sin € ni puntos (ej: 250000 no 250.000)
+           - Cantidades monetarias como números enteros sin € ni puntos (ej: 250000 no 250.000€)
            - Fechas en formato dd/mm/yyyy
 
         2. CAMPOS DE SELECCIÓN [SELECCIÓN] - OPCIONES EXACTAS A DEVOLVER:
@@ -698,7 +698,7 @@ class InteligenciaArtificialController extends Controller
         EOT;
 
         error_log('InteligenciaArtificialController: construirPromptExtractor - prompt generado con ' . count($camposBD) . ' campos, texto: ' . strlen($texto) . ' chars');
-        
+
         return $prompt;
     }
 
@@ -733,12 +733,12 @@ class InteligenciaArtificialController extends Controller
                 $gruposParam = $request->request->get('grupos');
                 $grupoIds = is_array($gruposParam) ? $gruposParam : ($gruposParam ? json_decode($gruposParam, true) : [4]);
             }
-            
+
             // Validar que grupos sea un array válido
             if (!is_array($grupoIds) || empty($grupoIds)) {
                 $grupoIds = [4];
             }
-            
+
             error_log('InteligenciaArtificialController: procesarTextoExpedienteAction - Grupos a procesar: ' . json_encode($grupoIds));
 
             $configIA = $this->obtenerConfiguracionIA();
@@ -754,24 +754,17 @@ class InteligenciaArtificialController extends Controller
             $prompt = $this->construirPromptExtractor($camposBD, $texto);
 
             $resultadoIA = null;
-                
-            if ($configIA['provider'] === 'GEMINI') 
-            {
+
+            if ($configIA['provider'] === 'GEMINI') {
                 error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAGeminiTexto()...');
                 $resultadoIA = $this->enviarAGeminiTexto($texto, $prompt, $configIA);
-            } 
-            elseif ($configIA['provider'] === 'OPENAI') 
-            {
+            } elseif ($configIA['provider'] === 'OPENAI') {
                 error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOpenAITexto()...');
                 $resultadoIA = $this->enviarAOpenAITexto($texto, $prompt, $configIA);
-            } 
-            elseif ($configIA['provider'] === 'OLLAMA') 
-            {
+            } elseif ($configIA['provider'] === 'OLLAMA') {
                 error_log('InteligenciaArtificialController: 9️⃣ Llamando enviarAOllamaTexto()...');
                 $resultadoIA = $this->enviarAOllamaTexto($texto, $prompt, $configIA);
-            } 
-            else 
-            {
+            } else {
                 error_log('InteligenciaArtificialController: ❌ Provider desconocido: ' . $configIA['provider']);
                 return new JsonResponse([
                     'success' => false,
@@ -794,9 +787,9 @@ class InteligenciaArtificialController extends Controller
             return new JsonResponse([
                 'success' => true,
                 'mensaje' => 'Textos procesados y campos mapeados con éxito',
-                'texto'=> substr($texto, 0, 100) . '...', 
-                'configIA'=> ['provider' => $configIA['provider']],
-                'resultadoIA'=> $resultadoIA,
+                'texto' => substr($texto, 0, 100) . '...',
+                'configIA' => ['provider' => $configIA['provider']],
+                'resultadoIA' => $resultadoIA,
                 'datosProcessados' => $datosProcessados
             ], 200);
 

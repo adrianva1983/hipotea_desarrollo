@@ -1231,7 +1231,8 @@ class WhatsappController extends Controller
                     $expUserOriginTechComm = $stmtDebug->fetchAll();
                     if ($expUserOriginTechComm) {
                         $debug[] = "Expedientes (como técnico/comercial): " . implode(', ', array_map(function ($e) {
-                            return $e['id_expediente']; }, $expUserOriginTechComm));
+                            return $e['id_expediente'];
+                        }, $expUserOriginTechComm));
                     } else {
                         $debug[] = "Expedientes como técnico/comercial: NINGUNO";
                     }
@@ -1244,7 +1245,8 @@ class WhatsappController extends Controller
                     $expUserOriginClient = $stmtDebug2->fetchAll();
                     if ($expUserOriginClient) {
                         $debug[] = "Expedientes (como cliente): " . implode(', ', array_map(function ($e) {
-                            return $e['id_expediente']; }, $expUserOriginClient));
+                            return $e['id_expediente'];
+                        }, $expUserOriginClient));
                     } else {
                         $debug[] = "Expedientes como cliente: NINGUNO";
                     }
@@ -1268,7 +1270,8 @@ class WhatsappController extends Controller
                         $expUserDest = $stmtDebug2->fetchAll();
                         if ($expUserDest) {
                             $debug[] = "Expedientes del usuario destino (como cliente): " . implode(', ', array_map(function ($e) {
-                                return $e['id_expediente']; }, $expUserDest));
+                                return $e['id_expediente'];
+                            }, $expUserDest));
                         } else {
                             $debug[] = "El usuario destino NO es cliente de ningún expediente";
                         }
@@ -3771,18 +3774,18 @@ class WhatsappController extends Controller
 
                     if ($esUsuarioInterno) {
                         $nombreCorto = trim(($usuarioOrigen['nombre'] ?? '') . ' ' . ($usuarioOrigen['apellidos'] ?? ''));
-                        
+
                         // Buscar el usuario del BOT (el destinatario del mensaje)
                         $usuarioBot = $this->findUserByPhone($this->normalizePhone($toPhone));
                         $nombreBot = "MAX"; // Default
                         $customPrompt = null;
-                        
+
                         if ($usuarioBot) {
                             $nombreBotAux = trim(($usuarioBot['nombre'] ?? '') . ' ' . ($usuarioBot['apellidos'] ?? ''));
                             if (!empty($nombreBotAux)) {
                                 $nombreBot = $nombreBotAux;
                             }
-                            
+
                             $em = $this->getDoctrine()->getManager();
                             $senderRepo = $em->getRepository('AppBundle:WhatsappSender');
                             $senderBot = $this->findLatestWhatsappSenderByUserId($senderRepo, (int) $usuarioBot['id_usuario']);
@@ -3808,7 +3811,7 @@ class WhatsappController extends Controller
                                 $systemPromptCRM .= "\n\nNOTA DE CONTEXTO: Estás hablando con tu compañero/a comercial llamado/a " . $nombreCorto . ". Úsalo para dirigirte a él/ella por su nombre de forma cercana (ej: '¡Claro que sí, " . $nombreCorto . "!...').";
                             }
                         }
-                        
+
                         $bodyClean = trim(strtolower($body));
                         $isAyuda = preg_match('/^\/(ayuda|help|habilidades|comandos|habilidad)/i', $bodyClean);
                         // Solo usamos respuestas hardcodeadas de saludo/despedida si NO hay personalidad customizada
@@ -4078,8 +4081,52 @@ class WhatsappController extends Controller
         try {
             switch ($habilidadDetectada) {
 
+                // ─────────────────────────────────────────────────────────────
+                // NUEVA HABILIDAD: Modificar expediente
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_modificar_expediente':
+                    if (empty($parametroHabilidad)) {
+                        return $textoConversacional . "\n\nPara modificar el expediente, por favor dime su número y qué dato quieres que cambie (ej: 'Modifica el expediente 123 y ponle un salario neto de 1800 al titular 1').";
+                    }
+
+                    $partes = explode('|', $parametroHabilidad);
+                    if (count($partes) < 2) {
+                        return $textoConversacional . "\n\nHe entendido que quieres modificar un expediente, pero me falta el ID o el dato a cambiar. ¿Puedes repetírmelo?";
+                    }
+
+                    $idExpParam = trim($partes[0]);
+                    $textoModificacion = trim($partes[1]);
+
+                    $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                        '/API/BotModificarExpediente',
+                        'POST',
+                        [
+                            'api_key' => '123456',
+                            'identificador' => $idExpParam,
                             'texto' => $textoModificacion,
                             'fromPhone' => $fromPhone
+                        ]
+                    );
+
+                    try {
+                        $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                        $data = json_decode($response->getContent(), true);
+                        $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
+
+                        if ($data === null) {
+                            $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
+                        }
+
+                        if ($response->getStatusCode() === 200 && $data['success']) {
+                            $msg = "✅ *Expediente " . $data['id_expediente'] . " actualizado*\nHe guardado los siguientes datos:\n";
+                            foreach ($data['datos_guardados'] as $campo) {
+                                $nombre = $campo['nombre_campo'] ?? $campo['tipo'] ?? 'Desconocido';
+                                $valor = $campo['valor'] ?? '';
+                                if ($nombre && $valor) {
+                                    $msg .= "   - " . $nombre . ": " . $valor . "\n";
+                                }
+                            }
+                            return $textoConversacional . "\n\n" . $msg;
                         } elseif ($response->getStatusCode() === 404) {
                             return $textoConversacional . "\n\n❌ Lo siento, no he encontrado ningún expediente con el ID o referencia: " . $idExpParam;
                         } else {
@@ -4208,10 +4255,14 @@ class WhatsappController extends Controller
 
                     // Preparar llamada a la API internamente en Symfony (evita problemas de cURL/DNS local)
                     $queryData = ['api_key' => '123456'];
-                    if ($referenciaBusqueda) $queryData['referencia'] = $referenciaBusqueda;
-                    if ($idExpediente) $queryData['id_expediente'] = $idExpediente;
-                    if ($telefonoBusqueda) $queryData['telefono'] = $telefonoBusqueda;
-                    if ($dniBusqueda) $queryData['dni'] = $dniBusqueda;
+                    if ($referenciaBusqueda)
+                        $queryData['referencia'] = $referenciaBusqueda;
+                    if ($idExpediente)
+                        $queryData['id_expediente'] = $idExpediente;
+                    if ($telefonoBusqueda)
+                        $queryData['telefono'] = $telefonoBusqueda;
+                    if ($dniBusqueda)
+                        $queryData['dni'] = $dniBusqueda;
 
                     $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                         '/API/BotBuscarExpediente',
@@ -4244,7 +4295,7 @@ class WhatsappController extends Controller
                     $respuesta .= "📁 *Expediente #{$exp['id_expediente']} encontrado:*\n";
                     $respuesta .= "• Cliente: {$exp['cliente_nombre']} {$exp['cliente_apellidos']}\n";
                     $respuesta .= "• Referencia: " . ($exp['referencia'] ?: 'N/A') . "\n";
-                    
+
                     if (!empty($exp['datos_fases'])) {
                         $respuesta .= "\n*Datos adicionales (Hitos / Fase 1):*\n";
                         foreach ($exp['datos_fases'] as $hito) {
@@ -4262,22 +4313,22 @@ class WhatsappController extends Controller
                 case 'habilidad_crear_expediente':
                     if (!empty($parametroHabilidad)) {
                         $identificador = trim($parametroHabilidad);
-                        
+
                         $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                             '/API/BotCrearExpediente',
                             'POST',
                             ['api_key' => '123456', 'identificador' => $identificador]
                         );
-                        
+
                         try {
                             $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                             $data = json_decode($response->getContent(), true);
-                        $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
+                            $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
 
-                        if ($data === null) {
-                            $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
-                        }
-                            
+                            if ($data === null) {
+                                $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
+                            }
+
                             if ($response->getStatusCode() === 200 && $data['success']) {
                                 return $textoConversacional . "\n\n✅ Expediente creado correctamente para el cliente *" . $data['cliente_nombre'] . " " . $data['cliente_apellidos'] . "*. ID de Expediente: " . $data['id_expediente'];
                             } elseif ($response->getStatusCode() === 404) {
@@ -4301,7 +4352,7 @@ class WhatsappController extends Controller
                             $telefono = trim($partes[2]);
                             $email = isset($partes[3]) ? trim($partes[3]) : '';
                             $dni = isset($partes[4]) ? trim($partes[4]) : '';
-                            
+
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotCrearCliente',
                                 'POST',
@@ -4314,16 +4365,16 @@ class WhatsappController extends Controller
                                     'dni' => $dni
                                 ]
                             );
-                            
+
                             try {
                                 $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                                 $data = json_decode($response->getContent(), true);
-                        $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
+                                $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
 
-                        if ($data === null) {
-                            $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
-                        }
-                                
+                                if ($data === null) {
+                                    $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
+                                }
+
                                 if ($response->getStatusCode() === 200 && $data['success']) {
                                     return $textoConversacional . "\n\n✅ Cliente *" . $nombre . " " . $apellidos . "* registrado correctamente con teléfono " . $telefono . ".";
                                 } elseif ($response->getStatusCode() === 409) {
@@ -4347,7 +4398,7 @@ class WhatsappController extends Controller
                             $aporte = (float) trim($partes[1]);
                             $plazo = (int) trim($partes[2]);
                             $interes = (float) str_replace(',', '.', trim($partes[3]));
-                            
+
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotCalcularCuota',
                                 'POST',
@@ -4363,11 +4414,11 @@ class WhatsappController extends Controller
                                     'tasaInteres' => $interes
                                 ])
                             );
-                            
+
                             try {
                                 $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                                 $datos = json_decode($response->getContent(), true);
-                                
+
                                 if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0) {
                                     return $textoConversacional . "\n\n" . $datos['datos']['mensaje_texto'];
                                 }
@@ -4388,7 +4439,7 @@ class WhatsappController extends Controller
                             $plazo = isset($partes[3]) && trim($partes[3]) !== '' ? (int) trim($partes[3]) : 30;
                             $comunidad = isset($partes[4]) && trim($partes[4]) !== '' ? trim($partes[4]) : 'Andalucia';
                             $edad = isset($partes[5]) && trim($partes[5]) !== '' ? (int) trim($partes[5]) : 35;
-                            
+
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotCalcularPrecioMaximo',
                                 'POST',
@@ -4406,7 +4457,7 @@ class WhatsappController extends Controller
                                     'edad' => $edad
                                 ])
                             );
-                            
+
                             try {
                                 $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                                 $datos = json_decode($response->getContent(), true);
@@ -4414,20 +4465,20 @@ class WhatsappController extends Controller
                                 if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos'])) {
                                     $res = $datos['datos'];
                                     $precioMaximo = $res['importe_fijo'];
-                                    
+
                                     $gastos = number_format($res['gastos'], 2, ',', '.');
                                     $precioViviendaStr = number_format($precioMaximo, 2, ',', '.');
                                     $aportacionStr = number_format($aportacion, 2, ',', '.');
-                                    
+
                                     $importeHipoteca = $precioMaximo + $res['gastos'] - $aportacion;
                                     $importeHipotecaStr = number_format($importeHipoteca, 2, ',', '.');
-                                    
+
                                     $cuota = number_format($res['cuota'], 2, ',', '.');
-                                    
+
                                     $msg = $textoConversacional . "\n\n🏠 *Resultado Precio Máximo:*\n" .
-                                           "• *Ingresos:* " . number_format($ingresos, 0, ',', '.') . " €\n" .
-                                           "• *Deudas:* " . number_format($deudas, 0, ',', '.') . " €\n\n";
-                                           
+                                        "• *Ingresos:* " . number_format($ingresos, 0, ',', '.') . " €\n" .
+                                        "• *Deudas:* " . number_format($deudas, 0, ',', '.') . " €\n\n";
+
                                     $msg .= "Con la información que nos has proporcionado, hemos estimado tu capacidad de pago. El precio máximo de vivienda que te recomendamos buscar ronda los *{$precioViviendaStr} €*.\n\n";
 
                                     // Gastos
@@ -4443,7 +4494,7 @@ class WhatsappController extends Controller
                                     $msg .= "🏛️ Registro: " . number_format($res['registro'], 2, ',', '.') . " €\n";
                                     $msg .= "👨‍💼 Gestoría: " . number_format($res['gestoria'], 2, ',', '.') . " €\n";
                                     $msg .= "🏠 Tasación: " . number_format($res['tasacion'], 2, ',', '.') . " €\n\n";
-                                    
+
                                     // Resumen
                                     $msg .= "*Importe total de tu Hipoteca*\n";
                                     $msg .= str_repeat("-", 20) . "\n";
@@ -4451,10 +4502,10 @@ class WhatsappController extends Controller
                                     $msg .= "Gastos: + {$gastos} €\n";
                                     $msg .= "Aportación: - {$aportacionStr} €\n";
                                     $msg .= "*IMPORTE HIPOTECA A SOLICITAR:* {$importeHipotecaStr} €\n\n";
-                                    
+
                                     $msg .= "⏳ Plazo: {$plazo} años\n";
                                     $msg .= "📊 Cuota estimada: {$cuota} €/mes\n\n";
-                                    
+
                                     $msg .= "_Recuerda que este cálculo es orientativo. Para obtener una valoración más precisa y personalizada con nuestros mejores tipos, contáctanos._";
 
                                     return $msg;
@@ -4476,13 +4527,13 @@ class WhatsappController extends Controller
                             $aporte = (float) trim($partes[1]);
                             $plazo = (int) trim($partes[2]);
                             $interes = (float) str_replace(',', '.', trim($partes[3]));
-                            
+
                             $comunidad = isset($partes[4]) && trim($partes[4]) !== '' ? trim($partes[4]) : 'Andalucia';
                             $edad = isset($partes[5]) && trim($partes[5]) !== '' ? (int) trim($partes[5]) : 35;
                             $obraNueva = isset($partes[6]) && strtolower(trim($partes[6])) === 'true';
                             $discapacidad = isset($partes[7]) && strtolower(trim($partes[7])) === 'true';
                             $familiaNumerosa = isset($partes[8]) && strtolower(trim($partes[8])) === 'true';
-                            
+
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotCalcularCuotaGastos',
                                 'POST',
@@ -4503,24 +4554,24 @@ class WhatsappController extends Controller
                                     'familiaNumerosa' => $familiaNumerosa
                                 ])
                             );
-                            
+
                             try {
                                 $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                                 $datos = json_decode($response->getContent(), true);
 
                                 if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos'])) {
                                     $res = $datos['datos'];
-                                    
+
                                     $gastos = number_format($res['gastos'], 2, ',', '.');
                                     $precioViviendaStr = number_format($importe, 2, ',', '.');
                                     $aportacionStr = number_format($aporte, 2, ',', '.');
-                                    
+
                                     $importeHipoteca = $importe + $res['gastos'] - $aporte;
                                     $importeHipotecaStr = number_format($importeHipoteca, 2, ',', '.');
-                                    
+
                                     $msg = $textoConversacional . "\n\n";
                                     $msg .= "Para un inmueble de {$precioViviendaStr} €, con una aportación de {$aportacionStr} € y unos gastos totales de {$gastos} €, el importe total de hipoteca será de {$importeHipotecaStr} €. Tu pago mensual calculado a {$plazo} años será de:\n\n";
-                                    
+
                                     // Cuotas
                                     $msg .= "🔹 *Tipo Fijo:* " . number_format($res['cuota_fija'], 2, ',', '.') . " €\n";
                                     $msg .= "   _(Tipo de interés " . number_format($res['tipo_fijo'], 2, ',', '.') . "%)_\n";
@@ -4528,7 +4579,7 @@ class WhatsappController extends Controller
                                     $msg .= "   _(Primer año " . number_format($res['tipo_variable'], 2, ',', '.') . "%, posteriormente Euribor + " . number_format($res['tipo_luego_mixto'], 2, ',', '.') . "%)_\n";
                                     $msg .= "🔹 *Tipo Mixto:* " . number_format($res['cuota_mixta'], 2, ',', '.') . " €\n";
                                     $msg .= "   _(Primeros 5 años " . number_format($res['tipo_mixto'], 2, ',', '.') . "%, posteriormente Euribor + " . number_format($res['tipo_luego_mixto'], 2, ',', '.') . "%)_\n\n";
-                                    
+
                                     // Gastos
                                     $msg .= "*Gastos asociados a la compraventa*\n";
                                     $msg .= str_repeat("-", 20) . "\n";
@@ -4542,7 +4593,7 @@ class WhatsappController extends Controller
                                     $msg .= "🏛️ Registro: " . number_format($res['registro'], 2, ',', '.') . " €\n";
                                     $msg .= "👨‍💼 Gestoría: " . number_format($res['gestoria'], 2, ',', '.') . " €\n";
                                     $msg .= "🏠 Tasación: " . number_format($res['tasacion'], 2, ',', '.') . " €\n\n";
-                                    
+
                                     // Resumen
                                     $msg .= "*Importe total de tu Hipoteca*\n";
                                     $msg .= str_repeat("-", 20) . "\n";
@@ -4550,9 +4601,9 @@ class WhatsappController extends Controller
                                     $msg .= "Gastos: + {$gastos} €\n";
                                     $msg .= "Aportación: - {$aportacionStr} €\n";
                                     $msg .= "*IMPORTE HIPOTECA A SOLICITAR:* {$importeHipotecaStr} €\n\n";
-                                    
+
                                     $msg .= "_Esta calculadora solo está destinada para vivienda. Los tipos mostrados son una estimación media y los gastos son orientativos._";
-                                    
+
                                     return $msg;
                                 }
                             } catch (\Exception $e) {
@@ -4579,7 +4630,7 @@ class WhatsappController extends Controller
                             $obraNueva = isset($partes[10]) && strtolower(trim($partes[10])) === 'true';
                             $discapacidad = isset($partes[11]) && strtolower(trim($partes[11])) === 'true';
                             $familiaNumerosa = isset($partes[12]) && strtolower(trim($partes[12])) === 'true';
-                            
+
                             $subRequest = \Symfony\Component\HttpFoundation\Request::create(
                                 '/API/BotSimularViabilidad',
                                 'POST',
@@ -4604,7 +4655,7 @@ class WhatsappController extends Controller
                                     'familiaNumerosa' => $familiaNumerosa
                                 ])
                             );
-                            
+
                             try {
                                 $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
                                 $datos = json_decode($response->getContent(), true);
@@ -4612,10 +4663,12 @@ class WhatsappController extends Controller
                                 if (isset($datos['errorlevel']) && $datos['errorlevel'] === 0 && isset($datos['datos']['resultado'])) {
                                     $dataCompleta = $datos['datos'];
                                     $res = $dataCompleta['resultado'];
-                                    
+
                                     $semaforoEmoji = '🟡';
-                                    if ($res['semaforo'] == 'verde') $semaforoEmoji = '🟢';
-                                    if ($res['semaforo'] == 'rojo') $semaforoEmoji = '🔴';
+                                    if ($res['semaforo'] == 'verde')
+                                        $semaforoEmoji = '🟢';
+                                    if ($res['semaforo'] == 'rojo')
+                                        $semaforoEmoji = '🔴';
 
                                     $motivosTxt = "";
                                     if (!empty($res['motivos'])) {
@@ -4629,17 +4682,17 @@ class WhatsappController extends Controller
                                     // Formatear valores
                                     $tieneImpagos = $dataCompleta['riesgo']['tienePrestamosImpagados'] ? '❌ Sí' : '✅ No';
                                     $porcentajeFinan = number_format($dataCompleta['cuota']['porcentajeFinanciacion'], 1, ',', '.');
-                                    
+
                                     $precioMaximo = $dataCompleta['precio']['precioMaximoRecomendado'];
                                     $vsMaximo = ($valor <= $precioMaximo) ? '✅ Dentro límite' : '❌ Supera límite';
-                                    
+
                                     $antiguedades = [
                                         'menos_1_anio' => 'Menos de 1 año',
                                         'un_anio' => '1 año',
                                         'mas_2_anios' => 'Más de 2 años'
                                     ];
                                     $antiguedadStr = $antiguedades[$dataCompleta['riesgo']['antiguedadLaboral']] ?? $dataCompleta['riesgo']['antiguedadLaboral'];
-                                    
+
                                     $situaciones = [
                                         'contrato_indefinido' => 'Contrato indefinido',
                                         'contrato_temporal' => 'Contrato temporal',
@@ -4656,7 +4709,7 @@ class WhatsappController extends Controller
                                     $ratioIcon = ($ratioEndeudamiento <= 35) ? '✅' : '⚠️';
 
                                     $importeFinanciar = number_format($dataCompleta['cuota']['importePrestamo'], 0, ',', '.');
-                                    
+
                                     $cuotaStr = number_format($cuotaEst, 2, ',', '.');
                                     $gastosStr = number_format($dataCompleta['cuota']['gastosTotalesAproximados'], 0, ',', '.');
                                     $aportacionStr = number_format($ahorros, 0, ',', '.');
@@ -4683,7 +4736,7 @@ class WhatsappController extends Controller
                                     $msg .= "💸 Gastos aprox: {$gastosStr} €\n";
                                     $msg .= "🏦 Aportación total: {$aportacionStr} €\n";
                                     $msg .= "📈 *Cuota orientativa:* {$cuotaStr} €/mes\n\n";
-                                    
+
                                     $msg .= "🎯 *Precio Máximo Recomendado:* {$precioMaximoStr} €\n\n";
 
                                     if (!empty($res['motivos'])) {
