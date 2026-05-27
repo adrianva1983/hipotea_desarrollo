@@ -137,6 +137,21 @@ class APIController extends Controller
 						));
 						$ficheros_grupo = array();
 						foreach ($camposHito as $campoHito) {
+							if ($campoHito->getCampoCondicional()) {
+								$opcionCond = $repositorios['OpcionesCampo']->findBy(array(
+									'idCampoCondicional' => $campoHito
+								));
+								if (count($opcionCond) > 0) {
+									$campoCond = $repositorios['CamposHitoExpediente']->findBy(array(
+										'idOpcionesCampo' => $opcionCond,
+										'idExpediente' => $expediente->getIdExpediente(),
+									));
+									if ($campoCond == null || count($campoCond) == 0) {
+										continue;
+									}
+								}
+							}
+							
 							$camposHitoExpediente = $repositorios['CamposHitoExpediente']->findBy(array(
 								'idCampoHito' => $campoHito->getIdCampoHito(),
 								'idExpediente' => $expediente->getIdExpediente(),

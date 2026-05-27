@@ -4133,8 +4133,6 @@ class WhatsappController extends Controller
                 // HABILIDAD 7: Buscar datos de cliente por teléfono o DNI
                 // ─────────────────────────────────────────────────────────────
                 case 'habilidad_buscar_cliente':
-                    $conn = $this->getDoctrine()->getConnection();
-
                     // Intentar extraer teléfono o DNI del mensaje original
                     $telefonoBusqueda = null;
                     $dniBusqueda = null;
@@ -4154,59 +4152,48 @@ class WhatsappController extends Controller
                         return $textoConversacional . "\n\nPara localizar al cliente, ¿puedes indicarme su teléfono o DNI/NIF?";
                     }
 
-                    // Construir la consulta dinámica
-                    $where = [];
-                    $params = [];
+                    $subRequest = \Symfony\Component\HttpFoundation\Request::create(
+                        '/API/BotBuscarCliente',
+                        'POST',
+                        [
+                            'api_key' => '123456',
+                            'telefono' => $telefonoBusqueda,
+                            'dni' => $dniBusqueda
+                        ]
+                    );
 
-                    if ($telefonoBusqueda) {
-                        // Buscar por últimos 9 dígitos
-                        $telLocal = strlen($telefonoBusqueda) > 9 ? substr($telefonoBusqueda, -9) : $telefonoBusqueda;
-                        $where[] = 'u.telefono_movil LIKE :telefono';
-                        $params['telefono'] = '%' . $telLocal . '%';
+                    try {
+                        $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
+                        $data = json_decode($response->getContent(), true);
+
+                        if ($response->getStatusCode() === 200 && $data['success']) {
+                            $cliente = $data['cliente'];
+                            $nombreCompleto = trim($cliente['nombre'] . ' ' . $cliente['apellidos']);
+                            $respuesta = $textoConversacional . "\n\n";
+                            $respuesta .= "📋 *Ficha del cliente encontrada:*\n";
+                            $respuesta .= "• Nombre: {$nombreCompleto}\n";
+                            $respuesta .= "• Teléfono: " . ($cliente['telefono_movil'] ?: 'N/A') . "\n";
+                            $respuesta .= "• DNI/NIF: " . ($cliente['dni'] ?: 'N/A') . "\n";
+                            $respuesta .= "• Email: " . ($cliente['email'] ?: 'N/A') . "\n";
+                            if (!empty($cliente['id_expediente'])) {
+                                $refAMostrar = !empty($cliente['referencia']) ? $cliente['referencia'] : $cliente['id_expediente'];
+                                $respuesta .= "• Expediente activo: {$refAMostrar}\n";
+                            } else {
+                                $respuesta .= "• Sin expediente activo\n";
+                            }
+
+                            $this->logear('✅ Habilidad buscar_cliente ejecutada → cliente ID: ' . $cliente['id']);
+                            return $respuesta;
+                        } elseif ($response->getStatusCode() === 404) {
+                            $criterio = $telefonoBusqueda ?: $dniBusqueda;
+                            return $textoConversacional . "\n\n❌ No encontré ningún cliente con el identificador *{$criterio}* en el sistema.";
+                        } else {
+                            return $textoConversacional . "\n\n❌ Hubo un error al intentar buscar al cliente: " . ($data['error'] ?? 'Desconocido');
+                        }
+                    } catch (\Exception $e) {
+                        $this->logear('⚠️ Error al buscar cliente vía API: ' . $e->getMessage());
+                        return $textoConversacional . "\n\n❌ Hubo un error al intentar buscar al cliente.";
                     }
-                    if ($dniBusqueda) {
-                        $where[] = 'u.nif = :nif';
-                        $params['nif'] = $dniBusqueda;
-                    }
-
-                    $sql = 'SELECT u.id_usuario, u.nombre, u.apellidos, u.email, u.telefono_movil, u.nif,
-                                   e.id_expediente, e.referencia, e.estado AS estado_expediente
-                            FROM usuario u
-                            LEFT JOIN expediente e ON (e.id_cliente = u.id_usuario AND e.estado > 0)
-                            WHERE u.estado = 1
-                              AND (' . implode(' OR ', $where) . ')
-                            ORDER BY e.id_expediente DESC
-                            LIMIT 1';
-
-                    $stmt = $conn->prepare($sql);
-                    foreach ($params as $k => $v) {
-                        $stmt->bindValue($k, $v);
-                    }
-                    $stmt->execute();
-                    $cliente = $stmt->fetch();
-
-                    if (!$cliente) {
-                        $criterio = $telefonoBusqueda ?: $dniBusqueda;
-                        return $textoConversacional . "\n\n❌ No encontré ningún cliente con el identificador *{$criterio}* en el sistema.";
-                    }
-
-                    // Formatear respuesta con los datos reales
-                    $nombreCompleto = trim($cliente['nombre'] . ' ' . $cliente['apellidos']);
-                    $respuesta = $textoConversacional . "\n\n";
-                    $respuesta .= "📋 *Ficha del cliente encontrada:*\n";
-                    $respuesta .= "• Nombre: {$nombreCompleto}\n";
-                    $respuesta .= "• Teléfono: " . ($cliente['telefono_movil'] ?: 'N/A') . "\n";
-                    $respuesta .= "• DNI/NIF: " . ($cliente['nif'] ?: 'N/A') . "\n";
-                    $respuesta .= "• Email: " . ($cliente['email'] ?: 'N/A') . "\n";
-                    if ($cliente['id_expediente']) {
-                        $refAMostrar = $cliente['referencia'] ? $cliente['referencia'] : $cliente['id_expediente'];
-                        $respuesta .= "• Expediente activo: {$refAMostrar}\n";
-                    } else {
-                        $respuesta .= "• Sin expediente activo\n";
-                    }
-
-                    $this->logear('✅ Habilidad buscar_cliente ejecutada → cliente ID: ' . $cliente['id_usuario']);
-                    return $respuesta;
 
                 // ─────────────────────────────────────────────────────────────
                 // HABILIDAD: Buscar expediente

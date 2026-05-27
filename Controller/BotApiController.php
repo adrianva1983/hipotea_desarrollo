@@ -964,18 +964,22 @@ class BotApiController extends Controller
 				$telPlaceholders[] = $ph;
 				$params[$ph] = $v;
 			}
-			$where[] = 'telefono_movil IN (' . implode(',', $telPlaceholders) . ')';
+			$where[] = 'u.telefono_movil IN (' . implode(',', $telPlaceholders) . ')';
 		}
 		if ($dni) {
-			$where[] = 'nif = :dni';
+			$where[] = 'u.nif = :dni';
 			$params[':dni'] = $dni;
 		}
 
-		$sql = 'SELECT id_usuario, nombre, apellidos, nif, email, telefono_movil, telefono_fijo, estado FROM usuario WHERE estado = 1';
+		$sql = 'SELECT u.id_usuario, u.nombre, u.apellidos, u.nif, u.email, u.telefono_movil, u.telefono_fijo, u.estado,
+					   e.id_expediente, e.referencia
+				FROM usuario u 
+				LEFT JOIN expediente e ON (e.id_cliente = u.id_usuario AND e.estado > 0)
+				WHERE u.estado = 1';
 		if (count($where) > 0) {
 			$sql .= ' AND (' . implode(' OR ', $where) . ')';
 		}
-		$sql .= ' LIMIT 1';
+		$sql .= ' ORDER BY e.id_expediente DESC LIMIT 1';
 
 		error_log('Executing SQL: ' . $sql . ' with params: ' . print_r($params, true));
 
