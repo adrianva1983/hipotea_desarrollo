@@ -1506,6 +1506,7 @@ class BotApiController extends Controller
         }
 
         if (empty($datosExtraidos['campos_encontrados'])) {
+
             $this->get('logger')->info('✗ No hay campos para guardar');
             return ['exito' => false, 'guardados' => 0];
         }
@@ -1514,7 +1515,9 @@ class BotApiController extends Controller
             $timestamp = date('Y-m-d H:i:s');
 
             // Obtener mapeo de opciones para campos que las tienen
-            $opcionesMapeo = $iaControllerGlobal->obtenerOpcionesCampos();
+            $iArtificalController = new \AppBundle\Controller\IArtificalController();
+            $iArtificalController->setContainer($this->container);
+            $opcionesMapeo = $iArtificalController->obtenerOpcionesCampos();
 
             // Procesar cada campo encontrado
             foreach ($datosExtraidos['campos_encontrados'] as $campo) {
@@ -1655,3 +1658,4 @@ class BotApiController extends Controller
 
 
 }
+
