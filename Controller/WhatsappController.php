@@ -4286,7 +4286,7 @@ class WhatsappController extends Controller
                     if ($dniBusqueda) $queryData['dni'] = $dniBusqueda;
 
                     $subRequest = \Symfony\Component\HttpFoundation\Request::create(
-                        '/API/BuscarExpediente1',
+                        '/API/BotBuscarExpediente',
                         'GET',
                         $queryData
                     );
@@ -4296,13 +4296,13 @@ class WhatsappController extends Controller
                         $httpCode = $response->getStatusCode();
                         $responseAPI = $response->getContent();
                     } catch (\Exception $e) {
-                        $this->logear('❌ Error en subpetición a BuscarExpediente1: ' . $e->getMessage());
+                        $this->logear('❌ Error en subpetición a BotBuscarExpediente: ' . $e->getMessage());
                         $httpCode = 500;
                         $responseAPI = '';
                     }
 
                     if ($httpCode !== 200 || !$responseAPI) {
-                        $criterio = $idExpediente ?: ($telefonoBusqueda ?: $dniBusqueda);
+                        $criterio = $referenciaBusqueda ?: ($idExpediente ?: ($telefonoBusqueda ?: $dniBusqueda));
                         return $textoConversacional . "\n\n❌ No encontré ningún expediente con el identificador *{$criterio}*.";
                     }
 
