@@ -1009,6 +1009,8 @@ class BotApiController extends Controller
 				'telefono_movil' => $cliente['telefono_movil'],
 				'telefono_fijo' => $cliente['telefono_fijo'],
 				'estado' => $cliente['estado'],
+				'id_expediente' => $cliente['id_expediente'] ?? null,
+				'referencia' => $cliente['referencia'] ?? null,
 			]
 		]);
 	}

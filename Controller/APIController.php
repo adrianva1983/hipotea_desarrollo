@@ -137,20 +137,25 @@ class APIController extends Controller
 						));
 						$ficheros_grupo = array();
 						foreach ($camposHito as $campoHito) {
+                            $debug = 'cond: '.($campoHito->getCampoCondicional() ? '1' : '0');
 							if ($campoHito->getCampoCondicional()) {
 								$opcionCond = $repositorios['OpcionesCampo']->findBy(array(
 									'idCampoCondicional' => $campoHito
 								));
+                                $debug .= ' opts: '.count($opcionCond);
 								if (count($opcionCond) > 0) {
 									$campoCond = $repositorios['CamposHitoExpediente']->findBy(array(
 										'idOpcionesCampo' => $opcionCond,
 										'idExpediente' => $expediente->getIdExpediente(),
 									));
+                                    $debug .= ' ans: '.count($campoCond);
 									if ($campoCond == null || count($campoCond) == 0) {
+                                        file_put_contents(__DIR__.'/../../../debug.txt', $campoHito->getNombre() . ': ' . $debug . " -> HIDDEN\n", FILE_APPEND);
 										continue;
 									}
 								}
 							}
+                            file_put_contents(__DIR__.'/../../../debug.txt', $campoHito->getNombre() . ': ' . $debug . " -> SHOWN\n", FILE_APPEND);
 							
 							$camposHitoExpediente = $repositorios['CamposHitoExpediente']->findBy(array(
 								'idCampoHito' => $campoHito->getIdCampoHito(),
@@ -170,7 +175,8 @@ class APIController extends Controller
 									'idExpediente' => $expediente->getIdExpediente(),
 									'idCampoHitoExpediente' => $campoHitoExpediente->getIdCampoHitoExpediente(),
 									'nombre' => $campoHito->getNombre(),
-									'descargable' => in_array($campoHito->getIdCampoHito(), [313,731,315,322,728,729,324,708,709,710,711,712,713,716,717,718,719,722,723,724,726,738,739])
+									'descargable' => in_array($campoHito->getIdCampoHito(), [313,731,315,322,728,729,324,708,709,710,711,712,713,716,717,718,719,722,723,724,726,738,739]),
+                                    'debug_info' => $debug
 								);
 								if ($ficheroCampo) {
 									$fichero['nombreFichero'] = $ficheroCampo->getNombreFichero();
