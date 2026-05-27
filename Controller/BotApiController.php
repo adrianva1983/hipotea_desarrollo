@@ -1415,7 +1415,7 @@ class BotApiController extends Controller
 		$iaControllerGlobal->setContainer($this->container);
 
 		try {
-			$gruposAMapear = range(1, 20); 
+			$gruposAMapear = range(1, 20); // TODOS los grupos a mapear
 			$resultadoGlobal = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
 			$camposProcesados = $resultadoGlobal['campos_procesados'] ?? [];
 		} catch (\Exception $e) {

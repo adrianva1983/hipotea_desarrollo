@@ -139,9 +139,18 @@ class APIController extends Controller
 						foreach ($camposHito as $campoHito) {
                             $debug = 'cond: '.($campoHito->getCampoCondicional() ? '1' : '0');
 							if ($campoHito->getCampoCondicional()) {
-								$opcionCond = $repositorios['OpcionesCampo']->findBy(array(
-									'idCampoCondicional' => $campoHito
-								));
+                                $todasOpciones = $repositorios['OpcionesCampo']->findAll();
+                                $opcionCond = array();
+                                $idBuscado = (string)$campoHito->getIdCampoHito();
+                                foreach ($todasOpciones as $op) {
+                                    $val = $op->getIdCampoCondicional();
+                                    if ($val) {
+                                        $ids = array_map('trim', explode(',', $val));
+                                        if (in_array($idBuscado, $ids)) {
+                                            $opcionCond[] = $op;
+                                        }
+                                    }
+                                }
                                 $debug .= ' opts: '.count($opcionCond);
 								if (count($opcionCond) > 0) {
 									$campoCond = $repositorios['CamposHitoExpediente']->findBy(array(

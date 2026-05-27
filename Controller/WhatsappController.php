@@ -4078,52 +4078,8 @@ class WhatsappController extends Controller
         try {
             switch ($habilidadDetectada) {
 
-                // ─────────────────────────────────────────────────────────────
-                // NUEVA HABILIDAD: Modificar expediente
-                // ─────────────────────────────────────────────────────────────
-                case 'habilidad_modificar_expediente':
-                    if (empty($parametroHabilidad)) {
-                        return $textoConversacional . "\n\nPara modificar el expediente, por favor dime su número y qué dato quieres que cambie (ej: 'Modifica el expediente 123 y ponle un salario neto de 1800 al titular 1').";
-                    }
-
-                    $partes = explode('|', $parametroHabilidad);
-                    if (count($partes) < 2) {
-                        return $textoConversacional . "\n\nHe entendido que quieres modificar un expediente, pero me falta el ID o el dato a cambiar. ¿Puedes repetírmelo?";
-                    }
-
-                    $idExpParam = trim($partes[0]);
-                    $textoModificacion = trim($partes[1]);
-
-                    $subRequest = \Symfony\Component\HttpFoundation\Request::create(
-                        '/API/BotModificarExpediente',
-                        'POST',
-                        [
-                            'api_key' => '123456',
-                            'identificador' => $idExpParam,
                             'texto' => $textoModificacion,
                             'fromPhone' => $fromPhone
-                        ]
-                    );
-
-                    try {
-                        $response = $this->get('http_kernel')->handle($subRequest, \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST);
-                        $data = json_decode($response->getContent(), true);
-                        $this->logear('DEBUG RAW API RESPONSE: ' . substr($response->getContent(), 0, 500));
-
-                        if ($data === null) {
-                            $this->logear('❌ FATAL SUBREQUEST ERROR. RAW HTML: ' . substr(strip_tags($response->getContent()), 0, 1500));
-                        }
-
-                        if ($response->getStatusCode() === 200 && $data['success']) {
-                            $msg = "✅ *Expediente " . $data['id_expediente'] . " actualizado*\nHe guardado los siguientes datos:\n";
-                            foreach ($data['datos_guardados'] as $campo) {
-                                $nombre = $campo['nombre_campo'] ?? $campo['tipo'] ?? 'Desconocido';
-                                $valor = $campo['valor'] ?? '';
-                                if ($nombre && $valor) {
-                                    $msg .= "   - " . $nombre . ": " . $valor . "\n";
-                                }
-                            }
-                            return $textoConversacional . "\n\n" . $msg;
                         } elseif ($response->getStatusCode() === 404) {
                             return $textoConversacional . "\n\n❌ Lo siento, no he encontrado ningún expediente con el ID o referencia: " . $idExpParam;
                         } else {
