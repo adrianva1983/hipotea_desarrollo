@@ -1565,6 +1565,8 @@ class BotApiController extends Controller
 					$stmt->execute();
 					$resultado = $stmt->fetch();
 
+					error_log("guardarDatos: Campo {$idCampoHito} ({$nombreCampo}) = '{$valor}' | Existe en BD: " . ($resultado ? 'SÍ (valor actual: "' . ($resultado['valor'] ?? '') . '", opcion: ' . ($resultado['id_opciones_campo'] ?? 'null') . ')' : 'NO'));
+
 					if ($resultado) {
 						// El campo ya existe - verificar si ya tiene valor
 						$valorActual = trim($resultado['valor'] ?? '');
@@ -1590,7 +1592,7 @@ class BotApiController extends Controller
 							$this->get('logger')->info('⚠ VALOR CORRUPTO DETECTADO: ' . $valorActual . ' - SOBRESCRIBIENDO CON: ' . $valor);
 						}
 
-						// El campo existe pero está vacío, proceder a actualizar
+						// El campo existe, proceder a actualizar
 						$sqlUpdate = 'UPDATE campo_hito_expediente 
                                       SET valor = :valor, id_opciones_campo = :idOpcional, fecha_modificacion = :timestamp
                                       WHERE id_expediente = :idExp AND id_campo_hito = :idCampo';
@@ -1601,7 +1603,9 @@ class BotApiController extends Controller
 						$stmt->bindValue('idExp', $idExpediente);
 						$stmt->bindValue('idCampo', $idCampoHito);
 						$stmt->execute();
-						$this->get('logger')->info('✓ ACTUALIZADO: ' . $nombreCampo);
+						$rowsAffected = $stmt->rowCount();
+						error_log("guardarDatos: UPDATE campo {$idCampoHito} → rowsAffected={$rowsAffected}");
+						$this->get('logger')->info('✓ ACTUALIZADO: ' . $nombreCampo . ' (rows: ' . $rowsAffected . ')');
 					} else {
 						// Obtener id_hito_expediente
 						$sqlHito = 'SELECT he.id_hito_expediente 
@@ -1615,6 +1619,8 @@ class BotApiController extends Controller
 						$resHito = $stmtHito->fetch();
 						$idHitoExp = $resHito ? $resHito['id_hito_expediente'] : 0;
 
+						error_log("guardarDatos: INSERT campo {$idCampoHito} → id_hito_expediente={$idHitoExp}");
+
 						// Insertar
 						$sqlInsert = 'INSERT INTO campo_hito_expediente 
                                       (id_expediente, id_campo_hito, id_hito_expediente, valor, id_opciones_campo, fecha_modificacion, obligatorio)
@@ -1627,12 +1633,14 @@ class BotApiController extends Controller
 						$stmt->bindValue('idOpcional', $idOpcional);
 						$stmt->bindValue('timestamp', $timestamp);
 						$stmt->execute();
+						error_log("guardarDatos: INSERT campo {$idCampoHito} → OK, lastInsertId=" . $conn->lastInsertId());
 						$this->get('logger')->info('✓ INSERTADO: ' . $nombreCampo);
 					}
 
 					$camposGuardados++;
 
 				} catch (\Exception $e) {
+					error_log("guardarDatos: ✗ EXCEPCIÓN campo {$idCampoHito}: " . $e->getMessage());
 					$this->get('logger')->info('✗ Error: ' . $e->getMessage());
 					$camposError++;
 				}
