@@ -4237,13 +4237,16 @@ class WhatsappController extends Controller
                 // HABILIDAD: Buscar expediente
                 // ─────────────────────────────────────────────────────────────
                 case 'habilidad_buscar_expediente':
+                    $referenciaBusqueda = null;
                     $idExpediente = null;
                     $telefonoBusqueda = null;
                     $dniBusqueda = null;
 
-                    // 1) Intentar extraer ID o datos desde el parámetro que la IA inyectó por el contexto
+                    // 1) Intentar extraer referencia (ej: 2727/26, HIP-123) o ID o datos desde el parámetro que la IA inyectó
                     if (!empty($parametroHabilidad)) {
-                        if (preg_match('/\b(\d{1,7})\b/', $parametroHabilidad, $mId)) {
+                        if (preg_match('/\b([A-Za-z0-9]+\/\d{2,4}|[A-Za-z]+-\d+)\b/i', $parametroHabilidad, $mRef)) {
+                            $referenciaBusqueda = $mRef[1];
+                        } elseif (preg_match('/\b(\d{1,7})\b/', $parametroHabilidad, $mId)) {
                             $idExpediente = $mId[1];
                         } elseif (preg_match('/\b([6-9]\d{8})\b/', preg_replace('/\D/', '', $parametroHabilidad), $mTel)) {
                             $telefonoBusqueda = $mTel[1];
@@ -4252,8 +4255,12 @@ class WhatsappController extends Controller
                         }
                     }
 
-                    // 2) Si la IA no lo inyectó, buscar ID de expediente en el texto original del usuario
-                    if (!$idExpediente && preg_match('/\b(\d{1,7})\b/', preg_replace('/(6|7|8|9)\d{8}/', '', $bodyOriginal), $mId)) {
+                    // 2) Si la IA no lo inyectó, buscar en el texto original del usuario
+                    if (!$referenciaBusqueda && preg_match('/\b([A-Za-z0-9]+\/\d{2,4}|[A-Za-z]+-\d+)\b/i', $bodyOriginal, $mRef)) {
+                        $referenciaBusqueda = $mRef[1];
+                    }
+
+                    if (!$referenciaBusqueda && !$idExpediente && preg_match('/\b(\d{1,7})\b/', preg_replace('/(6|7|8|9)\d{8}/', '', $bodyOriginal), $mId)) {
                         $idExpediente = $mId[1];
                     }
 
@@ -4267,12 +4274,13 @@ class WhatsappController extends Controller
                         $dniBusqueda = strtoupper($mDni[1]);
                     }
 
-                    if (!$idExpediente && !$telefonoBusqueda && !$dniBusqueda) {
-                        return $textoConversacional . "\n\nPara localizar el expediente, ¿puedes indicarme su número de ID, teléfono o DNI del cliente?";
+                    if (!$referenciaBusqueda && !$idExpediente && !$telefonoBusqueda && !$dniBusqueda) {
+                        return $textoConversacional . "\n\nPara localizar el expediente, ¿puedes indicarme su referencia, ID, teléfono o DNI del cliente?";
                     }
 
                     // Preparar llamada a la API internamente en Symfony (evita problemas de cURL/DNS local)
                     $queryData = ['api_key' => '123456'];
+                    if ($referenciaBusqueda) $queryData['referencia'] = $referenciaBusqueda;
                     if ($idExpediente) $queryData['id_expediente'] = $idExpediente;
                     if ($telefonoBusqueda) $queryData['telefono'] = $telefonoBusqueda;
                     if ($dniBusqueda) $queryData['dni'] = $dniBusqueda;
