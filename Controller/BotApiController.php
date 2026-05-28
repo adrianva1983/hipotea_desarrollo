@@ -1395,20 +1395,22 @@ class BotApiController extends Controller
 		}
 
 		$conn = $this->getDoctrine()->getConnection();
-		$sqlBusquedaExp = "SELECT id_expediente FROM expediente WHERE id_expediente = :id_param OR referencia = :ref_param LIMIT 1";
+		$sqlBusquedaExp = "SELECT id_expediente, referencia FROM expediente WHERE id_expediente = :id_param OR referencia = :ref_param LIMIT 1";
 		$stmtBusquedaExp = $conn->prepare($sqlBusquedaExp);
 		$stmtBusquedaExp->bindValue('id_param', is_numeric($idExpParam) ? (int) $idExpParam : 0);
 		$stmtBusquedaExp->bindValue('ref_param', (string) $idExpParam);
 		$stmtBusquedaExp->execute();
-		$idExpReal = $stmtBusquedaExp->fetchColumn();
+		$rowExpediente = $stmtBusquedaExp->fetch(\PDO::FETCH_ASSOC);
 
-		if (!$idExpReal) {
+		if (!$rowExpediente) {
 			return new JsonResponse([
 				'success' => false,
 				'error' => 'No se encontró ningún expediente con el ID o referencia: ' . $idExpParam
 			], 404);
 		}
 
+		$idExpReal = $rowExpediente['id_expediente'];
+		$refExpediente = $rowExpediente['referencia'];
 		$idExp = (int) $idExpReal;
 
 		$iaControllerGlobal = new \AppBundle\Controller\InteligenciaArtificialController($this->get('logger'));
@@ -1500,8 +1502,16 @@ class BotApiController extends Controller
 					continue;
 				}
 
-				$opcionesRef = $em->getReference('AppBundle:OpcionesCampo', (int) $opcionId);
-				$campoHitoExpediente->setIdOpcionesCampo($opcionesRef);
+				$opcionEntity = $em->getRepository('AppBundle:OpcionesCampo')->find((int) $opcionId);
+				if ($opcionEntity) {
+					$campoHitoExpediente->setIdOpcionesCampo($opcionEntity);
+					$nombreOpcion = $opcionEntity->getValor();
+				} else {
+					$opcionesRef = $em->getReference('AppBundle:OpcionesCampo', (int) $opcionId);
+					$campoHitoExpediente->setIdOpcionesCampo($opcionesRef);
+					$nombreOpcion = 'opción ID ' . $opcionId;
+				}
+				
 				$campoHitoExpediente->setValor(null);
 				$campoHitoExpediente->setFechaModificacion(new \DateTime());
 				$em->persist($campoHitoExpediente);
@@ -1512,7 +1522,7 @@ class BotApiController extends Controller
 				$datosGuardados[] = [
 					'campo_id' => $idCampo,
 					'nombre_campo' => $nombreCampo,
-					'valor' => 'opción ID ' . $opcionId,
+					'valor' => $nombreOpcion,
 					'tipo' => 'opcion'
 				];
 				$camposActualizados++;
@@ -1539,6 +1549,7 @@ class BotApiController extends Controller
 			return new JsonResponse([
 				'success' => true,
 				'id_expediente' => $idExp,
+				'referencia' => $refExpediente,
 				'datos_guardados' => $datosGuardados
 			]);
 		} else {

@@ -4118,7 +4118,8 @@ class WhatsappController extends Controller
                         }
 
                         if ($response->getStatusCode() === 200 && $data['success']) {
-                            $msg = "✅ *Expediente " . $data['id_expediente'] . " actualizado*\nHe guardado los siguientes datos:\n";
+                            $refMostrar = !empty($data['referencia']) ? $data['referencia'] : $data['id_expediente'];
+                            $msg = "✅ *Expediente " . $refMostrar . " actualizado*\nHe guardado los siguientes datos:\n";
                             foreach ($data['datos_guardados'] as $campo) {
                                 $nombre = $campo['nombre_campo'] ?? $campo['tipo'] ?? 'Desconocido';
                                 $valor = $campo['valor'] ?? '';
