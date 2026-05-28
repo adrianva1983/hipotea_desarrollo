@@ -4056,6 +4056,7 @@ class WhatsappController extends Controller
             'calcular cuota y gastos' => 'habilidad_calcular_cuota_gastos',
             'simular viabilidad hipotecaria' => 'habilidad_simular_viabilidad',
             'modificar expediente' => 'habilidad_modificar_expediente',
+            'datos pendientes' => 'habilidad_datos_pendientes',
         ];
 
         $habilidadDetectada = null;
@@ -4306,6 +4307,50 @@ class WhatsappController extends Controller
 
                     $this->logear('✅ Habilidad buscar_expediente ejecutada → expediente ID: ' . $exp['id_expediente']);
                     return $respuesta;
+
+                // ─────────────────────────────────────────────────────────────
+                // HABILIDAD 10: Consultar datos pendientes
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_datos_pendientes':
+                    $idBusqueda = $parametroHabilidad ?: ($idExpediente ?: ($sessionId ?: null));
+                    
+                    if (!$idBusqueda) {
+                        return $textoConversacional . "\n\n❌ No me has indicado el número o la referencia del expediente que quieres consultar.";
+                    }
+
+                    try {
+                        $botApiController = $this->get('AppBundle\Controller\BotApiController');
+                        if ($botApiController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
+                            $botApiController->setContainer($this->container);
+                        }
+
+                        // Llamamos al método que genera el informe
+                        $response = $botApiController->botPendientesExpedienteAction($idBusqueda);
+                        
+                        if ($response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
+                            $data = json_decode($response->getContent(), true);
+                            
+                            if (isset($data['success']) && $data['success'] === false) {
+                                return $textoConversacional . "\n\n❌ " . ($data['error'] ?? 'Hubo un error al buscar los pendientes del expediente.');
+                            }
+
+                            // Formatear mensaje final con los datos devueltos
+                            if (empty($data['pendientes'])) {
+                                return $textoConversacional . "\n\n✅ ¡El expediente *{$idBusqueda}* está completamente relleno! No le falta ningún dato.";
+                            }
+
+                            $msj = $textoConversacional . "\n\n";
+                            $msj .= "📄 *Datos Pendientes del Expediente {$idBusqueda}:*\n\n";
+                            $msj .= $data['pendientes'];
+
+                            $this->logear('✅ Habilidad datos pendientes ejecutada con éxito para ' . $idBusqueda);
+                            return $msj;
+                        }
+                    } catch (\Exception $e) {
+                        $this->logear('❌ Error habilidad_datos_pendientes: ' . $e->getMessage());
+                        return $textoConversacional . "\n\n❌ Hubo un error al consultar los pendientes del expediente: " . $e->getMessage();
+                    }
+                    return $textoConversacional;
 
                 // ─────────────────────────────────────────────────────────────
                 // HABILIDADES PENDIENTES DE IMPLEMENTAR

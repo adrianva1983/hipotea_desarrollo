@@ -9,7 +9,7 @@ use AppBundle\Entity\CalculadoraSencilla;
 use AppBundle\Entity\CalculadoraAvanzada;
 use AppBundle\Entity\CalculadoraComparativa;
 use AppBundle\Entity\Parametros;
-
+use Doctrine\Common\Collections\Criteria;
 class BotApiController extends Controller
 {
 	public function calcularSencillaAction(Request $request)
@@ -1767,6 +1767,225 @@ class BotApiController extends Controller
 		}
 	}
 
+	/**
+	 * @Route("/Bot/PendientesExpediente", name="bot_pendientes_expediente", methods={"POST", "GET"})
+	 */
+	public function botPendientesExpedienteAction($idExpParam)
+	{
+		try {
+			$conn = $this->getDoctrine()->getConnection();
+			$sqlBusquedaExp = "SELECT id_expediente, referencia FROM expediente WHERE id_expediente = :id_param OR referencia = :ref_param LIMIT 1";
+			$stmtBusquedaExp = $conn->prepare($sqlBusquedaExp);
+			$stmtBusquedaExp->bindValue('id_param', is_numeric($idExpParam) ? (int) $idExpParam : 0);
+			$stmtBusquedaExp->bindValue('ref_param', (string) $idExpParam);
+			$stmtBusquedaExp->execute();
+			$rowExpediente = $stmtBusquedaExp->fetch(\PDO::FETCH_ASSOC);
 
+			if (!$rowExpediente) {
+				// Buscar por DNI o Teléfono en el titular
+				$sqlBusquedaExpAlt = "SELECT e.id_expediente, e.referencia FROM expediente e
+					LEFT JOIN campo_hito_expediente che ON che.id_expediente = e.id_expediente
+					WHERE che.id_campo_hito IN (197, 408, 695) AND (che.valor = :param OR REPLACE(che.valor, ' ', '') = :param)
+					ORDER BY e.id_expediente DESC LIMIT 1";
+				$stmtBusquedaExpAlt = $conn->prepare($sqlBusquedaExpAlt);
+				$stmtBusquedaExpAlt->bindValue('param', (string) $idExpParam);
+				$stmtBusquedaExpAlt->execute();
+				$rowExpediente = $stmtBusquedaExpAlt->fetch(\PDO::FETCH_ASSOC);
+			}
+
+			if (!$rowExpediente) {
+				return new JsonResponse([
+					'success' => false,
+					'error' => 'No se encontró ningún expediente con el ID, referencia, teléfono o DNI: ' . $idExpParam
+				], 404);
+			}
+
+			$idExp = (int) $rowExpediente['id_expediente'];
+			$doctrine = $this->getDoctrine();
+			$expediente = $doctrine->getRepository('AppBundle:ExpedienteEntidad')->findOneBy(['idExpediente' => $idExp]);
+			
+			if (!$expediente) {
+				return new JsonResponse(['success' => false, 'error' => 'Expediente no encontrado en Doctrine.'], 404);
+			}
+
+			$fases = $doctrine->getRepository('AppBundle:FaseEntidad')->findBy(array(), array('orden' => 'ASC'));
+			$salida = array();
+			
+			foreach ($fases as $fase) {
+				$salida[$fase->getIdFase()]['nombre'] = $fase->getNombre();
+				$hitos = $doctrine->getRepository('AppBundle:HitoEntidad')->findBy(array('idFase' => $fase), array('orden' => 'ASC'));
+
+				foreach ($hitos as $hito) {
+					if($hito->getHitoCondicional()){
+						$opcionCondicional = $doctrine->getRepository('AppBundle:OpcionesCampoEntidad')->findOneBy(array('idHitoCondicional' => $hito));
+						if($opcionCondicional){
+							$campoHitoExpedienteC = $doctrine->getRepository('AppBundle:CampoHitoExpedienteEntidad')->findOneBy(array(
+								'idCampoHito' => $opcionCondicional->getIdCampoHito(),
+								'idExpediente' => $expediente,
+								'idOpcionesCampo' => $opcionCondicional
+							));
+							$mostrarCondicional = $campoHitoExpedienteC ? true : false;
+						} else {
+							$mostrarCondicional = false;
+						}
+					} else {
+						$mostrarCondicional = false;
+					}
+
+					if(!$hito->getHitoCondicional() || ($hito->getHitoCondicional() && $mostrarCondicional )){
+						$hitosExpediente = $doctrine->getRepository('AppBundle:HitoExpedienteEntidad')->findBy(array(
+							'idHito' => $hito,
+							'idExpediente' => $expediente
+						));
+						$gruposHito = $doctrine->getRepository('AppBundle:GrupoCamposHitoEntidad')->findBy(array(
+							'idHito' => $hito
+						), array('orden' => 'ASC'));
+
+						foreach ($hitosExpediente as $contador => $hitoExpediente) {
+							$salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()] = array(
+								'indice' => $contador,
+								'nombre' => $hito->getNombre()
+							);
+							
+							foreach($gruposHito as $grupoHito){
+								$camposHito = $doctrine->getRepository('AppBundle:CampoHitoEntidad')->findBy(
+									array('idGrupoCamposHito' => $grupoHito),
+									array('orden' => 'ASC')
+								);
+								
+								foreach ($camposHito as $campoHito) {
+									if($campoHito->getCampoCondicional()){
+										$opcionesCondicionales = $doctrine->getRepository('AppBundle:OpcionesCampoEntidad')->matching(Criteria::create()
+											->where(Criteria::expr()->contains('idCampoCondicional', $campoHito->getIdCampoHito() ))
+										)->toArray();
+										
+										if(count($opcionesCondicionales)>0){
+											$mostrarCampoCondicional = false;
+											foreach($opcionesCondicionales as $opcionCondicional){
+												$campoHitoExpedienteC = $doctrine->getRepository('AppBundle:CampoHitoExpedienteEntidad')->findOneBy(array(
+													'idExpediente' => $expediente,
+													'idOpcionesCampo' => $opcionCondicional
+												));
+												if($campoHitoExpedienteC){
+													$mostrarCampoCondicional = true;
+													break;
+												}
+											}
+										} else {
+											$mostrarCampoCondicional = false;
+										}
+									} else {
+										$mostrarCampoCondicional = true;
+									}
+
+									$campoHitoExpediente = $doctrine->getRepository('AppBundle:CampoHitoExpedienteEntidad')->findOneBy(array(
+										'idCampoHito' => $campoHito,
+										'idHitoExpediente' => $hitoExpediente,
+										'idExpediente' => $expediente
+									));
+									
+									if ($campoHitoExpediente && $mostrarCampoCondicional) {
+										$salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()] = array(
+											'nombre' => $campoHito->getNombre(),
+											'tipo' => $campoHito->getTipo(),
+											'grupo' => $campoHito->getIdGrupoCamposHito()->getNombre()
+										);
+										
+										if ($campoHito->getTipo() === 1 || $campoHito->getTipo() === 5 || $campoHito->getTipo() === 6) {
+											if (is_null($campoHitoExpediente->getValor()) || trim($campoHitoExpediente->getValor()) === '') {
+												$salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]['valor'] = '';
+											} else {
+												unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
+											}
+										} elseif ($campoHito->getTipo() === 2 || $campoHito->getTipo() === 3) {
+											if (is_null($campoHitoExpediente->getIdOpcionesCampo()) || is_null($campoHitoExpediente->getIdOpcionesCampo()->getValor())) {
+												$salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]['valor'] = '';
+											} else {
+												unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
+											}
+										} elseif ($campoHito->getTipo() === 4) {
+											if (!$campoHitoExpediente->getObligatorio() && !$campoHitoExpediente->getSolicitarAlColaborador()) {
+												unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
+											} else {
+												if ($campoHitoExpediente->getParaFirmar() && $campoHitoExpediente->getFirmado()){
+													unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
+												} elseif (!$campoHitoExpediente->getParaFirmar() && !is_null($campoHitoExpediente->getValor()) && !is_null($doctrine->getRepository('AppBundle:FicheroCampoEntidad')->findOneBy(array('idCampoHito' => $campoHito, 'idCampoHitoExpediente' => $campoHitoExpediente, 'idExpediente' => $expediente)))) {
+													unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
+												}
+											}
+										} elseif ($campoHito->getTipo() === 7 || $campoHito->getTipo() === 8 || $campoHito->getTipo() === 9) {
+											if (is_null($campoHitoExpediente->getIdAgenteColaborador())) {
+												$salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]['valor'] = '';
+											} else {
+												unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
+											}
+										} elseif ($campoHito->getTipo() === 10) {
+											unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
+										}
+										
+										if (isset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito']) && count($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito']) <= 0) {
+											unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito']);
+										}
+									}
+								}
+								if (isset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]) && count($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]) <= 2) {
+									unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]);
+								}
+							}
+						}
+					}
+					if (isset($salida[$fase->getIdFase()]['hitos']) && count($salida[$fase->getIdFase()]['hitos']) <= 0) {
+						unset($salida[$fase->getIdFase()]['hitos']);
+					}
+				}
+				if (isset($salida[$fase->getIdFase()]) && count($salida[$fase->getIdFase()]) <= 1) {
+					unset($salida[$fase->getIdFase()]);
+				}
+			}
+
+			// Construir texto de respuesta
+			$textoPendientes = "";
+			$totalPendientes = 0;
+			$maxPendientesMostrados = 20; // Límite sugerido en el plan
+			
+			foreach ($salida as $fase) {
+				if(!isset($fase['hitos'])) continue;
+				$textoPendientes .= "📌 *" . $fase['nombre'] . "*\n";
+				
+				foreach ($fase['hitos'] as $hito) {
+					if(!isset($hito['camposHito'])) continue;
+					
+					$contadorHito = $hito['indice'] > 0 ? " (" . ($hito['indice']+1) . ")" : "";
+					$textoPendientes .= "  🔹 " . $hito['nombre'] . $contadorHito . ":\n";
+					
+					foreach ($hito['camposHito'] as $campo) {
+						if ($totalPendientes < $maxPendientesMostrados) {
+							$textoPendientes .= "    - " . $campo['nombre'] . "\n";
+						}
+						$totalPendientes++;
+					}
+				}
+				$textoPendientes .= "\n";
+			}
+
+			if ($totalPendientes > $maxPendientesMostrados) {
+				$ocultos = $totalPendientes - $maxPendientesMostrados;
+				$textoPendientes .= "_(...y $ocultos campos más pendientes)_";
+			}
+
+			return new JsonResponse([
+				'success' => true,
+				'pendientes' => trim($textoPendientes),
+				'total' => $totalPendientes
+			]);
+
+		} catch (\Exception $e) {
+			$this->get('logger')->error('botPendientesExpedienteAction error: ' . $e->getMessage() . ' ' . $e->getTraceAsString());
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Error interno calculando pendientes: ' . $e->getMessage()
+			], 500);
+		}
+	}
 }
 
