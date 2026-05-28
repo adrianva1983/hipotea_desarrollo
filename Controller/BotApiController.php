@@ -1802,24 +1802,24 @@ class BotApiController extends Controller
 
 			$idExp = (int) $rowExpediente['id_expediente'];
 			$doctrine = $this->getDoctrine();
-			$expediente = $doctrine->getRepository('AppBundle:ExpedienteEntidad')->findOneBy(['idExpediente' => $idExp]);
+			$expediente = $doctrine->getRepository('AppBundle:Expediente')->findOneBy(['idExpediente' => $idExp]);
 			
 			if (!$expediente) {
 				return new JsonResponse(['success' => false, 'error' => 'Expediente no encontrado en Doctrine.'], 404);
 			}
 
-			$fases = $doctrine->getRepository('AppBundle:FaseEntidad')->findBy(array(), array('orden' => 'ASC'));
+			$fases = $doctrine->getRepository('AppBundle:Fase')->findBy(array(), array('orden' => 'ASC'));
 			$salida = array();
 			
 			foreach ($fases as $fase) {
 				$salida[$fase->getIdFase()]['nombre'] = $fase->getNombre();
-				$hitos = $doctrine->getRepository('AppBundle:HitoEntidad')->findBy(array('idFase' => $fase), array('orden' => 'ASC'));
+				$hitos = $doctrine->getRepository('AppBundle:Hito')->findBy(array('idFase' => $fase), array('orden' => 'ASC'));
 
 				foreach ($hitos as $hito) {
 					if($hito->getHitoCondicional()){
-						$opcionCondicional = $doctrine->getRepository('AppBundle:OpcionesCampoEntidad')->findOneBy(array('idHitoCondicional' => $hito));
+						$opcionCondicional = $doctrine->getRepository('AppBundle:OpcionesCampo')->findOneBy(array('idHitoCondicional' => $hito));
 						if($opcionCondicional){
-							$campoHitoExpedienteC = $doctrine->getRepository('AppBundle:CampoHitoExpedienteEntidad')->findOneBy(array(
+							$campoHitoExpedienteC = $doctrine->getRepository('AppBundle:CampoHitoExpediente')->findOneBy(array(
 								'idCampoHito' => $opcionCondicional->getIdCampoHito(),
 								'idExpediente' => $expediente,
 								'idOpcionesCampo' => $opcionCondicional
@@ -1833,11 +1833,11 @@ class BotApiController extends Controller
 					}
 
 					if(!$hito->getHitoCondicional() || ($hito->getHitoCondicional() && $mostrarCondicional )){
-						$hitosExpediente = $doctrine->getRepository('AppBundle:HitoExpedienteEntidad')->findBy(array(
+						$hitosExpediente = $doctrine->getRepository('AppBundle:HitoExpediente')->findBy(array(
 							'idHito' => $hito,
 							'idExpediente' => $expediente
 						));
-						$gruposHito = $doctrine->getRepository('AppBundle:GrupoCamposHitoEntidad')->findBy(array(
+						$gruposHito = $doctrine->getRepository('AppBundle:GrupoCamposHito')->findBy(array(
 							'idHito' => $hito
 						), array('orden' => 'ASC'));
 
@@ -1848,21 +1848,21 @@ class BotApiController extends Controller
 							);
 							
 							foreach($gruposHito as $grupoHito){
-								$camposHito = $doctrine->getRepository('AppBundle:CampoHitoEntidad')->findBy(
+								$camposHito = $doctrine->getRepository('AppBundle:CampoHito')->findBy(
 									array('idGrupoCamposHito' => $grupoHito),
 									array('orden' => 'ASC')
 								);
 								
 								foreach ($camposHito as $campoHito) {
 									if($campoHito->getCampoCondicional()){
-										$opcionesCondicionales = $doctrine->getRepository('AppBundle:OpcionesCampoEntidad')->matching(Criteria::create()
+										$opcionesCondicionales = $doctrine->getRepository('AppBundle:OpcionesCampo')->matching(Criteria::create()
 											->where(Criteria::expr()->contains('idCampoCondicional', $campoHito->getIdCampoHito() ))
 										)->toArray();
 										
 										if(count($opcionesCondicionales)>0){
 											$mostrarCampoCondicional = false;
 											foreach($opcionesCondicionales as $opcionCondicional){
-												$campoHitoExpedienteC = $doctrine->getRepository('AppBundle:CampoHitoExpedienteEntidad')->findOneBy(array(
+												$campoHitoExpedienteC = $doctrine->getRepository('AppBundle:CampoHitoExpediente')->findOneBy(array(
 													'idExpediente' => $expediente,
 													'idOpcionesCampo' => $opcionCondicional
 												));
@@ -1878,7 +1878,7 @@ class BotApiController extends Controller
 										$mostrarCampoCondicional = true;
 									}
 
-									$campoHitoExpediente = $doctrine->getRepository('AppBundle:CampoHitoExpedienteEntidad')->findOneBy(array(
+									$campoHitoExpediente = $doctrine->getRepository('AppBundle:CampoHitoExpediente')->findOneBy(array(
 										'idCampoHito' => $campoHito,
 										'idHitoExpediente' => $hitoExpediente,
 										'idExpediente' => $expediente
@@ -1909,7 +1909,7 @@ class BotApiController extends Controller
 											} else {
 												if ($campoHitoExpediente->getParaFirmar() && $campoHitoExpediente->getFirmado()){
 													unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
-												} elseif (!$campoHitoExpediente->getParaFirmar() && !is_null($campoHitoExpediente->getValor()) && !is_null($doctrine->getRepository('AppBundle:FicheroCampoEntidad')->findOneBy(array('idCampoHito' => $campoHito, 'idCampoHitoExpediente' => $campoHitoExpediente, 'idExpediente' => $expediente)))) {
+												} elseif (!$campoHitoExpediente->getParaFirmar() && !is_null($campoHitoExpediente->getValor()) && !is_null($doctrine->getRepository('AppBundle:FicheroCampo')->findOneBy(array('idCampoHito' => $campoHito, 'idCampoHitoExpediente' => $campoHitoExpediente, 'idExpediente' => $expediente)))) {
 													unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
 												}
 											}
