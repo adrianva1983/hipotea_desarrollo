@@ -872,7 +872,9 @@ class InteligenciaArtificialController extends Controller
             throw new \Exception('No hay configuración de IA activa.');
         }
 
-        $prompt = "Eres un experto analista hipotecario. Te enviaré el historial de notas internas de un expediente (ordenado cronológicamente). Tu tarea es hacer un Resumen Ejecutivo en EXACTAMENTE 3 LÍNEAS. Detalla: 1) Situación/Perfil del cliente, 2) Estado o bloqueos del trámite actual, 3) Próximo paso a seguir. Evita relleno y sé ultra conciso. No incluyas saludos ni frases introductorias.";
+        $prompt = "Eres un experto analista hipotecario. A continuación se te proporciona el historial de notas internas de un expediente (ordenado cronológicamente). Tu tarea es leerlo y generar un Resumen Ejecutivo en EXACTAMENTE 3 LÍNEAS. Detalla: 1) Situación/Perfil del cliente, 2) Estado o bloqueos del trámite actual, 3) Próximo paso a seguir. Evita relleno y sé ultra conciso. No incluyas saludos ni frases introductorias.\n\n";
+        $prompt .= "IMPORTANTE: Tu respuesta DEBE ser obligatoriamente un JSON válido con la siguiente estructura exacta: {\"resumen\": \"aquí van las 3 líneas\"}\n\n";
+        $prompt .= "--- INICIO DEL HISTORIAL ---\n" . $historialTexto . "\n--- FIN DEL HISTORIAL ---";
 
         $resultadoIA = null;
         if ($configIA['provider'] === 'GEMINI') {
@@ -885,11 +887,11 @@ class InteligenciaArtificialController extends Controller
             throw new \Exception('Proveedor IA desconocido: ' . $configIA['provider']);
         }
 
-        if (!$resultadoIA || !isset($resultadoIA['texto'])) {
-            throw new \Exception('No se obtuvo respuesta del proveedor IA al generar el resumen.');
+        if (!$resultadoIA || !isset($resultadoIA['datos']) || !isset($resultadoIA['datos']['resumen'])) {
+            throw new \Exception('La respuesta de la IA no contiene el resumen en el formato esperado.');
         }
 
-        return trim($resultadoIA['texto']);
+        return trim($resultadoIA['datos']['resumen']);
     }
 }
 
