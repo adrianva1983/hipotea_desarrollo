@@ -1415,9 +1415,12 @@ class BotApiController extends Controller
 		$iaControllerGlobal->setContainer($this->container);
 
 		try {
-			$gruposAMapear = range(1, 20);
+			// Usar los mismos grupos que KommoController: [4, 29, 5, 6]
+			$gruposAMapear = [4, 29, 5, 6];
 			$resultadoGlobal = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
 			$camposProcesados = $resultadoGlobal['campos_procesados'] ?? [];
+			$valoresTexto = $resultadoGlobal['valores_texto'] ?? [];
+			$valoresOpcion = $resultadoGlobal['valores_opcion'] ?? [];
 		} catch (\Exception $e) {
 			return new JsonResponse([
 				'success' => false,
@@ -1432,29 +1435,118 @@ class BotApiController extends Controller
 			], 400);
 		}
 
-		$datosExtraidos = ['campos_encontrados' => []];
-		foreach ($camposProcesados as $campoProc) {
-			$datosExtraidos['campos_encontrados'][] = [
-				'campo_id' => $campoProc['id'],
-				'nombre_campo' => $campoProc['nombre'] ?? '',
-				'valor' => $campoProc['valor']
-			];
+		// Guardar usando Doctrine entities (como KommoController)
+		$em = $this->getDoctrine()->getManager();
+		$expedienteEntity = $em->getRepository('AppBundle:Expediente')->find($idExp);
+
+		if (!$expedienteEntity) {
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'No se encontró el expediente con ID: ' . $idExp
+			], 404);
 		}
 
-		$resultadoGuardar = $this->guardarDatosEnExpediente($idExp, $datosExtraidos, $fromPhone ?? 'API', '', '', $iaControllerGlobal, true);
+		$datosGuardados = [];
+		$camposActualizados = 0;
+		$errores = [];
 
-		if ($resultadoGuardar['exito']) {
+		try {
+			// Procesar valores de texto (campo_id => valor)
+			foreach ($valoresTexto as $idCampo => $valor) {
+				if (empty($valor) || trim((string) $valor) === '') {
+					continue;
+				}
+
+				$campoHitoExpediente = $em->getRepository('AppBundle:CampoHitoExpediente')->findOneBy([
+					'idExpediente' => $expedienteEntity,
+					'idCampoHito' => $idCampo
+				]);
+
+				if (!$campoHitoExpediente) {
+					error_log("guardarDatos: Campo texto {$idCampo} NO existe en campo_hito_expediente para exp {$idExp} - saltando");
+					continue;
+				}
+
+				$campoHitoExpediente->setValor((string) $valor);
+				$campoHitoExpediente->setFechaModificacion(new \DateTime());
+				$em->persist($campoHitoExpediente);
+
+				$campoHito = $campoHitoExpediente->getIdCampoHito();
+				$nombreCampo = $campoHito ? $campoHito->getNombre() : 'Campo #' . $idCampo;
+
+				$datosGuardados[] = [
+					'campo_id' => $idCampo,
+					'nombre_campo' => $nombreCampo,
+					'valor' => (string) $valor,
+					'tipo' => 'texto'
+				];
+				$camposActualizados++;
+				error_log("guardarDatos: ✓ UPDATE texto campo {$idCampo} ({$nombreCampo}) = '{$valor}'");
+			}
+
+			// Procesar valores de opción (campo_id => opcion_id)
+			foreach ($valoresOpcion as $idCampo => $opcionId) {
+				if (empty($opcionId)) {
+					continue;
+				}
+
+				$campoHitoExpediente = $em->getRepository('AppBundle:CampoHitoExpediente')->findOneBy([
+					'idExpediente' => $expedienteEntity,
+					'idCampoHito' => $idCampo
+				]);
+
+				if (!$campoHitoExpediente) {
+					error_log("guardarDatos: Campo opción {$idCampo} NO existe en campo_hito_expediente para exp {$idExp} - saltando");
+					continue;
+				}
+
+				$opcionesRef = $em->getReference('AppBundle:OpcionesCampo', (int) $opcionId);
+				$campoHitoExpediente->setIdOpcionesCampo($opcionesRef);
+				$campoHitoExpediente->setValor(null);
+				$campoHitoExpediente->setFechaModificacion(new \DateTime());
+				$em->persist($campoHitoExpediente);
+
+				$campoHito = $campoHitoExpediente->getIdCampoHito();
+				$nombreCampo = $campoHito ? $campoHito->getNombre() : 'Campo #' . $idCampo;
+
+				$datosGuardados[] = [
+					'campo_id' => $idCampo,
+					'nombre_campo' => $nombreCampo,
+					'valor' => 'opción ID ' . $opcionId,
+					'tipo' => 'opcion'
+				];
+				$camposActualizados++;
+				error_log("guardarDatos: ✓ UPDATE opción campo {$idCampo} ({$nombreCampo}) = opción ID {$opcionId}");
+			}
+
+			// Actualizar fecha de modificación del expediente
+			$expedienteEntity->setFechaModificacion(new \DateTime());
+			$em->persist($expedienteEntity);
+
+			$em->flush();
+			error_log("guardarDatos: ✅ flush() exitoso. {$camposActualizados} campos actualizados");
+
+		} catch (\Exception $e) {
+			error_log("guardarDatos: ❌ EXCEPCIÓN: " . $e->getMessage());
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Hubo un error al guardar los datos en base de datos.',
+				'detalles' => $e->getMessage()
+			], 500);
+		}
+
+		if ($camposActualizados > 0) {
 			return new JsonResponse([
 				'success' => true,
 				'id_expediente' => $idExp,
-				'datos_guardados' => $datosExtraidos['campos_encontrados']
+				'datos_guardados' => $datosGuardados
 			]);
 		} else {
 			return new JsonResponse([
 				'success' => false,
-				'error' => 'Hubo un error al guardar los datos en base de datos.',
-				'detalles' => $resultadoGuardar['error'] ?? 'Desconocido'
-			], 500);
+				'error' => 'No se actualizó ningún campo. Los campos extraídos no existen en este expediente.',
+				'campos_intentados' => array_map(function($c) { return $c['id'] . ' (' . $c['nombre'] . ')'; }, $camposProcesados)
+			], 400);
 		}
 	}
 	private function guardarDatosEnExpediente(int $idExpediente, array $datosExtraidos, string $telefonoOrigen, string $nombreCliente = '', string $nifCliente = '', $iaControllerGlobal = null, bool $forzarSobrescritura = false)
