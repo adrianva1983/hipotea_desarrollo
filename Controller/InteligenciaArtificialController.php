@@ -853,6 +853,44 @@ class InteligenciaArtificialController extends Controller
         // procesarRespuestaIA devuelve un array de campos encontrados
         return $this->procesarRespuestaIA($resultadoIA['datos'], $grupoIds);
     }
+
+    /**
+     * Genera un resumen ejecutivo de máximo 3 líneas a partir del historial de notas de un expediente.
+     * @param string $historialTexto El texto concatenado de todas las notas.
+     * @return string El resumen generado por la IA.
+     * @throws \Exception
+     */
+    public function generarResumenEjecutivo(string $historialTexto): string
+    {
+        if (empty(trim($historialTexto))) {
+            return "No hay historial de notas para resumir.";
+        }
+
+        $configIA = $this->obtenerConfiguracionIA();
+
+        if (empty($configIA['api_key'])) {
+            throw new \Exception('No hay configuración de IA activa.');
+        }
+
+        $prompt = "Eres un experto analista hipotecario. Te enviaré el historial de notas internas de un expediente (ordenado cronológicamente). Tu tarea es hacer un Resumen Ejecutivo en EXACTAMENTE 3 LÍNEAS. Detalla: 1) Situación/Perfil del cliente, 2) Estado o bloqueos del trámite actual, 3) Próximo paso a seguir. Evita relleno y sé ultra conciso. No incluyas saludos ni frases introductorias.";
+
+        $resultadoIA = null;
+        if ($configIA['provider'] === 'GEMINI') {
+            $resultadoIA = $this->enviarAGeminiTexto($historialTexto, $prompt, $configIA);
+        } elseif ($configIA['provider'] === 'OPENAI') {
+            $resultadoIA = $this->enviarAOpenAITexto($historialTexto, $prompt, $configIA);
+        } elseif ($configIA['provider'] === 'OLLAMA') {
+            $resultadoIA = $this->enviarAOllamaTexto($historialTexto, $prompt, $configIA);
+        } else {
+            throw new \Exception('Proveedor IA desconocido: ' . $configIA['provider']);
+        }
+
+        if (!$resultadoIA || !isset($resultadoIA['texto'])) {
+            throw new \Exception('No se obtuvo respuesta del proveedor IA al generar el resumen.');
+        }
+
+        return trim($resultadoIA['texto']);
+    }
 }
 
 

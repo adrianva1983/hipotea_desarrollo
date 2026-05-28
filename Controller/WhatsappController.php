@@ -4057,6 +4057,7 @@ class WhatsappController extends Controller
             'simular viabilidad hipotecaria' => 'habilidad_simular_viabilidad',
             'modificar expediente' => 'habilidad_modificar_expediente',
             'datos pendientes' => 'habilidad_datos_pendientes',
+            'resumen ejecutivo' => 'habilidad_resumen_ejecutivo',
         ];
 
         $habilidadDetectada = null;
@@ -4349,6 +4350,44 @@ class WhatsappController extends Controller
                     } catch (\Exception $e) {
                         $this->logear('❌ Error habilidad_datos_pendientes: ' . $e->getMessage());
                         return $textoConversacional . "\n\n❌ Hubo un error al consultar los pendientes del expediente: " . $e->getMessage();
+                    }
+                    return $textoConversacional;
+
+                // ─────────────────────────────────────────────────────────────
+                // HABILIDAD 11: Resumen Ejecutivo
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_resumen_ejecutivo':
+                    $idBusqueda = $parametroHabilidad ?: ($idExpediente ?: ($sessionId ?: null));
+                    
+                    if (!$idBusqueda) {
+                        return $textoConversacional . "\n\n❌ No me has indicado la referencia del expediente del cual quieres un resumen.";
+                    }
+
+                    try {
+                        $botApiController = $this->get('AppBundle\Controller\BotApiController');
+                        if ($botApiController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
+                            $botApiController->setContainer($this->container);
+                        }
+
+                        $response = $botApiController->botResumenExpedienteAction($idBusqueda);
+                        
+                        if ($response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
+                            $data = json_decode($response->getContent(), true);
+                            
+                            if (isset($data['success']) && $data['success'] === false) {
+                                return $textoConversacional . "\n\n❌ " . ($data['error'] ?? 'Hubo un error al generar el resumen del expediente.');
+                            }
+
+                            $msj = $textoConversacional . "\n\n";
+                            $msj .= "🤖 *Resumen de MAX para el Expediente {$idBusqueda}:*\n\n";
+                            $msj .= $data['resumen'];
+
+                            $this->logear('✅ Habilidad resumen ejecutivo ejecutada con éxito para ' . $idBusqueda);
+                            return $msj;
+                        }
+                    } catch (\Exception $e) {
+                        $this->logear('❌ Error habilidad_resumen_ejecutivo: ' . $e->getMessage());
+                        return $textoConversacional . "\n\n❌ Hubo un error al generar el resumen del expediente: " . $e->getMessage();
                     }
                     return $textoConversacional;
 

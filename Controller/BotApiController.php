@@ -1987,5 +1987,90 @@ class BotApiController extends Controller
 			], 500);
 		}
 	}
+	/**
+	 * @Route("/Bot/ResumenExpediente", name="bot_resumen_expediente", methods={"POST", "GET"})
+	 */
+	public function botResumenExpedienteAction($idExpParam)
+	{
+		try {
+			$conn = $this->getDoctrine()->getConnection();
+			$sqlBusquedaExp = "SELECT id_expediente, referencia FROM expediente WHERE id_expediente = :id_param OR referencia = :ref_param LIMIT 1";
+			$stmtBusquedaExp = $conn->prepare($sqlBusquedaExp);
+			$stmtBusquedaExp->bindValue('id_param', is_numeric($idExpParam) ? (int) $idExpParam : 0);
+			$stmtBusquedaExp->bindValue('ref_param', (string) $idExpParam);
+			$stmtBusquedaExp->execute();
+			$rowExpediente = $stmtBusquedaExp->fetch(\PDO::FETCH_ASSOC);
+
+			if (!$rowExpediente) {
+				// Buscar por DNI o Teléfono en el titular
+				$sqlBusquedaExpAlt = "SELECT e.id_expediente, e.referencia FROM expediente e
+					LEFT JOIN campo_hito_expediente che ON che.id_expediente = e.id_expediente
+					WHERE che.id_campo_hito IN (197, 408, 695) AND (che.valor = :param OR REPLACE(che.valor, ' ', '') = :param)
+					ORDER BY e.id_expediente DESC LIMIT 1";
+				$stmtBusquedaExpAlt = $conn->prepare($sqlBusquedaExpAlt);
+				$stmtBusquedaExpAlt->bindValue('param', (string) $idExpParam);
+				$stmtBusquedaExpAlt->execute();
+				$rowExpediente = $stmtBusquedaExpAlt->fetch(\PDO::FETCH_ASSOC);
+			}
+
+			if (!$rowExpediente) {
+				return new JsonResponse([
+					'success' => false,
+					'error' => 'No se encontró ningún expediente con el ID, referencia, teléfono o DNI: ' . $idExpParam
+				], 404);
+			}
+
+			$idExp = (int) $rowExpediente['id_expediente'];
+			$doctrine = $this->getDoctrine();
+			$expediente = $doctrine->getRepository('AppBundle:Expediente')->findOneBy(['idExpediente' => $idExp]);
+			
+			if (!$expediente) {
+				return new JsonResponse(['success' => false, 'error' => 'Expediente no encontrado en Doctrine.'], 404);
+			}
+
+			// Cargar seguimientos
+			$seguimientos = $doctrine->getRepository('AppBundle:SeguimientoExpediente')->findBy(
+				['idExpediente' => $expediente],
+				['fecha' => 'DESC'], // Traemos de más nuevos a más viejos
+				30 // Límite de los últimos 30 seguimientos para no colapsar la IA
+			);
+
+			if (count($seguimientos) === 0) {
+				return new JsonResponse([
+					'success' => true,
+					'resumen' => 'No existen notas ni seguimientos registrados en este expediente para poder resumir.'
+				]);
+			}
+
+			// Invertimos para que el orden final enviado a la IA sea cronológico (de viejo a nuevo dentro de esos 30)
+			$seguimientos = array_reverse($seguimientos);
+			
+			$historialTexto = "Expediente: " . ($rowExpediente['referencia'] ? $rowExpediente['referencia'] : $idExp) . "\n\n";
+			foreach ($seguimientos as $seg) {
+				$fecha = $seg->getFecha() ? $seg->getFecha()->format('Y-m-d H:i') : 'Sin fecha';
+				$historialTexto .= "[{$fecha}] " . $seg->getComentario() . "\n";
+			}
+
+			// Llamar al controlador de IA
+			$iaController = clone $this->get('AppBundle\Controller\InteligenciaArtificialController');
+			if ($iaController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
+				$iaController->setContainer($this->container);
+			}
+
+			$resumen = $iaController->generarResumenEjecutivo($historialTexto);
+
+			return new JsonResponse([
+				'success' => true,
+				'resumen' => $resumen
+			]);
+
+		} catch (\Exception $e) {
+			$this->get('logger')->error('botResumenExpedienteAction error: ' . $e->getMessage() . ' ' . $e->getTraceAsString());
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Error interno generando el resumen: ' . $e->getMessage()
+			], 500);
+		}
+	}
 }
 
