@@ -1417,8 +1417,8 @@ class BotApiController extends Controller
 		$iaControllerGlobal->setContainer($this->container);
 
 		try {
-			// Usar los mismos grupos que KommoController: [4, 29, 5, 6]
-			$gruposAMapear = [4, 29, 5, 6];
+			// Pasar un rango amplio de grupos para que la IA vea todos los campos posibles (incluyendo Nacionalidad, etc.)
+			$gruposAMapear = range(1, 40);
 			$resultadoGlobal = $iaControllerGlobal->extraerCamposGlobal($textoModificacion, $gruposAMapear);
 			$camposProcesados = $resultadoGlobal['campos_procesados'] ?? [];
 			$valoresTexto = $resultadoGlobal['valores_texto'] ?? [];

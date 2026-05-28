@@ -555,16 +555,23 @@ class InteligenciaArtificialController extends Controller
      */
     private function construirPromptExtractor(array $camposBD, $texto = '')
     {
-        // Construir la lista de campos dinámicamente
+        // Construir la lista de campos dinámicamente con sus opciones si las hay
         $seccionCampos = '';
-        foreach ($camposBD as $campo) {
+        foreach ($camposBD as $id => $campo) {
+            // Soporta tanto la estructura plana antigua como la nueva asociativa
             $nombre = $campo['nombre'];
-            $id = $campo['id_campo_hito'];
+            $idCampo = isset($campo['id_campo_hito']) ? $campo['id_campo_hito'] : $id;
             $tipo = $campo['tipo'];
+            
+            $opcionesText = '';
+            if (in_array($tipo, [2, 3]) && !empty($campo['opciones'])) {
+                $nombresOpciones = array_column($campo['opciones'], 'valor');
+                $opcionesText = ' (Opciones válidas: "' . implode('", "', $nombresOpciones) . '")';
+            }
 
             // Indicar si es un campo de selección (tipo 2=dropdown, tipo 3=radio)
             $tipoIndicador = in_array($tipo, [2, 3]) ? ' [SELECCIÓN]' : '';
-            $seccionCampos .= "- ID {$id}: {$nombre}{$tipoIndicador}\n";
+            $seccionCampos .= "- ID {$idCampo}: {$nombre}{$tipoIndicador}{$opcionesText}\n";
         }
 
         $prompt = <<<EOT
@@ -825,7 +832,7 @@ class InteligenciaArtificialController extends Controller
             throw new \Exception('No hay configuración de IA activa.');
         }
 
-        $camposBD = $this->obtenerCamposDeGruposMod($grupoIds);
+        $camposBD = $this->obtenerCamposDeGruposConOpciones($grupoIds);
         $prompt = $this->construirPromptExtractor($camposBD, $texto);
 
         $resultadoIA = null;
