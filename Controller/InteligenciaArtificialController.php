@@ -893,6 +893,56 @@ class InteligenciaArtificialController extends Controller
 
         return trim($resultadoIA['datos']['resumen']);
     }
+
+    /**
+     * Extrae filtros estructurados de una pregunta en lenguaje natural.
+     * @param string $pregunta
+     * @return array
+     * @throws \Exception
+     */
+    public function generarFiltrosAnalitica(string $pregunta): array
+    {
+        $configIA = $this->obtenerConfiguracionIA();
+
+        if (empty($configIA['api_key'])) {
+            throw new \Exception('No hay configuración de IA activa.');
+        }
+
+        $prompt = "Eres un asistente de base de datos experto. El usuario quiere obtener KPIs o listados de sus expedientes. Tu tarea es extraer la intención de su pregunta y convertirla en un JSON estricto con los siguientes campos:
+1) \"tipo\": (string) \"COUNT\" si pregunta \"cuántos\" o pide cantidad. \"LIST\" si pide \"cuáles\", \"dime los expedientes\", \"muéstrame\", etc.
+2) \"fases_incluidas\": (array de strings) Palabras clave de las fases que quiere incluir (ej: [\"aprobado\"]). Si no pide ninguna fase específica, devuelve un array vacío [].
+3) \"fases_excluidas\": (array de strings) Palabras clave de fases a evitar (ej: [\"firmado\"] si dice \"aprobados sin firmar\"). Vacío [] si no aplica.
+4) \"dias_inactivo\": (entero o null) Número de días si pregunta por expedientes \"parados\", \"inactivos\" o \"sin moverse\" hace X días. Ej: 7.
+5) \"este_mes\": (booleano) true si dice \"este mes\", \"del mes\", etc. false en caso contrario.
+
+Pregunta del usuario: \"{$pregunta}\"
+
+IMPORTANTE: Devuelve SOLO el objeto JSON, nada de markdown ni texto adicional. Estructura exacta requerida:
+{
+  \"tipo\": \"COUNT\",
+  \"fases_incluidas\": [],
+  \"fases_excluidas\": [],
+  \"dias_inactivo\": null,
+  \"este_mes\": false
+}";
+
+        $resultadoIA = null;
+        if ($configIA['provider'] === 'GEMINI') {
+            $resultadoIA = $this->enviarAGeminiTexto($pregunta, $prompt, $configIA);
+        } elseif ($configIA['provider'] === 'OPENAI') {
+            $resultadoIA = $this->enviarAOpenAITexto($pregunta, $prompt, $configIA);
+        } elseif ($configIA['provider'] === 'OLLAMA') {
+            $resultadoIA = $this->enviarAOllamaTexto($pregunta, $prompt, $configIA);
+        } else {
+            throw new \Exception('Proveedor IA desconocido: ' . $configIA['provider']);
+        }
+
+        if (!$resultadoIA || !isset($resultadoIA['datos'])) {
+            throw new \Exception('La respuesta de la IA no es válida para analítica.');
+        }
+
+        return $resultadoIA['datos'];
+    }
 }
 
 

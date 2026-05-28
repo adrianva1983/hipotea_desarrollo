@@ -1511,7 +1511,7 @@ class BotApiController extends Controller
 					$campoHitoExpediente->setIdOpcionesCampo($opcionesRef);
 					$nombreOpcion = 'opción ID ' . $opcionId;
 				}
-				
+
 				$campoHitoExpediente->setValor(null);
 				$campoHitoExpediente->setFechaModificacion(new \DateTime());
 				$em->persist($campoHitoExpediente);
@@ -1556,7 +1556,8 @@ class BotApiController extends Controller
 			return new JsonResponse([
 				'success' => false,
 				'error' => 'No se actualizó ningún campo. Los campos extraídos no existen en este expediente.',
-				'campos_intentados' => array_map(function($c) { return $c['id'] . ' (' . $c['nombre'] . ')'; }, $camposProcesados)
+				'campos_intentados' => array_map(function ($c) {
+					return $c['id'] . ' (' . $c['nombre'] . ')'; }, $camposProcesados)
 			], 400);
 		}
 	}
@@ -1803,22 +1804,22 @@ class BotApiController extends Controller
 			$idExp = (int) $rowExpediente['id_expediente'];
 			$doctrine = $this->getDoctrine();
 			$expediente = $doctrine->getRepository('AppBundle:Expediente')->findOneBy(['idExpediente' => $idExp]);
-			
+
 			if (!$expediente) {
 				return new JsonResponse(['success' => false, 'error' => 'Expediente no encontrado en Doctrine.'], 404);
 			}
 
 			$fases = $doctrine->getRepository('AppBundle:Fase')->findBy(array(), array('orden' => 'ASC'));
 			$salida = array();
-			
+
 			foreach ($fases as $fase) {
 				$salida[$fase->getIdFase()]['nombre'] = $fase->getNombre();
 				$hitos = $doctrine->getRepository('AppBundle:Hito')->findBy(array('idFase' => $fase), array('orden' => 'ASC'));
 
 				foreach ($hitos as $hito) {
-					if($hito->getHitoCondicional()){
+					if ($hito->getHitoCondicional()) {
 						$opcionCondicional = $doctrine->getRepository('AppBundle:OpcionesCampo')->findOneBy(array('idHitoCondicional' => $hito));
-						if($opcionCondicional){
+						if ($opcionCondicional) {
 							$campoHitoExpedienteC = $doctrine->getRepository('AppBundle:CampoHitoExpediente')->findOneBy(array(
 								'idCampoHito' => $opcionCondicional->getIdCampoHito(),
 								'idExpediente' => $expediente,
@@ -1832,7 +1833,7 @@ class BotApiController extends Controller
 						$mostrarCondicional = false;
 					}
 
-					if(!$hito->getHitoCondicional() || ($hito->getHitoCondicional() && $mostrarCondicional )){
+					if (!$hito->getHitoCondicional() || ($hito->getHitoCondicional() && $mostrarCondicional)) {
 						$hitosExpediente = $doctrine->getRepository('AppBundle:HitoExpediente')->findBy(array(
 							'idHito' => $hito,
 							'idExpediente' => $expediente
@@ -1846,27 +1847,28 @@ class BotApiController extends Controller
 								'indice' => $contador,
 								'nombre' => $hito->getNombre()
 							);
-							
-							foreach($gruposHito as $grupoHito){
+
+							foreach ($gruposHito as $grupoHito) {
 								$camposHito = $doctrine->getRepository('AppBundle:CampoHito')->findBy(
 									array('idGrupoCamposHito' => $grupoHito),
 									array('orden' => 'ASC')
 								);
-								
+
 								foreach ($camposHito as $campoHito) {
-									if($campoHito->getCampoCondicional()){
-										$opcionesCondicionales = $doctrine->getRepository('AppBundle:OpcionesCampo')->matching(Criteria::create()
-											->where(Criteria::expr()->contains('idCampoCondicional', $campoHito->getIdCampoHito() ))
+									if ($campoHito->getCampoCondicional()) {
+										$opcionesCondicionales = $doctrine->getRepository('AppBundle:OpcionesCampo')->matching(
+											Criteria::create()
+												->where(Criteria::expr()->contains('idCampoCondicional', $campoHito->getIdCampoHito()))
 										)->toArray();
-										
-										if(count($opcionesCondicionales)>0){
+
+										if (count($opcionesCondicionales) > 0) {
 											$mostrarCampoCondicional = false;
-											foreach($opcionesCondicionales as $opcionCondicional){
+											foreach ($opcionesCondicionales as $opcionCondicional) {
 												$campoHitoExpedienteC = $doctrine->getRepository('AppBundle:CampoHitoExpediente')->findOneBy(array(
 													'idExpediente' => $expediente,
 													'idOpcionesCampo' => $opcionCondicional
 												));
-												if($campoHitoExpedienteC){
+												if ($campoHitoExpedienteC) {
 													$mostrarCampoCondicional = true;
 													break;
 												}
@@ -1883,14 +1885,14 @@ class BotApiController extends Controller
 										'idHitoExpediente' => $hitoExpediente,
 										'idExpediente' => $expediente
 									));
-									
+
 									if ($campoHitoExpediente && $mostrarCampoCondicional) {
 										$salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()] = array(
 											'nombre' => $campoHito->getNombre(),
 											'tipo' => $campoHito->getTipo(),
 											'grupo' => $campoHito->getIdGrupoCamposHito()->getNombre()
 										);
-										
+
 										if ($campoHito->getTipo() === 1 || $campoHito->getTipo() === 5 || $campoHito->getTipo() === 6) {
 											if (is_null($campoHitoExpediente->getValor()) || trim($campoHitoExpediente->getValor()) === '') {
 												$salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]['valor'] = '';
@@ -1907,7 +1909,7 @@ class BotApiController extends Controller
 											if (!$campoHitoExpediente->getObligatorio() && !$campoHitoExpediente->getSolicitarAlColaborador()) {
 												unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
 											} else {
-												if ($campoHitoExpediente->getParaFirmar() && $campoHitoExpediente->getFirmado()){
+												if ($campoHitoExpediente->getParaFirmar() && $campoHitoExpediente->getFirmado()) {
 													unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
 												} elseif (!$campoHitoExpediente->getParaFirmar() && !is_null($campoHitoExpediente->getValor()) && !is_null($doctrine->getRepository('AppBundle:FicheroCampo')->findOneBy(array('idCampoHito' => $campoHito, 'idCampoHitoExpediente' => $campoHitoExpediente, 'idExpediente' => $expediente)))) {
 													unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
@@ -1922,7 +1924,7 @@ class BotApiController extends Controller
 										} elseif ($campoHito->getTipo() === 10) {
 											unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito'][$campoHitoExpediente->getIdCampoHitoExpediente()]);
 										}
-										
+
 										if (isset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito']) && count($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito']) <= 0) {
 											unset($salida[$fase->getIdFase()]['hitos'][$hitoExpediente->getIdHitoExpediente()]['camposHito']);
 										}
@@ -1947,17 +1949,19 @@ class BotApiController extends Controller
 			$textoPendientes = "";
 			$totalPendientes = 0;
 			$maxPendientesMostrados = 20; // Límite sugerido en el plan
-			
+
 			foreach ($salida as $fase) {
-				if(!isset($fase['hitos'])) continue;
+				if (!isset($fase['hitos']))
+					continue;
 				$textoPendientes .= "📌 *" . $fase['nombre'] . "*\n";
-				
+
 				foreach ($fase['hitos'] as $hito) {
-					if(!isset($hito['camposHito'])) continue;
-					
-					$contadorHito = $hito['indice'] > 0 ? " (" . ($hito['indice']+1) . ")" : "";
+					if (!isset($hito['camposHito']))
+						continue;
+
+					$contadorHito = $hito['indice'] > 0 ? " (" . ($hito['indice'] + 1) . ")" : "";
 					$textoPendientes .= "  🔹 " . $hito['nombre'] . $contadorHito . ":\n";
-					
+
 					foreach ($hito['camposHito'] as $campo) {
 						if ($totalPendientes < $maxPendientesMostrados) {
 							$textoPendientes .= "    - " . $campo['nombre'] . "\n";
@@ -2023,7 +2027,7 @@ class BotApiController extends Controller
 			$idExp = (int) $rowExpediente['id_expediente'];
 			$doctrine = $this->getDoctrine();
 			$expediente = $doctrine->getRepository('AppBundle:Expediente')->findOneBy(['idExpediente' => $idExp]);
-			
+
 			if (!$expediente) {
 				return new JsonResponse(['success' => false, 'error' => 'Expediente no encontrado en Doctrine.'], 404);
 			}
@@ -2044,7 +2048,7 @@ class BotApiController extends Controller
 
 			// Invertimos para que el orden final enviado a la IA sea cronológico (de viejo a nuevo dentro de esos 30)
 			$seguimientos = array_reverse($seguimientos);
-			
+
 			$historialTexto = "Expediente: " . ($rowExpediente['referencia'] ? $rowExpediente['referencia'] : $idExp) . "\n\n";
 			foreach ($seguimientos as $seg) {
 				$fecha = $seg->getFecha() ? $seg->getFecha()->format('Y-m-d H:i') : 'Sin fecha';
@@ -2069,6 +2073,114 @@ class BotApiController extends Controller
 			return new JsonResponse([
 				'success' => false,
 				'error' => 'Error interno generando el resumen: ' . $e->getMessage()
+			], 500);
+		}
+	}
+	/**
+	 * @Route("/Bot/Analitica", name="bot_analitica", methods={"POST", "GET"})
+	 */
+	public function botAnaliticaAction(Request $request)
+	{
+		try {
+			$pregunta = $request->get('pregunta');
+			if (!$pregunta) {
+				return new JsonResponse(['success' => false, 'error' => 'No se proporcionó la pregunta.']);
+			}
+
+			// Llamar al controlador de IA para extraer filtros
+			$iaController = clone $this->get('AppBundle\Controller\InteligenciaArtificialController');
+			if ($iaController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
+				$iaController->setContainer($this->container);
+			}
+
+			$filtros = $iaController->generarFiltrosAnalitica($pregunta);
+
+			$em = $this->getDoctrine()->getManager();
+			$qb = $em->createQueryBuilder();
+			$qb->select('e')
+				->from('AppBundle:Expediente', 'e')
+				->leftJoin('e.idFaseActual', 'f'); // f es la fase
+
+			// Filtros activos: no queremos contar expedientes borrados lógicamente si tuvieran
+			// Asumimos estado = 1 como activos (según Expediente.php)
+			$qb->andWhere('e.estado = 1');
+
+			// Fases incluidas
+			if (!empty($filtros['fases_incluidas']) && is_array($filtros['fases_incluidas'])) {
+				$orX = $qb->expr()->orX();
+				foreach ($filtros['fases_incluidas'] as $idx => $kw) {
+					$orX->add($qb->expr()->like('f.nombre', ':inc_' . $idx));
+					$qb->setParameter('inc_' . $idx, '%' . $kw . '%');
+				}
+				$qb->andWhere($orX);
+			}
+
+			// Fases excluidas
+			if (!empty($filtros['fases_excluidas']) && is_array($filtros['fases_excluidas'])) {
+				foreach ($filtros['fases_excluidas'] as $idx => $kw) {
+					$qb->andWhere($qb->expr()->notLike('f.nombre', ':exc_' . $idx));
+					$qb->setParameter('exc_' . $idx, '%' . $kw . '%');
+				}
+			}
+
+			// Días inactivo
+			if (!empty($filtros['dias_inactivo']) && is_numeric($filtros['dias_inactivo'])) {
+				$fechaLimite = new \DateTime();
+				$fechaLimite->modify('-' . (int) $filtros['dias_inactivo'] . ' days');
+				$qb->andWhere('e.fechaModificacion < :fechaLimite');
+				$qb->setParameter('fechaLimite', $fechaLimite);
+			}
+
+			// Este mes
+			if (!empty($filtros['este_mes']) && $filtros['este_mes'] === true) {
+				$fechaInicioMes = new \DateTime('first day of this month 00:00:00');
+				$qb->andWhere('e.fechaCreacion >= :inicioMes');
+				$qb->setParameter('inicioMes', $fechaInicioMes);
+			}
+
+			$expedientes = $qb->getQuery()->getResult();
+			$total = count($expedientes);
+
+			$listaReferencias = [];
+			foreach ($expedientes as $exp) {
+				$listaReferencias[] = $exp->getReferencia() ?: $exp->getIdExpediente();
+			}
+
+			// Generamos un mensaje amigable
+			$tipo = $filtros['tipo'] ?? 'COUNT';
+
+			$mensaje = "🤖 *Resultados de tu búsqueda:*\n\n";
+
+			if ($total === 0) {
+				$mensaje .= "No he encontrado ningún expediente que cumpla con esos criterios.";
+			} else {
+				if ($tipo === 'COUNT') {
+					$mensaje .= "He encontrado *{$total}* expedientes en total.";
+				} else {
+					$mensaje .= "He encontrado *{$total}* expedientes:\n";
+					$limit = min($total, 20); // Mostrar máximo 20 para no saturar
+					for ($i = 0; $i < $limit; $i++) {
+						$mensaje .= "  🔹 " . $listaReferencias[$i] . "\n";
+					}
+					if ($total > 20) {
+						$ocultos = $total - 20;
+						$mensaje .= "_(...y {$ocultos} expedientes más)_";
+					}
+				}
+			}
+
+			return new JsonResponse([
+				'success' => true,
+				'mensaje' => $mensaje,
+				'total' => $total,
+				'referencias' => $listaReferencias
+			]);
+
+		} catch (\Exception $e) {
+			$this->get('logger')->error('botAnaliticaAction error: ' . $e->getMessage() . ' ' . $e->getTraceAsString());
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Error interno generando analítica: ' . $e->getMessage()
 			], 500);
 		}
 	}

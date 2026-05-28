@@ -4058,6 +4058,7 @@ class WhatsappController extends Controller
             'modificar expediente' => 'habilidad_modificar_expediente',
             'datos pendientes' => 'habilidad_datos_pendientes',
             'resumen ejecutivo' => 'habilidad_resumen_ejecutivo',
+            'analítica' => 'habilidad_analitica',
         ];
 
         $habilidadDetectada = null;
@@ -4388,6 +4389,45 @@ class WhatsappController extends Controller
                     } catch (\Exception $e) {
                         $this->logear('❌ Error habilidad_resumen_ejecutivo: ' . $e->getMessage());
                         return $textoConversacional . "\n\n❌ Hubo un error al generar el resumen del expediente: " . $e->getMessage();
+                    }
+                    return $textoConversacional;
+
+                // ─────────────────────────────────────────────────────────────
+                // HABILIDAD 12: Búsqueda y KPIs Rápidos (Analítica)
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_analitica':
+                    $pregunta = $parametroHabilidad ?: null;
+                    
+                    if (!$pregunta) {
+                        return $textoConversacional . "\n\n❌ No has indicado qué métrica o búsqueda deseas realizar.";
+                    }
+
+                    try {
+                        // Enviamos la pregunta natural como request al action
+                        $requestApi = new \Symfony\Component\HttpFoundation\Request([], ['pregunta' => $pregunta]);
+                        
+                        $botApiController = $this->get('AppBundle\Controller\BotApiController');
+                        if ($botApiController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
+                            $botApiController->setContainer($this->container);
+                        }
+
+                        $response = $botApiController->botAnaliticaAction($requestApi);
+                        
+                        if ($response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
+                            $data = json_decode($response->getContent(), true);
+                            
+                            if (isset($data['success']) && $data['success'] === false) {
+                                return $textoConversacional . "\n\n❌ " . ($data['error'] ?? 'Hubo un error calculando las analíticas.');
+                            }
+
+                            $msj = $textoConversacional . "\n\n" . $data['mensaje'];
+
+                            $this->logear('✅ Habilidad analítica ejecutada con éxito');
+                            return $msj;
+                        }
+                    } catch (\Exception $e) {
+                        $this->logear('❌ Error habilidad_analitica: ' . $e->getMessage());
+                        return $textoConversacional . "\n\n❌ Hubo un error al procesar tu búsqueda analítica: " . $e->getMessage();
                     }
                     return $textoConversacional;
 
