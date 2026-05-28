@@ -910,8 +910,8 @@ class InteligenciaArtificialController extends Controller
 
         $prompt = "Eres un asistente de base de datos experto. El usuario quiere obtener KPIs o listados de sus expedientes. Tu tarea es extraer la intención de su pregunta y convertirla en un JSON estricto con los siguientes campos:
 1) \"tipo\": (string) \"COUNT\" si pregunta \"cuántos\" o pide cantidad. \"LIST\" si pide \"cuáles\", \"dime los expedientes\", \"muéstrame\", etc.
-2) \"fases_incluidas\": (array de strings) Palabras clave de las fases que quiere incluir (ej: [\"aprobado\"]). Si no pide ninguna fase específica, devuelve un array vacío [].
-3) \"fases_excluidas\": (array de strings) Palabras clave de fases a evitar (ej: [\"firmado\"] si dice \"aprobados sin firmar\"). Vacío [] si no aplica.
+2) \"fases_incluidas\": (array de strings) Palabras clave o números de las fases que quiere incluir (ej: [\"aprobado\"], o [\"2\"] si dice \"fase 2\"). Si no pide ninguna, devuelve [].
+3) \"fases_excluidas\": (array de strings) Palabras clave o números de fases a evitar (ej: [\"firmado\"]). Vacío [] si no aplica.
 4) \"dias_inactivo\": (entero o null) Número de días si pregunta por expedientes \"parados\", \"inactivos\" o \"sin moverse\" hace X días. Ej: 7.
 5) \"este_mes\": (booleano) true si dice \"este mes\", \"del mes\", etc. false en caso contrario.
 

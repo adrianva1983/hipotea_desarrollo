@@ -2109,6 +2109,10 @@ class BotApiController extends Controller
 			if (!empty($filtros['fases_incluidas']) && is_array($filtros['fases_incluidas'])) {
 				$orX = $qb->expr()->orX();
 				foreach ($filtros['fases_incluidas'] as $idx => $kw) {
+					if (is_numeric($kw)) {
+						$orX->add($qb->expr()->eq('f.idFase', (int)$kw));
+						$orX->add($qb->expr()->eq('f.orden', (int)$kw));
+					}
 					$orX->add($qb->expr()->like('f.nombre', ':inc_' . $idx));
 					$qb->setParameter('inc_' . $idx, '%' . $kw . '%');
 				}
@@ -2118,6 +2122,10 @@ class BotApiController extends Controller
 			// Fases excluidas
 			if (!empty($filtros['fases_excluidas']) && is_array($filtros['fases_excluidas'])) {
 				foreach ($filtros['fases_excluidas'] as $idx => $kw) {
+					if (is_numeric($kw)) {
+						$qb->andWhere($qb->expr()->neq('f.idFase', (int)$kw));
+						$qb->andWhere($qb->expr()->neq('f.orden', (int)$kw));
+					}
 					$qb->andWhere($qb->expr()->notLike('f.nombre', ':exc_' . $idx));
 					$qb->setParameter('exc_' . $idx, '%' . $kw . '%');
 				}
