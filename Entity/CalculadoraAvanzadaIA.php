@@ -1074,7 +1074,114 @@ class CalculadoraAvanzadaIA
 
 
 
-		public function getValorViviendaActual()
+
+
+
+
+	private function calculoSencillo($datos)
+	{
+		$precio = $datos['precio'];
+		$entrada = $datos['entrada'];
+		$interes = $datos['intereses'];
+		$plazos = $datos['plazo'];
+		$ta = $precio;
+		$dp = $entrada;
+		$ir = $interes;
+		$am = $plazos;
+		$pp = 12;
+		$cp = 12;
+		$loan = $ta - $dp;
+		$np = $am * $pp;
+		if (!$ir) {
+			$payment = $loan / $np;
+		} else {
+			$rNom = $ir;
+			$rPeriod = pow(1 + $rNom / $cp, $cp / $pp) - 1;
+			$rFactor = pow($rPeriod + 1, $np);
+			$payment = $loan * (($rPeriod * $rFactor) / ($rFactor - 1));
+		}
+		// echo 'loan: '.$loan;
+		// echo 'np: '.$np;
+		// echo 'rNom: '.$rNom;
+		// echo 'rPeriod: '.$rPeriod;
+		// echo 'rFactor: '.$rFactor;
+		// echo 'payment: '.$payment;
+		$result = round($payment, 2);
+		$display_total = $ta - $dp;
+		// echo 'result: '.$result;
+		$conIntereses = round($payment * $np, 2);
+		$conEntrada = $conIntereses + $entrada;
+		// $resultado = new Object('cuota', $result, 'interes', $conIntereses, 'conEntrada', $conEntrada);
+		$resultado = array(
+			'cuota' => $result,
+			'interes' => $conIntereses,
+			'conEntrada' => $conEntrada
+		);
+		return $resultado;
+	}
+
+	private function calculoImporteMaximo($datos)
+	{
+		$cuota = $datos['cuota'];
+		$entrada = $datos['entrada'];
+		$interes = $datos['intereses'];
+		$plazos = $datos['plazo'];
+		$gastos = $datos['gastos'];
+		$edad = $datos['edad'];
+		// $ta = $precio;
+		$dp = $entrada;
+		$ir = $interes;
+		$am = $plazos;
+		$pp = 12;
+		$cp = 12;
+		// $loan = $ta - $dp;
+		$np = $am * $pp;
+		if (!$ir) {
+			$loan = $cuota * $np;
+		} else {
+			$rNom = $ir;
+			$rPeriod = pow(1 + $rNom / $cp, $cp / $pp) - 1;
+			$rFactor = pow($rPeriod + 1, $np);
+			$loan = $cuota / (($rPeriod * $rFactor) / ($rFactor - 1));
+		}
+		$resultado_sin_gastos = round($loan - $entrada, 2);
+		// if ($resultado_sin_gastos <= 150000 && $edad < 35) {
+		// 	$gastos = 15000;
+		// } elseif ($resultado_sin_gastos <= 150000 && $edad >= 35) {
+		// 	$gastos = 20000;
+		// } elseif ($resultado_sin_gastos > 150000 && $resultado_sin_gastos <= 200000) {
+		// 	$gastos = 25000;
+		// } elseif ($resultado_sin_gastos > 200000) {
+		// 	$gastos = 25000 + (5000 * (floor($resultado_sin_gastos / 50000) - 1));
+		// }
+		if($gastos == 0){
+			$gastos = $loan * 0.10;
+		}
+			
+		$resultado = round($loan + $entrada - $gastos, 2);
+		$resultado = array(
+			'importe' => $resultado,
+			'gastos' => $gastos
+		);
+		return $resultado;
+	}
+
+	private function redondear500($numero) {
+		// Obtenemos el residuo del número al dividirlo por 500
+		$resto = $numero % 500;
+	
+		// Si el resto es mayor o igual a 250, redondeamos hacia arriba
+		if ($resto >= 250) {
+			$resultado = $numero + (500 - $resto);
+		} else {
+			$resultado = $numero - $resto;
+		}
+	
+		// Convertimos el resultado a entero
+		return (int) $resultado;
+	}
+
+				public function getValorViviendaActual()
 	{
 		return $this->valorViviendaActual;
 	}
