@@ -322,4 +322,9 @@ class CalculadoraAvanzadaIA extends AbstractType
 			'data_class' => 'AppBundle\Entity\CalculadoraAvanzadaIA'
 		));
 	}
+
+    public function getBlockPrefix()
+    {
+        return 'calculadora_avanzada_test';
+    }
 }
