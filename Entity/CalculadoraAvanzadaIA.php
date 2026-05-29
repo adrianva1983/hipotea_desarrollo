@@ -1070,7 +1070,11 @@ class CalculadoraAvanzadaIA
 		return $respuesta;
 	}
 
-	public function getValorViviendaActual()
+
+
+
+
+		public function getValorViviendaActual()
 	{
 		return $this->valorViviendaActual;
 	}
