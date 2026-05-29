@@ -309,6 +309,35 @@ class InteligenciaArtificialController extends Controller
         }
     }
 
+    public function generarCambioParametrosCalculadora($texto)
+    {
+        $prompt = "Eres un asistente técnico del sistema Hipotea. El usuario quiere modificar los parámetros de la Calculadora Avanzada en base de datos.
+Extrae la información a formato JSON estricto con esta estructura:
+{
+    \"perfil\": \"(string) el nombre del perfil (ej: 'Funcionario', 'Fijo', 'Variable', '100%'). Busca siempre un nombre que encaje con un perfil laboral o tipo de hipoteca.\",
+    \"tasa_interes\": (float) la tasa de interés nueva (ej: 2.5), o null si no lo menciona,
+    \"plazo_maximo\": (int) el plazo máximo en años nuevo (ej: 30), o null si no lo menciona,
+    \"activo\": (bool) true si quiere activarlo, false si quiere desactivarlo, o null si no lo menciona
+}
+
+Texto del usuario: \"{$texto}\"
+
+Responde ÚNICAMENTE con el JSON, sin markdown, sin ```json, y sin comentarios extra.";
+
+        $jsonBruto = $this->enviarAOpenAITexto($prompt);
+        $jsonLimpio = trim(str_replace(['```json', '```'], '', $jsonBruto));
+
+        try {
+            $datos = json_decode($jsonLimpio, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception("JSON no válido: " . json_last_error_msg());
+            }
+            return $datos;
+        } catch (\Exception $e) {
+            $this->get('logger')->error('Error en generarCambioParametrosCalculadora: ' . $e->getMessage());
+            return ['perfil' => null, 'tasa_interes' => null, 'plazo_maximo' => null, 'activo' => null];
+        }
+    }
 
     /**
      * Procesa respuesta de IA en formato {"campos": [{id, nombre, valor}]}

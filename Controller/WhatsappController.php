@@ -4059,6 +4059,7 @@ class WhatsappController extends Controller
             'datos pendientes' => 'habilidad_datos_pendientes',
             'resumen ejecutivo' => 'habilidad_resumen_ejecutivo',
             'analítica' => 'habilidad_analitica',
+            'modificar parametros calculadora' => 'habilidad_modificar_parametros',
         ];
 
         $habilidadDetectada = null;
@@ -4428,6 +4429,44 @@ class WhatsappController extends Controller
                     } catch (\Exception $e) {
                         $this->logear('❌ Error habilidad_analitica: ' . $e->getMessage());
                         return $textoConversacional . "\n\n❌ Hubo un error al procesar tu búsqueda analítica: " . $e->getMessage();
+                    }
+                    return $textoConversacional;
+
+                // ─────────────────────────────────────────────────────────────
+                // HABILIDAD 13: Modificar Parámetros Calculadora
+                // ─────────────────────────────────────────────────────────────
+                case 'habilidad_modificar_parametros':
+                    $pregunta = $parametroHabilidad ?: null;
+                    if (!$pregunta) {
+                        return $textoConversacional . "\n\n❌ No has indicado qué parámetro o perfil deseas modificar.";
+                    }
+
+                    try {
+                        // Enviamos la petición a un nuevo endpoint en BotApiController o lo manejamos aquí.
+                        // Para simplificar y mantener la lógica unida, usaremos BotApiController.
+                        $requestApi = new \Symfony\Component\HttpFoundation\Request([], ['pregunta' => $pregunta]);
+                        
+                        $botApiController = $this->get('AppBundle\Controller\BotApiController');
+                        if ($botApiController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
+                            $botApiController->setContainer($this->container);
+                        }
+
+                        $response = $botApiController->botModificarParametrosCalculadoraAction($requestApi);
+                        
+                        if ($response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
+                            $data = json_decode($response->getContent(), true);
+                            
+                            if (isset($data['success']) && $data['success'] === false) {
+                                return $textoConversacional . "\n\n❌ " . ($data['error'] ?? 'Hubo un error modificando los parámetros.');
+                            }
+
+                            $msj = $textoConversacional . "\n\n✅ " . $data['mensaje'];
+                            $this->logear('✅ Habilidad modificar parámetros ejecutada con éxito');
+                            return $msj;
+                        }
+                    } catch (\Exception $e) {
+                        $this->logear('❌ Error habilidad_modificar_parametros: ' . $e->getMessage());
+                        return $textoConversacional . "\n\n❌ Hubo un error al intentar modificar los parámetros: " . $e->getMessage();
                     }
                     return $textoConversacional;
 

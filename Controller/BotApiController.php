@@ -2192,5 +2192,87 @@ class BotApiController extends Controller
 			], 500);
 		}
 	}
+
+	/**
+	 * @Route("/Bot/ModificarParametrosCalculadora", name="bot_modificar_parametros_calculadora", methods={"POST", "GET"})
+	 */
+	public function botModificarParametrosCalculadoraAction(Request $request)
+	{
+		try {
+			$pregunta = $request->get('pregunta');
+			if (!$pregunta) {
+				return new JsonResponse(['success' => false, 'error' => 'No se proporcionó la pregunta.']);
+			}
+
+			$iaController = clone $this->get('AppBundle\Controller\InteligenciaArtificialController');
+			if ($iaController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
+				$iaController->setContainer($this->container);
+			}
+
+			$datosExtraidos = $iaController->generarCambioParametrosCalculadora($pregunta);
+			$perfil = $datosExtraidos['perfil'] ?? null;
+
+			if (!$perfil) {
+				return new JsonResponse(['success' => false, 'error' => 'La IA no pudo identificar a qué perfil aplicar los cambios.']);
+			}
+
+			$em = $this->getDoctrine()->getManager();
+			$repoParametros = $em->getRepository('AppBundle:CalculadoraParametros');
+			
+			// Buscar el perfil
+			$parametro = $repoParametros->findOneBy(['perfilLaboral' => $perfil]);
+			
+			$esNuevo = false;
+			if (!$parametro) {
+				// Si no existe, lo creamos
+				$parametro = new \AppBundle\Entity\CalculadoraParametros();
+				$parametro->setPerfilLaboral($perfil);
+				$parametro->setTasaInteres(0);
+				$parametro->setPlazoMaximo(30);
+				$parametro->setActivo(true);
+				$em->persist($parametro);
+				$esNuevo = true;
+			}
+
+			$cambios = [];
+			if (isset($datosExtraidos['tasa_interes']) && $datosExtraidos['tasa_interes'] !== null) {
+				$parametro->setTasaInteres((float)$datosExtraidos['tasa_interes']);
+				$cambios[] = "Tasa de interés: " . $datosExtraidos['tasa_interes'] . "%";
+			}
+			if (isset($datosExtraidos['plazo_maximo']) && $datosExtraidos['plazo_maximo'] !== null) {
+				$parametro->setPlazoMaximo((int)$datosExtraidos['plazo_maximo']);
+				$cambios[] = "Plazo máximo: " . $datosExtraidos['plazo_maximo'] . " años";
+			}
+			if (isset($datosExtraidos['activo']) && $datosExtraidos['activo'] !== null) {
+				$parametro->setActivo((bool)$datosExtraidos['activo']);
+				$estado = $datosExtraidos['activo'] ? 'Activo' : 'Inactivo';
+				$cambios[] = "Estado: " . $estado;
+			}
+
+			$em->flush();
+
+			if (empty($cambios) && !$esNuevo) {
+				return new JsonResponse(['success' => true, 'mensaje' => "He encontrado el perfil '{$perfil}' pero no he detectado ningún valor nuevo para actualizar."]);
+			}
+
+			$accion = $esNuevo ? "creado" : "actualizado";
+			$mensaje = "He {$accion} los parámetros de la calculadora para el perfil *{$perfil}* con los siguientes valores:\n";
+			foreach ($cambios as $c) {
+				$mensaje .= "  🔹 " . $c . "\n";
+			}
+
+			return new JsonResponse([
+				'success' => true,
+				'mensaje' => $mensaje
+			]);
+
+		} catch (\Exception $e) {
+			$this->get('logger')->error('botModificarParametrosCalculadoraAction error: ' . $e->getMessage() . ' ' . $e->getTraceAsString());
+			return new JsonResponse([
+				'success' => false,
+				'error' => 'Error interno al modificar parámetros: ' . $e->getMessage()
+			], 500);
+		}
+	}
 }
 
