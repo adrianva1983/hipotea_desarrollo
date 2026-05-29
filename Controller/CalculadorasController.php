@@ -359,6 +359,93 @@ class CalculadorasController extends Controller
 		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzadaTest.html.twig', $variablesTwig);
 	}
 
+	public function calculadoraAvanzadaIAAction(Request $request)
+	{
+		$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaIA');
+		$formulario->handleRequest($request);
+		$variablesTwig = array(
+			'titulo' => 'Calculadora Avanzada IA',
+			'calculadora_avanzada' => $formulario->createView(),
+			'iva_label' => 'IVA',
+		);
+		if ($formulario->isSubmitted() && $formulario->isValid()) {
+			$resultado = $formulario->getData()->calcularAvanzadaIA($doctrine = $this->getDoctrine()->getManager());
+			if ($formulario->getData()->getTipo() == 1) {
+				$variablesTwig['valor_inmueble'] = $formulario->getData()->getValorInmueble();
+				$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+				$variablesTwig['importe_variable'] = $resultado['importe_variable'];
+				$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+				$variablesTwig['entrada'] = $resultado['entrada'];
+				$variablesTwig['interes_fijo'] = $resultado['con_interes_fijo'] ?? 0;
+				$variablesTwig['interes_variable'] = $resultado['con_interes_variable'] ?? 0;
+				$variablesTwig['con_entrada_fijo'] = $resultado['con_entrada_fijo'] ?? 0;
+				$variablesTwig['con_entrada_variable'] = $resultado['con_entrada_variable'] ?? 0;
+				$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+				$variablesTwig['cuota_fija'] = $resultado['cuota_fija'];
+				$variablesTwig['cuota_variable'] = $resultado['cuota_variable'];
+				$variablesTwig['cuota_mixta'] = $resultado['cuota_mixta'] ?? 0;
+				$variablesTwig['mensaje'] = $resultado['mensaje'];
+				$variablesTwig['cuota_fija_final'] = $resultado['cuota_fija_final'] ?? 0;
+				$variablesTwig['cuota_variable_final'] = $resultado['cuota_variable_final'] ?? 0;
+				$variablesTwig['cuota_mixta_final'] = $resultado['cuota_mixta_final'] ?? 0;
+				$variablesTwig['valor_vivienda_actual'] = $formulario->getData()->getValorViviendaActual();
+				$variablesTwig['hipoteca_actual'] = $resultado['hipoteca_actual'] ?? $formulario->getData()->getHipotecaActual();
+				$variablesTwig['aportacion_tras_venta'] = $formulario->getData()->getAportacionTrasVenta();
+				$variablesTwig['gastos'] = $resultado['gastos'] ?? 0;
+				$variablesTwig['tipo_fijo'] = $resultado['tipo_fijo'] ?? 0;
+				$variablesTwig['tipo_variable'] = $resultado['tipo_variable'] ?? 0;
+				$variablesTwig['tipo_mixto'] = $resultado['tipo_mixto'] ?? 0;
+				$variablesTwig['tipo_luego_mixto'] = $resultado['tipo_luego_mixto'] ?? 0;
+				$variablesTwig['intereses'] = $resultado['intereses'] ?? 0;
+				$variablesTwig['importe_total'] = $resultado['importe_total'] ?? 0;
+				$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+				$variablesTwig['tasacion'] = $resultado['tasacion'] ?? 0;
+				$variablesTwig['vinculaciones'] = $resultado['vinculaciones'] ?? 0;
+				$variablesTwig['notario'] = $resultado['notario'] ?? 0;
+				$variablesTwig['registro'] = $resultado['registro'] ?? 0;
+				$variablesTwig['gestoria'] = $resultado['gestoria'] ?? 0;
+				$variablesTwig['obraNueva'] = $resultado['obraNueva'] ?? 0;
+				$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'] ?? 0;
+				$variablesTwig['importe_iva'] = $resultado['importe_iva'] ?? 0;
+				$variablesTwig['tipo_interes_ccaa'] = ($resultado['tipo_interes_ccaa'] ?? 0) * 100;
+			} else {
+				if ($resultado['importe_fijo'] > 0) {
+					$variablesTwig['valor_inmueble'] = $resultado['importe_fijo'];
+					$variablesTwig['importe_fijo'] = $resultado['importe_fijo'];
+					$variablesTwig['amortizacion'] = $resultado['amortizacion'];
+					$variablesTwig['entrada'] = $resultado['entrada'];
+					$variablesTwig['gastos'] = $resultado['gastos'] ?? 0;
+					$variablesTwig['cuota'] = $resultado['cuota'] ?? 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+					$variablesTwig['tipo_calculo'] = $resultado['tipo_calculo'];
+					$variablesTwig['obraNueva'] = $resultado['obraNueva'] ?? 0;
+					$variablesTwig['escritura_compra_impuesto_transmisiones'] = $resultado['escritura_compra_impuesto_transmisiones'] ?? 0;
+					$variablesTwig['notario'] = $resultado['notario'] ?? 0;
+					$variablesTwig['registro'] = $resultado['registro'] ?? 0;
+					$variablesTwig['gestoria'] = $resultado['gestoria'] ?? 0;
+					$variablesTwig['tasacion'] = $resultado['tasacion'] ?? 0;
+					$variablesTwig['tipo_importe_maximo'] = $resultado['tipo_importe_maximo'] ?? 0;
+					$variablesTwig['gastos_inmobiliaria'] = $formulario->getData()->getHonorariosInmobiliaria();
+					$variablesTwig['importe_iva'] = $resultado['importe_iva'] ?? 0;
+					$variablesTwig['importe_total'] = $resultado['importe_fijo'] + ($resultado['gastos'] ?? 0) - $resultado['entrada'];
+					$variablesTwig['tipo_interes_ccaa'] = ($resultado['tipo_interes_ccaa'] ?? 0) * 100;					
+				} else {
+					$variablesTwig['importe_fijo'] = 0;
+					$variablesTwig['mensaje'] = $resultado['mensaje'];
+				}
+			}
+			$variablesTwig['resultado'] = null;
+				try {
+					$ccaa = $formulario->getData()->getComunidadAutonoma();
+					$nueva = $formulario->getData()->getObraNueva();
+					$variablesTwig['iva_label'] = ($nueva && $ccaa == '5') ? 'IGIC' : 'IVA';
+				} catch (\Exception $e) {
+					$variablesTwig['iva_label'] = 'IVA';
+				}
+		}
+		return $this->render('@App/Backoffice/Extras/CalculadoraAvanzadaIA.html.twig', $variablesTwig);
+	}
+
 	public function calculadoraAvanzadaWebAction(Request $request)
 	{
 		$formulario = $this->createForm('AppBundle\Form\CalculadoraAvanzadaTest');

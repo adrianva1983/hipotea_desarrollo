@@ -266,6 +266,9 @@ calculadora_avanzada:
 calculadora_avanzada_test:
   path: /CalculadoraAvanzadaTest
   controller: AppBundle:Calculadoras:calculadoraAvanzada
+calculadora_avanzada_ia:
+  path: /CalculadoraAvanzadaIA
+  controller: AppBundle:Calculadoras:calculadoraAvanzadaIA
 calculadora_avanzada_web:
   path: /web/calculadora-avanzada
   controller: AppBundle:Calculadoras:calculadoraAvanzadaWeb

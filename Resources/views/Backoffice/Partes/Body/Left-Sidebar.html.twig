@@ -211,6 +211,12 @@
 								<span class="hide-menu">Calculadora Avanzada</span>
 							</a>
 						</li>
+						<li>
+							<a class="waves-effect waves-dark" href="{{ path('calculadora_avanzada_ia') }}">
+								<i class="fas fa-calculator fa-fw"></i>
+								<span class="hide-menu">Calculadora Avanzada IA</span>
+							</a>
+						</li>
 					{% endif %}
 					{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_COLABORADOR') or is_granted('ROLE_COMERCIAL') or is_granted('ROLE_TECNICO')  or is_granted('ROLE_JEFE_INMOBILIARIA') or is_granted('ROLE_JEFE_OFICINA') or is_granted('ROLE_RESPONSABLE_ZONA') %}
 						<li>
