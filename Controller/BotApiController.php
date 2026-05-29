@@ -2211,53 +2211,43 @@ class BotApiController extends Controller
 			}
 
 			$datosExtraidos = $iaController->generarCambioParametrosCalculadora($pregunta);
-			$perfil = $datosExtraidos['perfil'] ?? null;
+			$codigoProducto = $datosExtraidos['codigo_producto'] ?? null;
 
-			if (!$perfil) {
-				return new JsonResponse(['success' => false, 'error' => 'La IA no pudo identificar a qué perfil aplicar los cambios.']);
+			if (!$codigoProducto) {
+				return new JsonResponse(['success' => false, 'error' => 'La IA no pudo identificar a qué producto aplicar los cambios (cien, premium, sin_compromiso o cambio_casa).']);
 			}
 
 			$em = $this->getDoctrine()->getManager();
-			$repoParametros = $em->getRepository('AppBundle:CalculadoraParametros');
+			$repoProducto = $em->getRepository('AppBundle:ProductoHipotecario');
 			
-			// Buscar el perfil
-			$parametro = $repoParametros->findOneBy(['perfilLaboral' => $perfil]);
+			// Buscar el producto
+			$producto = $repoProducto->findOneBy(['codigoProducto' => $codigoProducto]);
 			
-			$esNuevo = false;
-			if (!$parametro) {
-				// Si no existe, lo creamos
-				$parametro = new \AppBundle\Entity\CalculadoraParametros();
-				$parametro->setPerfilLaboral($perfil);
-				$parametro->setTasaInteres(0);
-				$parametro->setPlazoMaximo(30);
-				$parametro->setActivo(true);
-				$em->persist($parametro);
-				$esNuevo = true;
+			if (!$producto) {
+				return new JsonResponse(['success' => false, 'error' => "No he encontrado el producto '{$codigoProducto}' en la base de datos."]);
 			}
 
 			$cambios = [];
-			if (isset($datosExtraidos['tasa_interes']) && $datosExtraidos['tasa_interes'] !== null) {
-				$parametro->setTasaInteres((float)$datosExtraidos['tasa_interes']);
-				$cambios[] = "Tasa de interés: " . $datosExtraidos['tasa_interes'] . "%";
+			if (isset($datosExtraidos['tipo_fijo']) && $datosExtraidos['tipo_fijo'] !== null) {
+				$producto->setTipoFijo((float)$datosExtraidos['tipo_fijo']);
+				$cambios[] = "Tipo Fijo: " . $datosExtraidos['tipo_fijo'] . "%";
 			}
-			if (isset($datosExtraidos['plazo_maximo']) && $datosExtraidos['plazo_maximo'] !== null) {
-				$parametro->setPlazoMaximo((int)$datosExtraidos['plazo_maximo']);
-				$cambios[] = "Plazo máximo: " . $datosExtraidos['plazo_maximo'] . " años";
+			if (isset($datosExtraidos['tipo_variable']) && $datosExtraidos['tipo_variable'] !== null) {
+				$producto->setTipoVariable((float)$datosExtraidos['tipo_variable']);
+				$cambios[] = "Tipo Variable: " . $datosExtraidos['tipo_variable'] . "%";
 			}
-			if (isset($datosExtraidos['activo']) && $datosExtraidos['activo'] !== null) {
-				$parametro->setActivo((bool)$datosExtraidos['activo']);
-				$estado = $datosExtraidos['activo'] ? 'Activo' : 'Inactivo';
-				$cambios[] = "Estado: " . $estado;
+			if (isset($datosExtraidos['tipo_mixto']) && $datosExtraidos['tipo_mixto'] !== null) {
+				$producto->setTipoMixto((float)$datosExtraidos['tipo_mixto']);
+				$cambios[] = "Tipo Mixto: " . $datosExtraidos['tipo_mixto'] . "%";
 			}
 
 			$em->flush();
 
-			if (empty($cambios) && !$esNuevo) {
-				return new JsonResponse(['success' => true, 'mensaje' => "He encontrado el perfil '{$perfil}' pero no he detectado ningún valor nuevo para actualizar."]);
+			if (empty($cambios)) {
+				return new JsonResponse(['success' => true, 'mensaje' => "He encontrado el producto '{$codigoProducto}' pero no he detectado ningún tipo de interés nuevo para actualizar."]);
 			}
 
-			$accion = $esNuevo ? "creado" : "actualizado";
-			$mensaje = "He {$accion} los parámetros de la calculadora para el perfil *{$perfil}* con los siguientes valores:\n";
+			$mensaje = "He actualizado los intereses de la calculadora para el producto *{$codigoProducto}* con los siguientes valores:\n";
 			foreach ($cambios as $c) {
 				$mensaje .= "  🔹 " . $c . "\n";
 			}

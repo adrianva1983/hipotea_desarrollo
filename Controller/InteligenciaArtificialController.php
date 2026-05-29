@@ -311,13 +311,13 @@ class InteligenciaArtificialController extends Controller
 
     public function generarCambioParametrosCalculadora($texto)
     {
-        $prompt = "Eres un asistente técnico del sistema Hipotea. El usuario quiere modificar los parámetros de la Calculadora Avanzada en base de datos.
+        $prompt = "Eres un asistente técnico del sistema Hipotea. El usuario quiere modificar los tipos de interés de los productos hipotecarios en la base de datos.
 Extrae la información a formato JSON estricto con esta estructura:
 {
-    \"perfil\": \"(string) el nombre del perfil (ej: 'Funcionario', 'Fijo', 'Variable', '100%'). Busca siempre un nombre que encaje con un perfil laboral o tipo de hipoteca.\",
-    \"tasa_interes\": (float) la tasa de interés nueva (ej: 2.5), o null si no lo menciona,
-    \"plazo_maximo\": (int) el plazo máximo en años nuevo (ej: 30), o null si no lo menciona,
-    \"activo\": (bool) true si quiere activarlo, false si quiere desactivarlo, o null si no lo menciona
+    \"codigo_producto\": \"(string) el código del producto (SOLO PUEDE SER UNO DE ESTOS: 'cien', 'premium', 'sin_compromiso', 'cambio_casa'). Si menciona 100% o 80% asume 'cien'.\",
+    \"tipo_fijo\": (float) la tasa de interés para tipo fijo (ej: 2.5), o null si no lo menciona,
+    \"tipo_variable\": (float) la tasa de interés para tipo variable, o null si no lo menciona,
+    \"tipo_mixto\": (float) la tasa de interés para tipo mixto, o null si no lo menciona
 }
 
 Texto del usuario: \"{$texto}\"
