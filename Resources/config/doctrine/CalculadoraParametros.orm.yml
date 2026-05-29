@@ -1,0 +1,23 @@
+AppBundle\Entity\CalculadoraParametros:
+    type: entity
+    table: calculadora_parametros
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        perfilLaboral:
+            type: string
+            length: 255
+            unique: true
+            column: perfil_laboral
+        tasaInteres:
+            type: float
+            column: tasa_interes
+        plazoMaximo:
+            type: integer
+            column: plazo_maximo
+        activo:
+            type: boolean
+            column: activo

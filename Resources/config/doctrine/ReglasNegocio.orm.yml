@@ -1,0 +1,28 @@
+AppBundle\Entity\ReglasNegocio:
+    type: entity
+    table: reglas_negocio
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        edadMaximaAlVencimiento:
+            type: integer
+            column: edad_maxima_al_vencimiento
+        porcentajeMaximoEndeudamiento:
+            type: float
+            column: porcentaje_maximo_endeudamiento
+        gastosFijosTasacion:
+            type: float
+            column: gastos_fijos_tasacion
+        gastosFijosNotario:
+            type: float
+            column: gastos_fijos_notario
+        gastosFijosGestoria:
+            type: float
+            column: gastos_fijos_gestoria
+        edadJovenFrontera:
+            type: integer
+            nullable: true
+            column: edad_joven_frontera

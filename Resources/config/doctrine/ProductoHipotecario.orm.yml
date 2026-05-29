@@ -1,0 +1,37 @@
+AppBundle\Entity\ProductoHipotecario:
+    type: entity
+    table: producto_hipotecario
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        codigoProducto:
+            type: string
+            length: 255
+            unique: true
+            column: codigo_producto
+        tipoFijo:
+            type: float
+            nullable: true
+            column: tipo_fijo
+        tipoVariable:
+            type: float
+            nullable: true
+            column: tipo_variable
+        tipoMixto:
+            type: float
+            nullable: true
+            column: tipo_mixto
+        comisionApertura:
+            type: float
+            nullable: true
+            column: comision_apertura
+        permiteVinculaciones:
+            type: boolean
+            column: permite_vinculaciones
+        levantamientoRegistral:
+            type: float
+            nullable: true
+            column: levantamiento_registral

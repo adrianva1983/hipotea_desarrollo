@@ -1,0 +1,27 @@
+AppBundle\Entity\ImpuestoCcaa:
+    type: entity
+    table: impuesto_ccaa
+    id:
+        id:
+            type: integer
+            generator:
+                strategy: AUTO
+    fields:
+        comunidadAutonoma:
+            type: integer
+            column: comunidad_autonoma
+        tipoImpuesto:
+            type: string
+            length: 255
+            column: tipo_impuesto
+        porcentajeDefecto:
+            type: float
+            column: porcentaje_defecto
+        porcentajeBonificadoJovenes:
+            type: float
+            nullable: true
+            column: porcentaje_bonificado_jovenes
+        porcentajeBonificadoVpo:
+            type: float
+            nullable: true
+            column: porcentaje_bonificado_vpo

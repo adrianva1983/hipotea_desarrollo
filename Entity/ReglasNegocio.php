@@ -2,80 +2,24 @@
 
 namespace AppBundle\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-
-/**
- * ReglasNegocio
- *
- * @ORM\Table(name="reglas_negocio")
- * @ORM\Entity
- */
 class ReglasNegocio
 {
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
     private $id;
-
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="edad_maxima_al_vencimiento", type="integer")
-     */
     private $edadMaximaAlVencimiento;
-
-    /**
-     * @var float
-     *
-     * @ORM\Column(name="porcentaje_maximo_endeudamiento", type="float")
-     */
     private $porcentajeMaximoEndeudamiento;
-
-    /**
-     * @var float
-     *
-     * @ORM\Column(name="gastos_fijos_tasacion", type="float")
-     */
     private $gastosFijosTasacion;
-
-    /**
-     * @var float
-     *
-     * @ORM\Column(name="gastos_fijos_notario", type="float")
-     */
     private $gastosFijosNotario;
-
-    /**
-     * @var float
-     *
-     * @ORM\Column(name="gastos_fijos_gestoria", type="float")
-     */
     private $gastosFijosGestoria;
-
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="edad_joven_frontera", type="integer", nullable=true)
-     */
     private $edadJovenFrontera;
-
-    public function __construct()
-    {
-        $this->edadMaximaAlVencimiento = 75;
-        $this->porcentajeMaximoEndeudamiento = 0.35;
-        $this->gastosFijosTasacion = 0;
-        $this->gastosFijosNotario = 0;
-        $this->gastosFijosGestoria = 0;
-        $this->edadJovenFrontera = 35;
-    }
 
     public function getId()
     {
         return $this->id;
+    }
+
+    public function getEdadMaximaAlVencimiento()
+    {
+        return $this->edadMaximaAlVencimiento;
     }
 
     public function setEdadMaximaAlVencimiento($edadMaximaAlVencimiento)
@@ -84,9 +28,9 @@ class ReglasNegocio
         return $this;
     }
 
-    public function getEdadMaximaAlVencimiento()
+    public function getPorcentajeMaximoEndeudamiento()
     {
-        return $this->edadMaximaAlVencimiento;
+        return $this->porcentajeMaximoEndeudamiento;
     }
 
     public function setPorcentajeMaximoEndeudamiento($porcentajeMaximoEndeudamiento)
@@ -95,9 +39,9 @@ class ReglasNegocio
         return $this;
     }
 
-    public function getPorcentajeMaximoEndeudamiento()
+    public function getGastosFijosTasacion()
     {
-        return $this->porcentajeMaximoEndeudamiento;
+        return $this->gastosFijosTasacion;
     }
 
     public function setGastosFijosTasacion($gastosFijosTasacion)
@@ -106,9 +50,9 @@ class ReglasNegocio
         return $this;
     }
 
-    public function getGastosFijosTasacion()
+    public function getGastosFijosNotario()
     {
-        return $this->gastosFijosTasacion;
+        return $this->gastosFijosNotario;
     }
 
     public function setGastosFijosNotario($gastosFijosNotario)
@@ -117,9 +61,9 @@ class ReglasNegocio
         return $this;
     }
 
-    public function getGastosFijosNotario()
+    public function getGastosFijosGestoria()
     {
-        return $this->gastosFijosNotario;
+        return $this->gastosFijosGestoria;
     }
 
     public function setGastosFijosGestoria($gastosFijosGestoria)
@@ -128,19 +72,14 @@ class ReglasNegocio
         return $this;
     }
 
-    public function getGastosFijosGestoria()
+    public function getEdadJovenFrontera()
     {
-        return $this->gastosFijosGestoria;
+        return $this->edadJovenFrontera;
     }
 
     public function setEdadJovenFrontera($edadJovenFrontera)
     {
         $this->edadJovenFrontera = $edadJovenFrontera;
         return $this;
-    }
-
-    public function getEdadJovenFrontera()
-    {
-        return $this->edadJovenFrontera;
     }
 }

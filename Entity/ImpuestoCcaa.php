@@ -2,63 +2,23 @@
 
 namespace AppBundle\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-
-/**
- * ImpuestoCcaa
- *
- * @ORM\Table(name="impuesto_ccaa")
- * @ORM\Entity
- */
 class ImpuestoCcaa
 {
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
     private $id;
-
-    /**
-     * @var int
-     * 1 = Andalucia, 2 = Aragon... según mapeo
-     * @ORM\Column(name="comunidad_autonoma", type="integer")
-     */
     private $comunidadAutonoma;
-
-    /**
-     * @var string
-     * Ej: ITP, AJD, IVA, IGIC
-     * @ORM\Column(name="tipo_impuesto", type="string", length=255)
-     */
     private $tipoImpuesto;
-
-    /**
-     * @var float
-     *
-     * @ORM\Column(name="porcentaje_defecto", type="float")
-     */
     private $porcentajeDefecto;
-
-    /**
-     * @var float
-     *
-     * @ORM\Column(name="porcentaje_bonificado_jovenes", type="float", nullable=true)
-     */
     private $porcentajeBonificadoJovenes;
-
-    /**
-     * @var float
-     *
-     * @ORM\Column(name="porcentaje_bonificado_vpo", type="float", nullable=true)
-     */
     private $porcentajeBonificadoVpo;
 
     public function getId()
     {
         return $this->id;
+    }
+
+    public function getComunidadAutonoma()
+    {
+        return $this->comunidadAutonoma;
     }
 
     public function setComunidadAutonoma($comunidadAutonoma)
@@ -67,9 +27,9 @@ class ImpuestoCcaa
         return $this;
     }
 
-    public function getComunidadAutonoma()
+    public function getTipoImpuesto()
     {
-        return $this->comunidadAutonoma;
+        return $this->tipoImpuesto;
     }
 
     public function setTipoImpuesto($tipoImpuesto)
@@ -78,9 +38,9 @@ class ImpuestoCcaa
         return $this;
     }
 
-    public function getTipoImpuesto()
+    public function getPorcentajeDefecto()
     {
-        return $this->tipoImpuesto;
+        return $this->porcentajeDefecto;
     }
 
     public function setPorcentajeDefecto($porcentajeDefecto)
@@ -89,9 +49,9 @@ class ImpuestoCcaa
         return $this;
     }
 
-    public function getPorcentajeDefecto()
+    public function getPorcentajeBonificadoJovenes()
     {
-        return $this->porcentajeDefecto;
+        return $this->porcentajeBonificadoJovenes;
     }
 
     public function setPorcentajeBonificadoJovenes($porcentajeBonificadoJovenes)
@@ -100,19 +60,14 @@ class ImpuestoCcaa
         return $this;
     }
 
-    public function getPorcentajeBonificadoJovenes()
+    public function getPorcentajeBonificadoVpo()
     {
-        return $this->porcentajeBonificadoJovenes;
+        return $this->porcentajeBonificadoVpo;
     }
 
     public function setPorcentajeBonificadoVpo($porcentajeBonificadoVpo)
     {
         $this->porcentajeBonificadoVpo = $porcentajeBonificadoVpo;
         return $this;
-    }
-
-    public function getPorcentajeBonificadoVpo()
-    {
-        return $this->porcentajeBonificadoVpo;
     }
 }
