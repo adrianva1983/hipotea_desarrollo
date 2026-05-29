@@ -439,8 +439,7 @@ class CalculadoraAvanzadaIA
 		$monoparental = $this->getMonoparental();
 		$habitual = $this->getDestinoCompra()===1?true:false;
 
-		$resTipoInteres = $this->obtenerInteres($edad, $nombreCCAA, $minusvaliaFamiliaNumerosa, $familiaNumerosa, $nueva, $valor_inmueble, $habitual, 
-		$vpo, $monoparental, $precio_maximo);
+		$resTipoInteres = $this->obtenerInteres($entityManager, $reglasNegocio, $edad, $ccaa, $nueva, $vpo);
 		$tipo_interes_ccaa = $resTipoInteres['tipo'];
 		$respuesta['mensaje'] = $resTipoInteres['mensaje'];
 		$bonificacion = $resTipoInteres['bonificacion'];
@@ -619,8 +618,7 @@ class CalculadoraAvanzadaIA
 			$gastosDiez = $resultado_f['gastos'];
 			
 			
-			$resTipoInteres = $this->obtenerInteres($edad, $nombreCCAA, $minusvaliaFamiliaNumerosa, $familiaNumerosa, $nueva, $valor_inmueble, $habitual, 
-			$vpo, $monoparental, $precio_maximo);
+			$resTipoInteres = $this->obtenerInteres($entityManager, $reglasNegocio, $edad, $ccaa, $nueva, $vpo);
 			// dump($edad);
 			// dump($valor_inmueble);
 			// dump($resTipoInteres);
@@ -660,8 +658,7 @@ class CalculadoraAvanzadaIA
 			// dump($resultado_f);
 			// die();
 			$valor_inmueble = $this->redondear500($resultado_f['importe']);
-			$resTipoInteres = $this->obtenerInteres($edad, $nombreCCAA, $minusvaliaFamiliaNumerosa, $familiaNumerosa, $nueva, $valor_inmueble, $habitual, 
-			$vpo, $monoparental, $precio_maximo);
+			$resTipoInteres = $this->obtenerInteres($entityManager, $reglasNegocio, $edad, $ccaa, $nueva, $vpo);
 			$tipo_interes_ccaa = $resTipoInteres['tipo'];
 			$respuesta['mensaje'] = $resTipoInteres['mensaje'];
 			$bonificacion = $resTipoInteres['bonificacion'];
