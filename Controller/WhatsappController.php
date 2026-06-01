@@ -1360,18 +1360,23 @@ class WhatsappController extends Controller
 
 
 
-            $conn->insert('chat_history', [
-                'id_expediente' => $idExpediente,
-                'from_phone' => $phone,
-                'to_phone' => $phoneDestination ? $this->normalizePhone($phoneDestination) : null,
-                'message' => json_encode($messageData),
-                'role' => $finalRole,
-                'direction' => ($direction === 'recibido') ? 'recibido' : 'enviado',
-                'message_type' => $isImage ? 'image' : 'text',
-                'timestamp' => date('Y-m-d H:i:s')
-            ]);
-            $id = $conn->lastInsertId();
-            $this->logear("Mensaje guardado en chat_history con ID $id para expediente $idExpediente, direciion: $direction");
+            $shouldSave = $this->isSyncConversacionesEnabledForPhone($phone) || $this->isSyncConversacionesEnabledForPhone($phoneDestination ?? null);
+            if ($shouldSave) {
+                $conn->insert('chat_history', [
+                    'id_expediente' => $idExpediente,
+                    'from_phone' => $phone,
+                    'to_phone' => $phoneDestination ? $this->normalizePhone($phoneDestination) : null,
+                    'message' => json_encode($messageData),
+                    'role' => $finalRole,
+                    'direction' => ($direction === 'recibido') ? 'recibido' : 'enviado',
+                    'message_type' => $isImage ? 'image' : 'text',
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
+                $id = $conn->lastInsertId();
+                $this->logear("Mensaje guardado en chat_history con ID $id para expediente $idExpediente, direciion: $direction");
+            } else {
+                $this->logear('ℹ️ SyncConversaciones desactivado para from=' . $phone . ' to=' . ($phoneDestination ?? 'null') . '. Mensaje no guardado.');
+            }
 
             $mensajeGenerado = null;
 
@@ -2749,17 +2754,22 @@ class WhatsappController extends Controller
                                     'type' => 'text',
                                     'content' => $mensajeUnificado
                                 ];
-                                $conn->insert('chat_history', [
-                                    'id_expediente' => $idExpediente,
-                                    'from_phone' => $this->telefonoSistema,
-                                    'to_phone' => $this->normalizePhone($phoneDestino),
-                                    'message' => json_encode($messageData),
-                                    'role' => 'assistant',
-                                    'direction' => 'enviado',
-                                    'message_type' => 'text',
-                                    'timestamp' => date('Y-m-d H:i:s')
-                                ]);
-                                $this->logear('✅ Mensaje guardado en chat_history para expediente ' . $idExpediente);
+                                $shouldSaveSys = $this->isSyncConversacionesEnabledForPhone($this->telefonoSistema) || $this->isSyncConversacionesEnabledForPhone($phoneDestino ?? null);
+                                if ($shouldSaveSys) {
+                                    $conn->insert('chat_history', [
+                                        'id_expediente' => $idExpediente,
+                                        'from_phone' => $this->telefonoSistema,
+                                        'to_phone' => $this->normalizePhone($phoneDestino),
+                                        'message' => json_encode($messageData),
+                                        'role' => 'assistant',
+                                        'direction' => 'enviado',
+                                        'message_type' => 'text',
+                                        'timestamp' => date('Y-m-d H:i:s')
+                                    ]);
+                                    $this->logear('✅ Mensaje guardado en chat_history para expediente ' . $idExpediente);
+                                } else {
+                                    $this->logear('ℹ️ SyncConversaciones desactivado para system->' . ($phoneDestino ?? 'null') . '. Mensaje no guardado.');
+                                }
                             } catch (\Exception $e) {
                                 $this->logear('⚠️ Error al guardar en chat_history: ' . $e->getMessage());
                             }
@@ -3104,6 +3114,59 @@ class WhatsappController extends Controller
         } catch (\Exception $e) {
             if ($this->container->has('logger')) {
                 $this->container->get('logger')->error('verificarPilotoAutomatico error: ' . $e->getMessage());
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Comprueba si existe un WhatsappSender vinculado al teléfono y tiene SyncConversaciones activo
+     * @param string|null $telefono
+     * @return bool
+     */
+    private function isSyncConversacionesEnabledForPhone(?string $telefono): bool
+    {
+        try {
+            if (!$telefono || !is_string($telefono)) {
+                return false;
+            }
+
+            $em = $this->getDoctrine()->getManager();
+            $conn = $em->getConnection();
+
+            $numLocal = (strlen($telefono) > 9) ? substr($telefono, -9) : $telefono;
+            $variants = array_unique(array_filter([
+                $telefono,
+                ltrim($telefono, '0'),
+                $numLocal,
+                '34' . $numLocal,
+                '+34' . $numLocal
+            ]));
+
+            if (count($variants) === 0) {
+                return false;
+            }
+
+            $placeholders = [];
+            $params = [];
+            foreach ($variants as $i => $v) {
+                $ph = ':p' . $i;
+                $placeholders[] = $ph;
+                $params[$ph] = $v;
+            }
+
+            $sql = 'SELECT SyncConversaciones FROM WhatsappSenders WHERE telefono IN (' . implode(',', array_keys($params)) . ') ORDER BY FechaUltimaInteraccion DESC LIMIT 1';
+            $stmt = $conn->prepare($sql);
+            foreach ($params as $ph => $val) {
+                $stmt->bindValue(trim($ph, ':'), $val);
+            }
+            $stmt->execute();
+            $result = $stmt->fetch();
+
+            return $result && ($result['SyncConversaciones'] == 1 || $result['SyncConversaciones'] === true);
+        } catch (\Exception $e) {
+            if ($this->container->has('logger')) {
+                $this->container->get('logger')->error('isSyncConversacionesEnabledForPhone error: ' . $e->getMessage());
             }
             return false;
         }
@@ -3738,20 +3801,25 @@ class WhatsappController extends Controller
                 return new JsonResponse([], 200);
             }
 
-            $conn->insert('chat_history', [
-                'id_expediente' => $idExpediente,   // ✅ Id del expediente (si se encuentra)
-                'from_phone' => $fromPhone,         // ✅ Quién envía
-                'to_phone' => $toPhone,             // ✅ Quién recibe
-                'message' => $messageToSave,
-                'role' => $role,
-                'direction' => $direction,
-                'message_type' => $type,
-                'timestamp' => $now
-            ], [
-                'timestamp' => 'datetime'
-            ]);
+            $shouldSaveMsg = $this->isSyncConversacionesEnabledForPhone($fromPhone) || $this->isSyncConversacionesEnabledForPhone($toPhone);
+            if ($shouldSaveMsg) {
+                $conn->insert('chat_history', [
+                    'id_expediente' => $idExpediente,   // ✅ Id del expediente (si se encuentra)
+                    'from_phone' => $fromPhone,         // ✅ Quién envía
+                    'to_phone' => $toPhone,             // ✅ Quién recibe
+                    'message' => $messageToSave,
+                    'role' => $role,
+                    'direction' => $direction,
+                    'message_type' => $type,
+                    'timestamp' => $now
+                ], [
+                    'timestamp' => 'datetime'
+                ]);
 
-            $this->logear('✓ MESSAGE GUARDADO111: from=' . $fromPhone . ', to=' . $toPhone . ', direction=' . $direction . ', expediente=' . $idExpediente . ' | ' . substr($body, 0, 50));
+                $this->logear('✓ MESSAGE GUARDADO111: from=' . $fromPhone . ', to=' . $toPhone . ', direction=' . $direction . ', expediente=' . $idExpediente . ' | ' . substr($body, 0, 50));
+            } else {
+                $this->logear('ℹ️ SyncConversaciones desactivado para from=' . $fromPhone . ' to=' . ($toPhone ?? 'null') . '. Mensaje no guardado.');
+            }
 
             if ($direction === 'recibido') {
                 try {
@@ -3877,18 +3945,23 @@ class WhatsappController extends Controller
 
                     // Guardar la respuesta del bot INMEDIATAMENTE en el historial para que Gemini tenga el contexto al instante
                     try {
-                        $conn->insert('chat_history', [
-                            'id_expediente' => $idExpediente,
-                            'from_phone' => $toPhone,       // El bot
-                            'to_phone' => $fromPhone,       // El comercial/usuario
-                            'message' => $mensajeRespuestaAutomatica,
-                            'role' => 'assistant',
-                            'direction' => 'enviado',
-                            'message_type' => 'text',
-                            'timestamp' => new \DateTime()
-                        ], [
-                            'timestamp' => 'datetime'
-                        ]);
+                        $shouldSaveAutoReply = $this->isSyncConversacionesEnabledForPhone($toPhone) || $this->isSyncConversacionesEnabledForPhone($fromPhone);
+                        if ($shouldSaveAutoReply) {
+                            $conn->insert('chat_history', [
+                                'id_expediente' => $idExpediente,
+                                'from_phone' => $toPhone,       // El bot
+                                'to_phone' => $fromPhone,       // El comercial/usuario
+                                'message' => $mensajeRespuestaAutomatica,
+                                'role' => 'assistant',
+                                'direction' => 'enviado',
+                                'message_type' => 'text',
+                                'timestamp' => new \DateTime()
+                            ], [
+                                'timestamp' => 'datetime'
+                            ]);
+                        } else {
+                            $this->logear('ℹ️ SyncConversaciones desactivado para auto-reply from=' . ($toPhone ?? 'null') . ' to=' . ($fromPhone ?? 'null') . '. Mensaje no guardado.');
+                        }
                     } catch (\Exception $e) {
                         $this->logear('⚠️ Error guardando auto-reply en historial: ' . $e->getMessage());
                     }
