@@ -3378,6 +3378,9 @@ class WhatsappController extends Controller
      */
     public function webhookWhatsappAction(Request $request): JsonResponse
     {
+        return new JsonResponse([
+            'error' => 'Invalid JSON1111'
+        ], 400);
         try {
             // Obtener datos del webhook
             $data = json_decode($request->getContent(), true);
@@ -4389,7 +4392,7 @@ class WhatsappController extends Controller
                 // ─────────────────────────────────────────────────────────────
                 case 'habilidad_datos_pendientes':
                     $idBusqueda = $parametroHabilidad ?: ($idExpediente ?: ($sessionId ?: null));
-                    
+
                     if (!$idBusqueda) {
                         return $textoConversacional . "\n\n❌ No me has indicado el número o la referencia del expediente que quieres consultar.";
                     }
@@ -4402,10 +4405,10 @@ class WhatsappController extends Controller
 
                         // Llamamos al método que genera el informe
                         $response = $botApiController->botPendientesExpedienteAction($idBusqueda);
-                        
+
                         if ($response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
                             $data = json_decode($response->getContent(), true);
-                            
+
                             if (isset($data['success']) && $data['success'] === false) {
                                 return $textoConversacional . "\n\n❌ " . ($data['error'] ?? 'Hubo un error al buscar los pendientes del expediente.');
                             }
@@ -4433,7 +4436,7 @@ class WhatsappController extends Controller
                 // ─────────────────────────────────────────────────────────────
                 case 'habilidad_resumen_ejecutivo':
                     $idBusqueda = $parametroHabilidad ?: ($idExpediente ?: ($sessionId ?: null));
-                    
+
                     if (!$idBusqueda) {
                         return $textoConversacional . "\n\n❌ No me has indicado la referencia del expediente del cual quieres un resumen.";
                     }
@@ -4445,10 +4448,10 @@ class WhatsappController extends Controller
                         }
 
                         $response = $botApiController->botResumenExpedienteAction($idBusqueda);
-                        
+
                         if ($response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
                             $data = json_decode($response->getContent(), true);
-                            
+
                             if (isset($data['success']) && $data['success'] === false) {
                                 return $textoConversacional . "\n\n❌ " . ($data['error'] ?? 'Hubo un error al generar el resumen del expediente.');
                             }
@@ -4471,7 +4474,7 @@ class WhatsappController extends Controller
                 // ─────────────────────────────────────────────────────────────
                 case 'habilidad_analitica':
                     $pregunta = $parametroHabilidad ?: null;
-                    
+
                     if (!$pregunta) {
                         return $textoConversacional . "\n\n❌ No has indicado qué métrica o búsqueda deseas realizar.";
                     }
@@ -4479,17 +4482,17 @@ class WhatsappController extends Controller
                     try {
                         // Enviamos la pregunta natural como request al action
                         $requestApi = new \Symfony\Component\HttpFoundation\Request([], ['pregunta' => $pregunta]);
-                        
+
                         $botApiController = $this->get('AppBundle\Controller\BotApiController');
                         if ($botApiController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
                             $botApiController->setContainer($this->container);
                         }
 
                         $response = $botApiController->botAnaliticaAction($requestApi);
-                        
+
                         if ($response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
                             $data = json_decode($response->getContent(), true);
-                            
+
                             if (isset($data['success']) && $data['success'] === false) {
                                 return $textoConversacional . "\n\n❌ " . ($data['error'] ?? 'Hubo un error calculando las analíticas.');
                             }
@@ -4518,17 +4521,17 @@ class WhatsappController extends Controller
                         // Enviamos la petición a un nuevo endpoint en BotApiController o lo manejamos aquí.
                         // Para simplificar y mantener la lógica unida, usaremos BotApiController.
                         $requestApi = new \Symfony\Component\HttpFoundation\Request([], ['pregunta' => $pregunta]);
-                        
+
                         $botApiController = $this->get('AppBundle\Controller\BotApiController');
                         if ($botApiController instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface) {
                             $botApiController->setContainer($this->container);
                         }
 
                         $response = $botApiController->botModificarParametrosCalculadoraAction($requestApi);
-                        
+
                         if ($response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
                             $data = json_decode($response->getContent(), true);
-                            
+
                             if (isset($data['success']) && $data['success'] === false) {
                                 return $textoConversacional . "\n\n❌ " . ($data['error'] ?? 'Hubo un error modificando los parámetros.');
                             }
