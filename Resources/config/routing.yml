@@ -955,6 +955,11 @@ api_bot_modificar_expediente:
   controller: AppBundle:BotApi:botModificarExpediente
   methods: [POST]
 
+agente_expediente:
+  path: /API/IA/AgenteExpediente
+  controller: AppBundle:IArtifical:agenteExpediente
+  methods: [POST]
+
 pageNotFound:
     path:  /{path}
     defaults: { _controller: AppBundle:GrupoNegociador:pageNotFound, path: '' }
